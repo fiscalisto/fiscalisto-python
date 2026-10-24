@@ -24,6 +24,7 @@ if TYPE_CHECKING:
         CreateCustomerParams,
         CreateEmployeeParams,
         CreateInvoiceBatchParams,
+        CreateIssuerOnboardingLinkParams,
         CreateIssuerParams,
         CreatePaymentParams,
         CreatePayrollReceiptParams,
@@ -46,6 +47,7 @@ if TYPE_CHECKING:
         InvoiceBatch,
         InvoiceCreate,
         Issuer,
+        IssuerOnboardingLink,
         ListAdvancesParams,
         ListCustomerDataRequestsParams,
         ListCustomersParams,
@@ -268,6 +270,26 @@ class IssuersResource:
         """
         result: Issuer = self._client.request(
             "POST", f"/v1/issuers/{_path(id)}/efirma", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def create_onboarding_link(
+        self,
+        id: str,
+        params: CreateIssuerOnboardingLinkParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> IssuerOnboardingLink:
+        """Crear una liga de alta
+
+        Una página en fiscalisto.com donde el dueño del emisor sube su CSD y firma el contrato con el PAC con su e.firma, sin que esos archivos ni sus contraseñas pasen por su plataforma. Mande a su cliente a url; al terminar vuelve a return_url y llega issuer.ready. Cada liga sirve para un emisor, hasta que vence.
+
+        POST /v1/issuers/{id}/onboarding_links
+        https://fiscalisto.com/docs/api/referencia/emisores/create-issuer-onboarding-link
+        """
+        result: IssuerOnboardingLink = self._client.request(
+            "POST", f"/v1/issuers/{_path(id)}/onboarding_links", body=params, timeout=timeout, max_retries=max_retries
         )
         return result
 
