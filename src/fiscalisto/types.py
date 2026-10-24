@@ -198,6 +198,7 @@ __all__ = [
     "SendInvoiceParams",
     "SendRetentionParams",
     "SignEfirmaParams",
+    "TestWebhookEndpointParams",
     "UpdateCustomerParams",
     "UpdateCustomerParamsForeign",
     "UpdateEmployeeParams",
@@ -207,6 +208,8 @@ __all__ = [
     "UploadCertificateParams",
     "WebhookEndpoint",
     "WebhookEndpointList",
+    "WebhookTest",
+    "WebhookTestDelivery",
 ]
 
 
@@ -1106,6 +1109,30 @@ class WebhookEndpoint(TypedDict):
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
     secret: NotRequired[str]
     """Secreto de firma (whsec_…). Solo viene al crearlo o al cambiarlo: guárdelo para verificar las firmas."""
+
+
+class WebhookTestDelivery(TypedDict):
+    """Cómo le fue: ok si contestó 2xx, el código, el error y el inicio de su respuesta."""
+    ok: bool
+    """true si su servidor contestó 2xx."""
+    status: int | None
+    """El código HTTP que contestó; null si no se pudo conectar."""
+    error: str | None
+    """Qué falló (sin respuesta, no se pudo conectar, otro código), o null."""
+    response_body: str | None
+    """El inicio de lo que contestó su servidor (hasta 2,000 caracteres)."""
+    duration_ms: int
+    """Cuánto tardó su servidor, en milisegundos."""
+
+
+class WebhookTest(TypedDict):
+    """Un evento de prueba que se mandó a su webhook, y lo que respondió su servidor."""
+    object: Literal["webhook_test"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    event: Event
+    """El evento que se mandó, como lo recibió su servidor."""
+    delivery: WebhookTestDelivery
+    """Cómo le fue: ok si contestó 2xx, el código, el error y el inicio de su respuesta."""
 
 
 EventType = Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed"]
@@ -3137,6 +3164,11 @@ class UpdateWebhookEndpointParams(TypedDict):
 class RollWebhookSecretParams(TypedDict):
     previous_secret_expires_in: NotRequired[int]
     """Segundos que el secreto anterior sigue firmando, de 0 (deja de firmar ya: úselo si se filtró) a 86400. Por omisión 86400 (24 horas)."""
+
+
+class TestWebhookEndpointParams(TypedDict):
+    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed"]]
+    """El evento a mandar. Por omisión invoice.stamped."""
 
 
 class ListEventsParams(TypedDict):

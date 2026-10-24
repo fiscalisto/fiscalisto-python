@@ -65,6 +65,7 @@ if TYPE_CHECKING:
         SendInvoiceParams,
         SendRetentionParams,
         SignEfirmaParams,
+        TestWebhookEndpointParams,
         UpdateCustomerParams,
         UpdateEmployeeParams,
         UpdateIssuerParams,
@@ -72,6 +73,7 @@ if TYPE_CHECKING:
         UpdateWebhookEndpointParams,
         UploadCertificateParams,
         WebhookEndpoint,
+        WebhookTest,
     )
 
 
@@ -1234,6 +1236,26 @@ class WebhookEndpointsResource:
         """
         result: WebhookEndpoint = self._client.request(
             "POST", f"/v1/webhook_endpoints/{_path(id)}/roll_secret", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def test(
+        self,
+        id: str,
+        params: TestWebhookEndpointParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> WebhookTest:
+        """Mandar un evento de prueba
+
+        Manda ahora, una sola vez y sin reintentos, un evento del tipo que elija con un objeto de ejemplo (sus id no existen), firmado como los reales, aunque el webhook no escuche ese tipo. La respuesta trae lo que contestó su servidor. El evento no sale en GET /v1/events, pero sí en las entregas del webhook.
+
+        POST /v1/webhook_endpoints/{id}/test
+        https://fiscalisto.com/docs/api/referencia/webhooks/test-webhook-endpoint
+        """
+        result: WebhookTest = self._client.request(
+            "POST", f"/v1/webhook_endpoints/{_path(id)}/test", body=params, timeout=timeout, max_retries=max_retries
         )
         return result
 
