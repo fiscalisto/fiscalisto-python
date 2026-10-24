@@ -28,6 +28,8 @@ __all__ = [
     "CancelRetentionParams",
     "CheckSatListsParams",
     "CreateAdvanceParams",
+    "CreateAdvanceParamsCustomer",
+    "CreateAdvanceParamsCustomerForeign",
     "CreateCreditNoteParams",
     "CreateCustomerDataRequestParams",
     "CreateCustomerParams",
@@ -2794,10 +2796,35 @@ class CreateCreditNoteParams(TypedDict):
     """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
+class CreateAdvanceParamsCustomerForeign(TypedDict):
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    country: str
+    """País de residencia fiscal, clave de 3 letras de c_Pais (USA, CAN…)."""
+    tax_id: str
+    """Número de registro de identidad fiscal en su país (NumRegIdTrib)."""
+
+
+class CreateAdvanceParamsCustomer(TypedDict):
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    legal_name: str
+    """Nombre o razón social tal como está en la constancia de situación fiscal, sin el régimen de capital (sin «S.A. de C.V.»)."""
+    tax_system: str
+    """Régimen fiscal (RegimenFiscal), clave de c_RegimenFiscal: 601, 612, 626…"""
+    zip: str
+    """Código postal del domicilio fiscal del cliente (DomicilioFiscalReceptor), 5 dígitos."""
+    email: NotRequired[str | None]
+    """Correo a donde se envía (varios separados por comas). Solo se usa si se pide enviarlo."""
+    foreign: NotRequired[CreateAdvanceParamsCustomerForeign]
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    ieps_taxpayer: NotRequired[bool]
+    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+
+
 class CreateAdvanceParams(TypedDict):
     issuer: NotRequired[str]
     """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
-    customer: Any
+    customer: str | CreateAdvanceParamsCustomer
     """Cliente (Receptor): el id de uno de su catálogo (cus_…) o sus datos en un objeto."""
     use: NotRequired[str]
     """Uso del CFDI (UsoCFDI), clave de c_UsoCFDI. Por omisión G03, o S01 con régimen 616."""
@@ -2817,9 +2844,9 @@ class CreateAdvanceParams(TypedDict):
     """Observaciones que aparecen en el PDF (no van en el XML)."""
     send_email: NotRequired[bool]
     """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
-    email_cc: NotRequired[Any]
+    email_cc: NotRequired[str | None]
     """Correos con copia, separados por comas."""
-    metadata: NotRequired[Any]
+    metadata: NotRequired[dict[str, str]]
     """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
