@@ -27,6 +27,7 @@ from ._core import (
     urllib_transport,
 )
 from ._resources import FiscalistoApi
+from .error_codes import ErrorCode, ErrorCodeValue
 from ._webhooks import FiscalistoWebhookError, Webhooks, verify_webhook
 
 __version__ = VERSION
@@ -45,6 +46,8 @@ class Fiscalisto(FiscalistoApi):
 
 __all__ = [
     "VERSION",
+    "ErrorCode",
+    "ErrorCodeValue",
     "ErrorType",
     "Fiscalisto",
     "FiscalistoError",
