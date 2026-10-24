@@ -17,6 +17,7 @@ if TYPE_CHECKING:
         Balance,
         CancelInvoiceParams,
         CancelRetentionParams,
+        CheckSatListsParams,
         CreateAdvanceParams,
         CreateCreditNoteParams,
         CreateCustomerParams,
@@ -59,6 +60,8 @@ if TYPE_CHECKING:
         Retention,
         RollWebhookSecretParams,
         SatCatalogEntryList,
+        SatListCheck,
+        SatListCheckList,
         SendInvoiceParams,
         SendRetentionParams,
         SignEfirmaParams,
@@ -1078,6 +1081,51 @@ class SatCatalogsResource:
         return result
 
 
+class SatListsResource:
+    """Listas del SAT: fiscalisto.sat_lists."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        tax_id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> SatListCheck:
+        """Revisar un RFC en las listas del SAT
+
+        Si el RFC aparece en la lista 69-B (operaciones simuladas), 69-B Bis o del art. 69 (no localizados, créditos firmes, exigibles, cancelados, sentencias, CSD sin efectos). Las listas se actualizan cada día con los archivos del SAT. No usa timbres.
+
+        GET /v1/sat_lists/{tax_id}
+        https://fiscalisto.com/docs/api/referencia/listas-del-sat/get-sat-list-check
+        """
+        result: SatListCheck = self._client.request(
+            "GET", f"/v1/sat_lists/{_path(tax_id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def check(
+        self,
+        params: CheckSatListsParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> SatListCheckList:
+        """Revisar varios RFC en las listas del SAT
+
+        Hasta 1,000 RFC en una solicitud, en el mismo orden en que los mandó (sin repetidos). No usa timbres.
+
+        POST /v1/sat_lists/check
+        https://fiscalisto.com/docs/api/referencia/listas-del-sat/check-sat-lists
+        """
+        result: SatListCheckList = self._client.request(
+            "POST", "/v1/sat_lists/check", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
 class WebhookEndpointsResource:
     """Webhooks: fiscalisto.webhook_endpoints."""
 
@@ -1302,6 +1350,11 @@ class FiscalistoApi(Core):
     def sat_catalogs(self) -> SatCatalogsResource:
         """Catálogos del SAT."""
         return SatCatalogsResource(self)
+
+    @cached_property
+    def sat_lists(self) -> SatListsResource:
+        """Listas del SAT."""
+        return SatListsResource(self)
 
     @cached_property
     def webhook_endpoints(self) -> WebhookEndpointsResource:

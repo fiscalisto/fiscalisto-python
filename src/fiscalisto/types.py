@@ -26,6 +26,7 @@ __all__ = [
     "BalancePacksItem",
     "CancelInvoiceParams",
     "CancelRetentionParams",
+    "CheckSatListsParams",
     "CreateAdvanceParams",
     "CreateCreditNoteParams",
     "CreateCustomerParams",
@@ -191,6 +192,9 @@ __all__ = [
     "RollWebhookSecretParams",
     "SatCatalogEntry",
     "SatCatalogEntryList",
+    "SatListCheck",
+    "SatListCheckList",
+    "SatListCheckListsItem",
     "SendInvoiceParams",
     "SendRetentionParams",
     "SignEfirmaParams",
@@ -1043,6 +1047,39 @@ class SatCatalogEntry(TypedDict):
     """Su descripción en el catálogo."""
 
 
+class SatListCheckListsItem(TypedDict):
+    list: Literal["69", "69b", "69b_bis"]
+    """69b: art. 69-B (operaciones simuladas). 69b_bis: art. 69-B Bis (pérdidas fiscales). 69: art. 69 (no localizados, adeudos, cancelados)."""
+    source: str
+    """El archivo del SAT de donde viene (clave)."""
+    source_name: str
+    """El nombre del archivo del SAT, para mostrarlo."""
+    situation: str | None
+    """Su situación según el SAT: Presunto, Definitivo, Desvirtuado, Sentencia favorable; en el art. 69, el supuesto (null si el archivo no la trae)."""
+    published_on: str | None
+    """Fecha de publicación en el SAT o en el DOF (null si no la trae)."""
+    details: dict[str, str] | None
+    """Lo demás que publica el SAT para ese RFC (oficios, fechas, montos), tal cual; null si nada."""
+
+
+class SatListCheck(TypedDict):
+    """Si un RFC aparece en las listas del SAT (69-B, 69-B Bis y art. 69)."""
+    object: Literal["sat_list_check"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    tax_id: str
+    """El RFC revisado."""
+    name: str | None
+    """El nombre con que aparece en las listas del SAT (null si no aparece)."""
+    listed: bool
+    """true si el RFC aparece en alguna lista, aunque haya desvirtuado."""
+    risk: Literal["high", "medium", "none"]
+    """high: 69-B o 69-B Bis como presunto o definitivo (el SAT dice que simula operaciones; sus facturas no se pueden deducir). medium: una lista del art. 69 (no localizado, créditos firmes o exigibles, cancelados, sentencias, CSD sin efectos). none: no aparece, o ya desvirtuó o tiene sentencia favorable."""
+    lists: list[SatListCheckListsItem]
+    """Cada lista en que aparece; vacía si no aparece en ninguna."""
+    lists_updated_at: str | None
+    """Cuándo se actualizaron las listas por última vez (cada día a las 00:00 de la Ciudad de México)."""
+
+
 class WebhookEndpoint(TypedDict):
     """Una dirección de su servidor que recibe eventos."""
     id: str
@@ -1383,6 +1420,17 @@ class SatCatalogEntryList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[SatCatalogEntry]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class SatListCheckList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[SatListCheck]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -3051,6 +3099,11 @@ class GetSatCatalogParams(TypedDict):
     """Qué buscar: palabras («consultoría») o una clave."""
     limit: NotRequired[int]
     """Hasta cuántos, de 1 a 100 (búsquedas). Por omisión 20."""
+
+
+class CheckSatListsParams(TypedDict):
+    tax_ids: list[str]
+    """Los RFC a revisar, hasta 1000."""
 
 
 class CreateWebhookEndpointParams(TypedDict):
