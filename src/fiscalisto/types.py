@@ -29,6 +29,7 @@ __all__ = [
     "CheckSatListsParams",
     "CreateAdvanceParams",
     "CreateCreditNoteParams",
+    "CreateCustomerDataRequestParams",
     "CreateCustomerParams",
     "CreateCustomerParamsForeign",
     "CreateEmployeeParams",
@@ -50,6 +51,10 @@ __all__ = [
     "CreateRetentionParamsTotals",
     "CreateWebhookEndpointParams",
     "Customer",
+    "CustomerDataRequest",
+    "CustomerDataRequestCompletedEvent",
+    "CustomerDataRequestList",
+    "CustomerDataRequestSubmission",
     "CustomerForeign",
     "CustomerList",
     "Deleted",
@@ -156,6 +161,7 @@ __all__ = [
     "IssuerCertificate",
     "IssuerList",
     "ListAdvancesParams",
+    "ListCustomerDataRequestsParams",
     "ListCustomersParams",
     "ListEmployeesParams",
     "ListEventsParams",
@@ -198,6 +204,10 @@ __all__ = [
     "SendInvoiceParams",
     "SendRetentionParams",
     "SignEfirmaParams",
+    "TaxIdValidation",
+    "TaxIdValidationErrorsItem",
+    "TaxIdValidationSatRecord",
+    "TaxIdValidationWarningsItem",
     "TestWebhookEndpointParams",
     "UpdateCustomerParams",
     "UpdateCustomerParamsForeign",
@@ -206,6 +216,7 @@ __all__ = [
     "UpdateProductParams",
     "UpdateWebhookEndpointParams",
     "UploadCertificateParams",
+    "ValidateTaxIdParams",
     "WebhookEndpoint",
     "WebhookEndpointList",
     "WebhookTest",
@@ -1083,6 +1094,110 @@ class SatListCheck(TypedDict):
     """Cuándo se actualizaron las listas por última vez (cada día a las 00:00 de la Ciudad de México)."""
 
 
+class TaxIdValidationErrorsItem(TypedDict):
+    param: str
+    """El campo: tax_id, legal_name, tax_system, zip, use o cif_id."""
+    code: str
+    """Qué falló, para su código: tax_id_format, tax_id_date, legal_name_capital_regime, legal_name_mismatch, tax_system_person, tax_system_mismatch, zip_unknown, zip_mismatch, use_tax_system, cif_id_not_found…"""
+    message: str
+    """La explicación, para mostrarla a su usuario."""
+    suggestion: str | None
+    """El valor correcto cuando se sabe (el del SAT con cif_id, o el nombre sin régimen de capital); null si no."""
+
+
+class TaxIdValidationWarningsItem(TypedDict):
+    param: str
+    """El campo."""
+    code: str
+    """tax_id_check_digit, legal_name_format, tax_id_listed_69b o tax_id_listed_69."""
+    message: str
+    """La explicación."""
+    suggestion: str | None
+    """El valor sugerido, o null."""
+
+
+class TaxIdValidationSatRecord(TypedDict):
+    legal_name: str | None
+    """El nombre o razón social, como lo tiene el SAT."""
+    zip: str | None
+    """El código postal de su domicilio fiscal."""
+    tax_systems: list[str]
+    """Sus regímenes vigentes (c_RegimenFiscal)."""
+
+
+class TaxIdValidation(TypedDict):
+    """Si los datos fiscales de un cliente van a pasar el SAT."""
+    object: Literal["tax_id_validation"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    tax_id: str
+    """El RFC revisado."""
+    kind: Literal["company", "person", "generic"]
+    """company (persona moral, 12 caracteres), person (persona física, 13) o generic (XAXX010101000, XEXX010101000)."""
+    valid: bool
+    """true si no hay errores: con lo que mandó, el SAT no debería rechazar la factura por los datos del cliente."""
+    checked_with_sat: bool
+    """true si se comparó con el registro del SAT (mandó cif_id y el SAT contestó)."""
+    errors: list[TaxIdValidationErrorsItem]
+    """Lo que haría que el SAT rechace la factura. Cada uno con el campo (param), un código, la explicación y, si se puede, el valor correcto (suggestion)."""
+    warnings: list[TaxIdValidationWarningsItem]
+    """Lo que no impide timbrar pero conviene revisar: el dígito verificador, mayúsculas, si el RFC está en las listas del SAT."""
+    sat_record: TaxIdValidationSatRecord | None
+    """Lo que tiene el SAT en la constancia (con cif_id): nombre, código postal y regímenes vigentes. null sin cif_id."""
+    sat_error: str | None
+    """Si el SAT no contestó a tiempo (con cif_id): reintente en unos minutos. null si contestó o no se consultó."""
+    sat_lists: SatListCheck | None
+    """Si el RFC aparece en las listas del SAT. null con un RFC genérico o mal escrito."""
+
+
+class CustomerDataRequestSubmission(TypedDict):
+    tax_id: str
+    """Su RFC."""
+    legal_name: str
+    """Su nombre o razón social, como en su constancia."""
+    tax_system: str
+    """Su régimen fiscal (c_RegimenFiscal)."""
+    zip: str
+    """El código postal de su domicilio fiscal."""
+    use: str
+    """El uso del CFDI que eligió (c_UsoCFDI)."""
+    email: str | None
+    """Su correo para recibir facturas, si lo dio."""
+    source: Literal["constancia", "manual"]
+    """constancia (leído de su constancia o del SAT con su idCIF) o manual (escrito)."""
+    customer: str | None
+    """El cliente (cus_…) en el catálogo del emisor: el nuevo, o el que ya existía con ese RFC."""
+    applied: bool
+    """true si quedó en el catálogo. false si el cliente ya existía con otros datos: aplíquelos con POST /v1/customers/{id} si son correctos."""
+    submitted_at: str | None
+    """Cuándo los mandó."""
+
+
+class CustomerDataRequest(TypedDict):
+    """Una liga para que un cliente dé sus datos fiscales."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["customer_data_request"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor que le va a facturar."""
+    status: Literal["open", "completed", "expired", "canceled"]
+    """open (la liga espera), completed (el cliente mandó sus datos), expired (venció) o canceled."""
+    url: str | None
+    """La liga para su cliente, en fiscalisto.com. null cuando ya no está abierta."""
+    reference: str | None
+    """Su id para este cliente o pedido."""
+    description: str | None
+    """Lo que el cliente ve arriba del formulario."""
+    expires_at: str | None
+    """Cuándo deja de servir la liga."""
+    created_at: str | None
+    """Cuándo se creó."""
+    submission: CustomerDataRequestSubmission | None
+    """Lo que mandó el cliente (el último envío: puede corregirlo en las 24 horas siguientes). null mientras no conteste."""
+
+
 class WebhookEndpoint(TypedDict):
     """Una dirección de su servidor que recibe eventos."""
     id: str
@@ -1135,7 +1250,7 @@ class WebhookTest(TypedDict):
     """Cómo le fue: ok si contestó 2xx, el código, el error y el inicio de su respuesta."""
 
 
-EventType = Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed"]
+EventType = Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "customer_data_request.completed"]
 """Lo que puede pasar: el tipo de cada evento."""
 
 
@@ -1154,6 +1269,11 @@ class InvoiceBatchEventData(TypedDict):
     """El objeto como quedó: el lote completo, como lo contesta su GET."""
 
 
+class CustomerDataRequestEventData(TypedDict):
+    object: CustomerDataRequest
+    """El objeto como quedó: el lote completo, como lo contesta su GET."""
+
+
 class InvoiceStampedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
@@ -1161,7 +1281,7 @@ class InvoiceStampedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.stamped"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled o invoice_batch.completed."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed o customer_data_request.completed."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1178,7 +1298,7 @@ class InvoiceFailedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.failed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled o invoice_batch.completed."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed o customer_data_request.completed."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1195,7 +1315,7 @@ class InvoiceCanceledEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.canceled"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled o invoice_batch.completed."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed o customer_data_request.completed."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1212,7 +1332,7 @@ class InvoiceCancellationPendingEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.cancellation_pending"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled o invoice_batch.completed."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed o customer_data_request.completed."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1229,7 +1349,7 @@ class InvoiceCancellationRejectedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.cancellation_rejected"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled o invoice_batch.completed."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed o customer_data_request.completed."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1246,7 +1366,7 @@ class RetentionStampedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["retention.stamped"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled o invoice_batch.completed."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed o customer_data_request.completed."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1263,7 +1383,7 @@ class RetentionFailedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["retention.failed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled o invoice_batch.completed."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed o customer_data_request.completed."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1280,7 +1400,7 @@ class RetentionCanceledEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["retention.canceled"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled o invoice_batch.completed."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed o customer_data_request.completed."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1297,7 +1417,7 @@ class InvoiceBatchCompletedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice_batch.completed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled o invoice_batch.completed."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed o customer_data_request.completed."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1305,6 +1425,23 @@ class InvoiceBatchCompletedEvent(TypedDict):
     created_at: str
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
     data: InvoiceBatchEventData
+
+
+class CustomerDataRequestCompletedEvent(TypedDict):
+    """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    object: Literal["event"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    type: Literal["customer_data_request.completed"]
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed o customer_data_request.completed."""
+    api_version: str
+    """Versión de la API con que se armó el objeto."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    data: CustomerDataRequestEventData
 
 
 Event = Union[
@@ -1317,6 +1454,7 @@ Event = Union[
     RetentionFailedEvent,
     RetentionCanceledEvent,
     InvoiceBatchCompletedEvent,
+    CustomerDataRequestCompletedEvent,
 ]
 """Un evento: según su type, data.object es la factura, la constancia o el lote."""
 
@@ -1425,6 +1563,17 @@ class CustomerList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[Customer]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class CustomerDataRequestList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[CustomerDataRequest]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -2980,6 +3129,21 @@ class ListInvoiceBatchesParams(TypedDict):
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 
 
+class ValidateTaxIdParams(TypedDict):
+    tax_id: str
+    """El RFC del cliente."""
+    legal_name: NotRequired[str]
+    """El nombre o razón social que va a poner en la factura."""
+    tax_system: NotRequired[str]
+    """Su régimen fiscal (c_RegimenFiscal), como 601 o 612."""
+    zip: NotRequired[str]
+    """El código postal de su domicilio fiscal."""
+    use: NotRequired[str]
+    """El uso del CFDI (c_UsoCFDI), como G03."""
+    cif_id: NotRequired[str]
+    """El idCIF de su constancia de situación fiscal (11 dígitos, arriba a la izquierda, junto al QR). Con él se compara todo con lo que tiene el SAT."""
+
+
 class CreateCustomerParamsForeign(TypedDict):
     country: str
     """País de residencia fiscal, clave de 3 letras de c_Pais (USA, CAN…)."""
@@ -3044,6 +3208,27 @@ class UpdateCustomerParams(TypedDict):
     """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
     ieps_taxpayer: NotRequired[bool]
     """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+
+
+class CreateCustomerDataRequestParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…) que va a facturarle. Por omisión, su único emisor."""
+    reference: NotRequired[str]
+    """Su id para este cliente o pedido, como «Pedido 1042». El cliente la ve arriba del formulario y viene de vuelta en el evento."""
+    description: NotRequired[str]
+    """Una línea que el cliente ve arriba del formulario: para qué son sus datos."""
+    expires_in_days: NotRequired[int]
+    """Días que la liga sirve, de 1 a 60. Por omisión 60."""
+
+
+class ListCustomerDataRequestsParams(TypedDict):
+    """Los parámetros de GET /v1/customer_data_requests."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 
 
 class CreateProductParams(TypedDict):
@@ -3167,7 +3352,7 @@ class RollWebhookSecretParams(TypedDict):
 
 
 class TestWebhookEndpointParams(TypedDict):
-    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed"]]
+    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "customer_data_request.completed"]]
     """El evento a mandar. Por omisión invoice.stamped."""
 
 
@@ -3177,7 +3362,7 @@ class ListEventsParams(TypedDict):
     """Cuántos por página, de 1 a 100. Por omisión 10."""
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
-    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed"]]
+    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "customer_data_request.completed"]]
     """Solo de este tipo."""
     object: NotRequired[str]
     """Solo los de este objeto (inv_…, ret_…, bat_…)."""

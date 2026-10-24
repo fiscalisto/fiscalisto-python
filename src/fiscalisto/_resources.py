@@ -20,6 +20,7 @@ if TYPE_CHECKING:
         CheckSatListsParams,
         CreateAdvanceParams,
         CreateCreditNoteParams,
+        CreateCustomerDataRequestParams,
         CreateCustomerParams,
         CreateEmployeeParams,
         CreateInvoiceBatchParams,
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
         CreateRetentionParams,
         CreateWebhookEndpointParams,
         Customer,
+        CustomerDataRequest,
         Deleted,
         Employee,
         Event,
@@ -45,6 +47,7 @@ if TYPE_CHECKING:
         InvoiceCreate,
         Issuer,
         ListAdvancesParams,
+        ListCustomerDataRequestsParams,
         ListCustomersParams,
         ListEmployeesParams,
         ListEventsParams,
@@ -65,6 +68,7 @@ if TYPE_CHECKING:
         SendInvoiceParams,
         SendRetentionParams,
         SignEfirmaParams,
+        TaxIdValidation,
         TestWebhookEndpointParams,
         UpdateCustomerParams,
         UpdateEmployeeParams,
@@ -72,6 +76,7 @@ if TYPE_CHECKING:
         UpdateProductParams,
         UpdateWebhookEndpointParams,
         UploadCertificateParams,
+        ValidateTaxIdParams,
         WebhookEndpoint,
         WebhookTest,
     )
@@ -876,6 +881,32 @@ class InvoiceBatchesResource:
         return result
 
 
+class TaxIdsResource:
+    """Clientes: fiscalisto.tax_ids."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def validate(
+        self,
+        params: ValidateTaxIdParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> TaxIdValidation:
+        """Validar los datos fiscales de un cliente
+
+        Antes de timbrar: si el RFC, el nombre, el régimen, el código postal y el uso van a pasar. Sin cif_id revisa lo que se puede revisar sin el SAT (formato, régimen para ese tipo de persona, código postal en el catálogo, uso para el régimen, nombre sin «S.A. de C.V.») y las listas del SAT. Con el idCIF de la constancia lee el registro del SAT y compara nombre, código postal y régimen, como hará el PAC. No usa timbres.
+
+        POST /v1/tax_ids/validate
+        https://fiscalisto.com/docs/api/referencia/clientes/validate-tax-id
+        """
+        result: TaxIdValidation = self._client.request(
+            "POST", "/v1/tax_ids/validate", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
 class CustomersResource:
     """Clientes: fiscalisto.customers."""
 
@@ -962,6 +993,82 @@ class CustomersResource:
         """
         result: Deleted = self._client.request(
             "DELETE", f"/v1/customers/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
+class CustomerDataRequestsResource:
+    """Clientes: fiscalisto.customer_data_requests."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateCustomerDataRequestParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> CustomerDataRequest:
+        """Pedirle sus datos fiscales a un cliente
+
+        Una liga (url) que usted le manda a su cliente: la abre en fiscalisto.com y da su RFC, nombre, régimen, código postal y uso, escritos o leídos de su constancia, revisados antes de aceptarlos. Al mandarlos llega customer_data_request.completed. Un cliente nuevo queda en el catálogo del emisor; si ya existía con otros datos, los nuevos vienen en submission para que usted los aplique.
+
+        POST /v1/customer_data_requests
+        https://fiscalisto.com/docs/api/referencia/clientes/create-customer-data-request
+        """
+        result: CustomerDataRequest = self._client.request(
+            "POST", "/v1/customer_data_requests", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def list(
+        self,
+        params: ListCustomerDataRequestsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> ListObject[CustomerDataRequest]:
+        """Listar solicitudes de datos
+
+        GET /v1/customer_data_requests
+        https://fiscalisto.com/docs/api/referencia/clientes/list-customer-data-requests
+        """
+        return self._client.list("/v1/customer_data_requests", params, timeout=timeout, max_retries=max_retries)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> CustomerDataRequest:
+        """Ver una solicitud de datos
+
+        GET /v1/customer_data_requests/{id}
+        https://fiscalisto.com/docs/api/referencia/clientes/get-customer-data-request
+        """
+        result: CustomerDataRequest = self._client.request(
+            "GET", f"/v1/customer_data_requests/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def cancel(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> CustomerDataRequest:
+        """Cancelar una solicitud de datos
+
+        La liga deja de funcionar. Una que el cliente ya contestó no se cancela.
+
+        DELETE /v1/customer_data_requests/{id}
+        https://fiscalisto.com/docs/api/referencia/clientes/cancel-customer-data-request
+        """
+        result: CustomerDataRequest = self._client.request(
+            "DELETE", f"/v1/customer_data_requests/{_path(id)}", timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1359,9 +1466,19 @@ class FiscalistoApi(Core):
         return InvoiceBatchesResource(self)
 
     @cached_property
+    def tax_ids(self) -> TaxIdsResource:
+        """Clientes."""
+        return TaxIdsResource(self)
+
+    @cached_property
     def customers(self) -> CustomersResource:
         """Clientes."""
         return CustomersResource(self)
+
+    @cached_property
+    def customer_data_requests(self) -> CustomerDataRequestsResource:
+        """Clientes."""
+        return CustomerDataRequestsResource(self)
 
     @cached_property
     def products(self) -> ProductsResource:
