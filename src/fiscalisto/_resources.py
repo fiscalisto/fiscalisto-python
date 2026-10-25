@@ -30,6 +30,7 @@ if TYPE_CHECKING:
         CreatePayrollReceiptParams,
         CreateProductParams,
         CreateRetentionParams,
+        CreateSatDownloadParams,
         CreateWebhookEndpointParams,
         Customer,
         CustomerDataRequest,
@@ -58,6 +59,8 @@ if TYPE_CHECKING:
         ListIssuersParams,
         ListProductsParams,
         ListRetentionsParams,
+        ListSatDownloadsParams,
+        ListSatInvoicesParams,
         ListWebhookEndpointsParams,
         PayrollReceiptPreview,
         PreviewPayrollReceiptParams,
@@ -65,6 +68,8 @@ if TYPE_CHECKING:
         Retention,
         RollWebhookSecretParams,
         SatCatalogEntryList,
+        SatDownload,
+        SatInvoice,
         SatListCheck,
         SatListCheckList,
         SendInvoiceParams,
@@ -263,13 +268,32 @@ class IssuersResource:
     ) -> Issuer:
         """Firmar el contrato con el PAC
 
-        Una sola vez por RFC antes de timbrar en producción: firma el contrato de servicio del PAC (Finkok) con la e.firma del emisor. La e.firma se usa en memoria para esa firma y nunca se guarda.
+        Una sola vez por RFC antes de timbrar en producción: firma el contrato de servicio del PAC (Finkok) con la e.firma del emisor. La e.firma se usa en memoria para esa firma y no se guarda, salvo que mande keep_for_downloads: true para pedirle al SAT las facturas del emisor (POST /v1/sat_downloads); entonces se guarda cifrada y puede borrarla con DELETE.
 
         POST /v1/issuers/{id}/efirma
         https://fiscalisto.com/docs/api/referencia/emisores/sign-efirma
         """
         result: Issuer = self._client.request(
             "POST", f"/v1/issuers/{_path(id)}/efirma", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def delete_efirma(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Issuer:
+        """Borrar la e.firma guardada
+
+        Borra la e.firma que guardó con keep_for_downloads. El emisor sigue timbrando; ya no puede pedir descargas al SAT hasta que la mande de nuevo.
+
+        DELETE /v1/issuers/{id}/efirma
+        https://fiscalisto.com/docs/api/referencia/emisores/delete-efirma
+        """
+        result: Issuer = self._client.request(
+            "DELETE", f"/v1/issuers/{_path(id)}/efirma", timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1257,6 +1281,122 @@ class SatListsResource:
         return result
 
 
+class SatDownloadsResource:
+    """Descargas del SAT: fiscalisto.sat_downloads."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateSatDownloadParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> SatDownload:
+        """Pedirle al SAT las facturas de un emisor
+
+        La descarga masiva del SAT: las facturas que el emisor recibió (o emitió) en un periodo de hasta un año, con su XML. Contesta 202 de inmediato; el SAT tarda de minutos a horas y al terminar llega sat_download.completed (o sat_download.failed) y las facturas quedan en GET /v1/sat_invoices. En producción necesita la e.firma guardada del emisor; en pruebas no se le pregunta al SAT: la descarga trae facturas de ejemplo al instante. No usa timbres.
+
+        POST /v1/sat_downloads
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/create-sat-download
+        """
+        result: SatDownload = self._client.request(
+            "POST", "/v1/sat_downloads", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def list(
+        self,
+        params: ListSatDownloadsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> ListObject[SatDownload]:
+        """Listar descargas del SAT
+
+        GET /v1/sat_downloads
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/list-sat-downloads
+        """
+        return self._client.list("/v1/sat_downloads", params, timeout=timeout, max_retries=max_retries)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> SatDownload:
+        """Ver una descarga del SAT
+
+        GET /v1/sat_downloads/{id}
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/get-sat-download
+        """
+        result: SatDownload = self._client.request(
+            "GET", f"/v1/sat_downloads/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
+class SatInvoicesResource:
+    """Descargas del SAT: fiscalisto.sat_invoices."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListSatInvoicesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> ListObject[SatInvoice]:
+        """Listar facturas del SAT
+
+        Las facturas que trajeron sus descargas (y las demás que Fiscalisto tenga del emisor), de la más reciente a la más antigua por fecha.
+
+        GET /v1/sat_invoices
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/list-sat-invoices
+        """
+        return self._client.list("/v1/sat_invoices", params, timeout=timeout, max_retries=max_retries)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> SatInvoice:
+        """Ver una factura del SAT
+
+        GET /v1/sat_invoices/{id}
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/get-sat-invoice
+        """
+        result: SatInvoice = self._client.request(
+            "GET", f"/v1/sat_invoices/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def xml(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> str:
+        """Descargar el XML de una factura del SAT
+
+        El CFDI tal como lo entregó el SAT.
+
+        GET /v1/sat_invoices/{id}/xml
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/get-sat-invoice-xml
+        """
+        result: str = self._client.request(
+            "GET", f"/v1/sat_invoices/{_path(id)}/xml", result="text", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
 class WebhookEndpointsResource:
     """Webhooks: fiscalisto.webhook_endpoints."""
 
@@ -1516,6 +1656,16 @@ class FiscalistoApi(Core):
     def sat_lists(self) -> SatListsResource:
         """Listas del SAT."""
         return SatListsResource(self)
+
+    @cached_property
+    def sat_downloads(self) -> SatDownloadsResource:
+        """Descargas del SAT."""
+        return SatDownloadsResource(self)
+
+    @cached_property
+    def sat_invoices(self) -> SatInvoicesResource:
+        """Descargas del SAT."""
+        return SatInvoicesResource(self)
 
     @cached_property
     def webhook_endpoints(self) -> WebhookEndpointsResource:

@@ -45,7 +45,10 @@ class ErrorCode:
     """El cliente ya mandó sus datos con esa liga: una solicitud completada no se cancela."""
 
     EFIRMA_INVALID: Final = "efirma_invalid"
-    """La e.firma no sirve para firmar el contrato con el PAC: no es una e.firma (es un CSD), es de otro RFC o está vencida."""
+    """La e.firma no sirve: no es una e.firma (es un CSD), es de otro RFC, está vencida o la contraseña no abre la llave."""
+
+    EFIRMA_REQUIRED: Final = "efirma_required"
+    """Para pedirle al SAT las facturas de un emisor en producción, guarde antes su e.firma: POST /v1/issuers/{id}/efirma con keep_for_downloads: true. También si la guardada venció."""
 
     EMAIL_FAILED: Final = "email_failed"
     """No se pudo mandar el correo; el comprobante sí está timbrado."""
@@ -146,6 +149,9 @@ class ErrorCode:
     ROUTE_NOT_FOUND: Final = "route_not_found"
     """No existe esa ruta. Revise la dirección y la versión (/v1)."""
 
+    SAT_REQUEST_REJECTED: Final = "sat_request_rejected"
+    """El SAT rechazó la solicitud de descarga. El mensaje trae su motivo, por ejemplo que ya se pidió el mismo periodo con los mismos filtros demasiadas veces (el SAT pone un límite de por vida)."""
+
     STAMP_RATE_LIMIT: Final = "stamp_rate_limit"
     """Demasiados timbres seguidos del mismo emisor. Espere lo que dice Retry-After; para muchas facturas use POST /v1/invoice_batches."""
 
@@ -172,6 +178,7 @@ ErrorCodeValue = Literal[
     "daily_limit",
     "data_request_completed",
     "efirma_invalid",
+    "efirma_required",
     "email_failed",
     "endpoint_limit",
     "idempotency_key_missing",
@@ -205,6 +212,7 @@ ErrorCodeValue = Literal[
     "retention_not_stamped",
     "retention_rejected",
     "route_not_found",
+    "sat_request_rejected",
     "stamp_rate_limit",
     "substitution_unsupported",
     "timeout",

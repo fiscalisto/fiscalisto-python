@@ -54,6 +54,7 @@ __all__ = [
     "CreateRetentionParamsRecipient",
     "CreateRetentionParamsTaxesItem",
     "CreateRetentionParamsTotals",
+    "CreateSatDownloadParams",
     "CreateWebhookEndpointParams",
     "Customer",
     "CustomerDataRequest",
@@ -167,6 +168,7 @@ __all__ = [
     "IssuerList",
     "IssuerOnboardingLink",
     "IssuerReadyEvent",
+    "IssuerSatDownloads",
     "ListAdvancesParams",
     "ListCustomerDataRequestsParams",
     "ListCustomersParams",
@@ -177,6 +179,8 @@ __all__ = [
     "ListIssuersParams",
     "ListProductsParams",
     "ListRetentionsParams",
+    "ListSatDownloadsParams",
+    "ListSatInvoicesParams",
     "ListWebhookEndpointsParams",
     "PayrollReceiptPreview",
     "PayrollReceiptPreviewDeductionsItem",
@@ -205,6 +209,15 @@ __all__ = [
     "RollWebhookSecretParams",
     "SatCatalogEntry",
     "SatCatalogEntryList",
+    "SatDownload",
+    "SatDownloadCompletedEvent",
+    "SatDownloadFailedEvent",
+    "SatDownloadList",
+    "SatInvoice",
+    "SatInvoiceIssuedBy",
+    "SatInvoiceIssuedTo",
+    "SatInvoiceList",
+    "SatInvoiceTaxes",
     "SatListCheck",
     "SatListCheckList",
     "SatListCheckListsItem",
@@ -304,6 +317,14 @@ class IssuerCertificate(TypedDict):
     """Cuándo vence."""
 
 
+class IssuerSatDownloads(TypedDict):
+    """Si puede pedirle al SAT sus facturas (POST /v1/sat_downloads): available es true en pruebas, y en producción mientras su e.firma guardada esté vigente (efirma_expires_at)."""
+    available: bool
+    """true si puede pedir descargas al SAT ahora: siempre en pruebas; en producción con su e.firma guardada y vigente."""
+    efirma_expires_at: str | None
+    """Cuándo vence la e.firma guardada para las descargas, o null si no hay una."""
+
+
 class Issuer(TypedDict):
     """Un emisor: un RFC que timbra desde su cuenta API."""
     id: str
@@ -326,6 +347,8 @@ class Issuer(TypedDict):
     """Qué le falta al emisor para timbrar, y cómo dárselo."""
     certificate: IssuerCertificate | None
     """El sello digital (CSD) cargado: número de serie y vencimiento."""
+    sat_downloads: IssuerSatDownloads
+    """Si puede pedirle al SAT sus facturas (POST /v1/sat_downloads): available es true en pruebas, y en producción mientras su e.firma guardada esté vigente (efirma_expires_at)."""
     employer_registration: str | None
     """Registro patronal ante el IMSS (RegistroPatronal), 11 caracteres. Necesario para timbrar nómina."""
     curp: str | None
@@ -1222,6 +1245,113 @@ class CustomerDataRequest(TypedDict):
     """Lo que mandó el cliente (el último envío: puede corregirlo en las 24 horas siguientes). null mientras no conteste."""
 
 
+# Una solicitud al SAT de las facturas emitidas o recibidas de un emisor en un periodo.
+SatDownload = TypedDict(
+    "SatDownload",
+    {
+        "id": "str",
+        "livemode": "bool",
+        "object": "Literal[\"sat_download\"]",
+        "issuer": "str",
+        "direction": "Literal[\"received\", \"issued\"]",
+        "from": "str | None",
+        "to": "str | None",
+        "type": "Literal[\"I\", \"E\", \"P\", \"T\", \"N\"] | None",
+        "counterparty_tax_id": "str | None",
+        "uuid": "str | None",
+        "status": "Literal[\"processing\", \"completed\", \"failed\"]",
+        "new_invoices": "int | None",
+        "error": "str | None",
+        "created_at": "str | None",
+        "completed_at": "str | None",
+    },
+)
+
+
+class SatInvoiceIssuedBy(TypedDict):
+    """Quien la emitió (Emisor)."""
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    legal_name: str | None
+    """Nombre o razón social tal como está en la constancia de situación fiscal, sin el régimen de capital (sin «S.A. de C.V.»)."""
+
+
+class SatInvoiceIssuedTo(TypedDict):
+    """A quien se la emitieron (Receptor)."""
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    legal_name: str | None
+    """Nombre o razón social tal como está en la constancia de situación fiscal, sin el régimen de capital (sin «S.A. de C.V.»)."""
+
+
+class SatInvoiceTaxes(TypedDict):
+    """Impuestos del comprobante: trasladados (iva, ieps), retenidos (iva_withheld, isr_withheld, ieps_withheld) y locales."""
+    iva: float
+    """IVA trasladado."""
+    ieps: float
+    """IEPS trasladado."""
+    iva_withheld: float
+    """IVA retenido."""
+    isr_withheld: float
+    """ISR retenido."""
+    ieps_withheld: float
+    """IEPS retenido."""
+    local_transferred: float
+    """Impuestos locales trasladados (ISH y similares)."""
+    local_withheld: float
+    """Impuestos locales retenidos."""
+
+
+class SatInvoice(TypedDict):
+    """Una factura que el SAT tiene del emisor, emitida o recibida, traída con una descarga."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["sat_invoice"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor de su cuenta (iss_…) a quien pertenece esta factura."""
+    uuid: str
+    """El folio fiscal (UUID del timbre)."""
+    direction: Literal["received", "issued"]
+    """received (se la hicieron al emisor) o issued (la emitió)."""
+    type: Literal["I", "E", "P", "T", "N"] | None
+    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    date: str
+    """La fecha del comprobante (Fecha), en la hora local con que se emitió."""
+    series: str | None
+    """Serie (Serie), o null."""
+    folio: str | None
+    """Folio (Folio), o null."""
+    issued_by: SatInvoiceIssuedBy
+    """Quien la emitió (Emisor)."""
+    issued_to: SatInvoiceIssuedTo
+    """A quien se la emitieron (Receptor)."""
+    currency: str | None
+    """Moneda (Moneda): MXN, USD…"""
+    exchange_rate: float | None
+    """Tipo de cambio (TipoCambio), o null en pesos."""
+    payment_method: str | None
+    """Método de pago (MetodoPago): PUE o PPD."""
+    payment_form: str | None
+    """Forma de pago (FormaPago), clave de c_FormaPago."""
+    use: str | None
+    """Uso del CFDI (UsoCFDI)."""
+    subtotal: float | None
+    """Subtotal (SubTotal)."""
+    total: float | None
+    """Total (Total)."""
+    taxes: SatInvoiceTaxes
+    """Impuestos del comprobante: trasladados (iva, ieps), retenidos (iva_withheld, isr_withheld, ieps_withheld) y locales."""
+    sat_status: Literal["active", "canceled"] | None
+    """Su estado en el SAT cuando se revisó: active (vigente) o canceled. null si aún no se revisa."""
+    sat_download: str | None
+    """La descarga (sdl_…) que la trajo, o null."""
+    downloaded_at: str | None
+    """Cuándo llegó."""
+
+
 class IssuerOnboardingLink(TypedDict):
     """Una liga para que el dueño de un emisor suba su CSD y firme con su e.firma."""
     object: Literal["issuer_onboarding_link"]
@@ -1292,7 +1422,7 @@ class WebhookTest(TypedDict):
     """Cómo le fue: ok si contestó 2xx, el código, el error y el inicio de su respuesta."""
 
 
-EventType = Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "customer_data_request.completed", "issuer.ready", "balance.low"]
+EventType = Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "issuer.ready", "balance.low"]
 """Lo que puede pasar: el tipo de cada evento."""
 
 
@@ -1316,6 +1446,11 @@ class CustomerDataRequestEventData(TypedDict):
     """El objeto como quedó: el lote completo, como lo contesta su GET."""
 
 
+class SatDownloadEventData(TypedDict):
+    object: SatDownload
+    """El objeto como quedó: el lote completo, como lo contesta su GET."""
+
+
 class IssuerEventData(TypedDict):
     object: Issuer
     """El objeto como quedó: el lote completo, como lo contesta su GET."""
@@ -1333,7 +1468,7 @@ class InvoiceStampedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.stamped"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, issuer.ready o balance.low."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1350,7 +1485,7 @@ class InvoiceFailedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.failed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, issuer.ready o balance.low."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1367,7 +1502,7 @@ class InvoiceCanceledEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.canceled"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, issuer.ready o balance.low."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1384,7 +1519,7 @@ class InvoiceCancellationPendingEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.cancellation_pending"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, issuer.ready o balance.low."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1401,7 +1536,7 @@ class InvoiceCancellationRejectedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.cancellation_rejected"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, issuer.ready o balance.low."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1418,7 +1553,7 @@ class RetentionStampedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["retention.stamped"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, issuer.ready o balance.low."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1435,7 +1570,7 @@ class RetentionFailedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["retention.failed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, issuer.ready o balance.low."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1452,7 +1587,7 @@ class RetentionCanceledEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["retention.canceled"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, issuer.ready o balance.low."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1469,7 +1604,7 @@ class InvoiceBatchCompletedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice_batch.completed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, issuer.ready o balance.low."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1486,7 +1621,7 @@ class CustomerDataRequestCompletedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["customer_data_request.completed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, issuer.ready o balance.low."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1496,6 +1631,40 @@ class CustomerDataRequestCompletedEvent(TypedDict):
     data: CustomerDataRequestEventData
 
 
+class SatDownloadCompletedEvent(TypedDict):
+    """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    object: Literal["event"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    type: Literal["sat_download.completed"]
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
+    api_version: str
+    """Versión de la API con que se armó el objeto."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    data: SatDownloadEventData
+
+
+class SatDownloadFailedEvent(TypedDict):
+    """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    object: Literal["event"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    type: Literal["sat_download.failed"]
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
+    api_version: str
+    """Versión de la API con que se armó el objeto."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    data: SatDownloadEventData
+
+
 class IssuerReadyEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
@@ -1503,7 +1672,7 @@ class IssuerReadyEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["issuer.ready"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, issuer.ready o balance.low."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1520,7 +1689,7 @@ class BalanceLowEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["balance.low"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, issuer.ready o balance.low."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, issuer.ready o balance.low."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -1541,6 +1710,8 @@ Event = Union[
     RetentionCanceledEvent,
     InvoiceBatchCompletedEvent,
     CustomerDataRequestCompletedEvent,
+    SatDownloadCompletedEvent,
+    SatDownloadFailedEvent,
     IssuerReadyEvent,
     BalanceLowEvent,
 ]
@@ -1695,6 +1866,28 @@ class SatListCheckList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[SatListCheck]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class SatDownloadList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[SatDownload]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class SatInvoiceList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[SatInvoice]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -2718,6 +2911,8 @@ class SignEfirmaParams(TypedDict):
     """El archivo .key en base64 (puede traer el prefijo data:)."""
     password: str
     """La contraseña de la llave privada (.key). Se usa para abrirla y no se guarda en texto."""
+    keep_for_downloads: NotRequired[bool]
+    """true para guardarla (cifrada) y poder pedir al SAT las facturas del emisor con POST /v1/sat_downloads. Sin esto solo firma el contrato con el PAC y no se guarda."""
 
 
 class CreateIssuerOnboardingLinkParams(TypedDict):
@@ -3438,6 +3633,50 @@ class CheckSatListsParams(TypedDict):
     """Los RFC a revisar, hasta 1000."""
 
 
+CreateSatDownloadParams = TypedDict(
+    "CreateSatDownloadParams",
+    {
+        "issuer": "NotRequired[str]",
+        "direction": "NotRequired[Literal[\"received\", \"issued\"]]",
+        "from": "str",
+        "to": "str",
+        "type": "NotRequired[Literal[\"I\", \"E\", \"P\", \"T\", \"N\"]]",
+        "counterparty_tax_id": "NotRequired[str]",
+        "uuid": "NotRequired[str]",
+    },
+)
+
+
+class ListSatDownloadsParams(TypedDict):
+    """Los parámetros de GET /v1/sat_downloads."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class ListSatInvoicesParams(TypedDict):
+    """Los parámetros de GET /v1/sat_invoices."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    direction: NotRequired[Literal["received", "issued"]]
+    """received (por omisión) o issued."""
+    type: NotRequired[Literal["I", "E", "P", "T", "N"]]
+    """I, E, P, T o N."""
+    counterparty_tax_id: NotRequired[str]
+    """El RFC de quien la emitió (recibidas) o de quien la recibió (emitidas)."""
+    date_gte: NotRequired[str]
+    """Con fecha desde este día (AAAA-MM-DD)."""
+    date_lte: NotRequired[str]
+    """Con fecha hasta este día (AAAA-MM-DD), incluido."""
+
+
 class CreateWebhookEndpointParams(TypedDict):
     url: str
     """Dirección https de su servidor que recibe los avisos."""
@@ -3472,7 +3711,7 @@ class RollWebhookSecretParams(TypedDict):
 
 
 class TestWebhookEndpointParams(TypedDict):
-    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "customer_data_request.completed", "issuer.ready", "balance.low"]]
+    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "issuer.ready", "balance.low"]]
     """El evento a mandar. Por omisión invoice.stamped."""
 
 
@@ -3482,7 +3721,7 @@ class ListEventsParams(TypedDict):
     """Cuántos por página, de 1 a 100. Por omisión 10."""
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
-    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "customer_data_request.completed", "issuer.ready", "balance.low"]]
+    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "issuer.ready", "balance.low"]]
     """Solo de este tipo."""
     object: NotRequired[str]
     """Solo los de este objeto (inv_…, ret_…, bat_…)."""
