@@ -98,6 +98,9 @@ class ErrorCode:
     ISSUER_REQUIRED: Final = "issuer_required"
     """La cuenta tiene varios emisores y la solicitud no dice cuál: mande issuer (iss_…)."""
 
+    KEY_READ_ONLY: Final = "key_read_only"
+    """La llave es de solo lectura: puede hacer GET, validar RFC, revisar listas del SAT y calcular recibos de nómina, pero nada que timbre, cancele, envíe o cambie datos."""
+
     KEY_RESTRICTED: Final = "key_restricted"
     """La llave está limitada a algunos emisores y la solicitud toca otro (o crea uno nuevo, o usa algo de toda la cuenta como webhooks)."""
 
@@ -186,6 +189,7 @@ ErrorCodeValue = Literal[
     "issuer_missing",
     "issuer_not_allowed",
     "issuer_required",
+    "key_read_only",
     "key_restricted",
     "livemode_mismatch",
     "method_not_allowed",

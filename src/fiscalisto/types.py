@@ -239,6 +239,10 @@ class AccountKey(TypedDict):
     """Nombre de la llave."""
     issuers: list[str] | None
     """Emisores a los que se limita la llave; null si puede usar todos."""
+    read_only: bool
+    """true si la llave solo consulta (key_read_only en lo demás)."""
+    expires_at: str | None
+    """Cuándo deja de funcionar: la vigencia elegida al crearla, o el fin del traslape al cambiarla. null si no vence."""
 
 
 class Account(TypedDict):
