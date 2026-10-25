@@ -171,6 +171,7 @@ class TestDataResource:
         self,
         params: ResetTestDataParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> TestDataReset:
@@ -182,7 +183,7 @@ class TestDataResource:
         https://fiscalisto.com/docs/api/referencia/cuenta/reset-test-data
         """
         result: TestDataReset = self._client.request(
-            "POST", "/v1/test_data/reset", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/test_data/reset", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -197,6 +198,7 @@ class SandboxesResource:
         self,
         params: CreateSandboxParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Sandbox:
@@ -208,7 +210,7 @@ class SandboxesResource:
         https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/create-sandbox
         """
         result: Sandbox = self._client.request(
-            "POST", "/v1/sandboxes", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/sandboxes", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -300,6 +302,7 @@ class IssuersResource:
         self,
         params: CreateIssuerParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Issuer:
@@ -311,7 +314,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/emisores/create-issuer
         """
         result: Issuer = self._client.request(
-            "POST", "/v1/issuers", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/issuers", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -351,6 +354,7 @@ class IssuersResource:
         id: str,
         params: UpdateIssuerParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Issuer:
@@ -362,7 +366,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/emisores/update-issuer
         """
         result: Issuer = self._client.request(
-            "POST", f"/v1/issuers/{_path(id)}", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/issuers/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -390,6 +394,7 @@ class IssuersResource:
         id: str,
         params: UploadCertificateParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Issuer:
@@ -401,7 +406,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/emisores/upload-certificate
         """
         result: Issuer = self._client.request(
-            "POST", f"/v1/issuers/{_path(id)}/certificates", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/issuers/{_path(id)}/certificates", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -410,6 +415,7 @@ class IssuersResource:
         id: str,
         params: SignEfirmaParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Issuer:
@@ -421,7 +427,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/emisores/sign-efirma
         """
         result: Issuer = self._client.request(
-            "POST", f"/v1/issuers/{_path(id)}/efirma", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/issuers/{_path(id)}/efirma", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -449,6 +455,7 @@ class IssuersResource:
         id: str,
         params: CreateIssuerOnboardingLinkParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> IssuerOnboardingLink:
@@ -460,7 +467,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/emisores/create-issuer-onboarding-link
         """
         result: IssuerOnboardingLink = self._client.request(
-            "POST", f"/v1/issuers/{_path(id)}/onboarding_links", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/issuers/{_path(id)}/onboarding_links", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -486,6 +493,7 @@ class IssuersResource:
         id: str,
         params: UpdateSelfInvoicingParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> SelfInvoicing:
@@ -497,7 +505,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/autofactura/update-self-invoicing
         """
         result: SelfInvoicing = self._client.request(
-            "POST", f"/v1/issuers/{_path(id)}/self_invoicing", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/issuers/{_path(id)}/self_invoicing", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -628,6 +636,7 @@ class InvoicesResource:
         id: str,
         params: CancelInvoiceParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Invoice:
@@ -639,7 +648,7 @@ class InvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas/cancel-invoice
         """
         result: Invoice = self._client.request(
-            "POST", f"/v1/invoices/{_path(id)}/cancel", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/invoices/{_path(id)}/cancel", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -668,6 +677,7 @@ class InvoicesResource:
         self,
         id: str,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Invoice:
@@ -679,7 +689,7 @@ class InvoicesResource:
         https://fiscalisto.com/docs/api/referencia/cuentas-por-cobrar/mark-invoice-paid
         """
         result: Invoice = self._client.request(
-            "POST", f"/v1/invoices/{_path(id)}/mark_paid", timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/invoices/{_path(id)}/mark_paid", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -687,6 +697,7 @@ class InvoicesResource:
         self,
         id: str,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Invoice:
@@ -698,7 +709,7 @@ class InvoicesResource:
         https://fiscalisto.com/docs/api/referencia/cuentas-por-cobrar/mark-invoice-unpaid
         """
         result: Invoice = self._client.request(
-            "POST", f"/v1/invoices/{_path(id)}/mark_unpaid", timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/invoices/{_path(id)}/mark_unpaid", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -736,6 +747,7 @@ class BankTransactionsResource:
         self,
         params: CreateBankTransactionsParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> BankImport:
@@ -747,7 +759,7 @@ class BankTransactionsResource:
         https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/create-bank-transactions
         """
         result: BankImport = self._client.request(
-            "POST", "/v1/bank_transactions", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/bank_transactions", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -789,6 +801,7 @@ class BankTransactionsResource:
         id: str,
         params: MatchBankTransactionParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> BankTransaction:
@@ -800,7 +813,7 @@ class BankTransactionsResource:
         https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/match-bank-transaction
         """
         result: BankTransaction = self._client.request(
-            "POST", f"/v1/bank_transactions/{_path(id)}/match", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/bank_transactions/{_path(id)}/match", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -809,6 +822,7 @@ class BankTransactionsResource:
         id: str,
         params: ClassifyBankTransactionParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> BankTransaction:
@@ -820,7 +834,7 @@ class BankTransactionsResource:
         https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/classify-bank-transaction
         """
         result: BankTransaction = self._client.request(
-            "POST", f"/v1/bank_transactions/{_path(id)}/classify", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/bank_transactions/{_path(id)}/classify", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -828,6 +842,7 @@ class BankTransactionsResource:
         self,
         id: str,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> BankTransaction:
@@ -839,7 +854,7 @@ class BankTransactionsResource:
         https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/reopen-bank-transaction
         """
         result: BankTransaction = self._client.request(
-            "POST", f"/v1/bank_transactions/{_path(id)}/reopen", timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/bank_transactions/{_path(id)}/reopen", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1060,6 +1075,7 @@ class RetentionsResource:
         id: str,
         params: SendRetentionParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Retention:
@@ -1069,7 +1085,7 @@ class RetentionsResource:
         https://fiscalisto.com/docs/api/referencia/retenciones/send-retention
         """
         result: Retention = self._client.request(
-            "POST", f"/v1/retentions/{_path(id)}/send", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/retentions/{_path(id)}/send", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1078,6 +1094,7 @@ class RetentionsResource:
         id: str,
         params: CancelRetentionParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Retention:
@@ -1089,7 +1106,7 @@ class RetentionsResource:
         https://fiscalisto.com/docs/api/referencia/retenciones/cancel-retention
         """
         result: Retention = self._client.request(
-            "POST", f"/v1/retentions/{_path(id)}/cancel", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/retentions/{_path(id)}/cancel", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1104,6 +1121,7 @@ class EmployeesResource:
         self,
         params: CreateEmployeeParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Employee:
@@ -1113,7 +1131,7 @@ class EmployeesResource:
         https://fiscalisto.com/docs/api/referencia/nomina/create-employee
         """
         result: Employee = self._client.request(
-            "POST", "/v1/employees", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/employees", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1153,6 +1171,7 @@ class EmployeesResource:
         id: str,
         params: UpdateEmployeeParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Employee:
@@ -1162,7 +1181,7 @@ class EmployeesResource:
         https://fiscalisto.com/docs/api/referencia/nomina/update-employee
         """
         result: Employee = self._client.request(
-            "POST", f"/v1/employees/{_path(id)}", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/employees/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1216,6 +1235,7 @@ class PayrollReceiptsResource:
         self,
         params: PreviewPayrollReceiptParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> PayrollReceiptPreview:
@@ -1225,7 +1245,7 @@ class PayrollReceiptsResource:
         https://fiscalisto.com/docs/api/referencia/nomina/preview-payroll-receipt
         """
         result: PayrollReceiptPreview = self._client.request(
-            "POST", "/v1/payroll_receipts/preview", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/payroll_receipts/preview", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1300,6 +1320,7 @@ class TaxIdsResource:
         self,
         params: ValidateTaxIdParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> TaxIdValidation:
@@ -1311,7 +1332,7 @@ class TaxIdsResource:
         https://fiscalisto.com/docs/api/referencia/clientes/validate-tax-id
         """
         result: TaxIdValidation = self._client.request(
-            "POST", "/v1/tax_ids/validate", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/tax_ids/validate", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1326,6 +1347,7 @@ class CustomersResource:
         self,
         params: CreateCustomerParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Customer:
@@ -1335,7 +1357,7 @@ class CustomersResource:
         https://fiscalisto.com/docs/api/referencia/clientes/create-customer
         """
         result: Customer = self._client.request(
-            "POST", "/v1/customers", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/customers", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1375,6 +1397,7 @@ class CustomersResource:
         id: str,
         params: UpdateCustomerParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Customer:
@@ -1384,7 +1407,7 @@ class CustomersResource:
         https://fiscalisto.com/docs/api/referencia/clientes/update-customer
         """
         result: Customer = self._client.request(
-            "POST", f"/v1/customers/{_path(id)}", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/customers/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1416,6 +1439,7 @@ class CustomerDataRequestsResource:
         self,
         params: CreateCustomerDataRequestParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> CustomerDataRequest:
@@ -1427,7 +1451,7 @@ class CustomerDataRequestsResource:
         https://fiscalisto.com/docs/api/referencia/clientes/create-customer-data-request
         """
         result: CustomerDataRequest = self._client.request(
-            "POST", "/v1/customer_data_requests", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/customer_data_requests", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1492,6 +1516,7 @@ class ProductsResource:
         self,
         params: CreateProductParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Product:
@@ -1501,7 +1526,7 @@ class ProductsResource:
         https://fiscalisto.com/docs/api/referencia/productos/create-product
         """
         result: Product = self._client.request(
-            "POST", "/v1/products", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/products", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1541,6 +1566,7 @@ class ProductsResource:
         id: str,
         params: UpdateProductParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Product:
@@ -1550,7 +1576,7 @@ class ProductsResource:
         https://fiscalisto.com/docs/api/referencia/productos/update-product
         """
         result: Product = self._client.request(
-            "POST", f"/v1/products/{_path(id)}", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/products/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1628,6 +1654,7 @@ class SatListsResource:
         self,
         params: CheckSatListsParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> SatListCheckList:
@@ -1639,7 +1666,7 @@ class SatListsResource:
         https://fiscalisto.com/docs/api/referencia/listas-del-sat/check-sat-lists
         """
         result: SatListCheckList = self._client.request(
-            "POST", "/v1/sat_lists/check", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/sat_lists/check", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1654,6 +1681,7 @@ class SatDownloadsResource:
         self,
         params: CreateSatDownloadParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> SatDownload:
@@ -1665,7 +1693,7 @@ class SatDownloadsResource:
         https://fiscalisto.com/docs/api/referencia/descargas-del-sat/create-sat-download
         """
         result: SatDownload = self._client.request(
-            "POST", "/v1/sat_downloads", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/sat_downloads", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1770,6 +1798,7 @@ class TicketsResource:
         self,
         params: CreateTicketParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Ticket:
@@ -1781,7 +1810,7 @@ class TicketsResource:
         https://fiscalisto.com/docs/api/referencia/autofactura/create-ticket
         """
         result: Ticket = self._client.request(
-            "POST", "/v1/tickets", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/tickets", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1966,6 +1995,7 @@ class StoreConnectionsResource:
         self,
         params: CreateStoreConnectionParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> StoreConnection:
@@ -1977,7 +2007,7 @@ class StoreConnectionsResource:
         https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/create-store-connection
         """
         result: StoreConnection = self._client.request(
-            "POST", "/v1/store_connections", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/store_connections", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2019,6 +2049,7 @@ class StoreConnectionsResource:
         id: str,
         params: UpdateStoreConnectionParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> StoreConnection:
@@ -2030,7 +2061,7 @@ class StoreConnectionsResource:
         https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/update-store-connection
         """
         result: StoreConnection = self._client.request(
-            "POST", f"/v1/store_connections/{_path(id)}", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/store_connections/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2058,6 +2089,7 @@ class StoreConnectionsResource:
         id: str,
         params: ImportStoreOrdersParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> StoreImport:
@@ -2069,7 +2101,7 @@ class StoreConnectionsResource:
         https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/import-store-orders
         """
         result: StoreImport = self._client.request(
-            "POST", f"/v1/store_connections/{_path(id)}/import_orders", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/store_connections/{_path(id)}/import_orders", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2084,6 +2116,7 @@ class RecurringInvoicesResource:
         self,
         params: CreateRecurringInvoiceParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> RecurringInvoice:
@@ -2095,7 +2128,7 @@ class RecurringInvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/create-recurring-invoice
         """
         result: RecurringInvoice = self._client.request(
-            "POST", "/v1/recurring_invoices", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/recurring_invoices", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2137,6 +2170,7 @@ class RecurringInvoicesResource:
         id: str,
         params: UpdateRecurringInvoiceParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> RecurringInvoice:
@@ -2148,7 +2182,7 @@ class RecurringInvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/update-recurring-invoice
         """
         result: RecurringInvoice = self._client.request(
-            "POST", f"/v1/recurring_invoices/{_path(id)}", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/recurring_invoices/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2175,6 +2209,7 @@ class RecurringInvoicesResource:
         self,
         id: str,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> RecurringInvoice:
@@ -2186,7 +2221,7 @@ class RecurringInvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/skip-recurring-invoice
         """
         result: RecurringInvoice = self._client.request(
-            "POST", f"/v1/recurring_invoices/{_path(id)}/skip", timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/recurring_invoices/{_path(id)}/skip", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2194,6 +2229,7 @@ class RecurringInvoicesResource:
         self,
         id: str,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Invoice:
@@ -2205,7 +2241,7 @@ class RecurringInvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/run-recurring-invoice
         """
         result: Invoice = self._client.request(
-            "POST", f"/v1/recurring_invoices/{_path(id)}/run", timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/recurring_invoices/{_path(id)}/run", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2220,6 +2256,7 @@ class QuotesResource:
         self,
         params: CreateQuoteParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Quote:
@@ -2231,7 +2268,7 @@ class QuotesResource:
         https://fiscalisto.com/docs/api/referencia/cotizaciones/create-quote
         """
         result: Quote = self._client.request(
-            "POST", "/v1/quotes", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/quotes", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2275,6 +2312,7 @@ class QuotesResource:
         id: str,
         params: UpdateQuoteParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Quote:
@@ -2286,7 +2324,7 @@ class QuotesResource:
         https://fiscalisto.com/docs/api/referencia/cotizaciones/update-quote
         """
         result: Quote = self._client.request(
-            "POST", f"/v1/quotes/{_path(id)}", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/quotes/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2314,6 +2352,7 @@ class QuotesResource:
         id: str,
         params: SendQuoteParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Quote:
@@ -2325,7 +2364,7 @@ class QuotesResource:
         https://fiscalisto.com/docs/api/referencia/cotizaciones/send-quote
         """
         result: Quote = self._client.request(
-            "POST", f"/v1/quotes/{_path(id)}/send", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/quotes/{_path(id)}/send", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2333,6 +2372,7 @@ class QuotesResource:
         self,
         id: str,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> Quote:
@@ -2344,7 +2384,7 @@ class QuotesResource:
         https://fiscalisto.com/docs/api/referencia/cotizaciones/accept-quote
         """
         result: Quote = self._client.request(
-            "POST", f"/v1/quotes/{_path(id)}/accept", timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/quotes/{_path(id)}/accept", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2398,6 +2438,7 @@ class WebhookEndpointsResource:
         self,
         params: CreateWebhookEndpointParams,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> WebhookEndpoint:
@@ -2409,7 +2450,7 @@ class WebhookEndpointsResource:
         https://fiscalisto.com/docs/api/referencia/webhooks/create-webhook-endpoint
         """
         result: WebhookEndpoint = self._client.request(
-            "POST", "/v1/webhook_endpoints", body=params, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/webhook_endpoints", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2449,6 +2490,7 @@ class WebhookEndpointsResource:
         id: str,
         params: UpdateWebhookEndpointParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> WebhookEndpoint:
@@ -2458,7 +2500,7 @@ class WebhookEndpointsResource:
         https://fiscalisto.com/docs/api/referencia/webhooks/update-webhook-endpoint
         """
         result: WebhookEndpoint = self._client.request(
-            "POST", f"/v1/webhook_endpoints/{_path(id)}", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/webhook_endpoints/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2484,6 +2526,7 @@ class WebhookEndpointsResource:
         id: str,
         params: RollWebhookSecretParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> WebhookEndpoint:
@@ -2495,7 +2538,7 @@ class WebhookEndpointsResource:
         https://fiscalisto.com/docs/api/referencia/webhooks/roll-webhook-secret
         """
         result: WebhookEndpoint = self._client.request(
-            "POST", f"/v1/webhook_endpoints/{_path(id)}/roll_secret", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/webhook_endpoints/{_path(id)}/roll_secret", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2504,6 +2547,7 @@ class WebhookEndpointsResource:
         id: str,
         params: TestWebhookEndpointParams | None = None,
         *,
+        idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
     ) -> WebhookTest:
@@ -2515,7 +2559,7 @@ class WebhookEndpointsResource:
         https://fiscalisto.com/docs/api/referencia/webhooks/test-webhook-endpoint
         """
         result: WebhookTest = self._client.request(
-            "POST", f"/v1/webhook_endpoints/{_path(id)}/test", body=params, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/webhook_endpoints/{_path(id)}/test", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 

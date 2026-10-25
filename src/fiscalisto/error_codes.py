@@ -62,11 +62,14 @@ class ErrorCode:
     ENDPOINT_LIMIT: Final = "endpoint_limit"
     """La cuenta llegó al máximo de webhooks en este modo."""
 
+    IDEMPOTENCY_KEY_INVALID: Final = "idempotency_key_invalid"
+    """Idempotency-Key es de 1 a 255 caracteres ASCII, sin acentos ni ñ: el id de su pedido o un UUID."""
+
     IDEMPOTENCY_KEY_MISSING: Final = "idempotency_key_missing"
     """Lo que timbra exige el encabezado Idempotency-Key (8 a 255 caracteres, uno nuevo por comprobante). Así un reintento nunca timbra dos veces."""
 
     IDEMPOTENCY_KEY_REUSED: Final = "idempotency_key_reused"
-    """Esa Idempotency-Key ya se usó con otro cuerpo. Use una nueva para un comprobante distinto."""
+    """Esa Idempotency-Key ya se usó en las últimas 24 horas con otra solicitud (otra ruta u otro cuerpo). Use una nueva para cada operación distinta."""
 
     INSUFFICIENT_BALANCE: Final = "insufficient_balance"
     """La cuenta no tiene timbres de producción. Compre un paquete en Desarrolladores › Timbres. En pruebas nunca pasa. Para enterarse antes, escuche balance.low o active la recarga automática."""
@@ -168,7 +171,7 @@ class ErrorCode:
     """La factura recurrente está en pausa: reanúdela con active: true para timbrarla."""
 
     REQUEST_IN_PROGRESS: Final = "request_in_progress"
-    """Otra solicitud con la misma Idempotency-Key sigue en proceso. Espere un momento y repítala."""
+    """Otra solicitud con la misma Idempotency-Key sigue en proceso (409, con Retry-After). Repítala en un momento con la misma llave: contestará lo mismo."""
 
     RESOURCE_MISSING: Final = "resource_missing"
     """No existe un objeto con ese id (o es de otro emisor o del otro modo)."""
@@ -249,6 +252,7 @@ ErrorCodeValue = Literal[
     "efirma_required",
     "email_failed",
     "endpoint_limit",
+    "idempotency_key_invalid",
     "idempotency_key_missing",
     "idempotency_key_reused",
     "insufficient_balance",

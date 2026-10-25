@@ -87,7 +87,8 @@ class RequestTest(unittest.TestCase):
         self.assertEqual(r.headers["authorization"], "Bearer fk_test_abc")
         self.assertEqual(r.headers["content-type"], "application/json")
         self.assertTrue(r.headers["user-agent"].startswith("fiscalisto-python/"))
-        self.assertNotIn("idempotency-key", r.headers)
+        # Every POST carries a key of its own, so a retry never does it twice.
+        self.assertRegex(r.headers["idempotency-key"], r"^[0-9a-f-]{36}$")
         self.assertEqual(json.loads(r.body or b"")["legal_name"], "INMOBILIARIA CVA")
 
     def test_stamping_gets_an_idempotency_key_reused_on_retries(self) -> None:
@@ -112,16 +113,28 @@ class RequestTest(unittest.TestCase):
             fake.requests[0].url, "https://api.fiscalisto.com/v1/invoices/inv_1%2Fx/substitute"
         )
 
-    def test_never_repeats_what_could_do_something_twice(self) -> None:
+    def test_repeats_a_create_with_the_same_key(self) -> None:
+        fake = Fake(
+            answer(500, {"error": {"type": "api_error", "code": "internal_error"}}),
+            OSError("down"),
+            answer(201, {"id": "cus_1"}),
+        )
+        f, _ = client(fake)
+        self.assertEqual(f.customers.create({"tax_id": "ICV060329BY0", "legal_name": "X"})["id"], "cus_1")
+        self.assertEqual(len({r.headers["idempotency-key"] for r in fake.requests}), 1)
+
+    def test_never_repeats_a_post_without_a_key(self) -> None:
+        # Your own call to a route, without idempotent=True: it may have worked, so it isn't repeated.
         fake = Fake(answer(500, {"error": {"type": "api_error", "code": "internal_error"}}))
         f, _ = client(fake)
         with self.assertRaises(FiscalistoError) as caught:
-            f.customers.create({"tax_id": "ICV060329BY0", "legal_name": "X"})
+            f.request("POST", "/v1/customers", body={"tax_id": "ICV060329BY0"})
         self.assertEqual((caught.exception.status, len(fake.requests)), (500, 1))
+        self.assertNotIn("idempotency-key", fake.requests[0].headers)
         fake = Fake(OSError("down"))
         f, _ = client(fake)
         with self.assertRaises(FiscalistoError) as caught:
-            f.customers.create({"tax_id": "ICV060329BY0", "legal_name": "X"})
+            f.request("POST", "/v1/customers", body={})
         self.assertEqual(caught.exception.type, "connection_error")
         self.assertEqual(caught.exception.code, "connection_failed")
 
