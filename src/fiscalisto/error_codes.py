@@ -60,7 +60,7 @@ class ErrorCode:
     """Esa Idempotency-Key ya se usó con otro cuerpo. Use una nueva para un comprobante distinto."""
 
     INSUFFICIENT_BALANCE: Final = "insufficient_balance"
-    """La cuenta no tiene timbres de producción. Compre un paquete en Desarrolladores › Timbres. En pruebas nunca pasa."""
+    """La cuenta no tiene timbres de producción. Compre un paquete en Desarrolladores › Timbres. En pruebas nunca pasa. Para enterarse antes, escuche balance.low o active la recarga automática."""
 
     INTERNAL_ERROR: Final = "internal_error"
     """Algo falló de nuestro lado. Repita la solicitud con la misma Idempotency-Key: nunca se timbra dos veces. Si sigue, escríbanos con el request_id."""
