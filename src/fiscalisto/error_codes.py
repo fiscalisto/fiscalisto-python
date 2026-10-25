@@ -215,6 +215,21 @@ class ErrorCode:
     SUBSTITUTION_UNSUPPORTED: Final = "substitution_unsupported"
     """Los complementos de pago y las notas de crédito no se sustituyen: se cancelan y se emite otro."""
 
+    TEST_CLOCK_ADVANCING: Final = "test_clock_advancing"
+    """El reloj se está adelantando en otra solicitud (409, con Retry-After). Espere a test_clock.ready y repita."""
+
+    TEST_CLOCK_EXISTS: Final = "test_clock_exists"
+    """El emisor ya tiene un reloj de prueba: adelántelo, o bórrelo para volver a la hora real."""
+
+    TEST_CLOCK_INVALID: Final = "test_clock_invalid"
+    """frozen_time no sirve: no es una fecha y hora ISO 8601, es anterior a la hora del reloj (solo avanza) o va más de dos años adelante de la hora real."""
+
+    TEST_CLOCK_MISSING: Final = "test_clock_missing"
+    """El emisor no tiene reloj de prueba: créelo con POST /v1/issuers/{id}/test_clock."""
+
+    TEST_CLOCK_UNSUPPORTED: Final = "test_clock_unsupported"
+    """Los relojes de prueba son de emisores de prueba: use su llave fk_test_ y un emisor de pruebas."""
+
     TEST_MODE_ONLY: Final = "test_mode_only"
     """Esto solo existe en pruebas (como reiniciar los datos de prueba): use su llave fk_test_."""
 
@@ -303,6 +318,11 @@ ErrorCodeValue = Literal[
     "store_not_authorized",
     "store_platform_unavailable",
     "substitution_unsupported",
+    "test_clock_advancing",
+    "test_clock_exists",
+    "test_clock_invalid",
+    "test_clock_missing",
+    "test_clock_unsupported",
     "test_mode_only",
     "ticket_folio_taken",
     "ticket_invalid",

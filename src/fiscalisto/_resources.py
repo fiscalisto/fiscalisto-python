@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .types import (
         Account,
         AdvanceList,
+        AdvanceTestClockParams,
         ApplyAdvanceParams,
         Balance,
         BankImport,
@@ -39,6 +40,7 @@ if TYPE_CHECKING:
         CreateSandboxParams,
         CreateSatDownloadParams,
         CreateStoreConnectionParams,
+        CreateTestClockParams,
         CreateTicketParams,
         CreateWebhookEndpointParams,
         Customer,
@@ -112,6 +114,7 @@ if TYPE_CHECKING:
         StoreConnection,
         StoreImport,
         TaxIdValidation,
+        TestClock,
         TestDataReset,
         TestWebhookEndpointParams,
         Ticket,
@@ -263,6 +266,91 @@ class SandboxesResource:
         """
         result: Deleted = self._client.request(
             "DELETE", f"/v1/sandboxes/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
+class TestClocksResource:
+    """Entornos de prueba: fiscalisto.test_clocks."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        id: str,
+        params: CreateTestClockParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> TestClock:
+        """Crear un reloj de prueba
+
+        Le da a un emisor de pruebas su propia hora, congelada en frozen_time (ahora, si no la manda): sus facturas recurrentes, cotizaciones, cuentas por cobrar y tickets cuentan los días con ella, y nada de eso corre solo hasta que usted lo adelanta. Para ver en segundos lo que pasa en meses. Solo emisores de prueba; uno por emisor.
+
+        POST /v1/issuers/{id}/test_clock
+        https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/create-test-clock
+        """
+        result: TestClock = self._client.request(
+            "POST", f"/v1/issuers/{_path(id)}/test_clock", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> TestClock:
+        """Ver el reloj de prueba
+
+        GET /v1/issuers/{id}/test_clock
+        https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/get-test-clock
+        """
+        result: TestClock = self._client.request(
+            "GET", f"/v1/issuers/{_path(id)}/test_clock", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> TestClock:
+        """Borrar el reloj de prueba
+
+        El emisor vuelve a la hora real; lo que el reloj dejó pendiente lo hacen los procesos diarios.
+
+        DELETE /v1/issuers/{id}/test_clock
+        https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/delete-test-clock
+        """
+        result: TestClock = self._client.request(
+            "DELETE", f"/v1/issuers/{_path(id)}/test_clock", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def advance(
+        self,
+        id: str,
+        params: AdvanceTestClockParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> TestClock:
+        """Adelantar el reloj de prueba
+
+        Mueve el reloj hasta frozen_time haciendo, día por día, lo que habría pasado: timbra las facturas recurrentes de cada periodo, vence las cotizaciones y hace las facturas globales de tickets, con sus eventos. Contesta cuando terminó, con lo que hizo en advanced, y llega test_clock.ready. Hasta 25 comprobantes por solicitud: si se detiene antes, stopped_early y otra llamada sigue. Los CFDI se timbran con la fecha real (el SAT solo acepta la de hoy); el periodo, los vencimientos y los eventos siguen al reloj.
+
+        POST /v1/issuers/{id}/test_clock/advance
+        https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/advance-test-clock
+        """
+        result: TestClock = self._client.request(
+            "POST", f"/v1/issuers/{_path(id)}/test_clock/advance", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2621,6 +2709,11 @@ class FiscalistoApi(Core):
     def sandboxes(self) -> SandboxesResource:
         """Entornos de prueba."""
         return SandboxesResource(self)
+
+    @cached_property
+    def test_clocks(self) -> TestClocksResource:
+        """Entornos de prueba."""
+        return TestClocksResource(self)
 
     @cached_property
     def balance(self) -> BalanceResource:
