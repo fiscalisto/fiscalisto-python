@@ -11,6 +11,9 @@ __all__ = ["ErrorCode", "ErrorCodeValue"]
 class ErrorCode:
     """``if e.code == ErrorCode.INVOICE_REJECTED: …`` Vea https://fiscalisto.com/docs/api/errores."""
 
+    BANK_TRANSACTION_INVALID: Final = "bank_transaction_invalid"
+    """El depósito no se puede conciliar, clasificar o reabrir así (ya está conciliado, las facturas son de otro cliente o una está cancelada…). El mensaje dice por qué."""
+
     BATCH_INVALID: Final = "batch_invalid"
     """Una factura del lote no pasa la revisión; param dice cuál (invoices.3.items.0.unit_price). Ninguna del lote se timbró."""
 
@@ -76,6 +79,9 @@ class ErrorCode:
 
     INVOICE_INVALID: Final = "invoice_invalid"
     """La factura no cumple una regla del SAT que Fiscalisto revisa antes de mandarla al PAC (uso contra régimen, totales, complementos…). No se usó ningún timbre."""
+
+    INVOICE_NOT_MARKABLE: Final = "invoice_not_markable"
+    """Solo una factura de ingreso PUE vigente se marca pagada o por cobrar; una PPD se paga con su complemento de pago (type P)."""
 
     INVOICE_NOT_STAMPED: Final = "invoice_not_stamped"
     """La acción es para facturas timbradas (enviar, cancelar, sustituir)."""
@@ -202,6 +208,7 @@ class ErrorCode:
 
 
 ErrorCodeValue = Literal[
+    "bank_transaction_invalid",
     "batch_invalid",
     "body_too_large",
     "browser_not_supported",
@@ -224,6 +231,7 @@ ErrorCodeValue = Literal[
     "invalid_api_key",
     "invalid_json",
     "invoice_invalid",
+    "invoice_not_markable",
     "invoice_not_stamped",
     "invoice_rejected",
     "issuer_archived",

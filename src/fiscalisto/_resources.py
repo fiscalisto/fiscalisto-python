@@ -15,10 +15,14 @@ if TYPE_CHECKING:
         AdvanceList,
         ApplyAdvanceParams,
         Balance,
+        BankImport,
+        BankTransaction,
         CancelInvoiceParams,
         CancelRetentionParams,
         CheckSatListsParams,
+        ClassifyBankTransactionParams,
         CreateAdvanceParams,
+        CreateBankTransactionsParams,
         CreateCreditNoteParams,
         CreateCustomerDataRequestParams,
         CreateCustomerParams,
@@ -53,6 +57,7 @@ if TYPE_CHECKING:
         Issuer,
         IssuerOnboardingLink,
         ListAdvancesParams,
+        ListBankTransactionsParams,
         ListCustomerDataRequestsParams,
         ListCustomersParams,
         ListEmployeesParams,
@@ -62,16 +67,19 @@ if TYPE_CHECKING:
         ListIssuersParams,
         ListProductsParams,
         ListQuotesParams,
+        ListReceivablesParams,
         ListRecurringInvoicesParams,
         ListRetentionsParams,
         ListSatDownloadsParams,
         ListSatInvoicesParams,
         ListTicketsParams,
         ListWebhookEndpointsParams,
+        MatchBankTransactionParams,
         PayrollReceiptPreview,
         PreviewPayrollReceiptParams,
         Product,
         Quote,
+        Receivable,
         RecurringInvoice,
         ResetTestDataParams,
         Retention,
@@ -556,6 +564,185 @@ class InvoicesResource:
         """
         result: Invoice = self._client.request(
             "POST", f"/v1/invoices/{_path(id)}/substitute", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def mark_paid(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Invoice:
+        """Marcar pagada
+
+        Una factura PUE timbrada con paid_later (o marcada por cobrar) ya se pagó: queda paid y llega invoice.paid. Una PPD se paga con su complemento de pago (POST /v1/payments).
+
+        POST /v1/invoices/{id}/mark_paid
+        https://fiscalisto.com/docs/api/referencia/cuentas-por-cobrar/mark-invoice-paid
+        """
+        result: Invoice = self._client.request(
+            "POST", f"/v1/invoices/{_path(id)}/mark_paid", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def mark_unpaid(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Invoice:
+        """Marcar por cobrar
+
+        Una factura PUE que el cliente aún no paga (le paga este mes): queda unpaid hasta POST /v1/invoices/{id}/mark_paid. Si el mes termina sin pago, la ley pide sustituirla por una PPD (regla 2.7.1.39 de la RMF).
+
+        POST /v1/invoices/{id}/mark_unpaid
+        https://fiscalisto.com/docs/api/referencia/cuentas-por-cobrar/mark-invoice-unpaid
+        """
+        result: Invoice = self._client.request(
+            "POST", f"/v1/invoices/{_path(id)}/mark_unpaid", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
+class ReceivablesResource:
+    """Cuentas por cobrar: fiscalisto.receivables."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListReceivablesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> ListObject[Receivable]:
+        """Ver lo que le deben
+
+        Lo que debe cada cliente, por moneda, de sus facturas abiertas (PPD con saldo y PUE por cobrar), ordenado por RFC. Las facturas de cada uno: GET /v1/invoices?customer=RFC&payment_status=open.
+
+        GET /v1/receivables
+        https://fiscalisto.com/docs/api/referencia/cuentas-por-cobrar/list-receivables
+        """
+        return self._client.list("/v1/receivables", params, timeout=timeout, max_retries=max_retries)
+
+
+class BankTransactionsResource:
+    """Conciliación bancaria: fiscalisto.bank_transactions."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateBankTransactionsParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> BankImport:
+        """Mandar depósitos
+
+        Los depósitos de la cuenta del emisor (de la API de su banco o de un estado de cuenta), hasta 1,000 por solicitud. Uno que ya mandó (mismo día, monto, referencia y concepto) se omite, así que puede mandar periodos que se enciman. Cada uno trae suggested_match: las facturas que parece pagar.
+
+        POST /v1/bank_transactions
+        https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/create-bank-transactions
+        """
+        result: BankImport = self._client.request(
+            "POST", "/v1/bank_transactions", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def list(
+        self,
+        params: ListBankTransactionsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> ListObject[BankTransaction]:
+        """Listar depósitos
+
+        Los más recientes primero; los abiertos con su suggested_match.
+
+        GET /v1/bank_transactions
+        https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/list-bank-transactions
+        """
+        return self._client.list("/v1/bank_transactions", params, timeout=timeout, max_retries=max_retries)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> BankTransaction:
+        """Ver un depósito
+
+        GET /v1/bank_transactions/{id}
+        https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/get-bank-transaction
+        """
+        result: BankTransaction = self._client.request(
+            "GET", f"/v1/bank_transactions/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def match(
+        self,
+        id: str,
+        params: MatchBankTransactionParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> BankTransaction:
+        """Conciliar un depósito
+
+        El depósito pagó estas facturas (de un mismo cliente), o sin invoices, las de suggested_match. Sus facturas PUE por cobrar quedan pagadas (invoice.paid). No timbra: para pagar una PPD con este depósito, POST /v1/payments con bank_transaction.
+
+        POST /v1/bank_transactions/{id}/match
+        https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/match-bank-transaction
+        """
+        result: BankTransaction = self._client.request(
+            "POST", f"/v1/bank_transactions/{_path(id)}/match", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def classify(
+        self,
+        id: str,
+        params: ClassifyBankTransactionParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> BankTransaction:
+        """Explicar un depósito sin factura
+
+        Un depósito que ninguna factura explica: venta (aún sin facturar), prestamo, traspaso o devolucion. El SAT puede presumir ingreso un depósito sin explicar (CFF art. 59 fr. III).
+
+        POST /v1/bank_transactions/{id}/classify
+        https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/classify-bank-transaction
+        """
+        result: BankTransaction = self._client.request(
+            "POST", f"/v1/bank_transactions/{_path(id)}/classify", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def reopen(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> BankTransaction:
+        """Deshacer la conciliación
+
+        Vuelve a open, y sus facturas vuelven a deber. Si se pagó con un complemento vigente, cancélelo antes.
+
+        POST /v1/bank_transactions/{id}/reopen
+        https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/reopen-bank-transaction
+        """
+        result: BankTransaction = self._client.request(
+            "POST", f"/v1/bank_transactions/{_path(id)}/reopen", timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2067,6 +2254,16 @@ class FiscalistoApi(Core):
     def invoices(self) -> InvoicesResource:
         """Facturas."""
         return InvoicesResource(self)
+
+    @cached_property
+    def receivables(self) -> ReceivablesResource:
+        """Cuentas por cobrar."""
+        return ReceivablesResource(self)
+
+    @cached_property
+    def bank_transactions(self) -> BankTransactionsResource:
+        """Conciliación bancaria."""
+        return BankTransactionsResource(self)
 
     @cached_property
     def payments(self) -> PaymentsResource:
