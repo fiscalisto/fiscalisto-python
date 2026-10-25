@@ -131,6 +131,18 @@ class ErrorCode:
     RATE_LIMIT: Final = "rate_limit"
     """Demasiadas solicitudes con la llave. Espere lo que dice Retry-After y reintente."""
 
+    RECURRING_INVALID: Final = "recurring_invalid"
+    """La factura recurrente no se pudo guardar: el día, la hora, la zona o la factura no son válidos. El mensaje dice cuál."""
+
+    RECURRING_LIMIT: Final = "recurring_limit"
+    """El emisor ya tiene el máximo de facturas recurrentes activas (25 en pruebas, 5,000 en producción). Pause o borre las que ya no use."""
+
+    RECURRING_NOT_DUE: Final = "recurring_not_due"
+    """Aún no toca timbrar la factura recurrente (409): su next_invoice_on es después de hoy. Para una factura antes de tiempo, use POST /v1/invoices."""
+
+    RECURRING_PAUSED: Final = "recurring_paused"
+    """La factura recurrente está en pausa: reanúdela con active: true para timbrarla."""
+
     REQUEST_IN_PROGRESS: Final = "request_in_progress"
     """Otra solicitud con la misma Idempotency-Key sigue en proceso. Espere un momento y repítala."""
 
@@ -218,6 +230,10 @@ ErrorCodeValue = Literal[
     "parameter_unknown",
     "payroll_invalid",
     "rate_limit",
+    "recurring_invalid",
+    "recurring_limit",
+    "recurring_not_due",
+    "recurring_paused",
     "request_in_progress",
     "resource_missing",
     "retention_invalid",

@@ -29,6 +29,7 @@ if TYPE_CHECKING:
         CreatePaymentParams,
         CreatePayrollReceiptParams,
         CreateProductParams,
+        CreateRecurringInvoiceParams,
         CreateRetentionParams,
         CreateSatDownloadParams,
         CreateTicketParams,
@@ -59,6 +60,7 @@ if TYPE_CHECKING:
         ListInvoicesParams,
         ListIssuersParams,
         ListProductsParams,
+        ListRecurringInvoicesParams,
         ListRetentionsParams,
         ListSatDownloadsParams,
         ListSatInvoicesParams,
@@ -67,6 +69,7 @@ if TYPE_CHECKING:
         PayrollReceiptPreview,
         PreviewPayrollReceiptParams,
         Product,
+        RecurringInvoice,
         ResetTestDataParams,
         Retention,
         RollWebhookSecretParams,
@@ -87,6 +90,7 @@ if TYPE_CHECKING:
         UpdateEmployeeParams,
         UpdateIssuerParams,
         UpdateProductParams,
+        UpdateRecurringInvoiceParams,
         UpdateSelfInvoicingParams,
         UpdateWebhookEndpointParams,
         UploadCertificateParams,
@@ -1545,6 +1549,142 @@ class TicketsResource:
         return result
 
 
+class RecurringInvoicesResource:
+    """Facturas recurrentes: fiscalisto.recurring_invoices."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateRecurringInvoiceParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> RecurringInvoice:
+        """Crear una factura recurrente
+
+        Una factura que el emisor timbra solo en cada fecha (cada interval meses en day_of_month, o cada interval semanas o días), a la hora que elija, con los timbres de su cuenta, y la manda al cliente si send_email. Cada una es una factura normal (invoice.stamped, con recurring_invoice) y nunca se timbra dos veces el mismo periodo. invoice es el cuerpo de POST /v1/invoices: se revisa ahora, con las mismas reglas.
+
+        POST /v1/recurring_invoices
+        https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/create-recurring-invoice
+        """
+        result: RecurringInvoice = self._client.request(
+            "POST", "/v1/recurring_invoices", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def list(
+        self,
+        params: ListRecurringInvoicesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> ListObject[RecurringInvoice]:
+        """Listar facturas recurrentes
+
+        Las más recientes primero.
+
+        GET /v1/recurring_invoices
+        https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/list-recurring-invoices
+        """
+        return self._client.list("/v1/recurring_invoices", params, timeout=timeout, max_retries=max_retries)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> RecurringInvoice:
+        """Ver una factura recurrente
+
+        GET /v1/recurring_invoices/{id}
+        https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/get-recurring-invoice
+        """
+        result: RecurringInvoice = self._client.request(
+            "GET", f"/v1/recurring_invoices/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateRecurringInvoiceParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> RecurringInvoice:
+        """Cambiar o pausar una factura recurrente
+
+        Solo lo que mande cambia. invoice reemplaza la factura completa desde la siguiente vez. active: false la pausa; active: true la reanuda desde hoy, sin timbrar las fechas que pasaron en pausa. schedule.start_date mueve la siguiente fecha.
+
+        POST /v1/recurring_invoices/{id}
+        https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/update-recurring-invoice
+        """
+        result: RecurringInvoice = self._client.request(
+            "POST", f"/v1/recurring_invoices/{_path(id)}", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Deleted:
+        """Borrar una factura recurrente
+
+        Ya no timbra más; las facturas que timbró se quedan.
+
+        DELETE /v1/recurring_invoices/{id}
+        https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/delete-recurring-invoice
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/recurring_invoices/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def skip(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> RecurringInvoice:
+        """Saltar la siguiente factura
+
+        La siguiente fecha pasa a la que sigue, sin timbrar nada.
+
+        POST /v1/recurring_invoices/{id}/skip
+        https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/skip-recurring-invoice
+        """
+        result: RecurringInvoice = self._client.request(
+            "POST", f"/v1/recurring_invoices/{_path(id)}/skip", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def run(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Invoice:
+        """Timbrar ahora la que toca
+
+        Timbra el periodo que ya toca (next_invoice_on es hoy o antes) sin esperar su hora. Si no toca aún, 409 recurring_not_due. Si la hora llega mientras tanto, no se timbra dos veces: es el mismo periodo.
+
+        POST /v1/recurring_invoices/{id}/run
+        https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/run-recurring-invoice
+        """
+        result: Invoice = self._client.request(
+            "POST", f"/v1/recurring_invoices/{_path(id)}/run", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
 class WebhookEndpointsResource:
     """Webhooks: fiscalisto.webhook_endpoints."""
 
@@ -1824,6 +1964,11 @@ class FiscalistoApi(Core):
     def tickets(self) -> TicketsResource:
         """Autofactura."""
         return TicketsResource(self)
+
+    @cached_property
+    def recurring_invoices(self) -> RecurringInvoicesResource:
+        """Facturas recurrentes."""
+        return RecurringInvoicesResource(self)
 
     @cached_property
     def webhook_endpoints(self) -> WebhookEndpointsResource:
