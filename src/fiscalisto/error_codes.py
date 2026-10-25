@@ -161,6 +161,15 @@ class ErrorCode:
     TEST_MODE_ONLY: Final = "test_mode_only"
     """Esto solo existe en pruebas (como reiniciar los datos de prueba): use su llave fk_test_."""
 
+    TICKET_FOLIO_TAKEN: Final = "ticket_folio_taken"
+    """Ese folio ya está registrado para el emisor con otro total o con otra propina (409). Con el mismo total se contesta el ticket que ya existe."""
+
+    TICKET_INVALID: Final = "ticket_invalid"
+    """El ticket no se pudo registrar: el folio trae caracteres no válidos, la fecha de venta está en el futuro o es de hace más de un año, el producto ya no está en el catálogo… El mensaje dice cuál."""
+
+    TICKET_NOT_PENDING: Final = "ticket_not_pending"
+    """El ticket ya se facturó o entró en una factura global: no se puede cancelar."""
+
     TIMEOUT: Final = "timeout"
     """La API no contestó a tiempo (connection_error). Con lo que timbra, repita con la misma Idempotency-Key para saber si se timbró."""
 
@@ -219,6 +228,9 @@ ErrorCodeValue = Literal[
     "stamp_rate_limit",
     "substitution_unsupported",
     "test_mode_only",
+    "ticket_folio_taken",
+    "ticket_invalid",
+    "ticket_not_pending",
     "timeout",
     "unsupported_content_type",
 ]

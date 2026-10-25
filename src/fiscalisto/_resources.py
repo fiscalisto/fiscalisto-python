@@ -31,6 +31,7 @@ if TYPE_CHECKING:
         CreateProductParams,
         CreateRetentionParams,
         CreateSatDownloadParams,
+        CreateTicketParams,
         CreateWebhookEndpointParams,
         Customer,
         CustomerDataRequest,
@@ -61,6 +62,7 @@ if TYPE_CHECKING:
         ListRetentionsParams,
         ListSatDownloadsParams,
         ListSatInvoicesParams,
+        ListTicketsParams,
         ListWebhookEndpointsParams,
         PayrollReceiptPreview,
         PreviewPayrollReceiptParams,
@@ -73,16 +75,19 @@ if TYPE_CHECKING:
         SatInvoice,
         SatListCheck,
         SatListCheckList,
+        SelfInvoicing,
         SendInvoiceParams,
         SendRetentionParams,
         SignEfirmaParams,
         TaxIdValidation,
         TestDataReset,
         TestWebhookEndpointParams,
+        Ticket,
         UpdateCustomerParams,
         UpdateEmployeeParams,
         UpdateIssuerParams,
         UpdateProductParams,
+        UpdateSelfInvoicingParams,
         UpdateWebhookEndpointParams,
         UploadCertificateParams,
         ValidateTaxIdParams,
@@ -342,6 +347,43 @@ class IssuersResource:
         """
         result: IssuerOnboardingLink = self._client.request(
             "POST", f"/v1/issuers/{_path(id)}/onboarding_links", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def get_self_invoicing(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> SelfInvoicing:
+        """Ver el portal de autofactura de un emisor
+
+        GET /v1/issuers/{id}/self_invoicing
+        https://fiscalisto.com/docs/api/referencia/autofactura/get-self-invoicing
+        """
+        result: SelfInvoicing = self._client.request(
+            "GET", f"/v1/issuers/{_path(id)}/self_invoicing", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def update_self_invoicing(
+        self,
+        id: str,
+        params: UpdateSelfInvoicingParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> SelfInvoicing:
+        """Cambiar las reglas de autofactura
+
+        Hasta cuándo se puede facturar un ticket y cada cuánto se timbra la factura global.
+
+        POST /v1/issuers/{id}/self_invoicing
+        https://fiscalisto.com/docs/api/referencia/autofactura/update-self-invoicing
+        """
+        result: SelfInvoicing = self._client.request(
+            "POST", f"/v1/issuers/{_path(id)}/self_invoicing", body=params, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1425,6 +1467,84 @@ class SatInvoicesResource:
         return result
 
 
+class TicketsResource:
+    """Autofactura: fiscalisto.tickets."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateTicketParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Ticket:
+        """Registrar un ticket
+
+        Una venta que su comprador factura él mismo: con el código (code) y el total en el portal del emisor (url, que puede incrustar en su página con fiscalisto.js), da sus datos fiscales y la factura se timbra al momento con los timbres de su cuenta. Lo que nadie factura entra solo en la factura global del periodo. Registrar otra vez el mismo folio con el mismo total contesta el ticket que ya existe (los reintentos son seguros); con otro total, 409.
+
+        POST /v1/tickets
+        https://fiscalisto.com/docs/api/referencia/autofactura/create-ticket
+        """
+        result: Ticket = self._client.request(
+            "POST", "/v1/tickets", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def list(
+        self,
+        params: ListTicketsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> ListObject[Ticket]:
+        """Listar tickets
+
+        Del más reciente al más antiguo por fecha de venta.
+
+        GET /v1/tickets
+        https://fiscalisto.com/docs/api/referencia/autofactura/list-tickets
+        """
+        return self._client.list("/v1/tickets", params, timeout=timeout, max_retries=max_retries)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Ticket:
+        """Ver un ticket
+
+        GET /v1/tickets/{id}
+        https://fiscalisto.com/docs/api/referencia/autofactura/get-ticket
+        """
+        result: Ticket = self._client.request(
+            "GET", f"/v1/tickets/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def cancel(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Ticket:
+        """Cancelar un ticket
+
+        Una venta que no se hizo (devolución, error): ya no se puede facturar ni entra en la factura global. Solo mientras esté pendiente.
+
+        DELETE /v1/tickets/{id}
+        https://fiscalisto.com/docs/api/referencia/autofactura/cancel-ticket
+        """
+        result: Ticket = self._client.request(
+            "DELETE", f"/v1/tickets/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
 class WebhookEndpointsResource:
     """Webhooks: fiscalisto.webhook_endpoints."""
 
@@ -1699,6 +1819,11 @@ class FiscalistoApi(Core):
     def sat_invoices(self) -> SatInvoicesResource:
         """Descargas del SAT."""
         return SatInvoicesResource(self)
+
+    @cached_property
+    def tickets(self) -> TicketsResource:
+        """Autofactura."""
+        return TicketsResource(self)
 
     @cached_property
     def webhook_endpoints(self) -> WebhookEndpointsResource:
