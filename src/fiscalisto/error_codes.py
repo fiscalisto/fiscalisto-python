@@ -128,6 +128,18 @@ class ErrorCode:
     PAYROLL_INVALID: Final = "payroll_invalid"
     """El recibo de nómina no se puede calcular o timbrar con esos datos (periodo, días, registro patronal del emisor…)."""
 
+    QUOTE_CUSTOMER_MISSING: Final = "quote_customer_missing"
+    """La cotización no tiene los datos fiscales del cliente: agrégueselos con POST /v1/quotes/{id} (customer) o mándela con auto_invoice para que los dé al aceptarla."""
+
+    QUOTE_INVALID: Final = "quote_invalid"
+    """La cotización no se pudo guardar o ya no cambia (aceptada, rechazada o facturada), o no se puede mandar así. El mensaje dice por qué."""
+
+    QUOTE_NOT_DRAFT: Final = "quote_not_draft"
+    """Solo se borra una cotización que nunca se envió."""
+
+    QUOTE_NOT_INVOICEABLE: Final = "quote_not_invoiceable"
+    """La cotización se rechazó o venció: no se factura. Si venció, cámbiele valid_until (es una versión nueva)."""
+
     RATE_LIMIT: Final = "rate_limit"
     """Demasiadas solicitudes con la llave. Espere lo que dice Retry-After y reintente."""
 
@@ -229,6 +241,10 @@ ErrorCodeValue = Literal[
     "parameter_missing",
     "parameter_unknown",
     "payroll_invalid",
+    "quote_customer_missing",
+    "quote_invalid",
+    "quote_not_draft",
+    "quote_not_invoiceable",
     "rate_limit",
     "recurring_invalid",
     "recurring_limit",

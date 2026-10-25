@@ -29,6 +29,7 @@ if TYPE_CHECKING:
         CreatePaymentParams,
         CreatePayrollReceiptParams,
         CreateProductParams,
+        CreateQuoteParams,
         CreateRecurringInvoiceParams,
         CreateRetentionParams,
         CreateSatDownloadParams,
@@ -60,6 +61,7 @@ if TYPE_CHECKING:
         ListInvoicesParams,
         ListIssuersParams,
         ListProductsParams,
+        ListQuotesParams,
         ListRecurringInvoicesParams,
         ListRetentionsParams,
         ListSatDownloadsParams,
@@ -69,6 +71,7 @@ if TYPE_CHECKING:
         PayrollReceiptPreview,
         PreviewPayrollReceiptParams,
         Product,
+        Quote,
         RecurringInvoice,
         ResetTestDataParams,
         Retention,
@@ -80,6 +83,7 @@ if TYPE_CHECKING:
         SatListCheckList,
         SelfInvoicing,
         SendInvoiceParams,
+        SendQuoteParams,
         SendRetentionParams,
         SignEfirmaParams,
         TaxIdValidation,
@@ -90,6 +94,7 @@ if TYPE_CHECKING:
         UpdateEmployeeParams,
         UpdateIssuerParams,
         UpdateProductParams,
+        UpdateQuoteParams,
         UpdateRecurringInvoiceParams,
         UpdateSelfInvoicingParams,
         UpdateWebhookEndpointParams,
@@ -1685,6 +1690,184 @@ class RecurringInvoicesResource:
         return result
 
 
+class QuotesResource:
+    """Cotizaciones: fiscalisto.quotes."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateQuoteParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Quote:
+        """Crear una cotización
+
+        Una cotización en borrador, con los conceptos y las condiciones de pago de una factura (se revisan con las mismas reglas, así que siempre se puede facturar). customer es un cliente de su catálogo, uno con sus datos fiscales (se agrega a sus clientes) o solo name y email si aún no los tiene. Se manda con POST /v1/quotes/{id}/send.
+
+        POST /v1/quotes
+        https://fiscalisto.com/docs/api/referencia/cotizaciones/create-quote
+        """
+        result: Quote = self._client.request(
+            "POST", "/v1/quotes", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def list(
+        self,
+        params: ListQuotesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> ListObject[Quote]:
+        """Listar cotizaciones
+
+        Las más recientes primero, cada una en su última versión.
+
+        GET /v1/quotes
+        https://fiscalisto.com/docs/api/referencia/cotizaciones/list-quotes
+        """
+        return self._client.list("/v1/quotes", params, timeout=timeout, max_retries=max_retries)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Quote:
+        """Ver una cotización
+
+        Su última versión.
+
+        GET /v1/quotes/{id}
+        https://fiscalisto.com/docs/api/referencia/cotizaciones/get-quote
+        """
+        result: Quote = self._client.request(
+            "GET", f"/v1/quotes/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateQuoteParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Quote:
+        """Cambiar una cotización
+
+        Solo lo que mande cambia. Un borrador cambia ahí mismo; una que ya se envió se vuelve una versión nueva en borrador (mismo número, version + 1) que el cliente ve al mandarla; mientras, su liga muestra la anterior. Una aceptada, rechazada o facturada ya no cambia.
+
+        POST /v1/quotes/{id}
+        https://fiscalisto.com/docs/api/referencia/cotizaciones/update-quote
+        """
+        result: Quote = self._client.request(
+            "POST", f"/v1/quotes/{_path(id)}", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Deleted:
+        """Borrar una cotización
+
+        Solo una que nunca se envió; si no, 400 quote_not_draft.
+
+        DELETE /v1/quotes/{id}
+        https://fiscalisto.com/docs/api/referencia/cotizaciones/delete-quote
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/quotes/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def send(
+        self,
+        id: str,
+        params: SendQuoteParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Quote:
+        """Mandar una cotización
+
+        La manda por correo con su PDF y la liga donde el cliente la ve, la acepta, pide cambios o la rechaza. Con send_email: false solo se marca enviada y contesta url, para que usted la mande por WhatsApp o su propio correo.
+
+        POST /v1/quotes/{id}/send
+        https://fiscalisto.com/docs/api/referencia/cotizaciones/send-quote
+        """
+        result: Quote = self._client.request(
+            "POST", f"/v1/quotes/{_path(id)}/send", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def accept(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Quote:
+        """Marcar aceptada
+
+        El cliente le dijo que sí por teléfono, en persona… Llega quote.accepted. No timbra: para eso, POST /v1/quotes/{id}/invoice.
+
+        POST /v1/quotes/{id}/accept
+        https://fiscalisto.com/docs/api/referencia/cotizaciones/accept-quote
+        """
+        result: Quote = self._client.request(
+            "POST", f"/v1/quotes/{_path(id)}/accept", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def invoice(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Invoice:
+        """Facturar una cotización
+
+        Timbra la factura con los conceptos de la cotización y los datos fiscales del cliente, y la deja facturada (invoice). Si no estaba aceptada, la marca aceptada. Una en otra moneda va al tipo de cambio de hoy. Sin los datos fiscales del cliente, 400 quote_customer_missing; rechazada o vencida, 400 quote_not_invoiceable. Si ya se facturó, contesta esa factura.
+
+        POST /v1/quotes/{id}/invoice
+        https://fiscalisto.com/docs/api/referencia/cotizaciones/invoice-quote
+        """
+        result: Invoice = self._client.request(
+            "POST", f"/v1/quotes/{_path(id)}/invoice", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def pdf(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> bytes:
+        """Descargar el PDF
+
+        El PDF de su última versión, con el diseño de PDF del emisor.
+
+        GET /v1/quotes/{id}/pdf
+        https://fiscalisto.com/docs/api/referencia/cotizaciones/get-quote-pdf
+        """
+        result: bytes = self._client.request(
+            "GET", f"/v1/quotes/{_path(id)}/pdf", result="bytes", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
 class WebhookEndpointsResource:
     """Webhooks: fiscalisto.webhook_endpoints."""
 
@@ -1969,6 +2152,11 @@ class FiscalistoApi(Core):
     def recurring_invoices(self) -> RecurringInvoicesResource:
         """Facturas recurrentes."""
         return RecurringInvoicesResource(self)
+
+    @cached_property
+    def quotes(self) -> QuotesResource:
+        """Cotizaciones."""
+        return QuotesResource(self)
 
     @cached_property
     def webhook_endpoints(self) -> WebhookEndpointsResource:
