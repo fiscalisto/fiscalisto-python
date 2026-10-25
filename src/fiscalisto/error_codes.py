@@ -158,6 +158,9 @@ class ErrorCode:
     SUBSTITUTION_UNSUPPORTED: Final = "substitution_unsupported"
     """Los complementos de pago y las notas de crédito no se sustituyen: se cancelan y se emite otro."""
 
+    TEST_MODE_ONLY: Final = "test_mode_only"
+    """Esto solo existe en pruebas (como reiniciar los datos de prueba): use su llave fk_test_."""
+
     TIMEOUT: Final = "timeout"
     """La API no contestó a tiempo (connection_error). Con lo que timbra, repita con la misma Idempotency-Key para saber si se timbró."""
 
@@ -215,6 +218,7 @@ ErrorCodeValue = Literal[
     "sat_request_rejected",
     "stamp_rate_limit",
     "substitution_unsupported",
+    "test_mode_only",
     "timeout",
     "unsupported_content_type",
 ]

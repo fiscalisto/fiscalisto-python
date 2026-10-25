@@ -194,6 +194,7 @@ __all__ = [
     "PreviewPayrollReceiptParamsPeriod",
     "Product",
     "ProductList",
+    "ResetTestDataParams",
     "Retention",
     "RetentionCanceledEvent",
     "RetentionCancellation",
@@ -228,6 +229,7 @@ __all__ = [
     "TaxIdValidationErrorsItem",
     "TaxIdValidationSatRecord",
     "TaxIdValidationWarningsItem",
+    "TestDataReset",
     "TestWebhookEndpointParams",
     "UpdateCustomerParams",
     "UpdateCustomerParamsForeign",
@@ -1243,6 +1245,24 @@ class CustomerDataRequest(TypedDict):
     """Cuándo se creó."""
     submission: CustomerDataRequestSubmission | None
     """Lo que mandó el cliente (el último envío: puede corregirlo en las 24 horas siguientes). null mientras no conteste."""
+
+
+class TestDataReset(TypedDict):
+    """Lo que se borró (y se creó) al reiniciar los datos de prueba."""
+    object: Literal["test_data_reset"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: Literal[False]
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuers: int
+    """Cuántos emisores de pruebas se vaciaron (archivados incluidos)."""
+    deleted_rows: int
+    """Cuántos registros se borraron: facturas, clientes, productos, lotes, ligas, descargas…"""
+    deleted_events: int
+    """Cuántos eventos de pruebas se borraron (con sus entregas)."""
+    customers_created: int
+    """Clientes de ejemplo creados (con seed)."""
+    products_created: int
+    """Productos de ejemplo creados (con seed)."""
 
 
 # Una solicitud al SAT de las facturas emitidas o recibidas de un emisor en un periodo.
@@ -2849,6 +2869,11 @@ InvoiceCreate = TypedDict(
         "metadata": "NotRequired[dict[str, str]]",
     },
 )
+
+
+class ResetTestDataParams(TypedDict):
+    seed: NotRequired[bool]
+    """true (por omisión) para dejarle a cada emisor de pruebas 3 clientes y 3 productos de ejemplo. false para dejarlo vacío."""
 
 
 class CreateIssuerParams(TypedDict):

@@ -65,6 +65,7 @@ if TYPE_CHECKING:
         PayrollReceiptPreview,
         PreviewPayrollReceiptParams,
         Product,
+        ResetTestDataParams,
         Retention,
         RollWebhookSecretParams,
         SatCatalogEntryList,
@@ -76,6 +77,7 @@ if TYPE_CHECKING:
         SendRetentionParams,
         SignEfirmaParams,
         TaxIdValidation,
+        TestDataReset,
         TestWebhookEndpointParams,
         UpdateCustomerParams,
         UpdateEmployeeParams,
@@ -114,6 +116,32 @@ class AccountResource:
         """
         result: Account = self._client.request(
             "GET", "/v1/account", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
+class TestDataResource:
+    """Cuenta: fiscalisto.test_data."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def reset(
+        self,
+        params: ResetTestDataParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> TestDataReset:
+        """Reiniciar los datos de prueba
+
+        Deja el modo de pruebas como nuevo: cada emisor de pruebas conserva su RFC y su CSD de pruebas pero pierde sus facturas, clientes, productos, lotes, ligas y descargas, y se borran los eventos y el registro de solicitudes de pruebas. Las llaves y los webhooks se quedan. Con seed (por omisión) deja 3 clientes y 3 productos de ejemplo. Solo con una llave fk_test_; producción nunca se toca.
+
+        POST /v1/test_data/reset
+        https://fiscalisto.com/docs/api/referencia/cuenta/reset-test-data
+        """
+        result: TestDataReset = self._client.request(
+            "POST", "/v1/test_data/reset", body=params, timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -1576,6 +1604,11 @@ class FiscalistoApi(Core):
     def account(self) -> AccountResource:
         """Cuenta."""
         return AccountResource(self)
+
+    @cached_property
+    def test_data(self) -> TestDataResource:
+        """Cuenta."""
+        return TestDataResource(self)
 
     @cached_property
     def balance(self) -> BalanceResource:
