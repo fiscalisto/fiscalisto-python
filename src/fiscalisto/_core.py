@@ -199,10 +199,12 @@ class Core:
         transport: Transport | None = None,
         sleep: Callable[[float], None] | None = None,
         api_version: str | None = API_VERSION,
+        language: Literal["es", "en"] | None = None,
     ) -> None:
         """api_key: su llave fk_test_… o fk_live_…; sin ella, la variable FISCALISTO_API_KEY.
         timeout: segundos para cada respuesta (80 por omisión: el PAC puede tardar).
-        api_version: la versión de la API (Fiscalisto-Version); None usa la de su cuenta."""
+        api_version: la versión de la API (Fiscalisto-Version); None usa la de su cuenta.
+        language: "en" para los mensajes de error en inglés (Accept-Language)."""
         key = api_key if api_key is not None else os.environ.get("FISCALISTO_API_KEY")
         if not key:
             raise ValueError(
@@ -221,6 +223,7 @@ class Core:
         self._transport = transport or urllib_transport
         self._sleep = sleep or time.sleep
         self._api_version = api_version
+        self._language = language
 
     @property
     def livemode(self) -> bool:
@@ -254,6 +257,8 @@ class Core:
         }
         if self._api_version:
             headers["fiscalisto-version"] = self._api_version
+        if self._language:
+            headers["accept-language"] = self._language
         key = (idempotency_key or str(uuid.uuid4())) if idempotent else None
         if key:
             headers["idempotency-key"] = key

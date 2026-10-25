@@ -2728,6 +2728,8 @@ class ApiErrorError(TypedDict):
     """El campo con el problema (items.0.unit_price)."""
     sat_code: NotRequired[str]
     """Código del SAT o del PAC (CFDI40xxx)."""
+    message_es: NotRequired[str]
+    """Con Accept-Language: en, el mensaje original en español cuando message solo dice en inglés qué significa el código."""
     doc_url: str
     """La explicación de este código en la documentación."""
     request_id: str
