@@ -73,6 +73,7 @@ __all__ = [
     "CreateRetentionParamsRecipient",
     "CreateRetentionParamsTaxesItem",
     "CreateRetentionParamsTotals",
+    "CreateSandboxParams",
     "CreateSatDownloadParams",
     "CreateStoreConnectionParams",
     "CreateStoreConnectionParamsSettings",
@@ -273,6 +274,9 @@ __all__ = [
     "RetentionTaxesItem",
     "RetentionTotals",
     "RollWebhookSecretParams",
+    "Sandbox",
+    "SandboxKey",
+    "SandboxList",
     "SatCatalogEntry",
     "SatCatalogEntryList",
     "SatDownload",
@@ -354,6 +358,8 @@ class AccountKey(TypedDict):
     """true si la llave solo consulta (key_read_only en lo demás)."""
     expires_at: str | None
     """Cuándo deja de funcionar: la vigencia elegida al crearla, o el fin del traslape al cambiarla. null si no vence."""
+    sandbox: str | None
+    """El entorno de prueba (sbx_…) de la llave: solo ve sus emisores, webhooks y eventos. null si es de la cuenta."""
 
 
 class Account(TypedDict):
@@ -453,6 +459,8 @@ class Issuer(TypedDict):
     """CURP, 18 caracteres."""
     stamps_as: str
     """RFC con el que se timbra: el del emisor en producción y el de pruebas del SAT (EKU9003173C9) en pruebas."""
+    sandbox: str | None
+    """El entorno de prueba (sbx_…) al que pertenece, o null si es de la cuenta. Vea /v1/sandboxes."""
     created_at: str | None
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
     archived_at: str | None
@@ -1365,6 +1373,36 @@ class TestDataReset(TypedDict):
     """Productos de ejemplo creados (con seed)."""
 
 
+class SandboxKey(TypedDict):
+    """Solo al crearlo."""
+    id: str
+    """Id de la llave."""
+    secret: str
+    """La llave fk_test_… del entorno. Solo se ve esta vez: guárdela."""
+
+
+class Sandbox(TypedDict):
+    """Un entorno de prueba: el modo de pruebas propio de una persona, con su emisor, llaves, webhooks y eventos aparte."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    object: Literal["sandbox"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: Literal[False]
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    name: str
+    """Nombre."""
+    issuers: int
+    """Emisores activos en el entorno."""
+    issuer: NotRequired[Issuer | None]
+    """El emisor de pruebas del SAT con que nace (solo al crearlo)."""
+    key: NotRequired[SandboxKey]
+    """Solo al crearlo."""
+    created_at: str | None
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    deleted: NotRequired[bool]
+    """Siempre true."""
+
+
 # Una solicitud al SAT de las facturas emitidas o recibidas de un emisor en un periodo.
 SatDownload = TypedDict(
     "SatDownload",
@@ -2070,6 +2108,8 @@ class WebhookEndpoint(TypedDict):
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["webhook_endpoint"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
+    sandbox: str | None
+    """El entorno de prueba (sbx_…) al que pertenece, o null si es de la cuenta. Vea /v1/sandboxes."""
     url: str
     """Dirección https de su servidor que recibe los avisos."""
     description: str | None
@@ -2619,6 +2659,17 @@ class ApiError(TypedDict):
     """Todos los errores tienen esta forma."""
     error: ApiErrorError
     """Por qué el SAT o el PAC no lo aceptaron: mensaje, código del SAT y texto original."""
+
+
+class SandboxList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[Sandbox]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
 
 
 class IssuerList(TypedDict):
@@ -3811,6 +3862,11 @@ InvoiceCreate = TypedDict(
 class ResetTestDataParams(TypedDict):
     seed: NotRequired[bool]
     """true (por omisión) para dejarle a cada emisor de pruebas 3 clientes y 3 productos de ejemplo. false para dejarlo vacío."""
+
+
+class CreateSandboxParams(TypedDict):
+    name: str
+    """Para quién o para qué es, por ejemplo el nombre de quien lo usa."""
 
 
 class CreateIssuerParams(TypedDict):

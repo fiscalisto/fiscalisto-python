@@ -36,6 +36,7 @@ if TYPE_CHECKING:
         CreateQuoteParams,
         CreateRecurringInvoiceParams,
         CreateRetentionParams,
+        CreateSandboxParams,
         CreateSatDownloadParams,
         CreateStoreConnectionParams,
         CreateTicketParams,
@@ -96,6 +97,8 @@ if TYPE_CHECKING:
         ResetTestDataParams,
         Retention,
         RollWebhookSecretParams,
+        Sandbox,
+        SandboxList,
         SatCatalogEntryList,
         SatDownload,
         SatInvoice,
@@ -180,6 +183,84 @@ class TestDataResource:
         """
         result: TestDataReset = self._client.request(
             "POST", "/v1/test_data/reset", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
+class SandboxesResource:
+    """Entornos de prueba: fiscalisto.sandboxes."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateSandboxParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Sandbox:
+        """Crear un entorno de prueba
+
+        Un modo de pruebas propio para una persona o un proyecto: nace con el emisor de pruebas del SAT y una llave fk_test_ (key.secret, una sola vez) que solo ve los emisores, webhooks y eventos del entorno, y que reinicia solo los suyos. Se crea con una llave de pruebas de la cuenta (no de otro entorno ni limitada a emisores). Hasta 25 por cuenta.
+
+        POST /v1/sandboxes
+        https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/create-sandbox
+        """
+        result: Sandbox = self._client.request(
+            "POST", "/v1/sandboxes", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def list(
+        self,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> SandboxList:
+        """Listar entornos de prueba
+
+        GET /v1/sandboxes
+        https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/list-sandboxes
+        """
+        result: SandboxList = self._client.request(
+            "GET", "/v1/sandboxes", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Sandbox:
+        """Ver un entorno de prueba
+
+        GET /v1/sandboxes/{id}
+        https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/get-sandbox
+        """
+        result: Sandbox = self._client.request(
+            "GET", f"/v1/sandboxes/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Deleted:
+        """Borrar un entorno de prueba
+
+        Sus llaves dejan de funcionar al momento, sus emisores se archivan y sus webhooks se borran. No toca nada de la cuenta ni de otros entornos.
+
+        DELETE /v1/sandboxes/{id}
+        https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/delete-sandbox
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/sandboxes/{_path(id)}", timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2491,6 +2572,11 @@ class FiscalistoApi(Core):
     def test_data(self) -> TestDataResource:
         """Cuenta."""
         return TestDataResource(self)
+
+    @cached_property
+    def sandboxes(self) -> SandboxesResource:
+        """Entornos de prueba."""
+        return SandboxesResource(self)
 
     @cached_property
     def balance(self) -> BalanceResource:
