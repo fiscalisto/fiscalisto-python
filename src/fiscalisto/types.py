@@ -322,6 +322,7 @@ __all__ = [
     "TrialBalance",
     "TrialBalanceAccountsItem",
     "TrialBalanceTotals",
+    "UpdateAccountParams",
     "UpdateCustomerParams",
     "UpdateCustomerParamsForeign",
     "UpdateEmployeeParams",
@@ -378,6 +379,10 @@ class Account(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     name: str
     """El nombre de la cuenta API."""
+    api_version: str
+    """La versión de la API de la cuenta (la de sus solicitudes sin Fiscalisto-Version). Ver Versiones."""
+    latest_api_version: str
+    """La versión más reciente de la API."""
     key: AccountKey
     """La llave con que se hizo la solicitud: id, nombre y emisores a los que se limita."""
 
@@ -2173,6 +2178,8 @@ class WebhookEndpoint(TypedDict):
     """Desde cuándo fallan las entregas, o null."""
     previous_secret_expires_at: str | None
     """Hasta cuándo el secreto anterior también firma (después de cambiarlo), o null."""
+    api_version: str | None
+    """La versión de la API de sus eventos; null: la de la cuenta."""
     created_at: str | None
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
     secret: NotRequired[str]
@@ -3931,6 +3938,11 @@ InvoiceCreate = TypedDict(
 )
 
 
+class UpdateAccountParams(TypedDict):
+    api_version: str
+    """La versión de la API de la cuenta: la que reciben sus solicitudes sin Fiscalisto-Version y sus webhooks sin api_version propio. Pruebe antes la nueva con el encabezado."""
+
+
 class ResetTestDataParams(TypedDict):
     seed: NotRequired[bool]
     """true (por omisión) para dejarle a cada emisor de pruebas 3 clientes y 3 productos de ejemplo. false para dejarlo vacío."""
@@ -5466,6 +5478,8 @@ class CreateWebhookEndpointParams(TypedDict):
     """Eventos que quiere recibir, o ["*"] para todos (por omisión). Ver la lista en Webhooks."""
     description: NotRequired[str | None]
     """Para qué es, para usted (no se manda en los eventos)."""
+    api_version: NotRequired[str | None]
+    """La versión de la API en que llegan sus eventos (por ejemplo 2026-10-24); null o sin mandar: la de la cuenta. Así actualiza un endpoint a la vez."""
 
 
 class ListWebhookEndpointsParams(TypedDict):
@@ -5485,6 +5499,8 @@ class UpdateWebhookEndpointParams(TypedDict):
     """Para qué es, para usted (no se manda en los eventos)."""
     disabled: NotRequired[bool]
     """true para apagarlo sin borrarlo."""
+    api_version: NotRequired[str | None]
+    """La versión de la API en que llegan sus eventos (por ejemplo 2026-10-24); null o sin mandar: la de la cuenta. Así actualiza un endpoint a la vez."""
 
 
 class RollWebhookSecretParams(TypedDict):

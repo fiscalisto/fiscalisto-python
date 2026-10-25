@@ -11,6 +11,9 @@ __all__ = ["ErrorCode", "ErrorCodeValue"]
 class ErrorCode:
     """``if e.code == ErrorCode.INVOICE_REJECTED: …`` Vea https://fiscalisto.com/docs/api/errores."""
 
+    API_VERSION_INVALID: Final = "api_version_invalid"
+    """No existe esa versión de la API (en Fiscalisto-Version o api_version). El mensaje dice cuáles hay; vea Versiones."""
+
     BANK_TRANSACTION_INVALID: Final = "bank_transaction_invalid"
     """El depósito no se puede conciliar, clasificar o reabrir así (ya está conciliado, las facturas son de otro cliente o una está cancelada…). El mensaje dice por qué."""
 
@@ -250,6 +253,7 @@ class ErrorCode:
 
 
 ErrorCodeValue = Literal[
+    "api_version_invalid",
     "bank_transaction_invalid",
     "batch_invalid",
     "body_too_large",

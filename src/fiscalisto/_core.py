@@ -19,6 +19,8 @@ from urllib.request import Request as _UrllibRequest
 from urllib.request import urlopen
 
 VERSION = "0.1.0"
+# La versión de la API para la que se hizo este SDK: va en cada solicitud (Fiscalisto-Version).
+API_VERSION = "2026-10-24"
 DEFAULT_BASE_URL = "https://api.fiscalisto.com"
 
 ErrorType = Literal[
@@ -196,9 +198,11 @@ class Core:
         timeout: float = 80.0,
         transport: Transport | None = None,
         sleep: Callable[[float], None] | None = None,
+        api_version: str | None = API_VERSION,
     ) -> None:
         """api_key: su llave fk_test_… o fk_live_…; sin ella, la variable FISCALISTO_API_KEY.
-        timeout: segundos para cada respuesta (80 por omisión: el PAC puede tardar)."""
+        timeout: segundos para cada respuesta (80 por omisión: el PAC puede tardar).
+        api_version: la versión de la API (Fiscalisto-Version); None usa la de su cuenta."""
         key = api_key if api_key is not None else os.environ.get("FISCALISTO_API_KEY")
         if not key:
             raise ValueError(
@@ -216,6 +220,7 @@ class Core:
         self._timeout = timeout
         self._transport = transport or urllib_transport
         self._sleep = sleep or time.sleep
+        self._api_version = api_version
 
     @property
     def livemode(self) -> bool:
@@ -245,6 +250,8 @@ class Core:
             "user-agent": f"fiscalisto-python/{VERSION}",
             "accept": "application/json",
         }
+        if self._api_version:
+            headers["fiscalisto-version"] = self._api_version
         key = (idempotency_key or str(uuid.uuid4())) if idempotent else None
         if key:
             headers["idempotency-key"] = key

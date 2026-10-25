@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from fiscalisto import (
+    API_VERSION,
     Fiscalisto,
     FiscalistoError,
     FiscalistoWebhookError,
@@ -87,6 +88,7 @@ class RequestTest(unittest.TestCase):
         self.assertEqual(r.headers["authorization"], "Bearer fk_test_abc")
         self.assertEqual(r.headers["content-type"], "application/json")
         self.assertTrue(r.headers["user-agent"].startswith("fiscalisto-python/"))
+        self.assertEqual(r.headers["fiscalisto-version"], API_VERSION)
         # Every POST carries a key of its own, so a retry never does it twice.
         self.assertRegex(r.headers["idempotency-key"], r"^[0-9a-f-]{36}$")
         self.assertEqual(json.loads(r.body or b"")["legal_name"], "INMOBILIARIA CVA")

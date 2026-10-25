@@ -119,6 +119,7 @@ if TYPE_CHECKING:
         TestWebhookEndpointParams,
         Ticket,
         TrialBalance,
+        UpdateAccountParams,
         UpdateCustomerParams,
         UpdateEmployeeParams,
         UpdateIssuerParams,
@@ -160,6 +161,26 @@ class AccountResource:
         """
         result: Account = self._client.request(
             "GET", "/v1/account", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def update(
+        self,
+        params: UpdateAccountParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Account:
+        """Cambiar la versión de la API
+
+        Mueve la versión de la API de la cuenta: la que reciben sus solicitudes sin el encabezado Fiscalisto-Version y sus webhooks sin api_version propio. Antes, pruebe la nueva mandando Fiscalisto-Version en sus solicitudes. Con una llave de la cuenta con todos los permisos (no de un entorno de prueba). Queda en Desarrolladores › Actividad.
+
+        POST /v1/account
+        https://fiscalisto.com/docs/api/referencia/cuenta/update-account
+        """
+        result: Account = self._client.request(
+            "POST", "/v1/account", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
         )
         return result
 

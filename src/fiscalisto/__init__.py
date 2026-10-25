@@ -17,6 +17,7 @@ from __future__ import annotations
 from functools import cached_property
 
 from ._core import (
+    API_VERSION,
     VERSION,
     ErrorType,
     FiscalistoError,
@@ -36,7 +37,8 @@ __version__ = VERSION
 class Fiscalisto(FiscalistoApi):
     """El cliente de la API: Fiscalisto("fk_test_…") o, sin llave, FISCALISTO_API_KEY.
 
-    Opciones: base_url, max_retries (2), timeout (80 s) y transport (otro cliente HTTP)."""
+    Opciones: base_url, max_retries (2), timeout (80 s), transport (otro cliente HTTP) y
+    api_version (la de la API, por omisión API_VERSION; None usa la de su cuenta)."""
 
     @cached_property
     def webhooks(self) -> Webhooks:
@@ -45,6 +47,7 @@ class Fiscalisto(FiscalistoApi):
 
 
 __all__ = [
+    "API_VERSION",
     "VERSION",
     "ErrorCode",
     "ErrorCodeValue",
