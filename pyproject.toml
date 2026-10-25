@@ -22,7 +22,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://fiscalisto.com/docs/api/sdk/python"
 Documentation = "https://fiscalisto.com/docs/api"
-Source = "https://github.com/RVP97/invoices-retriever/tree/main/sdk/python"
+Source = "https://github.com/fiscalisto/fiscalisto-python"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fiscalisto"]
