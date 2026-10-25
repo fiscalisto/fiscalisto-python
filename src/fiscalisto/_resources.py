@@ -37,13 +37,18 @@ if TYPE_CHECKING:
         CreateRecurringInvoiceParams,
         CreateRetentionParams,
         CreateSatDownloadParams,
+        CreateStoreConnectionParams,
         CreateTicketParams,
         CreateWebhookEndpointParams,
         Customer,
         CustomerDataRequest,
         Deleted,
+        Diot,
         Employee,
         Event,
+        GetDiotFileParams,
+        GetDiotParams,
+        GetElectronicAccountingParams,
         GetInvoiceParams,
         GetInvoicePdfParams,
         GetInvoiceXmlParams,
@@ -51,11 +56,15 @@ if TYPE_CHECKING:
         GetRetentionPdfParams,
         GetRetentionXmlParams,
         GetSatCatalogParams,
+        GetTrialBalanceParams,
+        ImportStoreOrdersParams,
         Invoice,
         InvoiceBatch,
         InvoiceCreate,
         Issuer,
         IssuerOnboardingLink,
+        JournalEntry,
+        LedgerAccountList,
         ListAdvancesParams,
         ListBankTransactionsParams,
         ListCustomerDataRequestsParams,
@@ -65,6 +74,8 @@ if TYPE_CHECKING:
         ListInvoiceBatchesParams,
         ListInvoicesParams,
         ListIssuersParams,
+        ListJournalEntriesParams,
+        ListLedgerAccountsParams,
         ListProductsParams,
         ListQuotesParams,
         ListReceivablesParams,
@@ -72,6 +83,7 @@ if TYPE_CHECKING:
         ListRetentionsParams,
         ListSatDownloadsParams,
         ListSatInvoicesParams,
+        ListStoreConnectionsParams,
         ListTicketsParams,
         ListWebhookEndpointsParams,
         MatchBankTransactionParams,
@@ -94,10 +106,13 @@ if TYPE_CHECKING:
         SendQuoteParams,
         SendRetentionParams,
         SignEfirmaParams,
+        StoreConnection,
+        StoreImport,
         TaxIdValidation,
         TestDataReset,
         TestWebhookEndpointParams,
         Ticket,
+        TrialBalance,
         UpdateCustomerParams,
         UpdateEmployeeParams,
         UpdateIssuerParams,
@@ -105,6 +120,7 @@ if TYPE_CHECKING:
         UpdateQuoteParams,
         UpdateRecurringInvoiceParams,
         UpdateSelfInvoicingParams,
+        UpdateStoreConnectionParams,
         UpdateWebhookEndpointParams,
         UploadCertificateParams,
         ValidateTaxIdParams,
@@ -1741,6 +1757,242 @@ class TicketsResource:
         return result
 
 
+class AccountingResource:
+    """Contabilidad: fiscalisto.accounting."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def journal_entries(
+        self,
+        params: ListJournalEntriesParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> ListObject[JournalEntry]:
+        """Listar las pólizas de un mes
+
+        Una póliza de diario por cada CFDI de ingreso o egreso vigente del mes, emitido o recibido (los recibidos con la categoría de su gasto), con sus cuentas y código agrupador del SAT. En pesos; un CFDI en otra moneda sin tipo de cambio no se registra. Es un punto de partida para su contador: no incluye bancos, nómina ni depreciaciones.
+
+        GET /v1/accounting/journal_entries
+        https://fiscalisto.com/docs/api/referencia/contabilidad/list-journal-entries
+        """
+        return self._client.list("/v1/accounting/journal_entries", params, timeout=timeout, max_retries=max_retries)
+
+    def trial_balance(
+        self,
+        params: GetTrialBalanceParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> TrialBalance:
+        """Ver la balanza de comprobación
+
+        Saldo inicial, cargos, abonos y saldo final de cada cuenta en el mes. Los saldos iniciales se acumulan desde el primer CFDI (las de resultados, desde enero), y los resultados de cada año anterior se cierran a capital.
+
+        GET /v1/accounting/trial_balance
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-trial-balance
+        """
+        result: TrialBalance = self._client.request(
+            "GET", "/v1/accounting/trial_balance", query=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def accounts(
+        self,
+        params: ListLedgerAccountsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> LedgerAccountList:
+        """Ver el catálogo de cuentas
+
+        Las cuentas que usan las pólizas, con su código agrupador del SAT.
+
+        GET /v1/accounting/accounts
+        https://fiscalisto.com/docs/api/referencia/contabilidad/list-ledger-accounts
+        """
+        result: LedgerAccountList = self._client.request(
+            "GET", "/v1/accounting/accounts", query=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def electronic_accounting(
+        self,
+        params: GetElectronicAccountingParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> str:
+        """Descargar la contabilidad electrónica
+
+        El ZIP del mes para el Buzón Tributario: el catálogo (CT) y la balanza (BN, o BC si es complementaria), cada uno en su ZIP con el nombre que espera el SAT, en el formato 1.3 del Anexo 24. Con journal_request, también las pólizas (PL), que se entregan cuando el SAT las pide.
+
+        GET /v1/accounting/electronic_accounting
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-electronic-accounting
+        """
+        result: str = self._client.request(
+            "GET", "/v1/accounting/electronic_accounting", query=params, result="text", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def diot(
+        self,
+        params: GetDiotParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> Diot:
+        """Ver la DIOT de un mes
+
+        Lo efectivamente pagado a cada proveedor en el mes (facturas PUE y complementos de pago recibidos), con sus notas de crédito como devoluciones, por tipo de operación. Sale de las facturas recibidas que trajo de las descargas del SAT. Desde enero de 2025 (formato 2025).
+
+        GET /v1/accounting/diot
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-diot
+        """
+        result: Diot = self._client.request(
+            "GET", "/v1/accounting/diot", query=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def diot_file(
+        self,
+        params: GetDiotFileParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> str:
+        """Descargar la DIOT para el SAT
+
+        El TXT de carga masiva de la DIOT 2025: 54 campos separados por |, pesos enteros. Con group_small_suppliers=true junta en una línea global a los proveedores chicos (regla 4.5.2 RMF). Un mes sin pagos a proveedores responde diot_empty: esa se presenta sin operaciones en el portal del SAT.
+
+        GET /v1/accounting/diot/file
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-diot-file
+        """
+        result: str = self._client.request(
+            "GET", "/v1/accounting/diot/file", query=params, result="text", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
+class StoreConnectionsResource:
+    """Tiendas en línea: fiscalisto.store_connections."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateStoreConnectionParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> StoreConnection:
+        """Conectar una tienda
+
+        Shopify: con el dominio y las llaves de la app de la tienda (Dev Dashboard, permisos read_orders y write_orders) registra los webhooks y queda active. Mercado Libre: queda pending hasta que el vendedor autorice en authorize_url. Desde entonces cada pedido pagado es un ticket (folio SHOP-1001 o ML-…), que su comprador factura en el portal o entra en la factura global; un pedido cancelado o reembolsado completo cancela su ticket.
+
+        POST /v1/store_connections
+        https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/create-store-connection
+        """
+        result: StoreConnection = self._client.request(
+            "POST", "/v1/store_connections", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def list(
+        self,
+        params: ListStoreConnectionsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> ListObject[StoreConnection]:
+        """Listar tiendas
+
+        Las más recientes primero, también las desconectadas.
+
+        GET /v1/store_connections
+        https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/list-store-connections
+        """
+        return self._client.list("/v1/store_connections", params, timeout=timeout, max_retries=max_retries)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> StoreConnection:
+        """Ver una tienda
+
+        GET /v1/store_connections/{id}
+        https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/get-store-connection
+        """
+        result: StoreConnection = self._client.request(
+            "GET", f"/v1/store_connections/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateStoreConnectionParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> StoreConnection:
+        """Cambiar cómo se vuelven tickets sus pedidos
+
+        Cuenta para los pedidos que lleguen; los tickets ya hechos no cambian.
+
+        POST /v1/store_connections/{id}
+        https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/update-store-connection
+        """
+        result: StoreConnection = self._client.request(
+            "POST", f"/v1/store_connections/{_path(id)}", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> StoreConnection:
+        """Desconectar una tienda
+
+        Sus pedidos dejan de llegar y se borran sus llaves y webhooks. Los tickets que ya hizo siguen.
+
+        DELETE /v1/store_connections/{id}
+        https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/delete-store-connection
+        """
+        result: StoreConnection = self._client.request(
+            "DELETE", f"/v1/store_connections/{_path(id)}", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def import_orders(
+        self,
+        id: str,
+        params: ImportStoreOrdersParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> StoreImport:
+        """Traer pedidos pagados
+
+        Los pedidos pagados desde una fecha (hasta 31 días, 200 a la vez) que no llegaron por webhook: la tienda se conectó después o estuvo caída. Un pedido que ya es ticket no se repite.
+
+        POST /v1/store_connections/{id}/import_orders
+        https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/import-store-orders
+        """
+        result: StoreImport = self._client.request(
+            "POST", f"/v1/store_connections/{_path(id)}/import_orders", body=params, timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
 class RecurringInvoicesResource:
     """Facturas recurrentes: fiscalisto.recurring_invoices."""
 
@@ -2344,6 +2596,16 @@ class FiscalistoApi(Core):
     def tickets(self) -> TicketsResource:
         """Autofactura."""
         return TicketsResource(self)
+
+    @cached_property
+    def accounting(self) -> AccountingResource:
+        """Contabilidad."""
+        return AccountingResource(self)
+
+    @cached_property
+    def store_connections(self) -> StoreConnectionsResource:
+        """Tiendas en línea."""
+        return StoreConnectionsResource(self)
 
     @cached_property
     def recurring_invoices(self) -> RecurringInvoicesResource:

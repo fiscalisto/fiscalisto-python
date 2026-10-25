@@ -47,6 +47,9 @@ class ErrorCode:
     DATA_REQUEST_COMPLETED: Final = "data_request_completed"
     """El cliente ya mandó sus datos con esa liga: una solicitud completada no se cancela."""
 
+    DIOT_EMPTY: Final = "diot_empty"
+    """El mes no tiene pagos a proveedores: esa DIOT se presenta sin operaciones desde el portal del SAT."""
+
     EFIRMA_INVALID: Final = "efirma_invalid"
     """La e.firma no sirve: no es una e.firma (es un CSD), es de otro RFC, está vencida o la contraseña no abre la llave."""
 
@@ -185,6 +188,21 @@ class ErrorCode:
     STAMP_RATE_LIMIT: Final = "stamp_rate_limit"
     """Demasiados timbres seguidos del mismo emisor. Espere lo que dice Retry-After; para muchas facturas use POST /v1/invoice_batches."""
 
+    STORE_ALREADY_CONNECTED: Final = "store_already_connected"
+    """Esa tienda ya está conectada a este emisor."""
+
+    STORE_CONNECTION_FAILED: Final = "store_connection_failed"
+    """La tienda no aceptó la conexión o no respondió como se esperaba (llaves equivocadas, permisos read_orders/write_orders que faltan, una tienda que no vende en pesos). El mensaje dice qué contestó."""
+
+    STORE_DISCONNECTED: Final = "store_disconnected"
+    """La tienda se desconectó: conéctela otra vez con POST /v1/store_connections."""
+
+    STORE_NOT_AUTHORIZED: Final = "store_not_authorized"
+    """El vendedor aún no autoriza la conexión en authorize_url."""
+
+    STORE_PLATFORM_UNAVAILABLE: Final = "store_platform_unavailable"
+    """Esa plataforma aún no está disponible en Fiscalisto."""
+
     SUBSTITUTION_UNSUPPORTED: Final = "substitution_unsupported"
     """Los complementos de pago y las notas de crédito no se sustituyen: se cancelan y se emite otro."""
 
@@ -220,6 +238,7 @@ ErrorCodeValue = Literal[
     "customer_exists",
     "daily_limit",
     "data_request_completed",
+    "diot_empty",
     "efirma_invalid",
     "efirma_required",
     "email_failed",
@@ -266,6 +285,11 @@ ErrorCodeValue = Literal[
     "route_not_found",
     "sat_request_rejected",
     "stamp_rate_limit",
+    "store_already_connected",
+    "store_connection_failed",
+    "store_disconnected",
+    "store_not_authorized",
+    "store_platform_unavailable",
     "substitution_unsupported",
     "test_mode_only",
     "ticket_folio_taken",

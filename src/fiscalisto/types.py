@@ -74,6 +74,8 @@ __all__ = [
     "CreateRetentionParamsTaxesItem",
     "CreateRetentionParamsTotals",
     "CreateSatDownloadParams",
+    "CreateStoreConnectionParams",
+    "CreateStoreConnectionParamsSettings",
     "CreateTicketParams",
     "CreateWebhookEndpointParams",
     "Customer",
@@ -84,11 +86,18 @@ __all__ = [
     "CustomerForeign",
     "CustomerList",
     "Deleted",
+    "Diot",
+    "DiotLinesItem",
+    "DiotLinesItemPaid",
+    "DiotLinesItemReturns",
     "Employee",
     "EmployeeList",
     "Event",
     "EventList",
     "EventType",
+    "GetDiotFileParams",
+    "GetDiotParams",
+    "GetElectronicAccountingParams",
     "GetInvoiceParams",
     "GetInvoicePdfParams",
     "GetInvoiceXmlParams",
@@ -96,6 +105,8 @@ __all__ = [
     "GetRetentionPdfParams",
     "GetRetentionXmlParams",
     "GetSatCatalogParams",
+    "GetTrialBalanceParams",
+    "ImportStoreOrdersParams",
     "Invoice",
     "InvoiceAdvanceApplication",
     "InvoiceBatch",
@@ -191,6 +202,11 @@ __all__ = [
     "IssuerOnboardingLink",
     "IssuerReadyEvent",
     "IssuerSatDownloads",
+    "JournalEntry",
+    "JournalEntryLinesItem",
+    "JournalEntryList",
+    "LedgerAccount",
+    "LedgerAccountList",
     "ListAdvancesParams",
     "ListBankTransactionsParams",
     "ListCustomerDataRequestsParams",
@@ -200,6 +216,8 @@ __all__ = [
     "ListInvoiceBatchesParams",
     "ListInvoicesParams",
     "ListIssuersParams",
+    "ListJournalEntriesParams",
+    "ListLedgerAccountsParams",
     "ListProductsParams",
     "ListQuotesParams",
     "ListReceivablesParams",
@@ -207,6 +225,7 @@ __all__ = [
     "ListRetentionsParams",
     "ListSatDownloadsParams",
     "ListSatInvoicesParams",
+    "ListStoreConnectionsParams",
     "ListTicketsParams",
     "ListWebhookEndpointsParams",
     "MatchBankTransactionParams",
@@ -273,6 +292,12 @@ __all__ = [
     "SendQuoteParams",
     "SendRetentionParams",
     "SignEfirmaParams",
+    "StoreConnection",
+    "StoreConnectionLastError",
+    "StoreConnectionList",
+    "StoreConnectionSettings",
+    "StoreImport",
+    "StoreImportSkippedItem",
     "TaxIdValidation",
     "TaxIdValidationErrorsItem",
     "TaxIdValidationSatRecord",
@@ -284,6 +309,9 @@ __all__ = [
     "TicketIncludedInGlobalEvent",
     "TicketInvoicedEvent",
     "TicketList",
+    "TrialBalance",
+    "TrialBalanceAccountsItem",
+    "TrialBalanceTotals",
     "UpdateCustomerParams",
     "UpdateCustomerParamsForeign",
     "UpdateEmployeeParams",
@@ -302,6 +330,8 @@ __all__ = [
     "UpdateRecurringInvoiceParamsInvoice",
     "UpdateRecurringInvoiceParamsSchedule",
     "UpdateSelfInvoicingParams",
+    "UpdateStoreConnectionParams",
+    "UpdateStoreConnectionParamsSettings",
     "UpdateWebhookEndpointParams",
     "UploadCertificateParams",
     "ValidateTaxIdParams",
@@ -1525,7 +1555,7 @@ class RecurringInvoiceSchedule(TypedDict):
 
 class RecurringInvoiceLastError(TypedDict):
     message: str | None
-    """Qué pasó y cómo corregirlo, para una persona."""
+    """Qué pasó."""
 
 
 class RecurringInvoiceCustomer(TypedDict):
@@ -1587,6 +1617,259 @@ class RecurringInvoice(TypedDict):
     """El total de cada factura con los precios de hoy."""
     created_at: str | None
     """Cuándo se creó."""
+
+
+class JournalEntryLinesItem(TypedDict):
+    account: str
+    """El número de cuenta."""
+    account_name: str
+    """El nombre de la cuenta."""
+    grouping_code: str
+    """Su código agrupador del SAT."""
+    debit: float
+    """El cargo, en pesos."""
+    credit: float
+    """El abono, en pesos."""
+
+
+class JournalEntry(TypedDict):
+    """La póliza de diario de un CFDI: sus cargos y abonos, que siempre cuadran."""
+    id: str
+    """El número de la póliza: D-AAAAMM-NNNNN, en orden de fecha dentro del mes."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["journal_entry"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    date: str
+    """La fecha del CFDI."""
+    description: str
+    """Factura o nota de crédito, su folio y la contraparte."""
+    invoice: str | None
+    """La factura (inv_…) si la timbró este emisor; null si la recibió."""
+    uuid: str
+    """El folio fiscal del CFDI."""
+    tax_id: str
+    """El RFC de la contraparte (cliente o proveedor)."""
+    total: float
+    """El total del CFDI, en su moneda."""
+    currency: str
+    """La moneda del CFDI."""
+    exchange_rate: float | None
+    """El tipo de cambio, si no es en pesos; null si es en pesos."""
+    lines: list[JournalEntryLinesItem]
+    """Los movimientos, en pesos: el cargo (debit) o abono (credit) a cada cuenta."""
+
+
+class LedgerAccount(TypedDict):
+    """Una cuenta del catálogo, con su código agrupador del SAT."""
+    object: Literal["ledger_account"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    number: str
+    """El número de cuenta (NumCta)."""
+    name: str
+    """Su nombre."""
+    grouping_code: str
+    """El código agrupador del SAT (Anexo 24)."""
+    nature: Literal["debit", "credit"]
+    """debit (deudora) o credit (acreedora)."""
+
+
+class TrialBalanceAccountsItem(TypedDict):
+    object: Literal["ledger_account"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    number: str
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    grouping_code: str
+    """El código agrupador del SAT."""
+    nature: Literal["debit", "credit"]
+    """debit (deudora) o credit (acreedora)."""
+    opening_balance: float
+    """El saldo al empezar el mes."""
+    debit: float
+    """Los cargos del mes."""
+    credit: float
+    """Los abonos del mes."""
+    closing_balance: float
+    """El saldo al terminar el mes."""
+
+
+class TrialBalanceTotals(TypedDict):
+    """Cargos y abonos del mes: siempre iguales."""
+    debit: float
+    """Todos los cargos del mes."""
+    credit: float
+    """Todos los abonos del mes."""
+
+
+class TrialBalance(TypedDict):
+    """La balanza de comprobación de un mes."""
+    object: Literal["trial_balance"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM)."""
+    journal_entries: int
+    """Cuántas pólizas tuvo el mes."""
+    accounts: list[TrialBalanceAccountsItem]
+    """Cada cuenta con movimiento o saldo: saldo inicial, cargos, abonos y saldo final."""
+    totals: TrialBalanceTotals
+    """Cargos y abonos del mes: siempre iguales."""
+
+
+class DiotLinesItemPaid(TypedDict):
+    """Lo pagado en el mes por tasa, en pesos, con su IVA."""
+    base_16: float
+    """Valor de los actos al 16 %."""
+    base_8: float
+    """Valor de los actos al 8 % (región fronteriza)."""
+    base_0: float
+    """Valor de los actos al 0 %."""
+    exempt: float
+    """Valor de los actos exentos."""
+    not_taxable: float
+    """Valor de los actos no objeto de IVA."""
+    vat: float
+    """El IVA de esos actos."""
+
+
+class DiotLinesItemReturns(TypedDict):
+    """Las devoluciones (notas de crédito) del mes, por tasa."""
+    base_16: float
+    """Valor de los actos al 16 %."""
+    base_8: float
+    """Valor de los actos al 8 % (región fronteriza)."""
+    base_0: float
+    """Valor de los actos al 0 %."""
+    exempt: float
+    """Valor de las devoluciones exentas."""
+    not_taxable: float
+    """Valor de los actos no objeto de IVA."""
+    vat: float
+    """El IVA de esos actos."""
+
+
+class DiotLinesItem(TypedDict):
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    name: str | None
+    """Nombre."""
+    third_party_type: Literal["15", "04", "05"]
+    """Tipo de tercero: 04 nacional, 05 extranjero, 15 global."""
+    operation_type: Literal["85", "87", "02", "03", "06", "07"]
+    """Tipo de operación: 02 enajenación de bienes, 03 servicios profesionales, 06 uso o goce temporal, 07 importación, 85 otros, 87 operaciones globales."""
+    paid: DiotLinesItemPaid
+    """Lo pagado en el mes por tasa, en pesos, con su IVA."""
+    returns: DiotLinesItemReturns
+    """Las devoluciones (notas de crédito) del mes, por tasa."""
+    blacklisted: bool
+    """El proveedor está en la lista 69-B definitiva: revise si deduce sus CFDI."""
+
+
+class Diot(TypedDict):
+    """La DIOT de un mes: lo pagado a cada proveedor, por tipo de operación."""
+    object: Literal["diot"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM)."""
+    proportion: float
+    """La proporción de IVA acreditable del mes para gastos comunes (1 si no la aplica)."""
+    lines: list[DiotLinesItem]
+    """Una línea por proveedor y tipo de operación, con lo pagado en el mes."""
+    warnings: list[str]
+    """Lo que conviene revisar antes de presentarla."""
+
+
+class StoreConnectionSettings(TypedDict):
+    """Cómo se vuelve ticket cada pedido."""
+    product_key: str | None
+    """c_ClaveProdServ de lo que vende, o null."""
+    unit_key: str | None
+    """c_ClaveUnidad, o null (la de la clave del producto)."""
+    iva: Literal["0", "0.16", "0.08", "exento"]
+    """Tasa de IVA incluida en los precios."""
+    description: str | None
+    """El concepto fijo de cada ticket, o null (el pedido y sus artículos)."""
+    folio_prefix: str
+    """Lo que va antes del número del pedido en el folio."""
+    payment_form: str | None
+    """c_FormaPago cuando la del pedido no está en payment_forms, o null."""
+    payment_forms: dict[str, str]
+    """c_FormaPago por pasarela o tipo de pago."""
+    auto_invoice: bool | None
+    """Mercado Libre: si se timbra al momento con los datos fiscales del comprador; null en Shopify."""
+
+
+class StoreConnectionLastError(TypedDict):
+    message: str
+    """Qué pasó."""
+    at: str | None
+    """Cuándo."""
+
+
+class StoreConnection(TypedDict):
+    """Una tienda de Shopify o Mercado Libre cuyos pedidos pagados se vuelven tickets de autofactura del emisor."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["store_connection"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor dueño de la tienda."""
+    platform: Literal["shopify", "mercadolibre"]
+    """shopify o mercadolibre."""
+    shop: str | None
+    """El dominio de la tienda de Shopify, o el id del vendedor en Mercado Libre (al autorizar)."""
+    status: Literal["pending", "active", "disconnected"]
+    """pending (Mercado Libre espera que el vendedor autorice en authorize_url), active o disconnected."""
+    authorize_url: str | None
+    """Si está pending: la página de Mercado Libre donde el vendedor autoriza (vale un día; cada consulta da una nueva). Si no, null."""
+    settings: StoreConnectionSettings
+    """Cómo se vuelve ticket cada pedido."""
+    orders_count: int
+    """Cuántos pedidos se han vuelto tickets."""
+    last_order_at: str | None
+    """Cuándo llegó el último, o null."""
+    last_error: StoreConnectionLastError | None
+    """El último problema (un pedido en dólares, un ticket que ya se facturó cuando se canceló el pedido…), o null."""
+    created_at: str | None
+    """Cuándo se conectó."""
+
+
+class StoreImportSkippedItem(TypedDict):
+    order: str
+    """El pedido."""
+    reason: str
+    """Por qué no se volvió ticket."""
+
+
+class StoreImport(TypedDict):
+    """Los pedidos pagados que se trajeron."""
+    object: Literal["store_import"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    store_connection: str
+    """La conexión (stc_…)."""
+    since: str
+    """Desde qué día se buscaron pedidos."""
+    tickets: int
+    """Pedidos que son tickets (los que ya lo eran cuentan otra vez)."""
+    invoiced: int
+    """De ellos, los que se facturaron al momento con los datos del comprador."""
+    skipped: list[StoreImportSkippedItem]
+    """Los que no se volvieron ticket, con el motivo."""
 
 
 class QuoteCustomer(TypedDict):
@@ -2507,6 +2790,39 @@ class TicketList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[Ticket]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class JournalEntryList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[JournalEntry]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class LedgerAccountList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[LedgerAccount]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class StoreConnectionList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[StoreConnection]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -4433,6 +4749,147 @@ class UpdateSelfInvoicingParams(TypedDict):
     """Días para facturar con `window: days`."""
     global_periodicity: NotRequired[Literal["01", "02", "03", "04"]]
     """c_Periodicidad de la factura global con los tickets que nadie facturó: 01 diaria, 02 semanal, 03 quincenal, 04 mensual."""
+
+
+class ListJournalEntriesParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/journal_entries."""
+    month: str
+    """El mes (AAAA-MM)."""
+    limit: NotRequired[int]
+    """Cuántas por página, de 1 a 1,000. Por omisión 100."""
+    starting_after: NotRequired[str]
+    """El id de la última póliza de la página anterior."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetTrialBalanceParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/trial_balance."""
+    month: str
+    """El mes (AAAA-MM)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class ListLedgerAccountsParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/accounts."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetElectronicAccountingParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/electronic_accounting."""
+    month: str
+    """El mes (AAAA-MM)."""
+    type: NotRequired[Literal["normal", "complementary"]]
+    """normal (BN, por omisión) o complementary (BC, con modified_on)."""
+    modified_on: NotRequired[str]
+    """complementary: el día en que se modificó (AAAA-MM-DD)."""
+    journal_request: NotRequired[Literal["AF", "FC", "DE", "CO"]]
+    """Para incluir las pólizas: AF acto de fiscalización, FC fiscalización compulsa (con order_number), DE devolución o CO compensación (con procedure_number)."""
+    order_number: NotRequired[str]
+    """AF y FC: el número de orden (ABC1234567/26)."""
+    procedure_number: NotRequired[str]
+    """DE y CO: el número de trámite (AB123456789012)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetDiotParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/diot."""
+    month: str
+    """El mes (AAAA-MM)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetDiotFileParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/diot/file."""
+    month: str
+    """El mes (AAAA-MM)."""
+    group_small_suppliers: NotRequired[bool]
+    """true para agrupar proveedores de hasta $50,000 en el mes (regla 4.5.2)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateStoreConnectionParamsSettings(TypedDict):
+    """Cómo se vuelve ticket cada pedido."""
+    product_key: NotRequired[str]
+    """c_ClaveProdServ de lo que vende (8 dígitos)."""
+    unit_key: NotRequired[str]
+    """c_ClaveUnidad. Por omisión, la de la clave del producto."""
+    iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
+    """Tasa de IVA incluida en los precios. Por omisión 0.16."""
+    description: NotRequired[str]
+    """El concepto de cada ticket. Por omisión, el pedido y sus artículos («Pedido 1001: Playera (2), Gorra»)."""
+    folio_prefix: NotRequired[str]
+    """Lo que va antes del número del pedido en el folio del ticket. Por omisión SHOP- o ML-."""
+    payment_form: NotRequired[str]
+    """c_FormaPago cuando la forma de pago del pedido no está en payment_forms. Por omisión 04 (Shopify) o 31 (Mercado Libre)."""
+    payment_forms: NotRequired[dict[str, str]]
+    """c_FormaPago por pasarela de Shopify (shopify_payments, paypal, manual…) o tipo de pago de Mercado Libre (credit_card, debit_card, account_money, ticket, bank_transfer)."""
+    auto_invoice: NotRequired[bool]
+    """Mercado Libre: timbrar en cuanto se paga si el comprador dejó sus datos fiscales completos. Por omisión true."""
+
+
+class CreateStoreConnectionParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…) dueño de la tienda. Por omisión, su único emisor."""
+    platform: Literal["shopify", "mercadolibre"]
+    """shopify o mercadolibre."""
+    shop: NotRequired[str]
+    """Shopify: el dominio de la tienda (mi-tienda.myshopify.com)."""
+    client_id: NotRequired[str]
+    """Shopify: el Client ID de la app de la tienda (Dev Dashboard)."""
+    client_secret: NotRequired[str]
+    """Shopify: el Client secret de esa app; con él se firman los webhooks. Se guarda cifrado y nunca se muestra."""
+    access_token: NotRequired[str]
+    """Shopify, solo apps personalizadas antiguas: su token de la Admin API (shpat_…); client_secret es entonces su API secret key."""
+    return_url: NotRequired[str]
+    """Mercado Libre: a dónde volver después de autorizar (se agregan store_connection y status)."""
+    settings: NotRequired[CreateStoreConnectionParamsSettings]
+    """Cómo se vuelve ticket cada pedido."""
+
+
+class ListStoreConnectionsParams(TypedDict):
+    """Los parámetros de GET /v1/store_connections."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateStoreConnectionParamsSettings(TypedDict):
+    """Lo que cambia; lo demás queda."""
+    product_key: NotRequired[str]
+    """c_ClaveProdServ de lo que vende (8 dígitos)."""
+    unit_key: NotRequired[str]
+    """c_ClaveUnidad. Por omisión, la de la clave del producto."""
+    iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
+    """Tasa de IVA incluida en los precios. Por omisión 0.16."""
+    description: NotRequired[str]
+    """El concepto de cada ticket. Por omisión, el pedido y sus artículos («Pedido 1001: Playera (2), Gorra»)."""
+    folio_prefix: NotRequired[str]
+    """Lo que va antes del número del pedido en el folio del ticket. Por omisión SHOP- o ML-."""
+    payment_form: NotRequired[str]
+    """c_FormaPago cuando la forma de pago del pedido no está en payment_forms. Por omisión 04 (Shopify) o 31 (Mercado Libre)."""
+    payment_forms: NotRequired[dict[str, str]]
+    """c_FormaPago por pasarela de Shopify (shopify_payments, paypal, manual…) o tipo de pago de Mercado Libre (credit_card, debit_card, account_money, ticket, bank_transfer)."""
+    auto_invoice: NotRequired[bool]
+    """Mercado Libre: timbrar en cuanto se paga si el comprador dejó sus datos fiscales completos. Por omisión true."""
+
+
+class UpdateStoreConnectionParams(TypedDict):
+    settings: UpdateStoreConnectionParamsSettings
+    """Lo que cambia; lo demás queda."""
+
+
+class ImportStoreOrdersParams(TypedDict):
+    since: NotRequired[str]
+    """Desde qué día (AAAA-MM-DD, hasta 31 días atrás). Por omisión, hace 7 días."""
 
 
 class CreateRecurringInvoiceParamsSchedule(TypedDict):
