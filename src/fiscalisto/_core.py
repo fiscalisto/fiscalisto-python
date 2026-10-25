@@ -10,7 +10,7 @@ import random
 import re
 import time
 import uuid
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Generic, Literal, TypeVar
 from urllib.error import HTTPError
@@ -239,12 +239,14 @@ class Core:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Any:
         url = urljoin(self._base_url, path)
-        if query:
-            pairs = [(k, _query_value(v)) for k, v in query.items() if v is not None]
-            if pairs:
-                url = f"{url}?{urlencode(pairs)}"
+        pairs = [(k, _query_value(v)) for k, v in (query or {}).items() if v is not None]
+        # Ids as their objects in the same answer: expand=["issuer", "data.recurring_invoice"].
+        pairs += [("expand[]", e) for e in expand or []]
+        if pairs:
+            url = f"{url}?{urlencode(pairs)}"
         headers = {
             "authorization": f"Bearer {self._key}",
             "user-agent": f"fiscalisto-python/{VERSION}",
@@ -325,13 +327,14 @@ class Core:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[Any]:
         def page(starting_after: str | None) -> dict[str, Any]:
             q = dict(query or {})
             if starting_after:
                 q["starting_after"] = starting_after
             return self.request(  # type: ignore[no-any-return]
-                "GET", path, query=q, timeout=timeout, max_retries=max_retries
+                "GET", path, query=q, timeout=timeout, max_retries=max_retries, expand=expand
             )
 
         return ListObject(page)

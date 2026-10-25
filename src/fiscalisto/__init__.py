@@ -28,8 +28,8 @@ from ._core import (
     urllib_transport,
 )
 from ._resources import FiscalistoApi
-from .error_codes import ErrorCode, ErrorCodeValue
 from ._webhooks import FiscalistoWebhookError, Webhooks, verify_webhook
+from .error_codes import ErrorCode, ErrorCodeValue
 
 __version__ = VERSION
 

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from functools import cached_property
 from typing import TYPE_CHECKING
 from urllib.parse import quote
@@ -151,6 +152,7 @@ class AccountResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Account:
         """Ver la cuenta
 
@@ -160,7 +162,7 @@ class AccountResource:
         https://fiscalisto.com/docs/api/referencia/cuenta/get-account
         """
         result: Account = self._client.request(
-            "GET", "/v1/account", timeout=timeout, max_retries=max_retries
+            "GET", "/v1/account", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -171,6 +173,7 @@ class AccountResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Account:
         """Cambiar la versión de la API
 
@@ -180,7 +183,7 @@ class AccountResource:
         https://fiscalisto.com/docs/api/referencia/cuenta/update-account
         """
         result: Account = self._client.request(
-            "POST", "/v1/account", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/account", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -198,6 +201,7 @@ class TestDataResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> TestDataReset:
         """Reiniciar los datos de prueba
 
@@ -207,7 +211,7 @@ class TestDataResource:
         https://fiscalisto.com/docs/api/referencia/cuenta/reset-test-data
         """
         result: TestDataReset = self._client.request(
-            "POST", "/v1/test_data/reset", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/test_data/reset", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -225,6 +229,7 @@ class SandboxesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Sandbox:
         """Crear un entorno de prueba
 
@@ -234,7 +239,7 @@ class SandboxesResource:
         https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/create-sandbox
         """
         result: Sandbox = self._client.request(
-            "POST", "/v1/sandboxes", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/sandboxes", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -243,6 +248,7 @@ class SandboxesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> SandboxList:
         """Listar entornos de prueba
 
@@ -250,7 +256,7 @@ class SandboxesResource:
         https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/list-sandboxes
         """
         result: SandboxList = self._client.request(
-            "GET", "/v1/sandboxes", timeout=timeout, max_retries=max_retries
+            "GET", "/v1/sandboxes", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -260,6 +266,7 @@ class SandboxesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Sandbox:
         """Ver un entorno de prueba
 
@@ -267,7 +274,7 @@ class SandboxesResource:
         https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/get-sandbox
         """
         result: Sandbox = self._client.request(
-            "GET", f"/v1/sandboxes/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/sandboxes/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -277,6 +284,7 @@ class SandboxesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Deleted:
         """Borrar un entorno de prueba
 
@@ -286,7 +294,7 @@ class SandboxesResource:
         https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/delete-sandbox
         """
         result: Deleted = self._client.request(
-            "DELETE", f"/v1/sandboxes/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "DELETE", f"/v1/sandboxes/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -305,6 +313,7 @@ class TestClocksResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> TestClock:
         """Crear un reloj de prueba
 
@@ -314,7 +323,7 @@ class TestClocksResource:
         https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/create-test-clock
         """
         result: TestClock = self._client.request(
-            "POST", f"/v1/issuers/{_path(id)}/test_clock", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/issuers/{_path(id)}/test_clock", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -324,6 +333,7 @@ class TestClocksResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> TestClock:
         """Ver el reloj de prueba
 
@@ -331,7 +341,7 @@ class TestClocksResource:
         https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/get-test-clock
         """
         result: TestClock = self._client.request(
-            "GET", f"/v1/issuers/{_path(id)}/test_clock", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/issuers/{_path(id)}/test_clock", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -341,6 +351,7 @@ class TestClocksResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> TestClock:
         """Borrar el reloj de prueba
 
@@ -350,7 +361,7 @@ class TestClocksResource:
         https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/delete-test-clock
         """
         result: TestClock = self._client.request(
-            "DELETE", f"/v1/issuers/{_path(id)}/test_clock", timeout=timeout, max_retries=max_retries
+            "DELETE", f"/v1/issuers/{_path(id)}/test_clock", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -362,6 +373,7 @@ class TestClocksResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> TestClock:
         """Adelantar el reloj de prueba
 
@@ -371,7 +383,7 @@ class TestClocksResource:
         https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/advance-test-clock
         """
         result: TestClock = self._client.request(
-            "POST", f"/v1/issuers/{_path(id)}/test_clock/advance", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/issuers/{_path(id)}/test_clock/advance", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -387,6 +399,7 @@ class BalanceResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Balance:
         """Ver los timbres
 
@@ -396,7 +409,7 @@ class BalanceResource:
         https://fiscalisto.com/docs/api/referencia/cuenta/get-balance
         """
         result: Balance = self._client.request(
-            "GET", "/v1/balance", timeout=timeout, max_retries=max_retries
+            "GET", "/v1/balance", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -414,6 +427,7 @@ class IssuersResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Issuer:
         """Crear un emisor
 
@@ -423,7 +437,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/emisores/create-issuer
         """
         result: Issuer = self._client.request(
-            "POST", "/v1/issuers", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/issuers", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -433,13 +447,14 @@ class IssuersResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[Issuer]:
         """Listar emisores
 
         GET /v1/issuers
         https://fiscalisto.com/docs/api/referencia/emisores/list-issuers
         """
-        return self._client.list("/v1/issuers", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/issuers", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -447,6 +462,7 @@ class IssuersResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Issuer:
         """Ver un emisor
 
@@ -454,7 +470,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/emisores/get-issuer
         """
         result: Issuer = self._client.request(
-            "GET", f"/v1/issuers/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/issuers/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -466,6 +482,7 @@ class IssuersResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Issuer:
         """Actualizar un emisor
 
@@ -475,7 +492,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/emisores/update-issuer
         """
         result: Issuer = self._client.request(
-            "POST", f"/v1/issuers/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/issuers/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -485,6 +502,7 @@ class IssuersResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Issuer:
         """Archivar un emisor
 
@@ -494,7 +512,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/emisores/archive-issuer
         """
         result: Issuer = self._client.request(
-            "DELETE", f"/v1/issuers/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "DELETE", f"/v1/issuers/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -506,6 +524,7 @@ class IssuersResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Issuer:
         """Subir el CSD
 
@@ -515,7 +534,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/emisores/upload-certificate
         """
         result: Issuer = self._client.request(
-            "POST", f"/v1/issuers/{_path(id)}/certificates", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/issuers/{_path(id)}/certificates", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -527,6 +546,7 @@ class IssuersResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Issuer:
         """Firmar el contrato con el PAC
 
@@ -536,7 +556,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/emisores/sign-efirma
         """
         result: Issuer = self._client.request(
-            "POST", f"/v1/issuers/{_path(id)}/efirma", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/issuers/{_path(id)}/efirma", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -546,6 +566,7 @@ class IssuersResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Issuer:
         """Borrar la e.firma guardada
 
@@ -555,7 +576,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/emisores/delete-efirma
         """
         result: Issuer = self._client.request(
-            "DELETE", f"/v1/issuers/{_path(id)}/efirma", timeout=timeout, max_retries=max_retries
+            "DELETE", f"/v1/issuers/{_path(id)}/efirma", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -567,6 +588,7 @@ class IssuersResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> IssuerOnboardingLink:
         """Crear una liga de alta
 
@@ -576,7 +598,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/emisores/create-issuer-onboarding-link
         """
         result: IssuerOnboardingLink = self._client.request(
-            "POST", f"/v1/issuers/{_path(id)}/onboarding_links", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/issuers/{_path(id)}/onboarding_links", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -586,6 +608,7 @@ class IssuersResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> SelfInvoicing:
         """Ver el portal de autofactura de un emisor
 
@@ -593,7 +616,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/autofactura/get-self-invoicing
         """
         result: SelfInvoicing = self._client.request(
-            "GET", f"/v1/issuers/{_path(id)}/self_invoicing", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/issuers/{_path(id)}/self_invoicing", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -605,6 +628,7 @@ class IssuersResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> SelfInvoicing:
         """Cambiar las reglas de autofactura
 
@@ -614,7 +638,7 @@ class IssuersResource:
         https://fiscalisto.com/docs/api/referencia/autofactura/update-self-invoicing
         """
         result: SelfInvoicing = self._client.request(
-            "POST", f"/v1/issuers/{_path(id)}/self_invoicing", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/issuers/{_path(id)}/self_invoicing", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -632,6 +656,7 @@ class InvoicesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Timbrar una factura
 
@@ -641,7 +666,7 @@ class InvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas/create-invoice
         """
         result: Invoice = self._client.request(
-            "POST", "/v1/invoices", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/invoices", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -651,6 +676,7 @@ class InvoicesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[Invoice]:
         """Listar facturas
 
@@ -659,7 +685,7 @@ class InvoicesResource:
         GET /v1/invoices
         https://fiscalisto.com/docs/api/referencia/facturas/list-invoices
         """
-        return self._client.list("/v1/invoices", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/invoices", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -668,6 +694,7 @@ class InvoicesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Ver una factura
 
@@ -677,7 +704,7 @@ class InvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas/get-invoice
         """
         result: Invoice = self._client.request(
-            "GET", f"/v1/invoices/{_path(id)}", query=params, timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/invoices/{_path(id)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -727,6 +754,7 @@ class InvoicesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Enviar por correo
 
@@ -736,7 +764,7 @@ class InvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas/send-invoice
         """
         result: Invoice = self._client.request(
-            "POST", f"/v1/invoices/{_path(id)}/send", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/invoices/{_path(id)}/send", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -748,6 +776,7 @@ class InvoicesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Cancelar una factura
 
@@ -757,7 +786,7 @@ class InvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas/cancel-invoice
         """
         result: Invoice = self._client.request(
-            "POST", f"/v1/invoices/{_path(id)}/cancel", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/invoices/{_path(id)}/cancel", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -769,6 +798,7 @@ class InvoicesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Sustituir una factura
 
@@ -778,7 +808,7 @@ class InvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas/substitute-invoice
         """
         result: Invoice = self._client.request(
-            "POST", f"/v1/invoices/{_path(id)}/substitute", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/invoices/{_path(id)}/substitute", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -789,6 +819,7 @@ class InvoicesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Marcar pagada
 
@@ -798,7 +829,7 @@ class InvoicesResource:
         https://fiscalisto.com/docs/api/referencia/cuentas-por-cobrar/mark-invoice-paid
         """
         result: Invoice = self._client.request(
-            "POST", f"/v1/invoices/{_path(id)}/mark_paid", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/invoices/{_path(id)}/mark_paid", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -809,6 +840,7 @@ class InvoicesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Marcar por cobrar
 
@@ -818,7 +850,7 @@ class InvoicesResource:
         https://fiscalisto.com/docs/api/referencia/cuentas-por-cobrar/mark-invoice-unpaid
         """
         result: Invoice = self._client.request(
-            "POST", f"/v1/invoices/{_path(id)}/mark_unpaid", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/invoices/{_path(id)}/mark_unpaid", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -835,6 +867,7 @@ class ReceivablesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[Receivable]:
         """Ver lo que le deben
 
@@ -843,7 +876,7 @@ class ReceivablesResource:
         GET /v1/receivables
         https://fiscalisto.com/docs/api/referencia/cuentas-por-cobrar/list-receivables
         """
-        return self._client.list("/v1/receivables", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/receivables", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
 
 class BankTransactionsResource:
@@ -859,6 +892,7 @@ class BankTransactionsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> BankImport:
         """Mandar depósitos
 
@@ -868,7 +902,7 @@ class BankTransactionsResource:
         https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/create-bank-transactions
         """
         result: BankImport = self._client.request(
-            "POST", "/v1/bank_transactions", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/bank_transactions", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -878,6 +912,7 @@ class BankTransactionsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[BankTransaction]:
         """Listar depósitos
 
@@ -886,7 +921,7 @@ class BankTransactionsResource:
         GET /v1/bank_transactions
         https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/list-bank-transactions
         """
-        return self._client.list("/v1/bank_transactions", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/bank_transactions", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -894,6 +929,7 @@ class BankTransactionsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> BankTransaction:
         """Ver un depósito
 
@@ -901,7 +937,7 @@ class BankTransactionsResource:
         https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/get-bank-transaction
         """
         result: BankTransaction = self._client.request(
-            "GET", f"/v1/bank_transactions/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/bank_transactions/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -913,6 +949,7 @@ class BankTransactionsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> BankTransaction:
         """Conciliar un depósito
 
@@ -922,7 +959,7 @@ class BankTransactionsResource:
         https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/match-bank-transaction
         """
         result: BankTransaction = self._client.request(
-            "POST", f"/v1/bank_transactions/{_path(id)}/match", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/bank_transactions/{_path(id)}/match", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -934,6 +971,7 @@ class BankTransactionsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> BankTransaction:
         """Explicar un depósito sin factura
 
@@ -943,7 +981,7 @@ class BankTransactionsResource:
         https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/classify-bank-transaction
         """
         result: BankTransaction = self._client.request(
-            "POST", f"/v1/bank_transactions/{_path(id)}/classify", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/bank_transactions/{_path(id)}/classify", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -954,6 +992,7 @@ class BankTransactionsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> BankTransaction:
         """Deshacer la conciliación
 
@@ -963,7 +1002,7 @@ class BankTransactionsResource:
         https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/reopen-bank-transaction
         """
         result: BankTransaction = self._client.request(
-            "POST", f"/v1/bank_transactions/{_path(id)}/reopen", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/bank_transactions/{_path(id)}/reopen", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -981,6 +1020,7 @@ class PaymentsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Timbrar un complemento de pago
 
@@ -990,7 +1030,7 @@ class PaymentsResource:
         https://fiscalisto.com/docs/api/referencia/pagos-y-notas-de-credito/create-payment
         """
         result: Invoice = self._client.request(
-            "POST", "/v1/payments", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/payments", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1008,6 +1048,7 @@ class CreditNotesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Timbrar una nota de crédito
 
@@ -1017,7 +1058,7 @@ class CreditNotesResource:
         https://fiscalisto.com/docs/api/referencia/pagos-y-notas-de-credito/create-credit-note
         """
         result: Invoice = self._client.request(
-            "POST", "/v1/credit_notes", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/credit_notes", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1035,6 +1076,7 @@ class AdvancesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Timbrar un anticipo
 
@@ -1044,7 +1086,7 @@ class AdvancesResource:
         https://fiscalisto.com/docs/api/referencia/anticipos/create-advance
         """
         result: Invoice = self._client.request(
-            "POST", "/v1/advances", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/advances", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1054,6 +1096,7 @@ class AdvancesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> AdvanceList:
         """Listar anticipos sin aplicar
 
@@ -1061,7 +1104,7 @@ class AdvancesResource:
         https://fiscalisto.com/docs/api/referencia/anticipos/list-advances
         """
         result: AdvanceList = self._client.request(
-            "GET", "/v1/advances", query=params, timeout=timeout, max_retries=max_retries
+            "GET", "/v1/advances", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1073,6 +1116,7 @@ class AdvancesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Aplicar un anticipo
 
@@ -1082,7 +1126,7 @@ class AdvancesResource:
         https://fiscalisto.com/docs/api/referencia/anticipos/apply-advance
         """
         result: Invoice = self._client.request(
-            "POST", f"/v1/advances/{_path(id)}/apply", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/advances/{_path(id)}/apply", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1100,6 +1144,7 @@ class RetentionsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Retention:
         """Timbrar una constancia de retenciones
 
@@ -1107,7 +1152,7 @@ class RetentionsResource:
         https://fiscalisto.com/docs/api/referencia/retenciones/create-retention
         """
         result: Retention = self._client.request(
-            "POST", "/v1/retentions", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/retentions", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1117,13 +1162,14 @@ class RetentionsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[Retention]:
         """Listar constancias
 
         GET /v1/retentions
         https://fiscalisto.com/docs/api/referencia/retenciones/list-retentions
         """
-        return self._client.list("/v1/retentions", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/retentions", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -1132,6 +1178,7 @@ class RetentionsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Retention:
         """Ver una constancia
 
@@ -1139,7 +1186,7 @@ class RetentionsResource:
         https://fiscalisto.com/docs/api/referencia/retenciones/get-retention
         """
         result: Retention = self._client.request(
-            "GET", f"/v1/retentions/{_path(id)}", query=params, timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/retentions/{_path(id)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1187,6 +1234,7 @@ class RetentionsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Retention:
         """Enviar por correo
 
@@ -1194,7 +1242,7 @@ class RetentionsResource:
         https://fiscalisto.com/docs/api/referencia/retenciones/send-retention
         """
         result: Retention = self._client.request(
-            "POST", f"/v1/retentions/{_path(id)}/send", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/retentions/{_path(id)}/send", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1206,6 +1254,7 @@ class RetentionsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Retention:
         """Cancelar una constancia
 
@@ -1215,7 +1264,7 @@ class RetentionsResource:
         https://fiscalisto.com/docs/api/referencia/retenciones/cancel-retention
         """
         result: Retention = self._client.request(
-            "POST", f"/v1/retentions/{_path(id)}/cancel", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/retentions/{_path(id)}/cancel", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1233,6 +1282,7 @@ class EmployeesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Employee:
         """Crear un empleado
 
@@ -1240,7 +1290,7 @@ class EmployeesResource:
         https://fiscalisto.com/docs/api/referencia/nomina/create-employee
         """
         result: Employee = self._client.request(
-            "POST", "/v1/employees", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/employees", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1250,13 +1300,14 @@ class EmployeesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[Employee]:
         """Listar empleados
 
         GET /v1/employees
         https://fiscalisto.com/docs/api/referencia/nomina/list-employees
         """
-        return self._client.list("/v1/employees", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/employees", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -1264,6 +1315,7 @@ class EmployeesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Employee:
         """Ver un empleado
 
@@ -1271,7 +1323,7 @@ class EmployeesResource:
         https://fiscalisto.com/docs/api/referencia/nomina/get-employee
         """
         result: Employee = self._client.request(
-            "GET", f"/v1/employees/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/employees/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1283,6 +1335,7 @@ class EmployeesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Employee:
         """Actualizar un empleado
 
@@ -1290,7 +1343,7 @@ class EmployeesResource:
         https://fiscalisto.com/docs/api/referencia/nomina/update-employee
         """
         result: Employee = self._client.request(
-            "POST", f"/v1/employees/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/employees/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1300,6 +1353,7 @@ class EmployeesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Deleted:
         """Borrar un empleado
 
@@ -1309,7 +1363,7 @@ class EmployeesResource:
         https://fiscalisto.com/docs/api/referencia/nomina/delete-employee
         """
         result: Deleted = self._client.request(
-            "DELETE", f"/v1/employees/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "DELETE", f"/v1/employees/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1327,6 +1381,7 @@ class PayrollReceiptsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Timbrar un recibo de nómina
 
@@ -1336,7 +1391,7 @@ class PayrollReceiptsResource:
         https://fiscalisto.com/docs/api/referencia/nomina/create-payroll-receipt
         """
         result: Invoice = self._client.request(
-            "POST", "/v1/payroll_receipts", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/payroll_receipts", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1347,6 +1402,7 @@ class PayrollReceiptsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> PayrollReceiptPreview:
         """Calcular un recibo sin timbrar
 
@@ -1354,7 +1410,7 @@ class PayrollReceiptsResource:
         https://fiscalisto.com/docs/api/referencia/nomina/preview-payroll-receipt
         """
         result: PayrollReceiptPreview = self._client.request(
-            "POST", "/v1/payroll_receipts/preview", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/payroll_receipts/preview", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1372,6 +1428,7 @@ class InvoiceBatchesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> InvoiceBatch:
         """Timbrar un lote de facturas
 
@@ -1381,7 +1438,7 @@ class InvoiceBatchesResource:
         https://fiscalisto.com/docs/api/referencia/lotes/create-invoice-batch
         """
         result: InvoiceBatch = self._client.request(
-            "POST", "/v1/invoice_batches", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/invoice_batches", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1391,13 +1448,14 @@ class InvoiceBatchesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[InvoiceBatch]:
         """Listar lotes
 
         GET /v1/invoice_batches
         https://fiscalisto.com/docs/api/referencia/lotes/list-invoice-batches
         """
-        return self._client.list("/v1/invoice_batches", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/invoice_batches", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -1405,6 +1463,7 @@ class InvoiceBatchesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> InvoiceBatch:
         """Ver un lote
 
@@ -1414,7 +1473,7 @@ class InvoiceBatchesResource:
         https://fiscalisto.com/docs/api/referencia/lotes/get-invoice-batch
         """
         result: InvoiceBatch = self._client.request(
-            "GET", f"/v1/invoice_batches/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/invoice_batches/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1432,6 +1491,7 @@ class TaxIdsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> TaxIdValidation:
         """Validar los datos fiscales de un cliente
 
@@ -1441,7 +1501,7 @@ class TaxIdsResource:
         https://fiscalisto.com/docs/api/referencia/clientes/validate-tax-id
         """
         result: TaxIdValidation = self._client.request(
-            "POST", "/v1/tax_ids/validate", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/tax_ids/validate", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1459,6 +1519,7 @@ class CustomersResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Customer:
         """Crear un cliente
 
@@ -1466,7 +1527,7 @@ class CustomersResource:
         https://fiscalisto.com/docs/api/referencia/clientes/create-customer
         """
         result: Customer = self._client.request(
-            "POST", "/v1/customers", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/customers", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1476,13 +1537,14 @@ class CustomersResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[Customer]:
         """Listar clientes
 
         GET /v1/customers
         https://fiscalisto.com/docs/api/referencia/clientes/list-customers
         """
-        return self._client.list("/v1/customers", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/customers", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -1490,6 +1552,7 @@ class CustomersResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Customer:
         """Ver un cliente
 
@@ -1497,7 +1560,7 @@ class CustomersResource:
         https://fiscalisto.com/docs/api/referencia/clientes/get-customer
         """
         result: Customer = self._client.request(
-            "GET", f"/v1/customers/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/customers/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1509,6 +1572,7 @@ class CustomersResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Customer:
         """Actualizar un cliente
 
@@ -1516,7 +1580,7 @@ class CustomersResource:
         https://fiscalisto.com/docs/api/referencia/clientes/update-customer
         """
         result: Customer = self._client.request(
-            "POST", f"/v1/customers/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/customers/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1526,6 +1590,7 @@ class CustomersResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Deleted:
         """Borrar un cliente
 
@@ -1533,7 +1598,7 @@ class CustomersResource:
         https://fiscalisto.com/docs/api/referencia/clientes/delete-customer
         """
         result: Deleted = self._client.request(
-            "DELETE", f"/v1/customers/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "DELETE", f"/v1/customers/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1551,6 +1616,7 @@ class CustomerDataRequestsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> CustomerDataRequest:
         """Pedirle sus datos fiscales a un cliente
 
@@ -1560,7 +1626,7 @@ class CustomerDataRequestsResource:
         https://fiscalisto.com/docs/api/referencia/clientes/create-customer-data-request
         """
         result: CustomerDataRequest = self._client.request(
-            "POST", "/v1/customer_data_requests", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/customer_data_requests", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1570,13 +1636,14 @@ class CustomerDataRequestsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[CustomerDataRequest]:
         """Listar solicitudes de datos
 
         GET /v1/customer_data_requests
         https://fiscalisto.com/docs/api/referencia/clientes/list-customer-data-requests
         """
-        return self._client.list("/v1/customer_data_requests", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/customer_data_requests", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -1584,6 +1651,7 @@ class CustomerDataRequestsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> CustomerDataRequest:
         """Ver una solicitud de datos
 
@@ -1591,7 +1659,7 @@ class CustomerDataRequestsResource:
         https://fiscalisto.com/docs/api/referencia/clientes/get-customer-data-request
         """
         result: CustomerDataRequest = self._client.request(
-            "GET", f"/v1/customer_data_requests/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/customer_data_requests/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1601,6 +1669,7 @@ class CustomerDataRequestsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> CustomerDataRequest:
         """Cancelar una solicitud de datos
 
@@ -1610,7 +1679,7 @@ class CustomerDataRequestsResource:
         https://fiscalisto.com/docs/api/referencia/clientes/cancel-customer-data-request
         """
         result: CustomerDataRequest = self._client.request(
-            "DELETE", f"/v1/customer_data_requests/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "DELETE", f"/v1/customer_data_requests/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1628,6 +1697,7 @@ class ProductsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Product:
         """Crear un producto
 
@@ -1635,7 +1705,7 @@ class ProductsResource:
         https://fiscalisto.com/docs/api/referencia/productos/create-product
         """
         result: Product = self._client.request(
-            "POST", "/v1/products", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/products", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1645,13 +1715,14 @@ class ProductsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[Product]:
         """Listar productos
 
         GET /v1/products
         https://fiscalisto.com/docs/api/referencia/productos/list-products
         """
-        return self._client.list("/v1/products", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/products", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -1659,6 +1730,7 @@ class ProductsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Product:
         """Ver un producto
 
@@ -1666,7 +1738,7 @@ class ProductsResource:
         https://fiscalisto.com/docs/api/referencia/productos/get-product
         """
         result: Product = self._client.request(
-            "GET", f"/v1/products/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/products/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1678,6 +1750,7 @@ class ProductsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Product:
         """Actualizar un producto
 
@@ -1685,7 +1758,7 @@ class ProductsResource:
         https://fiscalisto.com/docs/api/referencia/productos/update-product
         """
         result: Product = self._client.request(
-            "POST", f"/v1/products/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/products/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1695,6 +1768,7 @@ class ProductsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Deleted:
         """Borrar un producto
 
@@ -1702,7 +1776,7 @@ class ProductsResource:
         https://fiscalisto.com/docs/api/referencia/productos/delete-product
         """
         result: Deleted = self._client.request(
-            "DELETE", f"/v1/products/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "DELETE", f"/v1/products/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1720,6 +1794,7 @@ class SatCatalogsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> SatCatalogEntryList:
         """Consultar un catálogo del SAT
 
@@ -1729,7 +1804,7 @@ class SatCatalogsResource:
         https://fiscalisto.com/docs/api/referencia/catalogos-del-sat/get-sat-catalog
         """
         result: SatCatalogEntryList = self._client.request(
-            "GET", f"/v1/sat_catalogs/{_path(name)}", query=params, timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/sat_catalogs/{_path(name)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1746,6 +1821,7 @@ class SatListsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> SatListCheck:
         """Revisar un RFC en las listas del SAT
 
@@ -1755,7 +1831,7 @@ class SatListsResource:
         https://fiscalisto.com/docs/api/referencia/listas-del-sat/get-sat-list-check
         """
         result: SatListCheck = self._client.request(
-            "GET", f"/v1/sat_lists/{_path(tax_id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/sat_lists/{_path(tax_id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1766,6 +1842,7 @@ class SatListsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> SatListCheckList:
         """Revisar varios RFC en las listas del SAT
 
@@ -1775,7 +1852,7 @@ class SatListsResource:
         https://fiscalisto.com/docs/api/referencia/listas-del-sat/check-sat-lists
         """
         result: SatListCheckList = self._client.request(
-            "POST", "/v1/sat_lists/check", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/sat_lists/check", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1793,6 +1870,7 @@ class SatDownloadsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> SatDownload:
         """Pedirle al SAT las facturas de un emisor
 
@@ -1802,7 +1880,7 @@ class SatDownloadsResource:
         https://fiscalisto.com/docs/api/referencia/descargas-del-sat/create-sat-download
         """
         result: SatDownload = self._client.request(
-            "POST", "/v1/sat_downloads", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/sat_downloads", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1812,13 +1890,14 @@ class SatDownloadsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[SatDownload]:
         """Listar descargas del SAT
 
         GET /v1/sat_downloads
         https://fiscalisto.com/docs/api/referencia/descargas-del-sat/list-sat-downloads
         """
-        return self._client.list("/v1/sat_downloads", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/sat_downloads", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -1826,6 +1905,7 @@ class SatDownloadsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> SatDownload:
         """Ver una descarga del SAT
 
@@ -1833,7 +1913,7 @@ class SatDownloadsResource:
         https://fiscalisto.com/docs/api/referencia/descargas-del-sat/get-sat-download
         """
         result: SatDownload = self._client.request(
-            "GET", f"/v1/sat_downloads/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/sat_downloads/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1850,6 +1930,7 @@ class SatInvoicesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[SatInvoice]:
         """Listar facturas del SAT
 
@@ -1858,7 +1939,7 @@ class SatInvoicesResource:
         GET /v1/sat_invoices
         https://fiscalisto.com/docs/api/referencia/descargas-del-sat/list-sat-invoices
         """
-        return self._client.list("/v1/sat_invoices", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/sat_invoices", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -1866,6 +1947,7 @@ class SatInvoicesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> SatInvoice:
         """Ver una factura del SAT
 
@@ -1873,7 +1955,7 @@ class SatInvoicesResource:
         https://fiscalisto.com/docs/api/referencia/descargas-del-sat/get-sat-invoice
         """
         result: SatInvoice = self._client.request(
-            "GET", f"/v1/sat_invoices/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/sat_invoices/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1910,6 +1992,7 @@ class TicketsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Ticket:
         """Registrar un ticket
 
@@ -1919,7 +2002,7 @@ class TicketsResource:
         https://fiscalisto.com/docs/api/referencia/autofactura/create-ticket
         """
         result: Ticket = self._client.request(
-            "POST", "/v1/tickets", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/tickets", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1929,6 +2012,7 @@ class TicketsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[Ticket]:
         """Listar tickets
 
@@ -1937,7 +2021,7 @@ class TicketsResource:
         GET /v1/tickets
         https://fiscalisto.com/docs/api/referencia/autofactura/list-tickets
         """
-        return self._client.list("/v1/tickets", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/tickets", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -1945,6 +2029,7 @@ class TicketsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Ticket:
         """Ver un ticket
 
@@ -1952,7 +2037,7 @@ class TicketsResource:
         https://fiscalisto.com/docs/api/referencia/autofactura/get-ticket
         """
         result: Ticket = self._client.request(
-            "GET", f"/v1/tickets/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/tickets/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1962,6 +2047,7 @@ class TicketsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Ticket:
         """Cancelar un ticket
 
@@ -1971,7 +2057,7 @@ class TicketsResource:
         https://fiscalisto.com/docs/api/referencia/autofactura/cancel-ticket
         """
         result: Ticket = self._client.request(
-            "DELETE", f"/v1/tickets/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "DELETE", f"/v1/tickets/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1988,6 +2074,7 @@ class AccountingResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[JournalEntry]:
         """Listar las pólizas de un mes
 
@@ -1996,7 +2083,7 @@ class AccountingResource:
         GET /v1/accounting/journal_entries
         https://fiscalisto.com/docs/api/referencia/contabilidad/list-journal-entries
         """
-        return self._client.list("/v1/accounting/journal_entries", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/accounting/journal_entries", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def trial_balance(
         self,
@@ -2004,6 +2091,7 @@ class AccountingResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> TrialBalance:
         """Ver la balanza de comprobación
 
@@ -2013,7 +2101,7 @@ class AccountingResource:
         https://fiscalisto.com/docs/api/referencia/contabilidad/get-trial-balance
         """
         result: TrialBalance = self._client.request(
-            "GET", "/v1/accounting/trial_balance", query=params, timeout=timeout, max_retries=max_retries
+            "GET", "/v1/accounting/trial_balance", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2023,6 +2111,7 @@ class AccountingResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> LedgerAccountList:
         """Ver el catálogo de cuentas
 
@@ -2032,7 +2121,7 @@ class AccountingResource:
         https://fiscalisto.com/docs/api/referencia/contabilidad/list-ledger-accounts
         """
         result: LedgerAccountList = self._client.request(
-            "GET", "/v1/accounting/accounts", query=params, timeout=timeout, max_retries=max_retries
+            "GET", "/v1/accounting/accounts", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2061,6 +2150,7 @@ class AccountingResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Diot:
         """Ver la DIOT de un mes
 
@@ -2070,7 +2160,7 @@ class AccountingResource:
         https://fiscalisto.com/docs/api/referencia/contabilidad/get-diot
         """
         result: Diot = self._client.request(
-            "GET", "/v1/accounting/diot", query=params, timeout=timeout, max_retries=max_retries
+            "GET", "/v1/accounting/diot", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2107,6 +2197,7 @@ class StoreConnectionsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> StoreConnection:
         """Conectar una tienda
 
@@ -2116,7 +2207,7 @@ class StoreConnectionsResource:
         https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/create-store-connection
         """
         result: StoreConnection = self._client.request(
-            "POST", "/v1/store_connections", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/store_connections", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2126,6 +2217,7 @@ class StoreConnectionsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[StoreConnection]:
         """Listar tiendas
 
@@ -2134,7 +2226,7 @@ class StoreConnectionsResource:
         GET /v1/store_connections
         https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/list-store-connections
         """
-        return self._client.list("/v1/store_connections", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/store_connections", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -2142,6 +2234,7 @@ class StoreConnectionsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> StoreConnection:
         """Ver una tienda
 
@@ -2149,7 +2242,7 @@ class StoreConnectionsResource:
         https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/get-store-connection
         """
         result: StoreConnection = self._client.request(
-            "GET", f"/v1/store_connections/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/store_connections/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2161,6 +2254,7 @@ class StoreConnectionsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> StoreConnection:
         """Cambiar cómo se vuelven tickets sus pedidos
 
@@ -2170,7 +2264,7 @@ class StoreConnectionsResource:
         https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/update-store-connection
         """
         result: StoreConnection = self._client.request(
-            "POST", f"/v1/store_connections/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/store_connections/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2180,6 +2274,7 @@ class StoreConnectionsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> StoreConnection:
         """Desconectar una tienda
 
@@ -2189,7 +2284,7 @@ class StoreConnectionsResource:
         https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/delete-store-connection
         """
         result: StoreConnection = self._client.request(
-            "DELETE", f"/v1/store_connections/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "DELETE", f"/v1/store_connections/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2201,6 +2296,7 @@ class StoreConnectionsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> StoreImport:
         """Traer pedidos pagados
 
@@ -2210,7 +2306,7 @@ class StoreConnectionsResource:
         https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/import-store-orders
         """
         result: StoreImport = self._client.request(
-            "POST", f"/v1/store_connections/{_path(id)}/import_orders", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/store_connections/{_path(id)}/import_orders", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2228,6 +2324,7 @@ class RecurringInvoicesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> RecurringInvoice:
         """Crear una factura recurrente
 
@@ -2237,7 +2334,7 @@ class RecurringInvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/create-recurring-invoice
         """
         result: RecurringInvoice = self._client.request(
-            "POST", "/v1/recurring_invoices", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/recurring_invoices", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2247,6 +2344,7 @@ class RecurringInvoicesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[RecurringInvoice]:
         """Listar facturas recurrentes
 
@@ -2255,7 +2353,7 @@ class RecurringInvoicesResource:
         GET /v1/recurring_invoices
         https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/list-recurring-invoices
         """
-        return self._client.list("/v1/recurring_invoices", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/recurring_invoices", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -2263,6 +2361,7 @@ class RecurringInvoicesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> RecurringInvoice:
         """Ver una factura recurrente
 
@@ -2270,7 +2369,7 @@ class RecurringInvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/get-recurring-invoice
         """
         result: RecurringInvoice = self._client.request(
-            "GET", f"/v1/recurring_invoices/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/recurring_invoices/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2282,6 +2381,7 @@ class RecurringInvoicesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> RecurringInvoice:
         """Cambiar o pausar una factura recurrente
 
@@ -2291,7 +2391,7 @@ class RecurringInvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/update-recurring-invoice
         """
         result: RecurringInvoice = self._client.request(
-            "POST", f"/v1/recurring_invoices/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/recurring_invoices/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2301,6 +2401,7 @@ class RecurringInvoicesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Deleted:
         """Borrar una factura recurrente
 
@@ -2310,7 +2411,7 @@ class RecurringInvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/delete-recurring-invoice
         """
         result: Deleted = self._client.request(
-            "DELETE", f"/v1/recurring_invoices/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "DELETE", f"/v1/recurring_invoices/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2321,6 +2422,7 @@ class RecurringInvoicesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> RecurringInvoice:
         """Saltar la siguiente factura
 
@@ -2330,7 +2432,7 @@ class RecurringInvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/skip-recurring-invoice
         """
         result: RecurringInvoice = self._client.request(
-            "POST", f"/v1/recurring_invoices/{_path(id)}/skip", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/recurring_invoices/{_path(id)}/skip", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2341,6 +2443,7 @@ class RecurringInvoicesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Timbrar ahora la que toca
 
@@ -2350,7 +2453,7 @@ class RecurringInvoicesResource:
         https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/run-recurring-invoice
         """
         result: Invoice = self._client.request(
-            "POST", f"/v1/recurring_invoices/{_path(id)}/run", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/recurring_invoices/{_path(id)}/run", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2368,6 +2471,7 @@ class QuotesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Quote:
         """Crear una cotización
 
@@ -2377,7 +2481,7 @@ class QuotesResource:
         https://fiscalisto.com/docs/api/referencia/cotizaciones/create-quote
         """
         result: Quote = self._client.request(
-            "POST", "/v1/quotes", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/quotes", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2387,6 +2491,7 @@ class QuotesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[Quote]:
         """Listar cotizaciones
 
@@ -2395,7 +2500,7 @@ class QuotesResource:
         GET /v1/quotes
         https://fiscalisto.com/docs/api/referencia/cotizaciones/list-quotes
         """
-        return self._client.list("/v1/quotes", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/quotes", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -2403,6 +2508,7 @@ class QuotesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Quote:
         """Ver una cotización
 
@@ -2412,7 +2518,7 @@ class QuotesResource:
         https://fiscalisto.com/docs/api/referencia/cotizaciones/get-quote
         """
         result: Quote = self._client.request(
-            "GET", f"/v1/quotes/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/quotes/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2424,6 +2530,7 @@ class QuotesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Quote:
         """Cambiar una cotización
 
@@ -2433,7 +2540,7 @@ class QuotesResource:
         https://fiscalisto.com/docs/api/referencia/cotizaciones/update-quote
         """
         result: Quote = self._client.request(
-            "POST", f"/v1/quotes/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/quotes/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2443,6 +2550,7 @@ class QuotesResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Deleted:
         """Borrar una cotización
 
@@ -2452,7 +2560,7 @@ class QuotesResource:
         https://fiscalisto.com/docs/api/referencia/cotizaciones/delete-quote
         """
         result: Deleted = self._client.request(
-            "DELETE", f"/v1/quotes/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "DELETE", f"/v1/quotes/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2464,6 +2572,7 @@ class QuotesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Quote:
         """Mandar una cotización
 
@@ -2473,7 +2582,7 @@ class QuotesResource:
         https://fiscalisto.com/docs/api/referencia/cotizaciones/send-quote
         """
         result: Quote = self._client.request(
-            "POST", f"/v1/quotes/{_path(id)}/send", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/quotes/{_path(id)}/send", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2484,6 +2593,7 @@ class QuotesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Quote:
         """Marcar aceptada
 
@@ -2493,7 +2603,7 @@ class QuotesResource:
         https://fiscalisto.com/docs/api/referencia/cotizaciones/accept-quote
         """
         result: Quote = self._client.request(
-            "POST", f"/v1/quotes/{_path(id)}/accept", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/quotes/{_path(id)}/accept", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2504,6 +2614,7 @@ class QuotesResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Invoice:
         """Facturar una cotización
 
@@ -2513,7 +2624,7 @@ class QuotesResource:
         https://fiscalisto.com/docs/api/referencia/cotizaciones/invoice-quote
         """
         result: Invoice = self._client.request(
-            "POST", f"/v1/quotes/{_path(id)}/invoice", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/quotes/{_path(id)}/invoice", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2550,6 +2661,7 @@ class WebhookEndpointsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> WebhookEndpoint:
         """Crear un webhook
 
@@ -2559,7 +2671,7 @@ class WebhookEndpointsResource:
         https://fiscalisto.com/docs/api/referencia/webhooks/create-webhook-endpoint
         """
         result: WebhookEndpoint = self._client.request(
-            "POST", "/v1/webhook_endpoints", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", "/v1/webhook_endpoints", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2569,13 +2681,14 @@ class WebhookEndpointsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[WebhookEndpoint]:
         """Listar webhooks
 
         GET /v1/webhook_endpoints
         https://fiscalisto.com/docs/api/referencia/webhooks/list-webhook-endpoints
         """
-        return self._client.list("/v1/webhook_endpoints", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/webhook_endpoints", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -2583,6 +2696,7 @@ class WebhookEndpointsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> WebhookEndpoint:
         """Ver un webhook
 
@@ -2590,7 +2704,7 @@ class WebhookEndpointsResource:
         https://fiscalisto.com/docs/api/referencia/webhooks/get-webhook-endpoint
         """
         result: WebhookEndpoint = self._client.request(
-            "GET", f"/v1/webhook_endpoints/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/webhook_endpoints/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2602,6 +2716,7 @@ class WebhookEndpointsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> WebhookEndpoint:
         """Actualizar un webhook
 
@@ -2609,7 +2724,7 @@ class WebhookEndpointsResource:
         https://fiscalisto.com/docs/api/referencia/webhooks/update-webhook-endpoint
         """
         result: WebhookEndpoint = self._client.request(
-            "POST", f"/v1/webhook_endpoints/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/webhook_endpoints/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2619,6 +2734,7 @@ class WebhookEndpointsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Deleted:
         """Borrar un webhook
 
@@ -2626,7 +2742,7 @@ class WebhookEndpointsResource:
         https://fiscalisto.com/docs/api/referencia/webhooks/delete-webhook-endpoint
         """
         result: Deleted = self._client.request(
-            "DELETE", f"/v1/webhook_endpoints/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "DELETE", f"/v1/webhook_endpoints/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2638,6 +2754,7 @@ class WebhookEndpointsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> WebhookEndpoint:
         """Cambiar el secreto
 
@@ -2647,7 +2764,7 @@ class WebhookEndpointsResource:
         https://fiscalisto.com/docs/api/referencia/webhooks/roll-webhook-secret
         """
         result: WebhookEndpoint = self._client.request(
-            "POST", f"/v1/webhook_endpoints/{_path(id)}/roll_secret", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/webhook_endpoints/{_path(id)}/roll_secret", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2659,6 +2776,7 @@ class WebhookEndpointsResource:
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> WebhookTest:
         """Mandar un evento de prueba
 
@@ -2668,7 +2786,7 @@ class WebhookEndpointsResource:
         https://fiscalisto.com/docs/api/referencia/webhooks/test-webhook-endpoint
         """
         result: WebhookTest = self._client.request(
-            "POST", f"/v1/webhook_endpoints/{_path(id)}/test", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries
+            "POST", f"/v1/webhook_endpoints/{_path(id)}/test", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2685,6 +2803,7 @@ class EventsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> ListObject[Event]:
         """Listar eventos
 
@@ -2693,7 +2812,7 @@ class EventsResource:
         GET /v1/events
         https://fiscalisto.com/docs/api/referencia/eventos/list-events
         """
-        return self._client.list("/v1/events", params, timeout=timeout, max_retries=max_retries)
+        return self._client.list("/v1/events", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -2701,6 +2820,7 @@ class EventsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
     ) -> Event:
         """Ver un evento
 
@@ -2708,7 +2828,7 @@ class EventsResource:
         https://fiscalisto.com/docs/api/referencia/eventos/get-event
         """
         result: Event = self._client.request(
-            "GET", f"/v1/events/{_path(id)}", timeout=timeout, max_retries=max_retries
+            "GET", f"/v1/events/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 

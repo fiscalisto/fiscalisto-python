@@ -65,6 +65,9 @@ class ErrorCode:
     ENDPOINT_LIMIT: Final = "endpoint_limit"
     """La cuenta llegó al máximo de webhooks en este modo."""
 
+    EXPAND_INVALID: Final = "expand_invalid"
+    """Un campo de expand[] no existe en la respuesta, no es el id de otro objeto, o se pidieron demasiados (hasta 10 campos, 4 niveles). Vea Expandir objetos."""
+
     IDEMPOTENCY_KEY_INVALID: Final = "idempotency_key_invalid"
     """Idempotency-Key es de 1 a 255 caracteres ASCII, sin acentos ni ñ: el id de su pedido o un UUID."""
 
@@ -271,6 +274,7 @@ ErrorCodeValue = Literal[
     "efirma_required",
     "email_failed",
     "endpoint_limit",
+    "expand_invalid",
     "idempotency_key_invalid",
     "idempotency_key_missing",
     "idempotency_key_reused",

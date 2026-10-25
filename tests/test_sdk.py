@@ -93,6 +93,16 @@ class RequestTest(unittest.TestCase):
         self.assertRegex(r.headers["idempotency-key"], r"^[0-9a-f-]{36}$")
         self.assertEqual(json.loads(r.body or b"")["legal_name"], "INMOBILIARIA CVA")
 
+    def test_expands_related_objects(self) -> None:
+        fake = Fake(answer(200, {"id": "inv_1", "issuer": {"id": "iss_1"}}))
+        f, _ = client(fake, base_url="http://api.localhost:3000")
+        f.invoices.get("inv_1", expand=["issuer", "recurring_invoice.last_invoice"])
+        self.assertEqual(
+            fake.requests[0].url,
+            "http://api.localhost:3000/v1/invoices/inv_1"
+            "?expand%5B%5D=issuer&expand%5B%5D=recurring_invoice.last_invoice",
+        )
+
     def test_stamping_gets_an_idempotency_key_reused_on_retries(self) -> None:
         fake = Fake(
             answer(503, {"error": {"type": "api_error", "code": "internal_error"}}),
