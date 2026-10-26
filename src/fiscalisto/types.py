@@ -82,6 +82,13 @@ __all__ = [
     "CreateTestClockParams",
     "CreateTicketParams",
     "CreateWebhookEndpointParams",
+    "CrossChecks",
+    "CrossChecksMonthsItem",
+    "CrossChecksMonthsItemChecksItem",
+    "CrossChecksTaxRegimes",
+    "CrossChecksTaxRegimesInvoicedItem",
+    "CrossChecksVatBalanceInFavor",
+    "CrossChecksVatBalanceInFavorPeriodsItem",
     "Customer",
     "CustomerDataRequest",
     "CustomerDataRequestCompletedEvent",
@@ -99,9 +106,31 @@ __all__ = [
     "Event",
     "EventList",
     "EventType",
+    "FinancialStatements",
+    "FinancialStatementsBalanceSheet",
+    "FinancialStatementsBalanceSheetAssets",
+    "FinancialStatementsBalanceSheetAssetsGroupsItem",
+    "FinancialStatementsBalanceSheetAssetsGroupsItemAccountsItem",
+    "FinancialStatementsBalanceSheetEquity",
+    "FinancialStatementsBalanceSheetEquityGroupsItem",
+    "FinancialStatementsBalanceSheetEquityGroupsItemAccountsItem",
+    "FinancialStatementsBalanceSheetLiabilities",
+    "FinancialStatementsBalanceSheetLiabilitiesGroupsItem",
+    "FinancialStatementsBalanceSheetLiabilitiesGroupsItemAccountsItem",
+    "FinancialStatementsIncomeStatement",
+    "FinancialStatementsIncomeStatementMonth",
+    "FinancialStatementsIncomeStatementMonthSectionsItem",
+    "FinancialStatementsIncomeStatementMonthSectionsItemGroupsItem",
+    "FinancialStatementsIncomeStatementMonthSectionsItemGroupsItemAccountsItem",
+    "FinancialStatementsIncomeStatementYearToDate",
+    "FinancialStatementsIncomeStatementYearToDateSectionsItem",
+    "FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItem",
+    "FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItemAccountsItem",
+    "GetCrossChecksParams",
     "GetDiotFileParams",
     "GetDiotParams",
     "GetElectronicAccountingParams",
+    "GetFinancialStatementsParams",
     "GetInvoiceParams",
     "GetInvoicePdfParams",
     "GetInvoiceXmlParams",
@@ -1877,7 +1906,7 @@ class JournalEntryLinesItem(TypedDict):
 
 
 class JournalEntry(TypedDict):
-    """La póliza de diario de un CFDI: sus cargos y abonos, que siempre cuadran."""
+    """Una póliza de diario (de un CFDI, un pago, un recibo de nómina o la depreciación del mes): sus cargos y abonos, que siempre cuadran."""
     id: str
     """El número de la póliza: D-AAAAMM-NNNNN, en orden de fecha dentro del mes."""
     livemode: bool
@@ -1886,20 +1915,22 @@ class JournalEntry(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     issuer: str
     """El emisor."""
+    type: Literal["invoice", "payment_received", "payment_made", "payroll", "depreciation"]
+    """De qué es: invoice (un CFDI de ingreso o egreso), payment_received o payment_made (un pago de un complemento), payroll (un recibo de nómina) o depreciation (la depreciación del mes de los activos fijos)."""
     date: str
-    """La fecha del CFDI."""
+    """La fecha del CFDI o del pago; en la depreciación, el último día del mes."""
     description: str
-    """Factura o nota de crédito, su folio y la contraparte."""
+    """El documento, su folio y la contraparte."""
     invoice: str | None
-    """La factura (inv_…) si la timbró este emisor; null si la recibió."""
-    uuid: str
-    """El folio fiscal del CFDI."""
-    tax_id: str
-    """El RFC de la contraparte (cliente o proveedor)."""
+    """La factura (inv_…) si es la póliza de un CFDI que timbró este emisor; null en los demás casos."""
+    uuid: str | None
+    """El folio fiscal del CFDI (o del complemento de pago); null en la depreciación."""
+    tax_id: str | None
+    """El RFC de la contraparte (cliente, proveedor o empleado); null en la depreciación."""
     total: float
-    """El total del CFDI, en su moneda."""
+    """El total del documento, en su moneda."""
     currency: str
-    """La moneda del CFDI."""
+    """La moneda del documento."""
     exchange_rate: float | None
     """El tipo de cambio, si no es en pesos; null si es en pesos."""
     lines: list[JournalEntryLinesItem]
@@ -1965,6 +1996,298 @@ class TrialBalance(TypedDict):
     """Cada cuenta con movimiento o saldo: saldo inicial, cargos, abonos y saldo final."""
     totals: TrialBalanceTotals
     """Cargos y abonos del mes: siempre iguales."""
+
+
+class FinancialStatementsIncomeStatementMonthSectionsItemGroupsItemAccountsItem(TypedDict):
+    number: str
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+
+
+class FinancialStatementsIncomeStatementMonthSectionsItemGroupsItem(TypedDict):
+    grouping_code: str
+    """El primer nivel del código agrupador (401, 601…)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+    accounts: list[FinancialStatementsIncomeStatementMonthSectionsItemGroupsItemAccountsItem]
+    """Las cuentas del grupo con su monto."""
+
+
+class FinancialStatementsIncomeStatementMonthSectionsItem(TypedDict):
+    key: Literal["ingresos", "costos", "gastos", "financiamiento", "otros"]
+    """El archivo .key en base64 (puede traer el prefijo data:)."""
+    name: str
+    """Nombre."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    groups: list[FinancialStatementsIncomeStatementMonthSectionsItemGroupsItem]
+    """Su monto por el primer nivel del código agrupador."""
+
+
+class FinancialStatementsIncomeStatementMonth(TypedDict):
+    """El estado de resultados del mes."""
+    sections: list[FinancialStatementsIncomeStatementMonthSectionsItem]
+    """Ingresos, costos, gastos, financiamiento y otros, cada uno con su total."""
+    net_income: float
+    """La utilidad (o pérdida, negativa) antes de impuestos del mes."""
+
+
+class FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItemAccountsItem(TypedDict):
+    number: str
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+
+
+class FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItem(TypedDict):
+    grouping_code: str
+    """El primer nivel del código agrupador (401, 601…)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+    accounts: list[FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItemAccountsItem]
+    """Las cuentas del grupo con su monto."""
+
+
+class FinancialStatementsIncomeStatementYearToDateSectionsItem(TypedDict):
+    key: Literal["ingresos", "costos", "gastos", "financiamiento", "otros"]
+    """El archivo .key en base64 (puede traer el prefijo data:)."""
+    name: str
+    """Nombre."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    groups: list[FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItem]
+    """Su monto por el primer nivel del código agrupador."""
+
+
+class FinancialStatementsIncomeStatementYearToDate(TypedDict):
+    """El estado de resultados de enero al mes."""
+    sections: list[FinancialStatementsIncomeStatementYearToDateSectionsItem]
+    """Ingresos, costos, gastos, financiamiento y otros, cada uno con su total."""
+    net_income: float
+    """La utilidad (o pérdida, negativa) antes de impuestos de enero al mes."""
+
+
+class FinancialStatementsIncomeStatement(TypedDict):
+    """El estado de resultados del mes (month) y del año hasta ese mes (year_to_date). Cada sección suma en positivo lo que aumenta la utilidad (ingresos) y en negativo lo que la reduce (costos y gastos)."""
+    month: FinancialStatementsIncomeStatementMonth
+    """El estado de resultados del mes."""
+    year_to_date: FinancialStatementsIncomeStatementYearToDate
+    """El estado de resultados de enero al mes."""
+
+
+class FinancialStatementsBalanceSheetAssetsGroupsItemAccountsItem(TypedDict):
+    number: str
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+
+
+class FinancialStatementsBalanceSheetAssetsGroupsItem(TypedDict):
+    grouping_code: str
+    """El primer nivel del código agrupador (401, 601…)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+    accounts: list[FinancialStatementsBalanceSheetAssetsGroupsItemAccountsItem]
+    """Las cuentas del grupo con su monto."""
+
+
+class FinancialStatementsBalanceSheetAssets(TypedDict):
+    """El activo: su total y sus grupos."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    groups: list[FinancialStatementsBalanceSheetAssetsGroupsItem]
+    """Su monto por el primer nivel del código agrupador."""
+
+
+class FinancialStatementsBalanceSheetLiabilitiesGroupsItemAccountsItem(TypedDict):
+    number: str
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+
+
+class FinancialStatementsBalanceSheetLiabilitiesGroupsItem(TypedDict):
+    grouping_code: str
+    """El primer nivel del código agrupador (401, 601…)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+    accounts: list[FinancialStatementsBalanceSheetLiabilitiesGroupsItemAccountsItem]
+    """Las cuentas del grupo con su monto."""
+
+
+class FinancialStatementsBalanceSheetLiabilities(TypedDict):
+    """El pasivo: su total y sus grupos."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    groups: list[FinancialStatementsBalanceSheetLiabilitiesGroupsItem]
+    """Su monto por el primer nivel del código agrupador."""
+
+
+class FinancialStatementsBalanceSheetEquityGroupsItemAccountsItem(TypedDict):
+    number: str
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+
+
+class FinancialStatementsBalanceSheetEquityGroupsItem(TypedDict):
+    grouping_code: str
+    """El primer nivel del código agrupador (401, 601…)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+    accounts: list[FinancialStatementsBalanceSheetEquityGroupsItemAccountsItem]
+    """Las cuentas del grupo con su monto."""
+
+
+class FinancialStatementsBalanceSheetEquity(TypedDict):
+    """El capital contable sin el resultado del ejercicio: su total y sus grupos."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    groups: list[FinancialStatementsBalanceSheetEquityGroupsItem]
+    """Su monto por el primer nivel del código agrupador."""
+
+
+class FinancialStatementsBalanceSheet(TypedDict):
+    """El balance general al cierre del mes, agrupado por el primer nivel del código agrupador. difference es activo menos pasivo y capital: 0 cuando los libros cuadran."""
+    assets: FinancialStatementsBalanceSheetAssets
+    """El activo: su total y sus grupos."""
+    liabilities: FinancialStatementsBalanceSheetLiabilities
+    """El pasivo: su total y sus grupos."""
+    equity: FinancialStatementsBalanceSheetEquity
+    """El capital contable sin el resultado del ejercicio: su total y sus grupos."""
+    net_income_year_to_date: float
+    """El resultado del ejercicio hasta el mes, parte del capital."""
+    liabilities_and_equity: float
+    """Pasivo más capital más el resultado del ejercicio."""
+    difference: float
+    """Activo menos pasivo y capital: 0 cuando los libros cuadran."""
+
+
+class FinancialStatements(TypedDict):
+    """El estado de resultados y el balance general de un mes, leídos de su balanza."""
+    object: Literal["financial_statements"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM)."""
+    income_statement: FinancialStatementsIncomeStatement
+    """El estado de resultados del mes (month) y del año hasta ese mes (year_to_date). Cada sección suma en positivo lo que aumenta la utilidad (ingresos) y en negativo lo que la reduce (costos y gastos)."""
+    balance_sheet: FinancialStatementsBalanceSheet
+    """El balance general al cierre del mes, agrupado por el primer nivel del código agrupador. difference es activo menos pasivo y capital: 0 cuando los libros cuadran."""
+    journal_entries: int
+    """Cuántas pólizas tuvo el mes."""
+    opening_balances_date: str | None
+    """Desde qué fecha cuentan los saldos iniciales capturados en la app; null si no hay."""
+    missing_invoices: int
+    """Pagos que se refieren a facturas que no están en Fiscalisto y no se registraron."""
+
+
+class CrossChecksMonthsItemChecksItem(TypedDict):
+    key: Literal["vat_charged", "vat_creditable", "vat_withheld", "isr_income"]
+    """Qué cifra: vat_charged (IVA trasladado), vat_creditable (IVA acreditable), vat_withheld (IVA que le retuvieron) o isr_income (ingresos para ISR: nominales en persona moral, cobrados en los demás)."""
+    status: Literal["matches", "differs", "not_filed", "unreadable"]
+    """matches (hasta $2 de diferencia), differs, not_filed (no hay declaración del mes) o unreadable (la declaración no trae la cifra en un renglón reconocible)."""
+    declared: float | None
+    """Lo declarado, en pesos; null si no hay declaración o no se pudo leer."""
+    invoiced: float
+    """Lo que dicen los CFDI del mes, con los mismos cálculos de Impuestos."""
+    difference: float | None
+    """declared menos invoiced; null si declared es null."""
+    operation_number: str | None
+    """El número de operación de la declaración de donde salió la cifra."""
+
+
+class CrossChecksMonthsItem(TypedDict):
+    month: str
+    """El mes (AAAA-MM)."""
+    status: Literal["matches", "differs", "not_filed", "unreadable"]
+    """El peor de sus cruces: differs (no coincide), unreadable (una cifra no se pudo leer), not_filed (sin declaración mensual) o matches."""
+    checks: list[CrossChecksMonthsItemChecksItem]
+    """Un cruce por cifra."""
+
+
+class CrossChecksVatBalanceInFavorPeriodsItem(TypedDict):
+    month: str
+    """El mes cuya declaración muestra el IVA a favor."""
+    amount: float
+    """El IVA a favor de ese mes."""
+    operation_number: str
+    """El número de operación de esa declaración."""
+
+
+class CrossChecksVatBalanceInFavor(TypedDict):
+    """El IVA a favor que muestran las declaraciones del año y lo que meses posteriores acreditaron. Una estimación con las declaraciones leídas, no la cuenta del SAT."""
+    periods: list[CrossChecksVatBalanceInFavorPeriodsItem]
+    """Cada mes con IVA a favor."""
+    total: float
+    """La suma del IVA a favor del año."""
+    credited: float
+    """Lo que las declaraciones del año acreditaron de saldos a favor de periodos anteriores."""
+    remaining: float
+    """total menos credited, nunca menos de 0: lo que quedaría por acreditar o pedir en devolución."""
+
+
+class CrossChecksTaxRegimesInvoicedItem(TypedDict):
+    tax_regime: str
+    """El régimen (c_RegimenFiscal)."""
+    invoices: int
+    """Cuántos CFDI lo llevan (ingreso, egreso y pago, sin cancelados)."""
+    first_date: str
+    """La fecha del primero (AAAA-MM-DD)."""
+    last_date: str
+    """La fecha del último (AAAA-MM-DD)."""
+    registered: bool | None
+    """Si el régimen está en su constancia; null si no se capturaron los regímenes de la constancia."""
+
+
+class CrossChecksTaxRegimes(TypedDict):
+    """Los regímenes del emisor (registered, de su constancia) y con cuáles facturó en el año."""
+    registered: list[str]
+    """Los regímenes de su constancia (c_RegimenFiscal), capturados en la app."""
+    invoiced: list[CrossChecksTaxRegimesInvoicedItem]
+    """Cada régimen con que facturó en el año (RegimenFiscal del emisor)."""
+
+
+class CrossChecks(TypedDict):
+    """Lo que el emisor declaró cada mes contra lo que dicen sus CFDI, el IVA a favor y el régimen con que factura."""
+    object: Literal["cross_checks"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    year: int
+    """El ejercicio."""
+    months: list[CrossChecksMonthsItem]
+    """Cada mes cuya declaración mensual ya venció (el día 17 del mes siguiente), con sus cruces. Un mes con complementaria toma, por impuesto, la más reciente que lo trae."""
+    vat_balance_in_favor: CrossChecksVatBalanceInFavor
+    """El IVA a favor que muestran las declaraciones del año y lo que meses posteriores acreditaron. Una estimación con las declaraciones leídas, no la cuenta del SAT."""
+    tax_regimes: CrossChecksTaxRegimes
+    """Los regímenes del emisor (registered, de su constancia) y con cuáles facturó en el año."""
 
 
 class DiotLinesItemPaid(TypedDict):
@@ -5127,6 +5450,22 @@ class GetTrialBalanceParams(TypedDict):
     """Los parámetros de GET /v1/accounting/trial_balance."""
     month: str
     """El mes (AAAA-MM)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetFinancialStatementsParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/financial_statements."""
+    month: str
+    """El mes (AAAA-MM)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetCrossChecksParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/cross_checks."""
+    year: NotRequired[int]
+    """El ejercicio. Por omisión, el actual."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 

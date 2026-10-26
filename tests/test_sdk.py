@@ -18,7 +18,13 @@ from fiscalisto import (
     verify_webhook,
 )
 
-VECTOR = json.loads((Path(__file__).parents[2] / "fixtures" / "webhook.json").read_text())
+def fixture(name: str) -> Any:
+    # In the published repository the shared fixtures sit in fixtures/ next to the code.
+    local = Path(__file__).parents[1] / "fixtures" / name
+    return json.loads((local if local.exists() else Path(__file__).parents[2] / "fixtures" / name).read_text())
+
+
+VECTOR = fixture("webhook.json")
 
 
 def answer(status: int, body: Any, **headers: str) -> HttpResponse:
@@ -244,7 +250,7 @@ class RequestTest(unittest.TestCase):
 
 class RoutesTest(unittest.TestCase):
     def test_every_route_has_a_method(self) -> None:
-        calls = json.loads((Path(__file__).parents[2] / "fixtures" / "calls.json").read_text())
+        calls = fixture("calls.json")
         f = Fiscalisto("fk_test_x")
         for route, call in calls.items():
             resource, method = call["python"].split(".")
