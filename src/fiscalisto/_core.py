@@ -14,11 +14,11 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Generic, Literal, TypeVar
 from urllib.error import HTTPError
-from urllib.parse import urlencode, urljoin
+from urllib.parse import urlencode
 from urllib.request import Request as _UrllibRequest
 from urllib.request import urlopen
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 # La versión de la API para la que se hizo este SDK: va en cada solicitud (Fiscalisto-Version).
 API_VERSION = "2026-10-24"
 DEFAULT_BASE_URL = "https://api.fiscalisto.com"
@@ -170,6 +170,20 @@ class ListObject(Generic[T]):
         return out
 
 
+def _invalid_response(status: int, body: bytes, request_id: str | None) -> FiscalistoError:
+    """A success that isn't the API's JSON: a proxy's or a network portal's page answered instead."""
+    text = " ".join(body.decode("utf-8", "replace").split())[:80] or "vacía"
+    return FiscalistoError(
+        {
+            "type": "api_error",
+            "code": "invalid_response",
+            "message": f"La respuesta ({status}) no es de la API: {text}. ¿Hay un proxy o un portal de por medio?",
+        },
+        status,
+        request_id,
+    )
+
+
 def _backoff(attempt: int) -> float:
     """0.5 s, 1 s, 2 s… hasta 8 s, con algo de azar para no llegar todos juntos."""
     return min(8.0, 0.5 * 2.0**attempt) * (0.75 + random.random() / 2)
@@ -217,7 +231,8 @@ class Core:
                 "para verificar webhooks.)"
             )
         self._key = key
-        self._base_url = base_url or DEFAULT_BASE_URL
+        # A proxy's path stays: https://proxy.example.com/fiscalisto + /v1/invoices.
+        self._base_url = (base_url or DEFAULT_BASE_URL).rstrip("/")
         self._max_retries = max_retries
         self._timeout = timeout
         self._transport = transport or urllib_transport
@@ -244,7 +259,7 @@ class Core:
         max_retries: int | None = None,
         expand: Sequence[str] | None = None,
     ) -> Any:
-        url = urljoin(self._base_url, path)
+        url = self._base_url + path
         pairs = [(k, _query_value(v)) for k, v in (query or {}).items() if v is not None]
         # Ids as their objects in the same answer: expand=["issuer", "data.recurring_invoice"].
         pairs += [("expand[]", e) for e in expand or []]
@@ -303,7 +318,10 @@ class Core:
                     return res.body
                 if result == "text":
                     return res.body.decode("utf-8")
-                return json.loads(res.body)
+                try:
+                    return json.loads(res.body)
+                except ValueError:
+                    raise _invalid_response(res.status, res.body, request_id) from None
             try:
                 parsed = json.loads(res.body)
                 raw = parsed.get("error") if isinstance(parsed, dict) else None

@@ -85,6 +85,7 @@ if TYPE_CHECKING:
         ListReceivablesParams,
         ListRecurringInvoicesParams,
         ListRetentionsParams,
+        ListSatDeclarationsParams,
         ListSatDownloadsParams,
         ListSatInvoicesParams,
         ListStoreConnectionsParams,
@@ -97,12 +98,15 @@ if TYPE_CHECKING:
         Quote,
         Receivable,
         RecurringInvoice,
+        RefreshSatDeclarationsParams,
         ResetTestDataParams,
         Retention,
         RollWebhookSecretParams,
         Sandbox,
         SandboxList,
         SatCatalogEntryList,
+        SatDeclaration,
+        SatDeclarationsRefresh,
         SatDownload,
         SatInvoice,
         SatListCheck,
@@ -780,7 +784,7 @@ class InvoicesResource:
     ) -> Invoice:
         """Cancelar una factura
 
-        Pide la cancelación al SAT. Si el cliente debe aceptarla queda en pending (escuche invoice.canceled o invoice.cancellation_rejected). Usa un timbre la primera vez que el SAT acepta la solicitud; repetirla, o pedirla otra vez después de un rechazo, no. Nunca se niega por falta de timbres.
+        Pide la cancelación al SAT. Si el cliente debe aceptarla queda en pending (escuche invoice.canceled o invoice.cancellation_rejected). No usa timbres.
 
         POST /v1/invoices/{id}/cancel
         https://fiscalisto.com/docs/api/referencia/facturas/cancel-invoice
@@ -1258,7 +1262,7 @@ class RetentionsResource:
     ) -> Retention:
         """Cancelar una constancia
 
-        Se cancela en el momento (no espera aceptación). Usa un timbre.
+        Se cancela en el momento (no espera aceptación). No usa timbres.
 
         POST /v1/retentions/{id}/cancel
         https://fiscalisto.com/docs/api/referencia/retenciones/cancel-retention
@@ -1874,7 +1878,7 @@ class SatDownloadsResource:
     ) -> SatDownload:
         """Pedirle al SAT las facturas de un emisor
 
-        La descarga masiva del SAT: las facturas que el emisor recibió (o emitió) en un periodo de hasta un año, con su XML. Contesta 202 de inmediato; el SAT tarda de minutos a horas y al terminar llega sat_download.completed (o sat_download.failed) y las facturas quedan en GET /v1/sat_invoices. En producción necesita la e.firma guardada del emisor; en pruebas no se le pregunta al SAT: la descarga trae facturas de ejemplo al instante. No usa timbres.
+        La descarga masiva del SAT: las facturas que el emisor recibió (o emitió) en un periodo de hasta un año, con su XML. Contesta 202 de inmediato; el SAT tarda de minutos a horas y al terminar llega sat_download.completed (o sat_download.failed) y las facturas quedan en GET /v1/sat_invoices. En producción necesita la e.firma guardada del emisor; en pruebas no se le pregunta al SAT: la descarga trae facturas de ejemplo al instante. En producción usa 1 timbre por cada 100 CFDI que trae (al menos 1).
 
         POST /v1/sat_downloads
         https://fiscalisto.com/docs/api/referencia/descargas-del-sat/create-sat-download
@@ -1975,6 +1979,126 @@ class SatInvoicesResource:
         """
         result: str = self._client.request(
             "GET", f"/v1/sat_invoices/{_path(id)}/xml", result="text", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
+class SatDeclarationsResource:
+    """Declaraciones del SAT: fiscalisto.sat_declarations."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def refresh(
+        self,
+        params: RefreshSatDeclarationsParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatDeclarationsRefresh:
+        """Consultar las declaraciones de un emisor en el SAT
+
+        Entra al SAT con la e.firma guardada del emisor y trae las declaraciones que presentó: provisionales o definitivas (desde 2022), la anual de persona moral (desde 2019) y las del servicio anterior Declaraciones y pagos, con su PDF, su acuse y sus cifras. La primera consulta trae todos los años que el SAT conserva; las siguientes, este año y el anterior. Solo consulta: nunca presenta ni firma nada. En producción usa 1 timbre por consulta (regresa si el SAT no contesta) y se puede hacer una vez cada 10 minutos por emisor. Contesta en menos de un minuto; si queda algo por bajar (status processing), sigue solo en la siguiente hora sin otro timbre. En pruebas no se le pregunta al SAT: trae declaraciones de ejemplo al instante.
+
+        POST /v1/sat_declarations/refresh
+        https://fiscalisto.com/docs/api/referencia/declaraciones-del-sat/refresh-sat-declarations
+        """
+        result: SatDeclarationsRefresh = self._client.request(
+            "POST", "/v1/sat_declarations/refresh", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListSatDeclarationsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[SatDeclaration]:
+        """Listar declaraciones del SAT
+
+        Las declaraciones que trajeron sus consultas, del ejercicio y mes más recientes a los más antiguos (la anual antes de los meses de su año). No usa timbres.
+
+        GET /v1/sat_declarations
+        https://fiscalisto.com/docs/api/referencia/declaraciones-del-sat/list-sat-declarations
+        """
+        return self._client.list("/v1/sat_declarations", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatDeclaration:
+        """Ver una declaración del SAT
+
+        GET /v1/sat_declarations/{id}
+        https://fiscalisto.com/docs/api/referencia/declaraciones-del-sat/get-sat-declaration
+        """
+        result: SatDeclaration = self._client.request(
+            "GET", f"/v1/sat_declarations/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def pdf(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> bytes:
+        """Descargar el PDF de una declaración
+
+        La declaración como la da el SAT. No usa timbres.
+
+        GET /v1/sat_declarations/{id}/pdf
+        https://fiscalisto.com/docs/api/referencia/declaraciones-del-sat/get-sat-declaration-pdf
+        """
+        result: bytes = self._client.request(
+            "GET", f"/v1/sat_declarations/{_path(id)}/pdf", result="bytes", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def receipt(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> bytes:
+        """Descargar el acuse de una declaración
+
+        El acuse de recibo, con la línea de captura si hay algo a pagar. No usa timbres.
+
+        GET /v1/sat_declarations/{id}/receipt
+        https://fiscalisto.com/docs/api/referencia/declaraciones-del-sat/get-sat-declaration-receipt
+        """
+        result: bytes = self._client.request(
+            "GET", f"/v1/sat_declarations/{_path(id)}/receipt", result="bytes", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def financial_statements(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> str:
+        """Descargar los estados financieros de una anual
+
+        El Excel de estados financieros de la anual de persona moral, como lo da el SAT. No usa timbres.
+
+        GET /v1/sat_declarations/{id}/financial_statements
+        https://fiscalisto.com/docs/api/referencia/declaraciones-del-sat/get-sat-declaration-financial-statements
+        """
+        result: str = self._client.request(
+            "GET", f"/v1/sat_declarations/{_path(id)}/financial_statements", result="text", timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -2955,6 +3079,11 @@ class FiscalistoApi(Core):
     def sat_invoices(self) -> SatInvoicesResource:
         """Descargas del SAT."""
         return SatInvoicesResource(self)
+
+    @cached_property
+    def sat_declarations(self) -> SatDeclarationsResource:
+        """Declaraciones del SAT."""
+        return SatDeclarationsResource(self)
 
     @cached_property
     def tickets(self) -> TicketsResource:

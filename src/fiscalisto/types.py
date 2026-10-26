@@ -54,6 +54,7 @@ __all__ = [
     "CreatePayrollReceiptParams",
     "CreatePayrollReceiptParamsPeriod",
     "CreateProductParams",
+    "CreateProductParamsLocalTaxesItem",
     "CreateQuoteParams",
     "CreateQuoteParamsCustomer1",
     "CreateQuoteParamsCustomer1Foreign",
@@ -227,6 +228,7 @@ __all__ = [
     "ListReceivablesParams",
     "ListRecurringInvoicesParams",
     "ListRetentionsParams",
+    "ListSatDeclarationsParams",
     "ListSatDownloadsParams",
     "ListSatInvoicesParams",
     "ListStoreConnectionsParams",
@@ -245,6 +247,7 @@ __all__ = [
     "PreviewPayrollReceiptParamsPeriod",
     "Product",
     "ProductList",
+    "ProductLocalTaxesItem",
     "Quote",
     "QuoteAcceptedEvent",
     "QuoteChangesRequestedEvent",
@@ -263,6 +266,7 @@ __all__ = [
     "RecurringInvoiceLastError",
     "RecurringInvoiceList",
     "RecurringInvoiceSchedule",
+    "RefreshSatDeclarationsParams",
     "ResetTestDataParams",
     "Retention",
     "RetentionCanceledEvent",
@@ -282,6 +286,14 @@ __all__ = [
     "SandboxList",
     "SatCatalogEntry",
     "SatCatalogEntryList",
+    "SatDeclaration",
+    "SatDeclarationFiles",
+    "SatDeclarationList",
+    "SatDeclarationReceipt",
+    "SatDeclarationReceiptConceptsItem",
+    "SatDeclarationSectionsItem",
+    "SatDeclarationSectionsItemFieldsItem",
+    "SatDeclarationsRefresh",
     "SatDownload",
     "SatDownloadCompletedEvent",
     "SatDownloadFailedEvent",
@@ -328,6 +340,7 @@ __all__ = [
     "UpdateEmployeeParams",
     "UpdateIssuerParams",
     "UpdateProductParams",
+    "UpdateProductParamsLocalTaxesItem",
     "UpdateQuoteParams",
     "UpdateQuoteParamsCustomer1",
     "UpdateQuoteParamsCustomer1Foreign",
@@ -928,8 +941,19 @@ class Customer(TypedDict):
     """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
     ieps_taxpayer: bool
     """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
     updated_at: str | None
     """Cuándo cambió por última vez, ISO 8601 (-06:00)."""
+
+
+class ProductLocalTaxesItem(TypedDict):
+    retention: bool
+    """true si es una retención local; false si es un traslado."""
+    name: str
+    """Nombre del impuesto local (ImpLocTrasladado o ImpLocRetenido), como ISH."""
+    rate: float
+    """Tasa en por ciento (TasadeTraslado o TasadeRetencion)."""
 
 
 class Product(TypedDict):
@@ -956,6 +980,8 @@ class Product(TypedDict):
     """Número de identificación o SKU (NoIdentificacion)."""
     unit_price: float
     """Precio unitario antes de impuestos (ValorUnitario)."""
+    open_price: bool
+    """Precio abierto: el producto no tiene precio fijo y cada concepto con él manda su unit_price."""
     taxability: str
     """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
     iva: str
@@ -968,6 +994,10 @@ class Product(TypedDict):
     """Tasa de IVA retenido (por ejemplo 0.106667, dos terceras partes del 16%)."""
     isr_retention: float
     """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    local_taxes: list[ProductLocalTaxesItem]
+    """Impuestos locales (complemento implocal): traslados y retenciones estatales."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
     updated_at: str | None
     """Cuándo cambió por última vez, ISO 8601 (-06:00)."""
 
@@ -1026,6 +1056,8 @@ class Employee(TypedDict):
     """Puesto (Puesto)."""
     warnings: list[str]
     """Lo que el SAT podría observar de sus datos, antes de timbrar."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
 
 
 class PayrollReceiptPreviewPeriod(TypedDict):
@@ -1562,6 +1594,126 @@ class SatInvoice(TypedDict):
     """La descarga (sdl_…) que la trajo, o null."""
     downloaded_at: str | None
     """Cuándo llegó."""
+
+
+class SatDeclarationSectionsItemFieldsItem(TypedDict):
+    label: str
+    """El renglón como lo imprime el SAT."""
+    value: float | str
+    """Valor de la mercancía (ValorMercancia); obligatorio en transporte aéreo."""
+
+
+class SatDeclarationSectionsItem(TypedDict):
+    tax: str
+    """Impuesto: isr, iva o ieps (ImpuestoRet 001, 002, 003)."""
+    fields: list[SatDeclarationSectionsItemFieldsItem]
+    """Los renglones del impuesto, en el orden del PDF."""
+
+
+class SatDeclarationReceiptConceptsItem(TypedDict):
+    concept: str
+    """Concepto del pago (ConceptoPago), c_TipoContribuyenteSujetoRetencion."""
+    due: float | None
+    """Lo que resultó a cargo."""
+    amount_due: float | None
+    """La cantidad a cargo."""
+    amount_to_pay: float | None
+    """La cantidad a pagar."""
+
+
+class SatDeclarationReceipt(TypedDict):
+    concepts: list[SatDeclarationReceiptConceptsItem]
+    """Cada impuesto del acuse."""
+    total: float | None
+    """Total en la moneda del comprobante (Total)."""
+    payment_line: str | None
+    """La línea de captura del acuse."""
+    valid_until: str | None
+    """Hasta cuándo sirve la línea de captura (AAAA-MM-DD)."""
+
+
+class SatDeclarationFiles(TypedDict):
+    """Qué archivos ya tiene: pdf (GET …/pdf), receipt (GET …/receipt) y financial_statements (GET …/financial_statements, solo en la anual de persona moral)."""
+    pdf: bool
+    """Si ya tiene la declaración en PDF (GET …/pdf)."""
+    receipt: bool
+    """Si ya tiene el acuse (GET …/receipt)."""
+    financial_statements: bool
+    """Si ya tiene el Excel de estados financieros (GET …/financial_statements), solo en la anual de persona moral."""
+
+
+class SatDeclaration(TypedDict):
+    """Una declaración que el emisor presentó ante el SAT (provisional o definitiva, anual o del servicio anterior Declaraciones y pagos), con sus cifras y sus archivos."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["sat_declaration"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor que la presentó."""
+    source: Literal["monthly", "annual", "dyp"]
+    """monthly (provisional o definitiva, desde 2022), annual (la anual de persona moral) o dyp (el servicio anterior Declaraciones y pagos, 2021 y antes)."""
+    year: int
+    """El ejercicio."""
+    month: int | None
+    """El mes (1 a 12), o null en la anual y otros periodos."""
+    period: str
+    """El periodo como lo nombra el SAT: «Enero», «Del Ejercicio»…"""
+    type: Literal["normal", "complementary"]
+    """normal o complementary (complementaria)."""
+    complementary_type: str | None
+    """El tipo de complementaria como lo dice el SAT («Modificación de obligaciones»…), o null."""
+    operation_number: str
+    """El número de operación que le dio el SAT."""
+    payment_line: str | None
+    """La línea de captura, si hubo algo a pagar."""
+    filed_on: str | None
+    """Cuándo se presentó (AAAA-MM-DD)."""
+    profit_coefficient: float | None
+    """El coeficiente de utilidad que aplicó (ISR de personas morales), o null."""
+    isr_due: float | None
+    """El ISR a cargo, según el acuse."""
+    vat_due: float | None
+    """El IVA a cargo, según el acuse."""
+    total_due: float | None
+    """El total a pagar, según el acuse."""
+    sections: list[SatDeclarationSectionsItem]
+    """Las cifras de la declaración por impuesto (tax), cada una con su texto como lo imprime el SAT (label) y su valor. Vacío en las de Declaraciones y pagos (su PDF trae dos columnas que no se leen con certeza) o si el PDF aún no llega."""
+    receipt: SatDeclarationReceipt | None
+    """Lo que dice el acuse: cada concepto con su cantidad a cargo y a pagar, el total, la línea de captura y su vigencia. null si el acuse aún no llega."""
+    files: SatDeclarationFiles
+    """Qué archivos ya tiene: pdf (GET …/pdf), receipt (GET …/receipt) y financial_statements (GET …/financial_statements, solo en la anual de persona moral)."""
+    files_error: str | None
+    """Por qué falta un archivo, como lo dijo el SAT (por ejemplo «No se puede generar el archivo»). Se vuelve a pedir en la siguiente consulta."""
+    created_at: str | None
+    """Cuándo se trajo por primera vez."""
+    updated_at: str | None
+    """Cuándo cambió por última vez."""
+
+
+class SatDeclarationsRefresh(TypedDict):
+    """Lo que trajo una consulta de las declaraciones del emisor en el SAT."""
+    object: Literal["sat_declarations_refresh"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor consultado."""
+    status: Literal["completed", "processing"]
+    """completed (ya bajó todo) o processing (queda algo por bajar: sigue solo en la siguiente hora, sin otro timbre)."""
+    found: int
+    """Cuántas declaraciones listó el SAT en los años consultados."""
+    downloaded: int
+    """Cuántos archivos bajó en esta consulta."""
+    pending: int
+    """Cuántas declaraciones quedan con archivos por bajar."""
+    warning: str | None
+    """Si una parte del SAT falló (por ejemplo, la anual), lo que dijo; lo demás sí se trajo. null si todo salió."""
+    refreshed_at: str
+    """Cuándo se consultó."""
+    next_refresh_at: str
+    """Desde cuándo se puede volver a consultar este emisor (10 minutos después)."""
 
 
 class TicketCustomer(TypedDict):
@@ -2918,6 +3070,17 @@ class SatInvoiceList(TypedDict):
     """La ruta de esta lista."""
 
 
+class SatDeclarationList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[SatDeclaration]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class TicketList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -4049,7 +4212,7 @@ class ListInvoicesParams(TypedDict):
     type: NotRequired[Literal["I", "E", "P", "T", "N"]]
     """I, E, P, T o N."""
     customer: NotRequired[str]
-    """RFC del cliente."""
+    """RFC del cliente o su id (cus_…)."""
     payment_status: NotRequired[Literal["unpaid", "partial", "open", "paid"]]
     """Facturas de ingreso por lo que deben: unpaid, partial, open (unpaid o partial) o paid."""
     created_gte: NotRequired[str]
@@ -4101,7 +4264,7 @@ class ListReceivablesParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
     customer: NotRequired[str]
-    """Solo este RFC."""
+    """Solo este cliente: su RFC o su id (cus_…)."""
 
 
 class CreateBankTransactionsParamsTransactionsItem(TypedDict):
@@ -4268,7 +4431,7 @@ class ListAdvancesParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
     customer: NotRequired[str]
-    """RFC del cliente."""
+    """RFC del cliente o su id (cus_…)."""
 
 
 class ApplyAdvanceParamsRemainder(TypedDict):
@@ -4722,6 +4885,15 @@ class ListCustomerDataRequestsParams(TypedDict):
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 
 
+class CreateProductParamsLocalTaxesItem(TypedDict):
+    retention: bool
+    """true si es una retención local; false si es un traslado."""
+    name: str
+    """Nombre del impuesto local (ImpLocTrasladado o ImpLocRetenido), como ISH."""
+    rate: float
+    """Tasa en por ciento (TasadeTraslado o TasadeRetencion)."""
+
+
 class CreateProductParams(TypedDict):
     issuer: NotRequired[str]
     """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
@@ -4737,8 +4909,10 @@ class CreateProductParams(TypedDict):
     """Nombre de la unidad (Unidad), hasta 20 caracteres."""
     sku: NotRequired[str | None]
     """Número de identificación o SKU (NoIdentificacion)."""
-    unit_price: float
+    unit_price: NotRequired[float]
     """Precio unitario antes de impuestos (ValorUnitario)."""
+    open_price: NotRequired[bool]
+    """Precio abierto: sin precio fijo (una noche de hotel que cambia cada día); cada factura manda su unit_price."""
     taxability: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
     """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
@@ -4751,6 +4925,8 @@ class CreateProductParams(TypedDict):
     """Tasa de IVA retenido (por ejemplo 0.106667, dos terceras partes del 16%)."""
     isr_retention: NotRequired[float]
     """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    local_taxes: NotRequired[list[CreateProductParamsLocalTaxesItem]]
+    """Impuestos locales que lleva, como el ISH 3% de hospedaje: van en cada factura con él, sobre sus conceptos."""
 
 
 class ListProductsParams(TypedDict):
@@ -4765,6 +4941,15 @@ class ListProductsParams(TypedDict):
     """Solo el de este SKU."""
     product_key: NotRequired[str]
     """Solo los de esta clave del SAT."""
+
+
+class UpdateProductParamsLocalTaxesItem(TypedDict):
+    retention: bool
+    """true si es una retención local; false si es un traslado."""
+    name: str
+    """Nombre del impuesto local (ImpLocTrasladado o ImpLocRetenido), como ISH."""
+    rate: float
+    """Tasa en por ciento (TasadeTraslado o TasadeRetencion)."""
 
 
 class UpdateProductParams(TypedDict):
@@ -4782,6 +4967,8 @@ class UpdateProductParams(TypedDict):
     """Número de identificación o SKU (NoIdentificacion)."""
     unit_price: NotRequired[float]
     """Precio unitario antes de impuestos (ValorUnitario)."""
+    open_price: NotRequired[bool]
+    """Precio abierto: sin precio fijo (una noche de hotel que cambia cada día); cada factura manda su unit_price."""
     taxability: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
     """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
@@ -4794,6 +4981,8 @@ class UpdateProductParams(TypedDict):
     """Tasa de IVA retenido (por ejemplo 0.106667, dos terceras partes del 16%)."""
     isr_retention: NotRequired[float]
     """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    local_taxes: NotRequired[list[UpdateProductParamsLocalTaxesItem]]
+    """Impuestos locales que lleva, como el ISH 3% de hospedaje: van en cada factura con él, sobre sus conceptos."""
 
 
 class GetSatCatalogParams(TypedDict):
@@ -4851,6 +5040,25 @@ class ListSatInvoicesParams(TypedDict):
     """Con fecha desde este día (AAAA-MM-DD)."""
     date_lte: NotRequired[str]
     """Con fecha hasta este día (AAAA-MM-DD), incluido."""
+
+
+class RefreshSatDeclarationsParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+
+
+class ListSatDeclarationsParams(TypedDict):
+    """Los parámetros de GET /v1/sat_declarations."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    year: NotRequired[int]
+    """Solo las de un ejercicio, como 2025."""
+    source: NotRequired[Literal["monthly", "annual", "dyp"]]
+    """monthly (provisionales o definitivas), annual (la anual) o dyp (Declaraciones y pagos)."""
 
 
 class CreateTicketParams(TypedDict):

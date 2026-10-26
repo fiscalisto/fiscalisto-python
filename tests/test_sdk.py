@@ -92,6 +92,11 @@ class RequestTest(unittest.TestCase):
         # Every POST carries a key of its own, so a retry never does it twice.
         self.assertRegex(r.headers["idempotency-key"], r"^[0-9a-f-]{36}$")
         self.assertEqual(json.loads(r.body or b"")["legal_name"], "INMOBILIARIA CVA")
+        # A proxy's path stays.
+        fake = Fake(answer(200, {"id": "org_1"}))
+        f, _ = client(fake, base_url="https://proxy.example.com/fiscalisto/")
+        f.account.get()
+        self.assertEqual(fake.requests[0].url, "https://proxy.example.com/fiscalisto/v1/account")
 
     def test_expands_related_objects(self) -> None:
         fake = Fake(answer(200, {"id": "inv_1", "issuer": {"id": "iss_1"}}))
@@ -202,6 +207,15 @@ class RequestTest(unittest.TestCase):
         with self.assertRaises(FiscalistoError) as caught:
             f.account.get()
         self.assertEqual((caught.exception.code, caught.exception.request_id), ("unknown", "req_2"))
+        # A success that isn't JSON (a proxy's or a network portal's page) is still a FiscalistoError.
+        fake = Fake(answer(200, b"<html>Inicie sesion en la red</html>", request_id="req_3"))
+        f, _ = client(fake)
+        with self.assertRaises(FiscalistoError) as caught:
+            f.account.get()
+        e = caught.exception
+        self.assertEqual(
+            (e.type, e.code, e.status, e.request_id), ("api_error", "invalid_response", 200, "req_3")
+        )
 
     def test_files_and_query(self) -> None:
         fake = Fake(answer(200, b"%PDF-1.7"), answer(200, b"<cfdi:Comprobante/>"))
