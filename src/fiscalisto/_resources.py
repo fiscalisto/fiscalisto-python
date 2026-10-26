@@ -64,6 +64,7 @@ if TYPE_CHECKING:
         GetRetentionPdfParams,
         GetRetentionXmlParams,
         GetSatCatalogParams,
+        GetSatDeclarationCalendarParams,
         GetTrialBalanceParams,
         ImportStoreOrdersParams,
         Invoice,
@@ -110,6 +111,7 @@ if TYPE_CHECKING:
         SandboxList,
         SatCatalogEntryList,
         SatDeclaration,
+        SatDeclarationCalendar,
         SatDeclarationsRefresh,
         SatDownload,
         SatInvoice,
@@ -260,6 +262,8 @@ class SandboxesResource:
     ) -> SandboxList:
         """Listar entornos de prueba
 
+        Los entornos de prueba de la cuenta, cada uno con su emisor de prueba y su llave fk_test_. Hasta 25 por cuenta.
+
         GET /v1/sandboxes
         https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/list-sandboxes
         """
@@ -277,6 +281,8 @@ class SandboxesResource:
         expand: Sequence[str] | None = None,
     ) -> Sandbox:
         """Ver un entorno de prueba
+
+        Un entorno de prueba: su nombre, su emisor y lo que lleva usado hoy de sus reinicios.
 
         GET /v1/sandboxes/{id}
         https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/get-sandbox
@@ -344,6 +350,8 @@ class TestClocksResource:
         expand: Sequence[str] | None = None,
     ) -> TestClock:
         """Ver el reloj de prueba
+
+        La hora que es «hoy» para un emisor de prueba y hasta dónde se ha adelantado. Solo emisores de prueba.
 
         GET /v1/issuers/{id}/test_clock
         https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/get-test-clock
@@ -459,6 +467,8 @@ class IssuersResource:
     ) -> ListObject[Issuer]:
         """Listar emisores
 
+        Los emisores de la cuenta en el modo de la llave, los más recientes primero. Una llave limitada a algunos emisores solo ve los suyos.
+
         GET /v1/issuers
         https://fiscalisto.com/docs/api/referencia/emisores/list-issuers
         """
@@ -473,6 +483,8 @@ class IssuersResource:
         expand: Sequence[str] | None = None,
     ) -> Issuer:
         """Ver un emisor
+
+        Un emisor: sus datos fiscales, si ya puede timbrar (status, CSD y contrato con el PAC) y su registro patronal.
 
         GET /v1/issuers/{id}
         https://fiscalisto.com/docs/api/referencia/emisores/get-issuer
@@ -620,6 +632,8 @@ class IssuersResource:
     ) -> SelfInvoicing:
         """Ver el portal de autofactura de un emisor
 
+        El portal de autofactura del emisor: su dirección, hasta cuándo se puede facturar un ticket y cómo se arma la factura global.
+
         GET /v1/issuers/{id}/self_invoicing
         https://fiscalisto.com/docs/api/referencia/autofactura/get-self-invoicing
         """
@@ -725,6 +739,8 @@ class InvoicesResource:
         max_retries: int | None = None,
     ) -> bytes:
         """Descargar el PDF
+
+        La representación impresa del CFDI, como la recibe su cliente. En vez del id puede usar el UUID (con issuer si la cuenta tiene varios emisores).
 
         GET /v1/invoices/{id}/pdf
         https://fiscalisto.com/docs/api/referencia/facturas/get-invoice-pdf
@@ -941,6 +957,8 @@ class BankTransactionsResource:
     ) -> BankTransaction:
         """Ver un depósito
 
+        Un depósito mandado a conciliación, con las facturas que se le encontraron o el pago que se registró con él.
+
         GET /v1/bank_transactions/{id}
         https://fiscalisto.com/docs/api/referencia/conciliacion-bancaria/get-bank-transaction
         """
@@ -1108,6 +1126,8 @@ class AdvancesResource:
     ) -> AdvanceList:
         """Listar anticipos sin aplicar
 
+        Los anticipos timbrados que todavía no se aplican a una factura, con lo que queda de cada uno. Filtre por customer para los de un cliente.
+
         GET /v1/advances
         https://fiscalisto.com/docs/api/referencia/anticipos/list-advances
         """
@@ -1156,6 +1176,8 @@ class RetentionsResource:
     ) -> Retention:
         """Timbrar una constancia de retenciones
 
+        Timbra una constancia de retenciones e información de pagos (Retenciones 2.0) con los folios RET1, RET2… del emisor. Una vez por Idempotency-Key; con send_email y email la manda al receptor al timbrarla.
+
         POST /v1/retentions
         https://fiscalisto.com/docs/api/referencia/retenciones/create-retention
         """
@@ -1174,6 +1196,8 @@ class RetentionsResource:
     ) -> ListObject[Retention]:
         """Listar constancias
 
+        Las constancias del emisor, las más recientes primero.
+
         GET /v1/retentions
         https://fiscalisto.com/docs/api/referencia/retenciones/list-retentions
         """
@@ -1189,6 +1213,8 @@ class RetentionsResource:
         expand: Sequence[str] | None = None,
     ) -> Retention:
         """Ver una constancia
+
+        Una constancia de retenciones con su estado, sus impuestos retenidos y, si se mandó, a quién.
 
         GET /v1/retentions/{id}
         https://fiscalisto.com/docs/api/referencia/retenciones/get-retention
@@ -1208,6 +1234,8 @@ class RetentionsResource:
     ) -> bytes:
         """Descargar el PDF
 
+        La representación impresa de la constancia.
+
         GET /v1/retentions/{id}/pdf
         https://fiscalisto.com/docs/api/referencia/retenciones/get-retention-pdf
         """
@@ -1225,6 +1253,8 @@ class RetentionsResource:
         max_retries: int | None = None,
     ) -> str:
         """Descargar el XML
+
+        El XML timbrado de la constancia, tal como lo tiene el SAT.
 
         GET /v1/retentions/{id}/xml
         https://fiscalisto.com/docs/api/referencia/retenciones/get-retention-xml
@@ -1245,6 +1275,8 @@ class RetentionsResource:
         expand: Sequence[str] | None = None,
     ) -> Retention:
         """Enviar por correo
+
+        Manda el PDF y el XML de la constancia a los correos de to (o al que se dio al timbrarla). Dos envíos a la vez de la misma constancia: el segundo contesta email_failed.
 
         POST /v1/retentions/{id}/send
         https://fiscalisto.com/docs/api/referencia/retenciones/send-retention
@@ -1294,6 +1326,8 @@ class EmployeesResource:
     ) -> Employee:
         """Crear un empleado
 
+        Un empleado del emisor para sus recibos de nómina: RFC, CURP, NSS, salario diario, salario diario integrado y periodicidad. Lo que no mande tiene el valor usual (contrato indefinido, jornada diurna, quincenal, riesgo clase I). warnings dice lo que el SAT podría rechazar.
+
         POST /v1/employees
         https://fiscalisto.com/docs/api/referencia/nomina/create-employee
         """
@@ -1312,6 +1346,8 @@ class EmployeesResource:
     ) -> ListObject[Employee]:
         """Listar empleados
 
+        Los empleados del emisor, los más recientes primero.
+
         GET /v1/employees
         https://fiscalisto.com/docs/api/referencia/nomina/list-employees
         """
@@ -1326,6 +1362,8 @@ class EmployeesResource:
         expand: Sequence[str] | None = None,
     ) -> Employee:
         """Ver un empleado
+
+        Un empleado con sus datos y lo que el SAT podría rechazar en warnings.
 
         GET /v1/employees/{id}
         https://fiscalisto.com/docs/api/referencia/nomina/get-employee
@@ -1346,6 +1384,8 @@ class EmployeesResource:
         expand: Sequence[str] | None = None,
     ) -> Employee:
         """Actualizar un empleado
+
+        Cambia solo los campos que manda; los recibos ya timbrados no cambian.
 
         POST /v1/employees/{id}
         https://fiscalisto.com/docs/api/referencia/nomina/update-employee
@@ -1414,6 +1454,8 @@ class PayrollReceiptsResource:
     ) -> PayrollReceiptPreview:
         """Calcular un recibo sin timbrar
 
+        El recibo como se timbraría (percepciones, ISR con el subsidio para el empleo, cuotas IMSS y el neto), sin timbrar ni usar timbres.
+
         POST /v1/payroll_receipts/preview
         https://fiscalisto.com/docs/api/referencia/nomina/preview-payroll-receipt
         """
@@ -1459,6 +1501,8 @@ class InvoiceBatchesResource:
         expand: Sequence[str] | None = None,
     ) -> ListObject[InvoiceBatch]:
         """Listar lotes
+
+        Los lotes de facturas, los más recientes primero, con cuántas se timbraron y cuántas fallaron.
 
         GET /v1/invoice_batches
         https://fiscalisto.com/docs/api/referencia/lotes/list-invoice-batches
@@ -1531,6 +1575,8 @@ class CustomersResource:
     ) -> Customer:
         """Crear un cliente
 
+        Un cliente del catálogo del emisor, con sus datos fiscales como vienen en su constancia. Un RFC que ya está en el catálogo contesta customer_exists.
+
         POST /v1/customers
         https://fiscalisto.com/docs/api/referencia/clientes/create-customer
         """
@@ -1549,6 +1595,8 @@ class CustomersResource:
     ) -> ListObject[Customer]:
         """Listar clientes
 
+        Los clientes del emisor, los más recientes primero. Con tax_id, el de ese RFC.
+
         GET /v1/customers
         https://fiscalisto.com/docs/api/referencia/clientes/list-customers
         """
@@ -1563,6 +1611,8 @@ class CustomersResource:
         expand: Sequence[str] | None = None,
     ) -> Customer:
         """Ver un cliente
+
+        Un cliente del catálogo.
 
         GET /v1/customers/{id}
         https://fiscalisto.com/docs/api/referencia/clientes/get-customer
@@ -1584,6 +1634,8 @@ class CustomersResource:
     ) -> Customer:
         """Actualizar un cliente
 
+        Cambia solo los campos que manda. Las facturas ya timbradas no cambian.
+
         POST /v1/customers/{id}
         https://fiscalisto.com/docs/api/referencia/clientes/update-customer
         """
@@ -1601,6 +1653,8 @@ class CustomersResource:
         expand: Sequence[str] | None = None,
     ) -> Deleted:
         """Borrar un cliente
+
+        Lo quita del catálogo. Sus facturas timbradas siguen igual.
 
         DELETE /v1/customers/{id}
         https://fiscalisto.com/docs/api/referencia/clientes/delete-customer
@@ -1648,6 +1702,8 @@ class CustomerDataRequestsResource:
     ) -> ListObject[CustomerDataRequest]:
         """Listar solicitudes de datos
 
+        Las ligas para pedir datos fiscales, las más recientes primero, con su estado.
+
         GET /v1/customer_data_requests
         https://fiscalisto.com/docs/api/referencia/clientes/list-customer-data-requests
         """
@@ -1662,6 +1718,8 @@ class CustomerDataRequestsResource:
         expand: Sequence[str] | None = None,
     ) -> CustomerDataRequest:
         """Ver una solicitud de datos
+
+        Una solicitud de datos: su liga y, si el cliente ya contestó, sus datos fiscales y el cliente que se guardó.
 
         GET /v1/customer_data_requests/{id}
         https://fiscalisto.com/docs/api/referencia/clientes/get-customer-data-request
@@ -1709,6 +1767,8 @@ class ProductsResource:
     ) -> Product:
         """Crear un producto
 
+        Un producto o servicio del catálogo del emisor, con su clave del SAT, su unidad, su precio y sus impuestos, para usarlo en items con product.
+
         POST /v1/products
         https://fiscalisto.com/docs/api/referencia/productos/create-product
         """
@@ -1727,6 +1787,8 @@ class ProductsResource:
     ) -> ListObject[Product]:
         """Listar productos
 
+        Los productos del emisor, los más recientes primero. Filtre por sku o product_key.
+
         GET /v1/products
         https://fiscalisto.com/docs/api/referencia/productos/list-products
         """
@@ -1741,6 +1803,8 @@ class ProductsResource:
         expand: Sequence[str] | None = None,
     ) -> Product:
         """Ver un producto
+
+        Un producto del catálogo.
 
         GET /v1/products/{id}
         https://fiscalisto.com/docs/api/referencia/productos/get-product
@@ -1762,6 +1826,8 @@ class ProductsResource:
     ) -> Product:
         """Actualizar un producto
 
+        Cambia solo los campos que manda. Las facturas ya timbradas no cambian.
+
         POST /v1/products/{id}
         https://fiscalisto.com/docs/api/referencia/productos/update-product
         """
@@ -1779,6 +1845,8 @@ class ProductsResource:
         expand: Sequence[str] | None = None,
     ) -> Deleted:
         """Borrar un producto
+
+        Lo quita del catálogo. Las facturas que lo usaron siguen igual.
 
         DELETE /v1/products/{id}
         https://fiscalisto.com/docs/api/referencia/productos/delete-product
@@ -1902,6 +1970,8 @@ class SatDownloadsResource:
     ) -> ListObject[SatDownload]:
         """Listar descargas del SAT
 
+        Las descargas pedidas al SAT, las más recientes primero, con su estado.
+
         GET /v1/sat_downloads
         https://fiscalisto.com/docs/api/referencia/descargas-del-sat/list-sat-downloads
         """
@@ -1916,6 +1986,8 @@ class SatDownloadsResource:
         expand: Sequence[str] | None = None,
     ) -> SatDownload:
         """Ver una descarga del SAT
+
+        Una descarga del SAT: su periodo, su estado y cuántos CFDI trajo. Al terminar llega sat_download.completed.
 
         GET /v1/sat_downloads/{id}
         https://fiscalisto.com/docs/api/referencia/descargas-del-sat/get-sat-download
@@ -1958,6 +2030,8 @@ class SatInvoicesResource:
         expand: Sequence[str] | None = None,
     ) -> SatInvoice:
         """Ver una factura del SAT
+
+        Un CFDI que trajo una descarga del SAT, con sus importes y su estado ante el SAT.
 
         GET /v1/sat_invoices/{id}
         https://fiscalisto.com/docs/api/referencia/descargas-del-sat/get-sat-invoice
@@ -2031,6 +2105,26 @@ class SatDeclarationsResource:
         """
         return self._client.list("/v1/sat_declarations", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
+    def calendar(
+        self,
+        params: GetSatDeclarationCalendarParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatDeclarationCalendar:
+        """Ver el año mes por mes
+
+        Cada mes del ejercicio con sus obligaciones: presentada (con sus declaraciones), falta (venció y no la encontramos) o por presentar, con el día en que vence (el 17 del mes siguiente, o el día hábil siguiente, más los días por el sexto dígito del RFC). Se arma con lo que trajeron sus consultas; no usa timbres.
+
+        GET /v1/sat_declarations/calendar
+        https://fiscalisto.com/docs/api/referencia/declaraciones-del-sat/get-sat-declaration-calendar
+        """
+        result: SatDeclarationCalendar = self._client.request(
+            "GET", "/v1/sat_declarations/calendar", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
     def get(
         self,
         id: str,
@@ -2040,6 +2134,8 @@ class SatDeclarationsResource:
         expand: Sequence[str] | None = None,
     ) -> SatDeclaration:
         """Ver una declaración del SAT
+
+        Una declaración presentada al SAT, con sus cifras en summary y si ya están su PDF y su acuse.
 
         GET /v1/sat_declarations/{id}
         https://fiscalisto.com/docs/api/referencia/declaraciones-del-sat/get-sat-declaration
@@ -2160,6 +2256,8 @@ class TicketsResource:
         expand: Sequence[str] | None = None,
     ) -> Ticket:
         """Ver un ticket
+
+        Un ticket de autofactura: si ya se facturó (invoice) o entró en la factura global (global_invoice).
 
         GET /v1/tickets/{id}
         https://fiscalisto.com/docs/api/referencia/autofactura/get-ticket
@@ -2406,6 +2504,8 @@ class StoreConnectionsResource:
     ) -> StoreConnection:
         """Ver una tienda
 
+        Una tienda conectada (Shopify, Mercado Libre o WooCommerce), su estado y lo último que importó.
+
         GET /v1/store_connections/{id}
         https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/get-store-connection
         """
@@ -2532,6 +2632,8 @@ class RecurringInvoicesResource:
         expand: Sequence[str] | None = None,
     ) -> RecurringInvoice:
         """Ver una factura recurrente
+
+        Una factura recurrente: su calendario, la próxima fecha, la última factura que timbró y, si falló, por qué en last_error.
 
         GET /v1/recurring_invoices/{id}
         https://fiscalisto.com/docs/api/referencia/facturas-recurrentes/get-recurring-invoice
@@ -2853,6 +2955,8 @@ class WebhookEndpointsResource:
     ) -> ListObject[WebhookEndpoint]:
         """Listar webhooks
 
+        Los webhooks del modo de la llave. Hasta 16 por modo.
+
         GET /v1/webhook_endpoints
         https://fiscalisto.com/docs/api/referencia/webhooks/list-webhook-endpoints
         """
@@ -2867,6 +2971,8 @@ class WebhookEndpointsResource:
         expand: Sequence[str] | None = None,
     ) -> WebhookEndpoint:
         """Ver un webhook
+
+        Un webhook: su dirección, los eventos que recibe y si sus entregas fallan. El secreto solo viene al crearlo.
 
         GET /v1/webhook_endpoints/{id}
         https://fiscalisto.com/docs/api/referencia/webhooks/get-webhook-endpoint
@@ -2888,6 +2994,8 @@ class WebhookEndpointsResource:
     ) -> WebhookEndpoint:
         """Actualizar un webhook
 
+        Cambia su dirección, sus eventos, su descripción o su versión de la API; con disabled: false vuelve a encender uno que se apagó.
+
         POST /v1/webhook_endpoints/{id}
         https://fiscalisto.com/docs/api/referencia/webhooks/update-webhook-endpoint
         """
@@ -2905,6 +3013,8 @@ class WebhookEndpointsResource:
         expand: Sequence[str] | None = None,
     ) -> Deleted:
         """Borrar un webhook
+
+        Deja de mandar eventos a esa dirección. Los eventos siguen en GET /v1/events.
 
         DELETE /v1/webhook_endpoints/{id}
         https://fiscalisto.com/docs/api/referencia/webhooks/delete-webhook-endpoint
@@ -2991,6 +3101,8 @@ class EventsResource:
         expand: Sequence[str] | None = None,
     ) -> Event:
         """Ver un evento
+
+        Un evento de los últimos 30 días, con el objeto como estaba cuando pasó.
 
         GET /v1/events/{id}
         https://fiscalisto.com/docs/api/referencia/eventos/get-event
