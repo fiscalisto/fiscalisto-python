@@ -2651,10 +2651,12 @@ class CrossChecksMonthsItemChecksItem(TypedDict):
     """matches (hasta $2 de diferencia), differs, not_filed (no hay declaración del mes, o en una retención ninguna declaración del mes la trae) o unreadable (la declaración no trae la cifra en un renglón reconocible)."""
     declared: float | None
     """Lo declarado, en pesos; null si no hay declaración o no se pudo leer."""
+    declared_without_cfdi: float
+    """De declared, lo que la propia declaración dice que no salió de facturas: en isr_income los ingresos nominales adicionales (cobrado sin factura, intereses) y en vat_charged el IVA al 16% por encima de la precarga del SAT. Se compara aparte; 0 si no hay."""
     invoiced: float
     """Lo que dicen los CFDI del mes, con los mismos cálculos de Impuestos."""
     difference: float | None
-    """declared menos invoiced; null si declared es null."""
+    """declared menos declared_without_cfdi menos invoiced; null si declared es null."""
     operation_number: str | None
     """El número de operación de la declaración de donde salió la cifra."""
 
@@ -2759,10 +2761,12 @@ class CrossCheckCfdi(TypedDict):
     """El cruce de esa cifra, como en GET /v1/accounting/cross_checks: matches, differs, not_filed o unreadable."""
     declared: float | None
     """Lo declarado, en pesos; null si no hay declaración o no se pudo leer."""
+    declared_without_cfdi: float
+    """De declared, lo que la propia declaración dice que no salió de facturas (ingresos nominales adicionales en isr_income, IVA al 16% sobre la precarga del SAT en vat_charged); 0 si no hay."""
     invoiced: float
     """Lo que dicen los CFDI del mes: la suma de cfdi más adjustment."""
     difference: float | None
-    """declared menos invoiced; null si declared es null."""
+    """declared menos declared_without_cfdi menos invoiced; null si declared es null."""
     operation_number: str | None
     """El número de operación de la declaración de donde salió la cifra."""
     cfdi: list[CrossCheckCfdiCfdiItem]
@@ -3125,7 +3129,7 @@ class WebhookEndpoint(TypedDict):
     description: str | None
     """Para qué es, para usted."""
     events: list[str]
-    """Eventos que quiere recibir, o ["*"] para todos (por omisión). Ver la lista en Webhooks."""
+    """Eventos que quiere recibir, o ["*"] para todos (por omisión). La lista con cuándo llega cada uno: [Tipos de evento](https://fiscalisto.com/docs/api/webhooks#tipos-de-evento)."""
     status: Literal["enabled", "failing", "disabled"]
     """enabled: entregando. failing: sus entregas fallan (se apaga tras 5 días así). disabled: apagado."""
     disabled_reason: NotRequired[str | None]
@@ -6869,7 +6873,7 @@ class CreateWebhookEndpointParams(TypedDict):
     url: str
     """Dirección https de su servidor que recibe los avisos."""
     events: NotRequired[list[str] | None]
-    """Eventos que quiere recibir, o ["*"] para todos (por omisión). Ver la lista en Webhooks."""
+    """Eventos que quiere recibir, o ["*"] para todos (por omisión). La lista con cuándo llega cada uno: [Tipos de evento](https://fiscalisto.com/docs/api/webhooks#tipos-de-evento)."""
     description: NotRequired[str | None]
     """Para qué es, para usted (no se manda en los eventos)."""
     api_version: NotRequired[str | None]
@@ -6888,7 +6892,7 @@ class UpdateWebhookEndpointParams(TypedDict):
     url: NotRequired[str]
     """Dirección https de su servidor que recibe los avisos."""
     events: NotRequired[list[str] | None]
-    """Eventos que quiere recibir, o ["*"] para todos (por omisión). Ver la lista en Webhooks."""
+    """Eventos que quiere recibir, o ["*"] para todos (por omisión). La lista con cuándo llega cada uno: [Tipos de evento](https://fiscalisto.com/docs/api/webhooks#tipos-de-evento)."""
     description: NotRequired[str | None]
     """Para qué es, para usted (no se manda en los eventos)."""
     disabled: NotRequired[bool]
