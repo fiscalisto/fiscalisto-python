@@ -82,6 +82,8 @@ __all__ = [
     "CreateTestClockParams",
     "CreateTicketParams",
     "CreateWebhookEndpointParams",
+    "CrossCheckCfdi",
+    "CrossCheckCfdiCfdiItem",
     "CrossChecks",
     "CrossChecksMonthsItem",
     "CrossChecksMonthsItemChecksItem",
@@ -126,6 +128,7 @@ __all__ = [
     "FinancialStatementsIncomeStatementYearToDateSectionsItem",
     "FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItem",
     "FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItemAccountsItem",
+    "GetCrossCheckCfdiParams",
     "GetCrossChecksParams",
     "GetDiotFileParams",
     "GetDiotParams",
@@ -2355,6 +2358,49 @@ class CrossChecks(TypedDict):
     """El IVA a favor que muestran las declaraciones del año y lo que meses posteriores acreditaron. Una estimación con las declaraciones leídas, no la cuenta del SAT."""
     tax_regimes: CrossChecksTaxRegimes
     """Los regímenes del emisor (registered, de su constancia) y con cuáles facturó en el año."""
+
+
+class CrossCheckCfdiCfdiItem(TypedDict):
+    uuid: str | None
+    """El folio fiscal (UUID) del CFDI; el de la factura PPD en un pago."""
+    type: Literal["invoice", "credit_note", "payment"]
+    """invoice (factura de ingreso, PUE), credit_note (nota de crédito: resta) o payment (lo pagado en el mes de una factura PPD)."""
+    date: str | None
+    """La fecha del CFDI, o la del pago (AAAA-MM-DD)."""
+    tax_id: str | None
+    """El RFC de la contraparte: el cliente en lo emitido, el proveedor en lo recibido."""
+    name: str | None
+    """El nombre de la contraparte, como viene en el CFDI."""
+    amount: float
+    """Lo que aporta a la cifra, en pesos; negativo en una nota de crédito."""
+
+
+class CrossCheckCfdi(TypedDict):
+    """Los CFDI que forman una cifra del cruce de un mes (invoiced): cada uno con lo que aporta, y el ajuste que Impuestos agrega encima."""
+    object: Literal["cross_check_cfdi"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM)."""
+    key: Literal["vat_charged", "vat_creditable", "vat_withheld", "isr_income", "isr_withheld_salaries", "isr_withheld_suppliers", "vat_withheld_suppliers"]
+    """La cifra: vat_charged (IVA trasladado), vat_creditable (IVA acreditable), vat_withheld (IVA que le retuvieron), isr_income (ingresos para ISR), isr_withheld_salaries (ISR retenido en sus recibos de nómina), isr_withheld_suppliers o vat_withheld_suppliers (ISR o IVA que retuvo a proveedores)."""
+    status: Literal["matches", "differs", "not_filed", "unreadable"]
+    """El cruce de esa cifra, como en GET /v1/accounting/cross_checks: matches, differs, not_filed o unreadable."""
+    declared: float | None
+    """Lo declarado, en pesos; null si no hay declaración o no se pudo leer."""
+    invoiced: float
+    """Lo que dicen los CFDI del mes: la suma de cfdi más adjustment."""
+    difference: float | None
+    """declared menos invoiced; null si declared es null."""
+    operation_number: str | None
+    """El número de operación de la declaración de donde salió la cifra."""
+    cfdi: list[CrossCheckCfdiCfdiItem]
+    """Cada CFDI que suma en el mes, de mayor a menor: los PUE y las notas de crédito en su mes, las facturas PPD por lo que se pagó en el mes."""
+    adjustment: float
+    """Lo que Impuestos agrega sobre los CFDI: en vat_creditable, la proporción de gastos comunes, el IVA retenido enterado del mes anterior y las importaciones; 0 en las demás."""
 
 
 class DiotLinesItemPaid(TypedDict):
@@ -5590,6 +5636,16 @@ class GetCrossChecksParams(TypedDict):
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 
 
+class GetCrossCheckCfdiParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/cross_checks/cfdi."""
+    month: str
+    """El mes (AAAA-MM), cuya declaración ya venció."""
+    key: Literal["vat_charged", "vat_creditable", "vat_withheld", "isr_income", "isr_withheld_salaries", "isr_withheld_suppliers", "vat_withheld_suppliers"]
+    """La cifra: vat_charged, vat_creditable, vat_withheld, isr_income, isr_withheld_salaries, isr_withheld_suppliers o vat_withheld_suppliers."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
 class ListLedgerAccountsParams(TypedDict):
     """Los parámetros de GET /v1/accounting/accounts."""
     issuer: NotRequired[str]
@@ -6188,10 +6244,12 @@ class ListEventsParams(TypedDict):
     """Cuántos por página, de 1 a 100. Por omisión 10."""
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
-    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.paid", "invoice.partially_paid", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "issuer.ready", "balance.low", "test_clock.ready"]]
-    """Solo de este tipo."""
+    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.paid", "invoice.partially_paid", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "issuer.ready", "balance.low", "test_clock.ready", "invoice.*", "invoice_batch.*", "recurring_invoice.*", "quote.*", "ticket.*", "retention.*", "customer_data_request.*", "sat_download.*", "sat_declaration.*", "issuer.*", "balance.*", "test_clock.*"]]
+    """Solo de este tipo (invoice.stamped), o todos los de un recurso con un comodín (invoice.*)."""
     object: NotRequired[str]
     """Solo los de este objeto (inv_…, ret_…, bat_…)."""
+    delivery_success: NotRequired[bool]
+    """false: los que algún webhook no recibió (su último intento falló). true: los que recibieron todos los webhooks a los que se mandaron."""
 
 
 class ApplyAdvanceParams(InvoiceCreate):

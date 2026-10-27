@@ -44,6 +44,7 @@ if TYPE_CHECKING:
         CreateTestClockParams,
         CreateTicketParams,
         CreateWebhookEndpointParams,
+        CrossCheckCfdi,
         CrossChecks,
         Customer,
         CustomerDataRequest,
@@ -52,6 +53,7 @@ if TYPE_CHECKING:
         Employee,
         Event,
         FinancialStatements,
+        GetCrossCheckCfdiParams,
         GetCrossChecksParams,
         GetDiotFileParams,
         GetDiotParams,
@@ -2368,6 +2370,26 @@ class AccountingResource:
         """
         result: CrossChecks = self._client.request(
             "GET", "/v1/accounting/cross_checks", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def cross_check_cfdi(
+        self,
+        params: GetCrossCheckCfdiParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CrossCheckCfdi:
+        """Ver los CFDI de una cifra del cruce
+
+        Los CFDI que forman lo facturado (invoiced) de una cifra del cruce de un mes, con los mismos cálculos de Impuestos: cada factura PUE o nota de crédito en su mes y cada factura PPD por lo que se pagó en el mes, con lo que aporta. La suma de cfdi más adjustment es invoiced. Sirve para ver por qué una cifra differs. Gratis: no consulta al SAT.
+
+        GET /v1/accounting/cross_checks/cfdi
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-cross-check-cfdi
+        """
+        result: CrossCheckCfdi = self._client.request(
+            "GET", "/v1/accounting/cross_checks/cfdi", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
