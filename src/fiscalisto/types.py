@@ -2731,7 +2731,7 @@ class CrossChecks(TypedDict):
 class CrossCheckCfdiCfdiItem(TypedDict):
     uuid: str | None
     """El folio fiscal (UUID) del CFDI; el de la factura PPD en un pago."""
-    type: Literal["invoice", "credit_note", "payment"]
+    type: Literal["invoice", "credit_note", "payment", "withholding_certificate"]
     """invoice (factura de ingreso, PUE), credit_note (nota de crédito: resta) o payment (lo pagado en el mes de una factura PPD)."""
     date: str | None
     """La fecha del CFDI, o la del pago (AAAA-MM-DD)."""
