@@ -19,12 +19,15 @@ if TYPE_CHECKING:
         Balance,
         BankImport,
         BankTransaction,
+        Branch,
         CancelInvoiceParams,
         CancelRetentionParams,
         CheckSatListsParams,
         ClassifyBankTransactionParams,
+        ComplianceOpinion,
         CreateAdvanceParams,
         CreateBankTransactionsParams,
+        CreateBranchParams,
         CreateCreditNoteParams,
         CreateCustomerDataRequestParams,
         CreateCustomerParams,
@@ -40,6 +43,7 @@ if TYPE_CHECKING:
         CreateRetentionParams,
         CreateSandboxParams,
         CreateSatDownloadParams,
+        CreateStockAdjustmentParams,
         CreateStoreConnectionParams,
         CreateTestClockParams,
         CreateTicketParams,
@@ -78,6 +82,7 @@ if TYPE_CHECKING:
         LedgerAccountList,
         ListAdvancesParams,
         ListBankTransactionsParams,
+        ListBranchesParams,
         ListCustomerDataRequestsParams,
         ListCustomersParams,
         ListEmployeesParams,
@@ -94,9 +99,15 @@ if TYPE_CHECKING:
         ListRetentionsParams,
         ListSatDeclarationsParams,
         ListSatDownloadsParams,
+        ListSatFindingsParams,
         ListSatInvoicesParams,
+        ListSatMailboxMessagesParams,
+        ListStockAdjustmentsParams,
+        ListStockMovementsParams,
         ListStoreConnectionsParams,
         ListTicketsParams,
+        ListWarehouseStockParams,
+        ListWarehousesParams,
         ListWebhookEndpointsParams,
         MatchBankTransactionParams,
         PayrollReceiptPreview,
@@ -116,23 +127,32 @@ if TYPE_CHECKING:
         SatDeclarationCalendar,
         SatDeclarationsRefresh,
         SatDownload,
+        SatFindingList,
         SatInvoice,
         SatListCheck,
         SatListCheckList,
+        SatMailboxMessage,
+        SatRefresh,
         SelfInvoicing,
         SendInvoiceParams,
         SendQuoteParams,
         SendRetentionParams,
         SignEfirmaParams,
+        StockAdjustment,
+        StockLevel,
+        StockLevelList,
+        StockMovement,
         StoreConnection,
         StoreImport,
         TaxIdValidation,
+        TaxStatusCertificate,
         TestClock,
         TestDataReset,
         TestWebhookEndpointParams,
         Ticket,
         TrialBalance,
         UpdateAccountParams,
+        UpdateBranchParams,
         UpdateCustomerParams,
         UpdateEmployeeParams,
         UpdateIssuerParams,
@@ -144,6 +164,8 @@ if TYPE_CHECKING:
         UpdateWebhookEndpointParams,
         UploadCertificateParams,
         ValidateTaxIdParams,
+        Warehouse,
+        WarehouseList,
         WebhookEndpoint,
         WebhookTest,
     )
@@ -621,6 +643,147 @@ class IssuersResource:
         """
         result: IssuerOnboardingLink = self._client.request(
             "POST", f"/v1/issuers/{_path(id)}/onboarding_links", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def compliance_opinion(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ComplianceOpinion:
+        """Ver la opinión de cumplimiento (32-D)
+
+        La última opinión que trajo del SAT: positiva, negativa (con sus motivos), sin obligaciones o en suspensión. result es null hasta la primera consulta. No usa timbres.
+
+        GET /v1/issuers/{id}/compliance_opinion
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/get-compliance-opinion
+        """
+        result: ComplianceOpinion = self._client.request(
+            "GET", f"/v1/issuers/{_path(id)}/compliance_opinion", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def refresh_compliance_opinion(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatRefresh:
+        """Pedir la opinión de cumplimiento al SAT
+
+        La pide al SAT ahora con la e.firma guardada del emisor (POST /v1/issuers/{id}/efirma con keep_for_downloads: true). 1 timbre en producción, una vez cada 10 minutos; regresa si el SAT no contesta. Si el SAT tarda, contesta status processing y el resultado llega a GET /v1/issuers/{id}/compliance_opinion. En pruebas da una positiva de ejemplo.
+
+        POST /v1/issuers/{id}/compliance_opinion/refresh
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/refresh-compliance-opinion
+        """
+        result: SatRefresh = self._client.request(
+            "POST", f"/v1/issuers/{_path(id)}/compliance_opinion/refresh", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def compliance_opinion_pdf(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> bytes:
+        """Descargar el PDF de la opinión de cumplimiento
+
+        El PDF de la última opinión, como lo da el SAT. No usa timbres.
+
+        GET /v1/issuers/{id}/compliance_opinion/pdf
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/get-compliance-opinion-pdf
+        """
+        result: bytes = self._client.request(
+            "GET", f"/v1/issuers/{_path(id)}/compliance_opinion/pdf", result="bytes", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def tax_status_certificate(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TaxStatusCertificate:
+        """Ver la constancia de situación fiscal
+
+        Lo que dice la última constancia generada: razón social, regímenes, código postal, estatus en el padrón e idCIF. No usa timbres.
+
+        GET /v1/issuers/{id}/tax_status_certificate
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/get-tax-status-certificate
+        """
+        result: TaxStatusCertificate = self._client.request(
+            "GET", f"/v1/issuers/{_path(id)}/tax_status_certificate", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def refresh_tax_status_certificate(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatRefresh:
+        """Generar la constancia de situación fiscal en el SAT
+
+        Genera una constancia nueva con la e.firma guardada del emisor. 1 timbre en producción, una vez cada 10 minutos; regresa si el SAT no contesta. En pruebas hace una con los datos del emisor.
+
+        POST /v1/issuers/{id}/tax_status_certificate/refresh
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/refresh-tax-status-certificate
+        """
+        result: SatRefresh = self._client.request(
+            "POST", f"/v1/issuers/{_path(id)}/tax_status_certificate/refresh", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def tax_status_certificate_pdf(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> bytes:
+        """Descargar el PDF de la constancia
+
+        El PDF de la última constancia, como lo da el SAT. No usa timbres.
+
+        GET /v1/issuers/{id}/tax_status_certificate/pdf
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/get-tax-status-certificate-pdf
+        """
+        result: bytes = self._client.request(
+            "GET", f"/v1/issuers/{_path(id)}/tax_status_certificate/pdf", result="bytes", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def refresh_sat_mailbox(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatRefresh:
+        """Revisar el buzón tributario en el SAT
+
+        Lee los avisos del buzón tributario del emisor ahora, con su e.firma guardada; nunca abre notificaciones (abrirlas firma el acuse y corren los plazos). 1 timbre en producción, una vez cada 10 minutos. En pruebas deja dos avisos de ejemplo.
+
+        POST /v1/issuers/{id}/sat_mailbox/refresh
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/refresh-sat-mailbox
+        """
+        result: SatRefresh = self._client.request(
+            "POST", f"/v1/issuers/{_path(id)}/sat_mailbox/refresh", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1560,6 +1723,113 @@ class TaxIdsResource:
         return result
 
 
+class BranchesResource:
+    """Sucursales: fiscalisto.branches."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateBranchParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Branch:
+        """Crear una sucursal
+
+        Otro lugar desde donde factura el emisor, con su propio código postal: sus facturas llevan ese CP en LugarExpedicion (y su zona horaria en la Fecha, y el IVA 8 % si es de la franja fronteriza), su dirección en el PDF y, si las da, sus propias series. Un CP que ya tiene otra sucursal contesta branch_exists; el del domicilio fiscal del emisor no es sucursal (es la Matriz). Hasta 200 por emisor.
+
+        POST /v1/branches
+        https://fiscalisto.com/docs/api/referencia/sucursales/create-branch
+        """
+        result: Branch = self._client.request(
+            "POST", "/v1/branches", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListBranchesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[Branch]:
+        """Listar sucursales
+
+        Las sucursales del emisor, las más recientes primero. Las archivadas solo con include_archived=true.
+
+        GET /v1/branches
+        https://fiscalisto.com/docs/api/referencia/sucursales/list-branches
+        """
+        return self._client.list("/v1/branches", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Branch:
+        """Ver una sucursal
+
+        Una sucursal del emisor.
+
+        GET /v1/branches/{id}
+        https://fiscalisto.com/docs/api/referencia/sucursales/get-branch
+        """
+        result: Branch = self._client.request(
+            "GET", f"/v1/branches/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateBranchParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Branch:
+        """Actualizar una sucursal
+
+        Cambia solo los campos que manda; una serie en null vuelve a la del emisor. archived: true la archiva (ya no se factura desde ella y sus facturas la siguen nombrando), false la restaura. El código postal de una sucursal que ya facturó no cambia: si se mudó, archívela y cree otra.
+
+        POST /v1/branches/{id}
+        https://fiscalisto.com/docs/api/referencia/sucursales/update-branch
+        """
+        result: Branch = self._client.request(
+            "POST", f"/v1/branches/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar una sucursal
+
+        Solo una que nunca facturó; con facturas contesta branch_has_invoices: archívela con archived: true.
+
+        DELETE /v1/branches/{id}
+        https://fiscalisto.com/docs/api/referencia/sucursales/delete-branch
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/branches/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class CustomersResource:
     """Clientes: fiscalisto.customers."""
 
@@ -1855,6 +2125,271 @@ class ProductsResource:
         """
         result: Deleted = self._client.request(
             "DELETE", f"/v1/products/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def stock(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> StockLevelList:
+        """Ver las existencias de un producto
+
+        Lo que hay del producto en cada almacén del emisor (también en 0), apartado por cotizaciones y disponible.
+
+        GET /v1/products/{id}/stock
+        https://fiscalisto.com/docs/api/referencia/inventario/get-product-stock
+        """
+        result: StockLevelList = self._client.request(
+            "GET", f"/v1/products/{_path(id)}/stock", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class SatMailboxMessagesResource:
+    """Cumplimiento SAT: fiscalisto.sat_mailbox_messages."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListSatMailboxMessagesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[SatMailboxMessage]:
+        """Listar avisos del buzón tributario
+
+        Los avisos que trajo del buzón del emisor, los más recientes primero. No usa timbres.
+
+        GET /v1/sat_mailbox_messages
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/list-sat-mailbox-messages
+        """
+        return self._client.list("/v1/sat_mailbox_messages", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatMailboxMessage:
+        """Ver un aviso del buzón tributario
+
+        Un aviso del buzón, con su urgencia y si pide hacer algo.
+
+        GET /v1/sat_mailbox_messages/{id}
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/get-sat-mailbox-message
+        """
+        result: SatMailboxMessage = self._client.request(
+            "GET", f"/v1/sat_mailbox_messages/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class SatFindingsResource:
+    """Cumplimiento SAT: fiscalisto.sat_findings."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListSatFindingsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatFindingList:
+        """Listar hallazgos en los CFDI
+
+        Lo que Fiscalisto encontró en los CFDI del emisor (los suyos y los descargados del SAT) y nadie ha revisado, por tipo y del más grave al más leve: proveedores en la lista 69-B, CFDI cancelados, pagos en efectivo de más de $2,000, errores de CFDI 4.0. Todos en una página. No usa timbres.
+
+        GET /v1/sat_findings
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/list-sat-findings
+        """
+        result: SatFindingList = self._client.request(
+            "GET", "/v1/sat_findings", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class WarehousesResource:
+    """Inventario: fiscalisto.warehouses."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListWarehousesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> WarehouseList:
+        """Listar almacenes
+
+        Los almacenes del emisor, los más recientes primero: el de la Matriz y uno por sucursal se crean solos. Todos en una página.
+
+        GET /v1/warehouses
+        https://fiscalisto.com/docs/api/referencia/inventario/list-warehouses
+        """
+        result: WarehouseList = self._client.request(
+            "GET", "/v1/warehouses", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Warehouse:
+        """Ver un almacén
+
+        Un almacén del emisor.
+
+        GET /v1/warehouses/{id}
+        https://fiscalisto.com/docs/api/referencia/inventario/get-warehouse
+        """
+        result: Warehouse = self._client.request(
+            "GET", f"/v1/warehouses/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def stock(
+        self,
+        id: str,
+        params: ListWarehouseStockParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[StockLevel]:
+        """Ver las existencias de un almacén
+
+        Lo que hay de cada producto en el almacén, el producto más reciente primero. Solo los que tienen existencias, salvo con include_empty=true (todos los que llevan track_stock).
+
+        GET /v1/warehouses/{id}/stock
+        https://fiscalisto.com/docs/api/referencia/inventario/list-warehouse-stock
+        """
+        return self._client.list(f"/v1/warehouses/{_path(id)}/stock", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+
+class StockMovementsResource:
+    """Inventario: fiscalisto.stock_movements."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListStockMovementsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[StockMovement]:
+        """Listar movimientos (kárdex)
+
+        Cada entrada y salida de existencias, la más reciente primero: ventas (de sus facturas), compras, ajustes, traspasos y lo que deshizo una cancelación.
+
+        GET /v1/stock_movements
+        https://fiscalisto.com/docs/api/referencia/inventario/list-stock-movements
+        """
+        return self._client.list("/v1/stock_movements", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> StockMovement:
+        """Ver un movimiento
+
+        Una entrada o salida de existencias, con lo que la causó (source).
+
+        GET /v1/stock_movements/{id}
+        https://fiscalisto.com/docs/api/referencia/inventario/get-stock-movement
+        """
+        result: StockMovement = self._client.request(
+            "GET", f"/v1/stock_movements/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class StockAdjustmentsResource:
+    """Inventario: fiscalisto.stock_adjustments."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateStockAdjustmentParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> StockAdjustment:
+        """Ajustar existencias
+
+        Mete o saca existencias de un almacén con su motivo: el inventario inicial, una merma, un robo, un sobrante. Las entradas valen su unit_cost (o el costo promedio), las salidas el costo del emisor (promedio o PEPS). Los productos deben llevar track_stock: true. Se aplica al momento (status applied).
+
+        POST /v1/stock_adjustments
+        https://fiscalisto.com/docs/api/referencia/inventario/create-stock-adjustment
+        """
+        result: StockAdjustment = self._client.request(
+            "POST", "/v1/stock_adjustments", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListStockAdjustmentsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[StockAdjustment]:
+        """Listar ajustes
+
+        Los ajustes del emisor, los más recientes primero.
+
+        GET /v1/stock_adjustments
+        https://fiscalisto.com/docs/api/referencia/inventario/list-stock-adjustments
+        """
+        return self._client.list("/v1/stock_adjustments", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> StockAdjustment:
+        """Ver un ajuste
+
+        Un ajuste de existencias, con sus líneas.
+
+        GET /v1/stock_adjustments/{id}
+        https://fiscalisto.com/docs/api/referencia/inventario/get-stock-adjustment
+        """
+        result: StockAdjustment = self._client.request(
+            "GET", f"/v1/stock_adjustments/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -3224,6 +3759,11 @@ class FiscalistoApi(Core):
         return TaxIdsResource(self)
 
     @cached_property
+    def branches(self) -> BranchesResource:
+        """Sucursales."""
+        return BranchesResource(self)
+
+    @cached_property
     def customers(self) -> CustomersResource:
         """Clientes."""
         return CustomersResource(self)
@@ -3237,6 +3777,31 @@ class FiscalistoApi(Core):
     def products(self) -> ProductsResource:
         """Productos."""
         return ProductsResource(self)
+
+    @cached_property
+    def sat_mailbox_messages(self) -> SatMailboxMessagesResource:
+        """Cumplimiento SAT."""
+        return SatMailboxMessagesResource(self)
+
+    @cached_property
+    def sat_findings(self) -> SatFindingsResource:
+        """Cumplimiento SAT."""
+        return SatFindingsResource(self)
+
+    @cached_property
+    def warehouses(self) -> WarehousesResource:
+        """Inventario."""
+        return WarehousesResource(self)
+
+    @cached_property
+    def stock_movements(self) -> StockMovementsResource:
+        """Inventario."""
+        return StockMovementsResource(self)
+
+    @cached_property
+    def stock_adjustments(self) -> StockAdjustmentsResource:
+        """Inventario."""
+        return StockAdjustmentsResource(self)
 
     @cached_property
     def sat_catalogs(self) -> SatCatalogsResource:

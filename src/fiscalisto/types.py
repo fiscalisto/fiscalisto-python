@@ -31,15 +31,23 @@ __all__ = [
     "BankTransaction",
     "BankTransactionList",
     "BankTransactionSuggestedMatch",
+    "Branch",
+    "BranchAddress",
+    "BranchList",
+    "BranchSeries",
     "CancelInvoiceParams",
     "CancelRetentionParams",
     "CheckSatListsParams",
     "ClassifyBankTransactionParams",
+    "ComplianceOpinion",
     "CreateAdvanceParams",
     "CreateAdvanceParamsCustomer",
     "CreateAdvanceParamsCustomerForeign",
     "CreateBankTransactionsParams",
     "CreateBankTransactionsParamsTransactionsItem",
+    "CreateBranchParams",
+    "CreateBranchParamsAddress",
+    "CreateBranchParamsSeries",
     "CreateCreditNoteParams",
     "CreateCustomerDataRequestParams",
     "CreateCustomerParams",
@@ -77,6 +85,8 @@ __all__ = [
     "CreateRetentionParamsTotals",
     "CreateSandboxParams",
     "CreateSatDownloadParams",
+    "CreateStockAdjustmentParams",
+    "CreateStockAdjustmentParamsLinesItem",
     "CreateStoreConnectionParams",
     "CreateStoreConnectionParamsSettings",
     "CreateTestClockParams",
@@ -247,6 +257,7 @@ __all__ = [
     "LedgerAccountList",
     "ListAdvancesParams",
     "ListBankTransactionsParams",
+    "ListBranchesParams",
     "ListCustomerDataRequestsParams",
     "ListCustomersParams",
     "ListEmployeesParams",
@@ -263,9 +274,15 @@ __all__ = [
     "ListRetentionsParams",
     "ListSatDeclarationsParams",
     "ListSatDownloadsParams",
+    "ListSatFindingsParams",
     "ListSatInvoicesParams",
+    "ListSatMailboxMessagesParams",
+    "ListStockAdjustmentsParams",
+    "ListStockMovementsParams",
     "ListStoreConnectionsParams",
     "ListTicketsParams",
+    "ListWarehouseStockParams",
+    "ListWarehousesParams",
     "ListWebhookEndpointsParams",
     "MatchBankTransactionParams",
     "PayrollReceiptPreview",
@@ -338,6 +355,8 @@ __all__ = [
     "SatDownloadCompletedEvent",
     "SatDownloadFailedEvent",
     "SatDownloadList",
+    "SatFinding",
+    "SatFindingList",
     "SatInvoice",
     "SatInvoiceIssuedBy",
     "SatInvoiceIssuedTo",
@@ -346,11 +365,22 @@ __all__ = [
     "SatListCheck",
     "SatListCheckList",
     "SatListCheckListsItem",
+    "SatMailboxMessage",
+    "SatMailboxMessageList",
+    "SatRefresh",
     "SelfInvoicing",
     "SendInvoiceParams",
     "SendQuoteParams",
     "SendRetentionParams",
     "SignEfirmaParams",
+    "StockAdjustment",
+    "StockAdjustmentLinesItem",
+    "StockAdjustmentList",
+    "StockLevel",
+    "StockLevelList",
+    "StockMovement",
+    "StockMovementList",
+    "StockMovementSource",
     "StoreConnection",
     "StoreConnectionLastError",
     "StoreConnectionList",
@@ -361,6 +391,8 @@ __all__ = [
     "TaxIdValidationErrorsItem",
     "TaxIdValidationSatRecord",
     "TaxIdValidationWarningsItem",
+    "TaxStatusCertificate",
+    "TaxStatusCertificateTaxSystemsItem",
     "TestClock",
     "TestClockAdvanced",
     "TestClockReadyEvent",
@@ -375,6 +407,9 @@ __all__ = [
     "TrialBalanceAccountsItem",
     "TrialBalanceTotals",
     "UpdateAccountParams",
+    "UpdateBranchParams",
+    "UpdateBranchParamsAddress",
+    "UpdateBranchParamsSeries",
     "UpdateCustomerParams",
     "UpdateCustomerParamsForeign",
     "UpdateEmployeeParams",
@@ -399,6 +434,8 @@ __all__ = [
     "UpdateWebhookEndpointParams",
     "UploadCertificateParams",
     "ValidateTaxIdParams",
+    "Warehouse",
+    "WarehouseList",
     "WebhookEndpoint",
     "WebhookEndpointList",
     "WebhookTest",
@@ -425,7 +462,7 @@ class AccountKey(TypedDict):
 class Account(TypedDict):
     """La cuenta API de la llave que hizo la solicitud."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["account"]
@@ -501,7 +538,7 @@ class IssuerTestClock(TypedDict):
 class Issuer(TypedDict):
     """Un emisor: un RFC que timbra desde su cuenta API."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["issuer"]
@@ -631,7 +668,7 @@ class InvoicePayrollEmployer(TypedDict):
 class InvoicePayrollEmployee(TypedDict):
     """El empleado (emp_…)."""
     id: str | None
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     number: str
     """Número de empleado (NumEmpleado)."""
     curp: str
@@ -784,6 +821,7 @@ Invoice = TypedDict(
         "livemode": "bool",
         "object": "Literal[\"invoice\"]",
         "issuer": "str",
+        "branch": "str | None",
         "type": "Literal[\"I\", \"E\", \"P\", \"T\", \"N\"]",
         "status": "Literal[\"processing\", \"pending\", \"valid\", \"rejected\", \"canceled\"]",
         "uuid": "str | None",
@@ -897,7 +935,7 @@ class RetentionError(TypedDict):
 class Retention(TypedDict):
     """Una constancia de retenciones e información de pagos (CFDI de retenciones 2.0)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["retention"]
@@ -958,7 +996,7 @@ class CustomerForeign(TypedDict):
 class Customer(TypedDict):
     """Un cliente del catálogo de un emisor."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["customer"]
@@ -999,7 +1037,7 @@ class ProductLocalTaxesItem(TypedDict):
 class Product(TypedDict):
     """Un producto o servicio del catálogo de un emisor."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["product"]
@@ -1036,6 +1074,14 @@ class Product(TypedDict):
     """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     local_taxes: list[ProductLocalTaxesItem]
     """Impuestos locales (complemento implocal): traslados y retenciones estatales."""
+    track_stock: bool
+    """true si lleva existencias (Inventario)."""
+    cost: float | None
+    """Su costo por unidad en pesos sin IVA, o null."""
+    barcode: str | None
+    """Su código de barras, o null."""
+    min_stock: float | None
+    """Su existencia mínima, o null."""
     created_at: str
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
     updated_at: str | None
@@ -1045,7 +1091,7 @@ class Product(TypedDict):
 class Employee(TypedDict):
     """Un empleado de un emisor, para sus recibos de nómina."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["employee"]
@@ -1273,7 +1319,7 @@ class InvoiceBatchInvoicesItem(TypedDict):
 class InvoiceBatch(TypedDict):
     """Un lote de hasta 1,000 facturas timbradas en segundo plano."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["invoice_batch"]
@@ -1422,7 +1468,7 @@ class CustomerDataRequestSubmission(TypedDict):
 class CustomerDataRequest(TypedDict):
     """Una liga para que un cliente dé sus datos fiscales."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["customer_data_request"]
@@ -1474,7 +1520,7 @@ class SandboxKey(TypedDict):
 class Sandbox(TypedDict):
     """Un entorno de prueba: el modo de pruebas propio de una persona, con su emisor, llaves, webhooks y eventos aparte."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["sandbox"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     livemode: Literal[False]
@@ -1589,7 +1635,7 @@ class SatInvoiceTaxes(TypedDict):
 class SatInvoice(TypedDict):
     """Una factura que el SAT tiene del emisor, emitida o recibida, traída con una descarga."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["sat_invoice"]
@@ -1708,7 +1754,7 @@ class SatDeclarationFiles(TypedDict):
 class SatDeclaration(TypedDict):
     """Una declaración que el emisor presentó ante el SAT (provisional o definitiva, anual o del servicio anterior Declaraciones y pagos), con sus cifras y sus archivos."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["sat_declaration"]
@@ -1815,6 +1861,328 @@ class SatDeclarationCalendar(TypedDict):
     """Los 12 meses y, en persona moral, la anual (month null). Las obligaciones se deducen de lo que el emisor presenta: ISR e IVA cada mes desde el primero que presentó; una retención si la presentó en 2 de los 3 meses anteriores o antes y después. La opinión de cumplimiento del SAT es la que manda."""
 
 
+class BranchAddress(TypedDict):
+    """Su dirección, en el PDF de sus facturas."""
+    street: str | None
+    """Calle (Calle)."""
+    exterior: str | None
+    """Número exterior (NumeroExterior)."""
+    interior: str | None
+    """Número interior (NumeroInterior)."""
+    neighborhood: str | None
+    """Colonia."""
+    city: str | None
+    """Municipio o alcaldía."""
+    state: str | None
+    """Estado (Estado): en el extranjero c_Estado para USA y CAN, o texto."""
+
+
+class BranchSeries(TypedDict):
+    """La serie de cada tipo de CFDI que se timbra desde ella; null usa la del emisor."""
+    invoice: str | None
+    """Serie de sus facturas (tipo I); null, la del emisor."""
+    credit_note: str | None
+    """Serie de sus notas de crédito (tipo E); null, la del emisor."""
+    payment: str | None
+    """Serie de sus complementos de pago (tipo P); null, la del emisor."""
+    transfer: str | None
+    """Serie de sus traslados (tipo T); null, la del emisor."""
+
+
+class Branch(TypedDict):
+    """Una sucursal del emisor: otro lugar desde donde factura, con su código postal (LugarExpedicion), su dirección en el PDF y sus series."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["branch"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor de la sucursal."""
+    name: str
+    """Cómo la llama su equipo; va en el PDF."""
+    zip: str
+    """Su código postal: el LugarExpedicion de sus CFDI."""
+    address: BranchAddress
+    """Su dirección, en el PDF de sus facturas."""
+    phone: str | None
+    """Teléfono, en el PDF, o null."""
+    email: str | None
+    """Correo, en el PDF, o null."""
+    series: BranchSeries
+    """La serie de cada tipo de CFDI que se timbra desde ella; null usa la del emisor."""
+    archived: bool
+    """true si está archivada: ya no se factura desde ella."""
+    created_at: str | None
+    """Cuándo se creó."""
+    updated_at: str | None
+    """Cuándo cambió por última vez."""
+
+
+class Warehouse(TypedDict):
+    """Un almacén del emisor: el de la Matriz y uno por sucursal se crean solos; cada factura saca existencias del de su sucursal."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["warehouse"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor del almacén."""
+    name: str
+    """Su nombre («Matriz», el de su sucursal, o el que le dieron en la app)."""
+    code: str | None
+    """Su clave corta, o null."""
+    type: Literal["warehouse", "consignment"]
+    """warehouse (almacén propio) o consignment (mercancía en consignación con un cliente, todavía suya)."""
+    branch: str | None
+    """Su sucursal (brn_…), o null si es de la Matriz."""
+    default: bool
+    """true si es el almacén del que vende y recibe su sucursal."""
+    archived: bool
+    """true si está archivado."""
+    created_at: str | None
+    """Cuándo se creó."""
+
+
+class StockLevel(TypedDict):
+    """Lo que hay de un producto en un almacén, y lo que vale."""
+    id: str
+    """Su id (stl_…): el producto en ese almacén. Sirve como starting_after."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["stock_level"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    product: str
+    """El producto (prd_…)."""
+    warehouse: str
+    """El almacén (whs_…)."""
+    on_hand: float
+    """Lo que hay, en la unidad del producto (todos sus lotes)."""
+    reserved: float
+    """Lo apartado por cotizaciones aceptadas que no se han facturado."""
+    available: float
+    """on_hand menos reserved: lo que se puede vender."""
+    value: float
+    """Lo que valen esas existencias a su costo, en pesos sin IVA."""
+    average_cost: float | None
+    """value / on_hand: el costo por unidad, o null sin existencias."""
+
+
+class StockMovementSource(TypedDict):
+    """Lo que lo causó: type invoice (id es el UUID del CFDI), adjustment (adj_…), receipt, transfer, count o ticket."""
+    type: str
+    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+
+
+class StockMovement(TypedDict):
+    """Una entrada o salida de existencias (el kárdex): una venta, una compra, un ajuste, un traspaso…"""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["stock_movement"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    product: str
+    """El producto (prd_…)."""
+    warehouse: str
+    """El almacén (whs_…)."""
+    type: Literal["sale", "purchase", "customer_return", "supplier_return", "adjustment", "count", "transfer_out", "transfer_in", "initial", "cost", "reversal"]
+    """sale (una factura), purchase (una compra), customer_return, supplier_return, adjustment, count (conteo físico), transfer_out, transfer_in, initial, cost (un ajuste de costo) o reversal (deshace otro, como una factura cancelada)."""
+    quantity: float
+    """Cuánto entró (positivo) o salió (negativo)."""
+    unit_cost: float
+    """El costo por unidad con que entró o salió, en pesos sin IVA."""
+    value: float
+    """quantity × unit_cost: lo que cambió el valor del inventario."""
+    lot: str | None
+    """El lote o número de serie, o null."""
+    source: StockMovementSource
+    """Lo que lo causó: type invoice (id es el UUID del CFDI), adjustment (adj_…), receipt, transfer, count o ticket."""
+    reason: str | None
+    """El motivo de un ajuste, o null."""
+    date: str | None
+    """Cuándo pasó, hora de la Ciudad de México (la Fecha del CFDI en una venta)."""
+    reversed: bool
+    """true si un movimiento posterior lo deshizo."""
+    created_at: str | None
+    """Cuándo se registró."""
+
+
+class StockAdjustmentLinesItem(TypedDict):
+    product: str
+    """Un producto de su catálogo (prd_…): toma su clave, unidad, precio e impuestos."""
+    quantity: float
+    """Cantidad (Cantidad). Por omisión 1."""
+    unit_cost: float | None
+    """El costo por unidad que se dio al ajuste, en pesos sin IVA, o null (el costo promedio)."""
+    lot: str | None
+    """Lote del medicamento (LoteMedicamento)."""
+
+
+class StockAdjustment(TypedDict):
+    """Un ajuste de existencias: lo que entró o salió de un almacén por inventario inicial, merma, robo, conteo…"""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["stock_adjustment"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    warehouse: str
+    """El almacén (whs_…)."""
+    reason: Literal["shrinkage", "theft", "damage", "expiration", "internal_use", "gift", "initial", "surplus", "count", "other"]
+    """El motivo (ver POST /v1/stock_adjustments)."""
+    note: str | None
+    """Su nota, o null."""
+    status: Literal["applied", "pending", "rejected", "reversed"]
+    """applied (ya movió existencias), pending (espera aprobación en la app), rejected o reversed (se deshizo)."""
+    value: float
+    """Lo que vale lo que movió, en pesos sin IVA."""
+    lines: list[StockAdjustmentLinesItem]
+    """Lo que entró o salió de cada producto."""
+    created_at: str | None
+    """Cuándo se hizo."""
+
+
+class ComplianceOpinion(TypedDict):
+    """La opinión de cumplimiento de obligaciones fiscales (32-D) más reciente del emisor, como la dio el SAT."""
+    object: Literal["compliance_opinion"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    result: Literal["positive", "negative", "no_obligations", "suspended"] | None
+    """positive, negative, no_obligations (inscrito sin obligaciones) o suspended (en suspensión de actividades); null si no se ha consultado."""
+    date: str | None
+    """El día que la emitió el SAT (AAAA-MM-DD), o null."""
+    folio: str | None
+    """Su folio, o null."""
+    reasons: list[str]
+    """Si es negativa, lo que el SAT marca como pendiente."""
+    pdf: bool
+    """true si su PDF está en GET /v1/issuers/{id}/compliance_opinion/pdf."""
+    checked_at: str | None
+    """Cuándo se consultó por última vez, o null."""
+    last_error: str | None
+    """Por qué falló la última consulta, o null."""
+
+
+class TaxStatusCertificateTaxSystemsItem(TypedDict):
+    code: str
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero…"""
+    name: str
+    """Nombre."""
+
+
+class TaxStatusCertificate(TypedDict):
+    """La constancia de situación fiscal más reciente del emisor, generada en el SAT con su e.firma."""
+    object: Literal["tax_status_certificate"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    issued_on: str | None
+    """El día que la emitió el SAT (AAAA-MM-DD), o null."""
+    id_cif: str | None
+    """Su idCIF, o null."""
+    tax_id: str
+    """El RFC."""
+    legal_name: str | None
+    """Nombre o razón social como la tiene el SAT, o null."""
+    tax_systems: list[TaxStatusCertificateTaxSystemsItem]
+    """Sus regímenes fiscales (clave de c_RegimenFiscal y nombre)."""
+    zip: str | None
+    """El código postal de su domicilio fiscal, o null."""
+    status: str | None
+    """Estatus en el padrón (ACTIVO, SUSPENDIDO…), o null."""
+    pdf: bool
+    """true si su PDF está en GET /v1/issuers/{id}/tax_status_certificate/pdf."""
+    created_at: str | None
+    """Cuándo se generó."""
+
+
+class SatMailboxMessage(TypedDict):
+    """Un aviso del buzón tributario del SAT del emisor."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["sat_mailbox_message"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    subject: str
+    """Su asunto."""
+    summary: str | None
+    """Su texto, resumido, o null."""
+    source: Literal["mailbox", "email"]
+    """mailbox (el buzón del portal) o email (un aviso que el SAT mandó por correo)."""
+    unread: bool
+    """true si no se ha leído en el SAT."""
+    urgency: Literal["urgent", "attention", "informational"]
+    """urgent (un requerimiento, un plazo), attention o informational."""
+    kind: str
+    """Qué es: requerimiento, carta invitación, informativo…"""
+    action_required: bool
+    """true si pide hacer algo."""
+    received_at: str | None
+    """Cuándo llegó, como lo dice el SAT."""
+    created_at: str | None
+    """Cuándo lo trajo Fiscalisto."""
+
+
+class SatRefresh(TypedDict):
+    """Una consulta al SAT de un documento del emisor: si ya terminó y dónde leerlo."""
+    object: Literal["sat_refresh"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    document: Literal["compliance_opinion", "tax_status_certificate", "sat_mailbox"]
+    """Qué se consultó."""
+    status: Literal["completed", "processing"]
+    """completed (ya está en url) o processing (el SAT tarda; llega a url en unos minutos)."""
+    refreshed_at: str | None
+    """Cuándo se pidió."""
+    next_refresh_at: str | None
+    """Desde cuándo se puede pedir otra vez."""
+    url: str
+    """Dónde leer lo que trajo."""
+
+
+class SatFinding(TypedDict):
+    """Un tipo de hallazgo en los CFDI del emisor (un proveedor en la lista 69-B, un CFDI cancelado, un pago en efectivo de más de $2,000…), con cuántos CFDI lo tienen."""
+    id: str
+    """El código del hallazgo (el mismo que code)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["sat_finding"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    code: str
+    """El código del hallazgo, estable (por ejemplo efos_definitivo)."""
+    severity: Literal["critical", "warning", "info"]
+    """critical (grave), warning (revisar) o info."""
+    title: str
+    """Qué es, en palabras."""
+    explanation: str | None
+    """Por qué importa y qué hacer, o null."""
+    invoices: int
+    """Cuántos CFDI lo tienen, sin revisar."""
+    amount: float
+    """La suma de sus totales."""
+
+
 class TicketCustomer(TypedDict):
     tax_id: str
     """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
@@ -1825,7 +2193,7 @@ class TicketCustomer(TypedDict):
 class Ticket(TypedDict):
     """Una venta que su comprador puede facturar él mismo en el portal del emisor (autofactura)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["ticket"]
@@ -1925,7 +2293,7 @@ class RecurringInvoiceItemsItem(TypedDict):
 class RecurringInvoice(TypedDict):
     """Una factura que el emisor timbra solo, cada mes, semana o día."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["recurring_invoice"]
@@ -2500,7 +2868,7 @@ class StoreConnectionLastError(TypedDict):
 class StoreConnection(TypedDict):
     """Una tienda de Shopify o Mercado Libre cuyos pedidos pagados se vuelven tickets de autofactura del emisor."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["store_connection"]
@@ -2580,7 +2948,7 @@ class QuoteItemsItem(TypedDict):
 class Quote(TypedDict):
     """Una cotización: su cliente la ve en una liga, la acepta, pide cambios o la rechaza, y se factura."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["quote"]
@@ -2673,7 +3041,7 @@ class BankTransactionSuggestedMatch(TypedDict):
 class BankTransaction(TypedDict):
     """Un depósito de la cuenta del emisor, y las facturas que pagó."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["bank_transaction"]
@@ -2745,7 +3113,7 @@ class IssuerOnboardingLink(TypedDict):
 class WebhookEndpoint(TypedDict):
     """Una dirección de su servidor que recibe eventos."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["webhook_endpoint"]
@@ -2865,7 +3233,7 @@ class TestClockEventData(TypedDict):
 class InvoiceStampedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.stamped"]
@@ -2882,7 +3250,7 @@ class InvoiceStampedEvent(TypedDict):
 class InvoiceFailedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.failed"]
@@ -2899,7 +3267,7 @@ class InvoiceFailedEvent(TypedDict):
 class InvoiceCanceledEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.canceled"]
@@ -2916,7 +3284,7 @@ class InvoiceCanceledEvent(TypedDict):
 class InvoiceCancellationPendingEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.cancellation_pending"]
@@ -2933,7 +3301,7 @@ class InvoiceCancellationPendingEvent(TypedDict):
 class InvoiceCancellationRejectedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.cancellation_rejected"]
@@ -2950,7 +3318,7 @@ class InvoiceCancellationRejectedEvent(TypedDict):
 class InvoicePaidEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.paid"]
@@ -2967,7 +3335,7 @@ class InvoicePaidEvent(TypedDict):
 class InvoicePartiallyPaidEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.partially_paid"]
@@ -2984,7 +3352,7 @@ class InvoicePartiallyPaidEvent(TypedDict):
 class RetentionStampedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["retention.stamped"]
@@ -3001,7 +3369,7 @@ class RetentionStampedEvent(TypedDict):
 class RetentionFailedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["retention.failed"]
@@ -3018,7 +3386,7 @@ class RetentionFailedEvent(TypedDict):
 class RetentionCanceledEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["retention.canceled"]
@@ -3035,7 +3403,7 @@ class RetentionCanceledEvent(TypedDict):
 class InvoiceBatchCompletedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice_batch.completed"]
@@ -3052,7 +3420,7 @@ class InvoiceBatchCompletedEvent(TypedDict):
 class CustomerDataRequestCompletedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["customer_data_request.completed"]
@@ -3069,7 +3437,7 @@ class CustomerDataRequestCompletedEvent(TypedDict):
 class SatDownloadCompletedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["sat_download.completed"]
@@ -3086,7 +3454,7 @@ class SatDownloadCompletedEvent(TypedDict):
 class SatDownloadFailedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["sat_download.failed"]
@@ -3103,7 +3471,7 @@ class SatDownloadFailedEvent(TypedDict):
 class SatDeclarationCreatedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["sat_declaration.created"]
@@ -3120,7 +3488,7 @@ class SatDeclarationCreatedEvent(TypedDict):
 class SatDeclarationUpdatedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["sat_declaration.updated"]
@@ -3137,7 +3505,7 @@ class SatDeclarationUpdatedEvent(TypedDict):
 class TicketInvoicedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["ticket.invoiced"]
@@ -3154,7 +3522,7 @@ class TicketInvoicedEvent(TypedDict):
 class TicketIncludedInGlobalEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["ticket.included_in_global"]
@@ -3171,7 +3539,7 @@ class TicketIncludedInGlobalEvent(TypedDict):
 class RecurringInvoiceFailedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["recurring_invoice.failed"]
@@ -3188,7 +3556,7 @@ class RecurringInvoiceFailedEvent(TypedDict):
 class QuoteViewedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["quote.viewed"]
@@ -3205,7 +3573,7 @@ class QuoteViewedEvent(TypedDict):
 class QuoteAcceptedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["quote.accepted"]
@@ -3222,7 +3590,7 @@ class QuoteAcceptedEvent(TypedDict):
 class QuoteChangesRequestedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["quote.changes_requested"]
@@ -3239,7 +3607,7 @@ class QuoteChangesRequestedEvent(TypedDict):
 class QuoteRejectedEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["quote.rejected"]
@@ -3256,7 +3624,7 @@ class QuoteRejectedEvent(TypedDict):
 class IssuerReadyEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["issuer.ready"]
@@ -3273,7 +3641,7 @@ class IssuerReadyEvent(TypedDict):
 class BalanceLowEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["balance.low"]
@@ -3290,7 +3658,7 @@ class BalanceLowEvent(TypedDict):
 class TestClockReadyEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["test_clock.ready"]
@@ -3338,7 +3706,7 @@ Event = Union[
 class Deleted(TypedDict):
     """Confirmación de que se borró."""
     id: str
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, evt_, whe_)."""
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     object: str
     """Qué tipo de objeto es («invoice», «customer»…)."""
     deleted: Literal[True]
@@ -3470,6 +3838,17 @@ class InvoiceBatchList(TypedDict):
     """La ruta de esta lista."""
 
 
+class BranchList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[Branch]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class CustomerList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -3496,6 +3875,72 @@ class ProductList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[Product]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class SatMailboxMessageList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[SatMailboxMessage]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class SatFindingList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[SatFinding]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class WarehouseList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[Warehouse]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class StockLevelList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[StockLevel]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class StockMovementList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[StockMovement]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class StockAdjustmentList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[StockAdjustment]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -4548,6 +4993,8 @@ InvoiceCreate = TypedDict(
     "InvoiceCreate",
     {
         "issuer": "NotRequired[str]",
+        "branch": "NotRequired[str]",
+        "warehouse": "NotRequired[str]",
         "customer": "str | InvoiceCreateCustomer",
         "items": "list[InvoiceCreateItemsItem]",
         "type": "NotRequired[Literal[\"I\", \"T\"]]",
@@ -5275,6 +5722,110 @@ class ValidateTaxIdParams(TypedDict):
     """El idCIF de su constancia de situación fiscal (11 dígitos, arriba a la izquierda, junto al QR). Con él se compara todo con lo que tiene el SAT."""
 
 
+class CreateBranchParamsAddress(TypedDict):
+    """La dirección que va en el PDF de sus facturas."""
+    street: NotRequired[str | None]
+    """Calle."""
+    exterior: NotRequired[str | None]
+    """Número exterior."""
+    interior: NotRequired[str | None]
+    """Número interior."""
+    neighborhood: NotRequired[str | None]
+    """Colonia."""
+    city: NotRequired[str | None]
+    """Municipio o alcaldía."""
+    state: NotRequired[str | None]
+    """Estado; por omisión, el de su código postal."""
+
+
+class CreateBranchParamsSeries(TypedDict):
+    """Serie (Serie), hasta 25 caracteres. Cada serie lleva sus propios folios."""
+    invoice: NotRequired[str | None]
+    """Serie de sus facturas (tipo I); sin ella, la del emisor."""
+    credit_note: NotRequired[str | None]
+    """Serie de sus notas de crédito (tipo E); sin ella, la del emisor."""
+    payment: NotRequired[str | None]
+    """Serie de sus complementos de pago (tipo P); sin ella, la del emisor."""
+    transfer: NotRequired[str | None]
+    """Serie de sus traslados (tipo T); sin ella, la del emisor."""
+
+
+class CreateBranchParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    name: str
+    """Cómo la llama su equipo, por ejemplo «Sucursal Monterrey». Va en el PDF."""
+    zip: str
+    """Su código postal (LugarExpedicion de sus CFDI): uno por sucursal, distinto del domicilio fiscal del emisor."""
+    address: NotRequired[CreateBranchParamsAddress]
+    """La dirección que va en el PDF de sus facturas."""
+    phone: NotRequired[str | None]
+    """Teléfono, para el PDF."""
+    email: NotRequired[str | None]
+    """Correo, para el PDF."""
+    series: NotRequired[CreateBranchParamsSeries]
+    """Serie (Serie), hasta 25 caracteres. Cada serie lleva sus propios folios."""
+
+
+class ListBranchesParams(TypedDict):
+    """Los parámetros de GET /v1/branches."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    include_archived: NotRequired[bool]
+    """true para incluir las archivadas."""
+    zip: NotRequired[str]
+    """Solo la de este código postal."""
+
+
+class UpdateBranchParamsAddress(TypedDict):
+    """La dirección que va en el PDF de sus facturas."""
+    street: NotRequired[str | None]
+    """Calle."""
+    exterior: NotRequired[str | None]
+    """Número exterior."""
+    interior: NotRequired[str | None]
+    """Número interior."""
+    neighborhood: NotRequired[str | None]
+    """Colonia."""
+    city: NotRequired[str | None]
+    """Municipio o alcaldía."""
+    state: NotRequired[str | None]
+    """Estado; por omisión, el de su código postal."""
+
+
+class UpdateBranchParamsSeries(TypedDict):
+    """Serie (Serie), hasta 25 caracteres. Cada serie lleva sus propios folios."""
+    invoice: NotRequired[str | None]
+    """Serie de sus facturas (tipo I); sin ella, la del emisor."""
+    credit_note: NotRequired[str | None]
+    """Serie de sus notas de crédito (tipo E); sin ella, la del emisor."""
+    payment: NotRequired[str | None]
+    """Serie de sus complementos de pago (tipo P); sin ella, la del emisor."""
+    transfer: NotRequired[str | None]
+    """Serie de sus traslados (tipo T); sin ella, la del emisor."""
+
+
+class UpdateBranchParams(TypedDict):
+    name: NotRequired[str]
+    """Cómo la llama su equipo, por ejemplo «Sucursal Monterrey». Va en el PDF."""
+    zip: NotRequired[str]
+    """Su código postal (LugarExpedicion de sus CFDI): uno por sucursal, distinto del domicilio fiscal del emisor."""
+    address: NotRequired[UpdateBranchParamsAddress]
+    """La dirección que va en el PDF de sus facturas."""
+    phone: NotRequired[str | None]
+    """Teléfono, para el PDF."""
+    email: NotRequired[str | None]
+    """Correo, para el PDF."""
+    series: NotRequired[UpdateBranchParamsSeries]
+    """Serie (Serie), hasta 25 caracteres. Cada serie lleva sus propios folios."""
+    archived: NotRequired[bool]
+    """true la archiva: ya no se puede facturar desde ella, y sus facturas la siguen nombrando. false la restaura."""
+
+
 class CreateCustomerParamsForeign(TypedDict):
     country: str
     """País de residencia fiscal, clave de 3 letras de c_Pais (USA, CAN…)."""
@@ -5404,6 +5955,14 @@ class CreateProductParams(TypedDict):
     """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     local_taxes: NotRequired[list[CreateProductParamsLocalTaxesItem]]
     """Impuestos locales que lleva, como el ISH 3% de hospedaje: van en cada factura con él, sobre sus conceptos."""
+    track_stock: NotRequired[bool]
+    """Lleva existencias (Inventario): cada factura que lo vende las saca del almacén de su sucursal, y una cancelada las regresa. Ver GET /v1/products/{id}/stock."""
+    cost: NotRequired[float | None]
+    """Su costo por unidad en pesos sin IVA, hasta que sus compras den otro: vale las existencias que entran sin unit_cost."""
+    barcode: NotRequired[str | None]
+    """Código de barras (EAN, UPC o el suyo). Una factura cuyo concepto lo trae como NoIdentificacion saca existencias de este producto."""
+    min_stock: NotRequired[float | None]
+    """Existencia mínima: por debajo, el aviso de existencias bajas lo incluye."""
 
 
 class ListProductsParams(TypedDict):
@@ -5460,6 +6019,116 @@ class UpdateProductParams(TypedDict):
     """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     local_taxes: NotRequired[list[UpdateProductParamsLocalTaxesItem]]
     """Impuestos locales que lleva, como el ISH 3% de hospedaje: van en cada factura con él, sobre sus conceptos."""
+    track_stock: NotRequired[bool]
+    """Lleva existencias (Inventario): cada factura que lo vende las saca del almacén de su sucursal, y una cancelada las regresa. Ver GET /v1/products/{id}/stock."""
+    cost: NotRequired[float | None]
+    """Su costo por unidad en pesos sin IVA, hasta que sus compras den otro: vale las existencias que entran sin unit_cost."""
+    barcode: NotRequired[str | None]
+    """Código de barras (EAN, UPC o el suyo). Una factura cuyo concepto lo trae como NoIdentificacion saca existencias de este producto."""
+    min_stock: NotRequired[float | None]
+    """Existencia mínima: por debajo, el aviso de existencias bajas lo incluye."""
+
+
+class ListSatMailboxMessagesParams(TypedDict):
+    """Los parámetros de GET /v1/sat_mailbox_messages."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    unread: NotRequired[bool]
+    """true para solo los no leídos en el SAT, false para los leídos."""
+
+
+class ListSatFindingsParams(TypedDict):
+    """Los parámetros de GET /v1/sat_findings."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    direction: NotRequired[Literal["issued", "received"]]
+    """issued (emitidos) o received (recibidos); sin él, los dos."""
+    date_gte: NotRequired[str]
+    """CFDI desde este día (AAAA-MM-DD)."""
+    date_lte: NotRequired[str]
+    """CFDI hasta este día (AAAA-MM-DD, completo)."""
+
+
+class ListWarehousesParams(TypedDict):
+    """Los parámetros de GET /v1/warehouses."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    include_archived: NotRequired[bool]
+    """true para incluir los archivados."""
+
+
+class ListWarehouseStockParams(TypedDict):
+    """Los parámetros de GET /v1/warehouses/{id}/stock."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    include_empty: NotRequired[bool]
+    """true para incluir los productos con track_stock que están en 0."""
+
+
+class ListStockMovementsParams(TypedDict):
+    """Los parámetros de GET /v1/stock_movements."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    product: NotRequired[str]
+    """Solo los de este producto (prd_…)."""
+    warehouse: NotRequired[str]
+    """Solo los de este almacén (whs_…)."""
+    type: NotRequired[Literal["sale", "purchase", "customer_return", "supplier_return", "adjustment", "count", "transfer_out", "transfer_in", "initial", "cost", "reversal"]]
+    """Solo los de este tipo."""
+    date_gte: NotRequired[str]
+    """Desde este día (AAAA-MM-DD) u hora (AAAA-MM-DDTHH:MM:SS) de la Ciudad de México."""
+    date_lte: NotRequired[str]
+    """Hasta este día (completo) u hora de la Ciudad de México."""
+
+
+class CreateStockAdjustmentParamsLinesItem(TypedDict):
+    product: str
+    """El producto (prd_…), con track_stock: true."""
+    quantity: float
+    """Cuánto entra (positivo) o sale (negativo), en la unidad del producto."""
+    unit_cost: NotRequired[float]
+    """Lo que costó cada unidad que entra, en pesos sin IVA; sin él, el costo promedio de hoy."""
+    lot: NotRequired[str]
+    """El lote o número de serie, si el producto los lleva."""
+    expires_on: NotRequired[str]
+    """La caducidad de un lote nuevo (AAAA-MM-DD)."""
+
+
+class CreateStockAdjustmentParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    warehouse: NotRequired[str]
+    """El almacén (whs_…). Por omisión, el de la Matriz."""
+    reason: Literal["shrinkage", "theft", "damage", "expiration", "internal_use", "gift", "initial", "surplus", "count", "other"]
+    """Por qué: shrinkage (merma), theft (robo o extravío), damage (daño), expiration (caducidad), internal_use (uso interno), gift (muestra o regalo), initial (inventario inicial), surplus (sobrante), count (conteo físico) u other."""
+    note: NotRequired[str | None]
+    """Una nota, para el kárdex."""
+    lines: list[CreateStockAdjustmentParamsLinesItem]
+    """Lo que entra o sale de cada producto, hasta 500 líneas."""
+
+
+class ListStockAdjustmentsParams(TypedDict):
+    """Los parámetros de GET /v1/stock_adjustments."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    warehouse: NotRequired[str]
+    """Solo los de este almacén (whs_…)."""
+    status: NotRequired[Literal["applied", "pending", "rejected", "reversed"]]
+    """applied, pending, rejected o reversed."""
 
 
 class GetSatCatalogParams(TypedDict):
