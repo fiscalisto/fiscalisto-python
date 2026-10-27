@@ -77,12 +77,23 @@ __all__ = [
     "CreateRecurringInvoiceParamsSchedule",
     "CreateRetentionParams",
     "CreateRetentionParamsDividends",
+    "CreateRetentionParamsFinancialDerivatives",
     "CreateRetentionParamsForeignPayment",
     "CreateRetentionParamsInterest",
+    "CreateRetentionParamsMortgageInterest",
     "CreateRetentionParamsPeriod",
+    "CreateRetentionParamsPrize",
     "CreateRetentionParamsRecipient",
+    "CreateRetentionParamsRetirementPlan",
+    "CreateRetentionParamsRetirementPlanContributionsItem",
+    "CreateRetentionParamsShareSale",
     "CreateRetentionParamsTaxesItem",
     "CreateRetentionParamsTotals",
+    "CreateRetentionParamsTrust",
+    "CreateRetentionParamsTrustDeductions",
+    "CreateRetentionParamsTrustIncome",
+    "CreateRetentionParamsTrustLease",
+    "CreateRetentionParamsTrustWithholding",
     "CreateSandboxParams",
     "CreateSatDownloadParams",
     "CreateStockAdjustmentParams",
@@ -953,7 +964,7 @@ class Retention(TypedDict):
     date: str | None
     """Fecha de emisión (Fecha), hora de la Ciudad de México."""
     code: str
-    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero…"""
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) aún no se puede emitir."""
     description: str | None
     """Descripción de la retención (DescRetenc)."""
     recipient: RetentionRecipient
@@ -970,6 +981,20 @@ class Retention(TypedDict):
     """Complemento de intereses."""
     foreign_payment: NotRequired[dict[str, Any]]
     """Complemento de pagos a extranjeros."""
+    trust_lease: NotRequired[dict[str, Any]]
+    """Complemento de arrendamiento en fideicomiso (Arrendamientoenfideicomiso 1.0), obligatorio con code 17."""
+    share_sale: NotRequired[dict[str, Any]]
+    """Complemento de enajenación de acciones u operaciones de valores (EnajenaciondeAcciones 1.0), obligatorio con code 19."""
+    prize: NotRequired[dict[str, Any]]
+    """Complemento de premios (Premios 1.0), obligatorio con code 20. Sus montos son los de totals."""
+    trust: NotRequired[dict[str, Any]]
+    """Complemento de fideicomisos que no realizan actividades empresariales (Fideicomisonoempresarial 1.0), obligatorio con code 21."""
+    retirement_plan: NotRequired[dict[str, Any]]
+    """Complemento de planes personales de retiro (Planesderetiro 1.1), obligatorio con code 22: lo del año anterior."""
+    mortgage_interest: NotRequired[dict[str, Any]]
+    """Complemento de intereses reales deducibles por créditos hipotecarios (Intereseshipotecarios 1.0), obligatorio con code 23."""
+    financial_derivatives: NotRequired[dict[str, Any]]
+    """Complemento de operaciones financieras derivadas de capital (Operacionesconderivados 1.0), obligatorio con code 24."""
     cancellation: RetentionCancellation | None
     """La cancelación, si se pidió: estado, motivo, sustituto y cuándo."""
     email: RetentionEmail | None
@@ -2076,9 +2101,9 @@ class ComplianceOpinion(TypedDict):
 
 class TaxStatusCertificateTaxSystemsItem(TypedDict):
     code: str
-    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero…"""
+    """Clave del régimen fiscal (c_RegimenFiscal): 601, 612, 626…"""
     name: str
-    """Nombre."""
+    """Nombre del régimen fiscal, como lo escribe el SAT."""
 
 
 class TaxStatusCertificate(TypedDict):
@@ -5471,11 +5496,148 @@ class CreateRetentionParamsForeignPayment(TypedDict):
     """Nombre o razón social del beneficiario (NomDenRazSocB)."""
 
 
+class CreateRetentionParamsTrustLease(TypedDict):
+    """Complemento de arrendamiento en fideicomiso (Arrendamientoenfideicomiso 1.0), obligatorio con code 17."""
+    trustee_payment: float
+    """Pago provisional que el fiduciario efectuó al arrendador en el periodo (PagProvEfecPorFiduc)."""
+    income: float
+    """Rendimientos del periodo por el arrendamiento de los bienes (RendimFideicom)."""
+    deductions: float
+    """Deducciones del arrendamiento en el periodo (DeduccCorresp)."""
+    withheld_total: NotRequired[float | None]
+    """Monto total retenido del arrendamiento en el periodo (MontTotRet)."""
+    fibra_result: NotRequired[float | None]
+    """Resultado fiscal distribuido por FIBRAS (MontResFiscDistFibras)."""
+    other_amount: NotRequired[float | None]
+    """Monto de otros conceptos distribuidos (MontOtrosConceptDistr)."""
+    other_description: NotRequired[str | None]
+    """Qué son los otros conceptos distribuidos (DescrMontOtrosConceptDistr); obligatoria con other_amount."""
+
+
+class CreateRetentionParamsShareSale(TypedDict):
+    """Complemento de enajenación de acciones u operaciones de valores (EnajenaciondeAcciones 1.0), obligatorio con code 19."""
+    contract: str
+    """Descripción del contrato de intermediación (ContratoIntermediacion)."""
+    gain: float
+    """Ganancia obtenida (Ganancia)."""
+    loss: float
+    """Pérdida (Perdida)."""
+
+
+class CreateRetentionParamsPrize(TypedDict):
+    """Complemento de premios (Premios 1.0), obligatorio con code 20. Sus montos son los de totals."""
+    state: str
+    """Entidad federativa donde se paga el premio (EntidadFederativa), c_EntidadesFederativas de catRetenciones: 01 Aguascalientes … 09 Ciudad de México … 32 Zacatecas."""
+
+
+class CreateRetentionParamsTrustIncome(TypedDict):
+    """Ingresos o entradas del fideicomiso en el periodo (IngresosOEntradas) y la parte del receptor."""
+    concept: str
+    """Concepto de los ingresos (IntegracIngresos/Concepto), hasta 100 caracteres."""
+    total: float
+    """Ingresos totales del fideicomiso en el periodo (MontTotEntradasPeriodo)."""
+    share: float
+    """Parte proporcional de los ingresos acumulables del receptor (PartPropAcumDelFideicom)."""
+    proportion: float
+    """Proporción de participación del receptor según el contrato (PropDelMontTot)."""
+
+
+class CreateRetentionParamsTrustDeductions(TypedDict):
+    """Deducciones o salidas del fideicomiso en el periodo (DeduccOSalidas) y la parte del receptor."""
+    concept: str
+    """Concepto de los egresos (IntegracEgresos/ConceptoS), hasta 100 caracteres."""
+    total: float
+    """Egresos totales del fideicomiso en el periodo (MontTotEgresPeriodo)."""
+    share: float
+    """Parte proporcional de las deducciones autorizadas del receptor (PartPropDelFideicom)."""
+    proportion: float
+    """Proporción de participación del receptor según el contrato (PropDelMontTot)."""
+
+
+class CreateRetentionParamsTrustWithholding(TypedDict):
+    """Retención efectuada al fideicomiso (RetEfectFideicomiso)."""
+    amount: float
+    """Monto de la retención (MontRetRelPagFideic)."""
+    description: str
+    """Descripción de la retención (DescRetRelPagFideic), hasta 100 caracteres."""
+
+
+class CreateRetentionParamsTrust(TypedDict):
+    """Complemento de fideicomisos que no realizan actividades empresariales (Fideicomisonoempresarial 1.0), obligatorio con code 21."""
+    income: CreateRetentionParamsTrustIncome
+    """Ingresos o entradas del fideicomiso en el periodo (IngresosOEntradas) y la parte del receptor."""
+    deductions: CreateRetentionParamsTrustDeductions
+    """Deducciones o salidas del fideicomiso en el periodo (DeduccOSalidas) y la parte del receptor."""
+    withholding: CreateRetentionParamsTrustWithholding
+    """Retención efectuada al fideicomiso (RetEfectFideicomiso)."""
+
+
+class CreateRetentionParamsRetirementPlanContributionsItem(TypedDict):
+    type: Literal["a", "b", "c"]
+    """Tipo de aportación (TipoAportacionODeposito): a (art. 151 fracc. V LISR), b (art. 185 LISR) o c (art. 258 RLISR, con trustee_rfc)."""
+    amount: float
+    """Monto de la aportación o depósito (MontAportODep)."""
+    trustee_rfc: NotRequired[str | None]
+    """RFC de la fiduciaria que administra el plan (RFCFiduciaria); obligatorio con el tipo c."""
+
+
+class CreateRetentionParamsRetirementPlan(TypedDict):
+    """Complemento de planes personales de retiro (Planesderetiro 1.1), obligatorio con code 22: lo del año anterior."""
+    financial_system: bool
+    """true si el plan es del sistema financiero (SistemaFinanc)."""
+    contributions_last_year: NotRequired[float | None]
+    """Aportaciones actualizadas del año anterior (MontTotAportAnioInmAnterior)."""
+    real_interest: float
+    """Intereses reales devengados o percibidos el año anterior (MontIntRealesDevengAniooInmAnt)."""
+    early_withdrawals: bool
+    """true si hubo retiros antes de cumplir los requisitos de permanencia (HuboRetirosAnioInmAntPer)."""
+    early_withdrawn: NotRequired[float | None]
+    """Monto retirado antes de cumplir la permanencia (MontTotRetiradoAnioInmAntPer); obligatorio con early_withdrawals."""
+    exempt_withdrawn: NotRequired[float | None]
+    """Monto exento de lo retirado el año anterior (MontTotExentRetiradoAnioInmAnt)."""
+    excess_withdrawn: NotRequired[float | None]
+    """Excedente del monto exento de lo retirado el año anterior (MontTotExedenteAnioInmAnt)."""
+    withdrawals: bool
+    """true si hubo retiros el año anterior (HuboRetirosAnioInmAnt)."""
+    withdrawn: NotRequired[float | None]
+    """Monto retirado el año anterior (MontTotRetiradoAnioInmAnt); obligatorio con withdrawals."""
+    reference: NotRequired[str | None]
+    """Número de referencia, contrato o cuenta del cliente (NumReferencia)."""
+    contributions: NotRequired[list[CreateRetentionParamsRetirementPlanContributionsItem]]
+    """Aportaciones o depósitos (AportacionesODepositos), uno por tipo y hasta tres."""
+
+
+class CreateRetentionParamsMortgageInterest(TypedDict):
+    """Complemento de intereses reales deducibles por créditos hipotecarios (Intereseshipotecarios 1.0), obligatorio con code 23."""
+    financial_institution: bool
+    """true si el crédito lo otorgó una institución financiera (CreditoDeInstFinanc)."""
+    outstanding_balance: float
+    """Saldo insoluto al 31 de diciembre del año anterior, o a la fecha del contrato si es de este año (SaldoInsoluto)."""
+    deductible_proportion: NotRequired[float | None]
+    """Proporción deducible del crédito sobre los intereses reales devengados y pagados (PropDeducDelCredit)."""
+    nominal_accrued: NotRequired[float | None]
+    """Intereses nominales devengados (MontTotIntNominalesDev)."""
+    nominal_accrued_paid: NotRequired[float | None]
+    """Intereses nominales devengados y pagados (MontTotIntNominalesDevYPag)."""
+    real_deductible: NotRequired[float | None]
+    """Intereses reales pagados deducibles (MontTotIntRealPagDeduc)."""
+    contract: NotRequired[str | None]
+    """Número de contrato del crédito hipotecario (NumContrato)."""
+
+
+class CreateRetentionParamsFinancialDerivatives(TypedDict):
+    """Complemento de operaciones financieras derivadas de capital (Operacionesconderivados 1.0), obligatorio con code 24."""
+    gain: float
+    """Ganancia acumulable (MontGanAcum)."""
+    loss: float
+    """Pérdida deducible (MontPerdDed)."""
+
+
 class CreateRetentionParams(TypedDict):
     issuer: NotRequired[str]
     """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
     code: str
-    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero…"""
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) aún no se puede emitir."""
     description: NotRequired[str | None]
     """Descripción de la retención (DescRetenc); obligatoria con la clave 25 (otro tipo)."""
     recipient: CreateRetentionParamsRecipient
@@ -5492,6 +5654,20 @@ class CreateRetentionParams(TypedDict):
     """Complemento de intereses."""
     foreign_payment: NotRequired[CreateRetentionParamsForeignPayment]
     """Complemento de pagos a extranjeros."""
+    trust_lease: NotRequired[CreateRetentionParamsTrustLease]
+    """Complemento de arrendamiento en fideicomiso (Arrendamientoenfideicomiso 1.0), obligatorio con code 17."""
+    share_sale: NotRequired[CreateRetentionParamsShareSale]
+    """Complemento de enajenación de acciones u operaciones de valores (EnajenaciondeAcciones 1.0), obligatorio con code 19."""
+    prize: NotRequired[CreateRetentionParamsPrize]
+    """Complemento de premios (Premios 1.0), obligatorio con code 20. Sus montos son los de totals."""
+    trust: NotRequired[CreateRetentionParamsTrust]
+    """Complemento de fideicomisos que no realizan actividades empresariales (Fideicomisonoempresarial 1.0), obligatorio con code 21."""
+    retirement_plan: NotRequired[CreateRetentionParamsRetirementPlan]
+    """Complemento de planes personales de retiro (Planesderetiro 1.1), obligatorio con code 22: lo del año anterior."""
+    mortgage_interest: NotRequired[CreateRetentionParamsMortgageInterest]
+    """Complemento de intereses reales deducibles por créditos hipotecarios (Intereseshipotecarios 1.0), obligatorio con code 23."""
+    financial_derivatives: NotRequired[CreateRetentionParamsFinancialDerivatives]
+    """Complemento de operaciones financieras derivadas de capital (Operacionesconderivados 1.0), obligatorio con code 24."""
     send_email: NotRequired[bool]
     """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
     email: NotRequired[str]
