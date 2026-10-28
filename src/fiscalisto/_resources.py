@@ -36,6 +36,7 @@ if TYPE_CHECKING:
         CreateIssuerOnboardingLinkParams,
         CreateIssuerParams,
         CreatePaymentParams,
+        CreatePayrollBatchParams,
         CreatePayrollReceiptParams,
         CreateProductParams,
         CreateQuoteParams,
@@ -94,6 +95,7 @@ if TYPE_CHECKING:
         ListIssuersParams,
         ListJournalEntriesParams,
         ListLedgerAccountsParams,
+        ListPayrollBatchesParams,
         ListProductsParams,
         ListQuotesParams,
         ListReceivablesParams,
@@ -112,6 +114,7 @@ if TYPE_CHECKING:
         ListWarehousesParams,
         ListWebhookEndpointsParams,
         MatchBankTransactionParams,
+        PayrollBatch,
         PayrollReceiptPreview,
         PreviewPayrollReceiptParams,
         Product,
@@ -1670,6 +1673,71 @@ class PayrollReceiptsResource:
         """
         result: ExternalPayrollReceiptPreview = self._client.request(
             "POST", "/v1/payroll_receipts/external/preview", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PayrollBatchesResource:
+    """Nómina: fiscalisto.payroll_batches."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreatePayrollBatchParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollBatch:
+        """Timbrar una nómina completa (lote)
+
+        Toda una corrida de nómina en una solicitud: hasta 1,000 recibos de un emisor, timbrados en segundo plano uno tras otro, sin el límite de timbres por segundo de una sola solicitud. De una de dos formas, nunca mezcladas: receipts (ids de empleado; Fiscalisto calcula cada recibo con el periodo del lote) o external_receipts (los recibos que calculó su sistema, como en POST /v1/payroll_receipts/external, con reference en lugar de metadata). Todo lo que se puede revisar antes se revisa antes: si algo falla, no se timbra ninguno y el error dice qué recibo (param receipts.3.employee). Lo que solo se sabe al timbrar (un periodo ya pagado, el SAT que rechaza un RFC) queda en ese recibo, con su error. Un recibo por empleado y periodo: mandar la corrida otra vez, aun con otra Idempotency-Key, devuelve los recibos que ya tiene. Responde 202; escuche payroll_batch.completed o consulte el lote.
+
+        POST /v1/payroll_batches
+        https://fiscalisto.com/docs/api/referencia/nomina/create-payroll-batch
+        """
+        result: PayrollBatch = self._client.request(
+            "POST", "/v1/payroll_batches", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListPayrollBatchesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[PayrollBatch]:
+        """Listar lotes de nómina
+
+        Los lotes de nómina, los más recientes primero, con cuántos recibos se timbraron y cuántos no.
+
+        GET /v1/payroll_batches
+        https://fiscalisto.com/docs/api/referencia/nomina/list-payroll-batches
+        """
+        return self._client.list("/v1/payroll_batches", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollBatch:
+        """Ver un lote de nómina
+
+        Con el recibo de cada empleado: timbrado (su factura y UUID) o por qué no (error.code y error.message).
+
+        GET /v1/payroll_batches/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/get-payroll-batch
+        """
+        result: PayrollBatch = self._client.request(
+            "GET", f"/v1/payroll_batches/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -3791,6 +3859,11 @@ class FiscalistoApi(Core):
     def payroll_receipts(self) -> PayrollReceiptsResource:
         """Nómina."""
         return PayrollReceiptsResource(self)
+
+    @cached_property
+    def payroll_batches(self) -> PayrollBatchesResource:
+        """Nómina."""
+        return PayrollBatchesResource(self)
 
     @cached_property
     def invoice_batches(self) -> InvoiceBatchesResource:

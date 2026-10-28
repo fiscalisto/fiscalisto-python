@@ -240,7 +240,7 @@ class ErrorCode:
     """El SAT no contestó o no dejó entrar con la e.firma del emisor. El mensaje trae lo que dijo; no se usó ningún timbre. Reintente en 10 minutos."""
 
     STAMP_RATE_LIMIT: Final = "stamp_rate_limit"
-    """Demasiados timbres seguidos del mismo emisor. Espere lo que dice Retry-After; para muchas facturas use POST /v1/invoice_batches."""
+    """Demasiados timbres seguidos del mismo emisor. Espere lo que dice Retry-After; para muchas facturas use POST /v1/invoice_batches, y para una nómina POST /v1/payroll_batches."""
 
     STORE_ALREADY_CONNECTED: Final = "store_already_connected"
     """Esa tienda ya está conectada a este emisor."""
