@@ -1404,12 +1404,16 @@ class SatListCheck(TypedDict):
     """El nombre con que aparece en las listas del SAT (null si no aparece)."""
     listed: bool
     """true si el RFC aparece en alguna lista, aunque haya desvirtuado."""
-    risk: Literal["high", "medium", "none"]
-    """high: 69-B o 69-B Bis como presunto o definitivo (el SAT dice que simula operaciones; sus facturas no se pueden deducir). medium: una lista del art. 69 (no localizado, créditos firmes o exigibles, cancelados, sentencias, CSD sin efectos). none: no aparece, o ya desvirtuó o tiene sentencia favorable."""
+    risk: Literal["high", "medium", "none", "unknown"]
+    """high: 69-B o 69-B Bis como presunto o definitivo (el SAT dice que simula operaciones; sus facturas no se pueden deducir). medium: una lista del art. 69 (no localizado, créditos firmes o exigibles, cancelados, sentencias, CSD sin efectos). none: no aparece en ninguna, con todas las listas al día, o ya desvirtuó o tiene sentencia favorable. unknown: no aparece, pero alguna lista no se pudo actualizar (vea lists_unavailable): no lo dé por limpio."""
+    verified: bool
+    """true si todas las listas se leyeron con éxito en los últimos dos días. Con false, que no aparezca no significa que esté limpio."""
     lists: list[SatListCheckListsItem]
     """Cada lista en que aparece; vacía si no aparece en ninguna."""
     lists_updated_at: str | None
     """Cuándo se actualizaron las listas por última vez (cada día a las 00:00 de la Ciudad de México)."""
+    lists_unavailable: list[str]
+    """Las listas que no se pudieron confirmar (su última actualización falló, falta o tiene más de dos días). Vacía si todas están al día."""
 
 
 class TaxIdValidationErrorsItem(TypedDict):
@@ -6640,7 +6644,7 @@ class CreateRecurringInvoiceParams(TypedDict):
     schedule: CreateRecurringInvoiceParamsSchedule
     """Cada cuánto y a qué hora se timbra."""
     invoice: CreateRecurringInvoiceParamsInvoice
-    """La factura que se repite: el cuerpo de POST /v1/invoices, sin issuer, folio, date, global ni metadata. En description puede usar {mes}, {mes anterior}, {mes siguiente}, {año}, {año anterior}, {año siguiente} y {periodo}: cada factura los llena con su fecha."""
+    """La factura que se repite: el cuerpo de POST /v1/invoices, sin issuer, folio, date, global ni metadata. En description puede usar {mes}, {mes anterior}, {mes siguiente}, {año}, {año anterior}, {año siguiente} y {periodo}: cada factura los llena con su fecha. Como se escriben es como salen: {mes} «noviembre», {Mes} «Noviembre», {MES} «NOVIEMBRE»."""
     send_email: NotRequired[bool]
     """Mandar cada factura al correo del cliente (customer.email o el del catálogo). Por omisión true."""
     catch_up: NotRequired[Literal["all", "latest"]]
@@ -7116,7 +7120,7 @@ class CreateInvoiceBatchParamsInvoicesItem(InvoiceCreate):
 
 
 class CreateRecurringInvoiceParamsInvoice(InvoiceCreate):
-    """La factura que se repite: el cuerpo de POST /v1/invoices, sin issuer, folio, date, global ni metadata. En description puede usar {mes}, {mes anterior}, {mes siguiente}, {año}, {año anterior}, {año siguiente} y {periodo}: cada factura los llena con su fecha."""
+    """La factura que se repite: el cuerpo de POST /v1/invoices, sin issuer, folio, date, global ni metadata. En description puede usar {mes}, {mes anterior}, {mes siguiente}, {año}, {año anterior}, {año siguiente} y {periodo}: cada factura los llena con su fecha. Como se escriben es como salen: {mes} «noviembre», {Mes} «Noviembre», {MES} «NOVIEMBRE»."""
     pass
 
 
