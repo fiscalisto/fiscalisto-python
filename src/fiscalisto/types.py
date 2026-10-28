@@ -337,6 +337,7 @@ __all__ = [
     "PayrollReceiptPreviewPerceptionsItemStockOptions",
     "PayrollReceiptPreviewPeriod",
     "PayrollReceiptPreviewTotals",
+    "PayrollReceiptPreviewWarningsItem",
     "PreviewPayrollReceiptParams",
     "PreviewPayrollReceiptParamsPeriod",
     "Product",
@@ -1352,6 +1353,13 @@ class Employee(TypedDict):
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
 
 
+class PayrollReceiptPreviewWarningsItem(TypedDict):
+    code: str
+    """finiquito_not_included: el empleado se fue en el periodo y el recibo no trae su finiquito; payroll_rates_pending: aún no se cargan los valores (ISR, subsidio, salario mínimo, UMA) de una fecha próxima."""
+    message: str
+    """Qué pasó y cómo corregirlo, para una persona."""
+
+
 class PayrollReceiptPreviewPeriod(TypedDict):
     """El periodo de pago: primer y último día y el día de pago (FechaInicialPago, FechaFinalPago y FechaPago)."""
     start: str
@@ -1490,6 +1498,10 @@ class PayrollReceiptPreview(TypedDict):
     """El recibo como se timbraría: percepciones, deducciones (ISR, IMSS), otros pagos (subsidio) y el neto."""
     object: Literal["payroll_receipt_preview"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
+    confirmation_token: str
+    """Mándelo en POST /v1/payroll_receipts para timbrar exactamente este recibo: si al timbrar se calcula otro, contesta 409 payroll_calculation_changed sin timbrar."""
+    warnings: list[PayrollReceiptPreviewWarningsItem]
+    """Lo que el recibo no incluye o pronto no se podrá calcular; no impide timbrar."""
     employee: str
     """El empleado (emp_…)."""
     periodicity: str
@@ -5598,7 +5610,7 @@ class UpdateAccountParams(TypedDict):
 
 class ResetTestDataParams(TypedDict):
     seed: NotRequired[bool]
-    """true (por omisión) para dejarle a cada emisor de pruebas 3 clientes y 3 productos de ejemplo. false para dejarlo vacío."""
+    """true (por omisión) para dejarle a cada emisor de pruebas 2 clientes y 3 productos de ejemplo. false para dejarlo vacío."""
 
 
 class CreateSandboxParams(TypedDict):
@@ -6378,6 +6390,8 @@ class CreatePayrollReceiptParams(TypedDict):
     """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
     metadata: NotRequired[dict[str, str]]
     """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
+    confirmation_token: NotRequired[str]
+    """El confirmation_token de POST /v1/payroll_receipts/preview: timbra solo si el recibo calculado ahora es exactamente el que revisó (si no, 409 payroll_calculation_changed y no timbra). Sin él, timbra el que calcule en ese momento."""
 
 
 class PreviewPayrollReceiptParamsPeriod(TypedDict):
