@@ -18,7 +18,7 @@ from urllib.parse import urlencode
 from urllib.request import Request as _UrllibRequest
 from urllib.request import urlopen
 
-VERSION = "0.1.10"
+VERSION = "0.1.11"
 # La versión de la API para la que se hizo este SDK: va en cada solicitud (Fiscalisto-Version).
 API_VERSION = "2026-10-24"
 DEFAULT_BASE_URL = "https://api.fiscalisto.com"

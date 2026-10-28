@@ -129,6 +129,26 @@ __all__ = [
     "Event",
     "EventList",
     "EventType",
+    "ExternalPayrollReceiptCreate",
+    "ExternalPayrollReceiptCreateDeductionsItem",
+    "ExternalPayrollReceiptCreateDisabilitiesItem",
+    "ExternalPayrollReceiptCreateEmployee",
+    "ExternalPayrollReceiptCreateEmployeeSubcontractingItem",
+    "ExternalPayrollReceiptCreateEmployer",
+    "ExternalPayrollReceiptCreateEmployerSncf",
+    "ExternalPayrollReceiptCreateOtherPaymentsItem",
+    "ExternalPayrollReceiptCreateOtherPaymentsItemBalanceCompensation",
+    "ExternalPayrollReceiptCreatePerceptionsItem",
+    "ExternalPayrollReceiptCreatePerceptionsItemOvertimeItem",
+    "ExternalPayrollReceiptCreatePerceptionsItemStockOptions",
+    "ExternalPayrollReceiptCreatePeriod",
+    "ExternalPayrollReceiptCreateReferences",
+    "ExternalPayrollReceiptCreateRetirement",
+    "ExternalPayrollReceiptCreateSeparation",
+    "ExternalPayrollReceiptCreateTotals",
+    "ExternalPayrollReceiptPreview",
+    "ExternalPayrollReceiptPreviewCustomer",
+    "ExternalPayrollReceiptPreviewWarningsItem",
     "FinancialStatements",
     "FinancialStatementsBalanceSheet",
     "FinancialStatementsBalanceSheetAssets",
@@ -246,11 +266,21 @@ __all__ = [
     "InvoicePaymentDocumentsItem",
     "InvoicePayroll",
     "InvoicePayrollDeductionsItem",
+    "InvoicePayrollDisabilitiesItem",
     "InvoicePayrollEmployee",
+    "InvoicePayrollEmployeeSubcontractingItem",
     "InvoicePayrollEmployer",
+    "InvoicePayrollEmployerSncf",
     "InvoicePayrollOtherPaymentsItem",
+    "InvoicePayrollOtherPaymentsItemBalanceCompensation",
     "InvoicePayrollPerceptionsItem",
+    "InvoicePayrollPerceptionsItemOvertimeItem",
+    "InvoicePayrollPerceptionsItemStockOptions",
     "InvoicePayrollPeriod",
+    "InvoicePayrollReferences",
+    "InvoicePayrollRetirement",
+    "InvoicePayrollSeparation",
+    "InvoicePayrollTotals",
     "InvoiceStampedEvent",
     "InvoiceSubstitutes",
     "InvoiceTaxes",
@@ -301,7 +331,10 @@ __all__ = [
     "PayrollReceiptPreviewIsr",
     "PayrollReceiptPreviewIsrAdjustment",
     "PayrollReceiptPreviewOtherPaymentsItem",
+    "PayrollReceiptPreviewOtherPaymentsItemBalanceCompensation",
     "PayrollReceiptPreviewPerceptionsItem",
+    "PayrollReceiptPreviewPerceptionsItemOvertimeItem",
+    "PayrollReceiptPreviewPerceptionsItemStockOptions",
     "PayrollReceiptPreviewPeriod",
     "PayrollReceiptPreviewTotals",
     "PreviewPayrollReceiptParams",
@@ -593,8 +626,267 @@ class InvoiceItem(TypedDict):
     pass
 
 
+class InvoicePayrollPeriod(TypedDict):
+    """Periodo pagado: FechaInicialPago, FechaFinalPago y FechaPago."""
+    start: str
+    """Primer día del periodo (FechaInicialPago), AAAA-MM-DD."""
+    end: str
+    """Último día del periodo (FechaFinalPago), AAAA-MM-DD."""
+    payment_date: str
+    """Fecha de pago (FechaPago), AAAA-MM-DD. Por omisión el último día del periodo."""
+
+
+class InvoicePayrollReferences(TypedDict):
+    employee_id: str | None
+    """El id del empleado en su sistema de nómina."""
+    payroll_run_id: str | None
+    """El id de la corrida de nómina en su sistema."""
+
+
+class InvoicePayrollEmployerSncf(TypedDict):
+    """Entidad del SNCF (EntidadSNCF)."""
+    resource_origin: str
+    """Origen del recurso (OrigenRecurso): IP, IF o IM."""
+    own_resource_amount: float | None
+    """Monto de recursos propios (MontoRecursoPropio), con IM."""
+
+
+class InvoicePayrollEmployer(TypedDict):
+    """El patrón (Emisor del complemento): registro patronal y CURP si es persona física."""
+    employer_registration: str | None
+    """Registro patronal ante el IMSS (RegistroPatronal), 11 caracteres. Necesario para timbrar nómina."""
+    curp: str | None
+    """CURP, 18 caracteres."""
+    origin_tax_id: NotRequired[str]
+    """RFC del patrón de origen (RfcPatronOrigen)."""
+    sncf: NotRequired[InvoicePayrollEmployerSncf]
+    """Entidad del SNCF (EntidadSNCF)."""
+
+
+class InvoicePayrollEmployeeSubcontractingItem(TypedDict):
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    percentage: float
+    """Porcentaje de tiempo (PorcentajeTiempo)."""
+
+
+class InvoicePayrollEmployee(TypedDict):
+    """El empleado (Nomina/Receptor), como se timbró."""
+    id: str | None
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    number: str
+    """Número de empleado (NumEmpleado)."""
+    curp: str
+    """CURP, 18 caracteres."""
+    social_security_number: str | None
+    """Número de seguridad social (NumSeguridadSocial), 11 dígitos."""
+    start_date: str | None
+    """Fecha de inicio de la relación laboral (FechaInicioRelLaboral), AAAA-MM-DD."""
+    seniority: str | None
+    """Antigüedad (P52W, P1Y2M3D)."""
+    contract_type: str
+    """Tipo de contrato (TipoContrato), c_TipoContrato. Por omisión 01, por tiempo indeterminado."""
+    unionized: bool | None
+    """true si es sindicalizado (Sindicalizado)."""
+    workday_type: str | None
+    """Tipo de jornada (TipoJornada), c_TipoJornada. Por omisión 01, diurna."""
+    regime_type: str
+    """Tipo de régimen (TipoRegimen): 02 sueldos y salarios."""
+    department: str | None
+    """Departamento (Departamento)."""
+    position: str | None
+    """Puesto (Puesto)."""
+    risk_class: str | None
+    """Clase de riesgo del puesto ante el IMSS (RiesgoPuesto), 1 a 5. Por omisión 1."""
+    contribution_base_salary: float | None
+    """Salario base de cotización (SalarioBaseCotApor)."""
+    integrated_daily_salary: float | None
+    """Salario diario integrado (SalarioDiarioIntegrado): no menor al salario diario."""
+    state: str
+    """Entidad federativa donde trabaja (ClaveEntFed): JAL, CMX, NLE…"""
+    bank: NotRequired[str]
+    """Banco (Banco), c_Banco."""
+    bank_account: NotRequired[str]
+    """Cuenta bancaria o CLABE (CuentaBancaria)."""
+    subcontracting: NotRequired[list[InvoicePayrollEmployeeSubcontractingItem]]
+    """Subcontratación (SubContratacion)."""
+
+
+class InvoicePayrollPerceptionsItemOvertimeItem(TypedDict):
+    days: int
+    """Días con horas extra (Dias)."""
+    hours_type: str
+    """c_TipoHoras: 01 dobles, 02 triples, 03 simples."""
+    hours: int
+    """Horas extra (HorasExtra)."""
+    amount_paid: float
+    """Importe pagado (ImportePagado)."""
+
+
+class InvoicePayrollPerceptionsItemStockOptions(TypedDict):
+    """Acciones o títulos (AccionesOTitulos), con la percepción 045."""
+    market_value: float
+    """Valor de mercado (ValorMercado)."""
+    grant_price: float
+    """Precio al otorgarse (PrecioAlOtorgarse)."""
+
+
+class InvoicePayrollPerceptionsItem(TypedDict):
+    type: str
+    """Tipo de percepción (TipoPercepcion), c_TipoPercepcion: 001 sueldos…"""
+    key: str
+    """Clave del patrón (Clave)."""
+    concept: str
+    """Concepto (Concepto)."""
+    taxed: float
+    """Importe gravado (ImporteGravado)."""
+    exempt: float
+    """Importe exento (ImporteExento)."""
+    overtime: NotRequired[list[InvoicePayrollPerceptionsItemOvertimeItem]]
+    """Horas extra (HorasExtra), con la percepción 019."""
+    stock_options: NotRequired[InvoicePayrollPerceptionsItemStockOptions]
+    """Acciones o títulos (AccionesOTitulos), con la percepción 045."""
+
+
+class InvoicePayrollDeductionsItem(TypedDict):
+    type: str
+    """Tipo de deducción (TipoDeduccion), c_TipoDeduccion: 001 IMSS, 002 ISR…"""
+    key: str
+    """Clave del patrón (Clave)."""
+    concept: str
+    """Concepto (Concepto)."""
+    amount: float
+    """Importe (Importe)."""
+
+
+class InvoicePayrollOtherPaymentsItemBalanceCompensation(TypedDict):
+    """Compensación del saldo a favor (CompensacionSaldosAFavor), con el 004."""
+    balance: float
+    """Saldo a favor (SaldoAFavor)."""
+    year: int
+    """Año del saldo a favor (Año)."""
+    remaining: float
+    """Remanente del saldo a favor (RemanenteSalFav)."""
+
+
+class InvoicePayrollOtherPaymentsItem(TypedDict):
+    type: str
+    """Tipo de otro pago (TipoOtroPago), c_TipoOtroPago: 002 subsidio para el empleo."""
+    key: str
+    """Clave del patrón (Clave)."""
+    concept: str
+    """Concepto (Concepto)."""
+    amount: float
+    """Importe pagado (Importe)."""
+    subsidy_caused: NotRequired[float]
+    """Subsidio causado (SubsidioCausado)."""
+    subsidy_applied: NotRequired[float]
+    """Del subsidio causado, el ISR que evitó (no va en el XML)."""
+    balance_compensation: NotRequired[InvoicePayrollOtherPaymentsItemBalanceCompensation]
+    """Compensación del saldo a favor (CompensacionSaldosAFavor), con el 004."""
+
+
+class InvoicePayrollSeparation(TypedDict):
+    """SeparacionIndemnizacion (percepciones 022, 023, 025)."""
+    total_paid: float
+    """Total pagado (TotalPagado)."""
+    years_of_service: int
+    """Años de servicio (NumAñosServicio)."""
+    last_monthly_salary: float
+    """Último sueldo mensual ordinario (UltimoSueldoMensOrd)."""
+    accumulable_income: float
+    """Ingreso acumulable (IngresoAcumulable)."""
+    non_accumulable_income: float
+    """Ingreso no acumulable (IngresoNoAcumulable)."""
+
+
+class InvoicePayrollRetirement(TypedDict):
+    """JubilacionPensionRetiro (percepciones 039, 044)."""
+    total_one_payment: NotRequired[float]
+    """Total en una exhibición (TotalUnaExhibicion)."""
+    total_installment: NotRequired[float]
+    """Total en parcialidades (TotalParcialidad)."""
+    daily_amount: NotRequired[float]
+    """Monto diario (MontoDiario)."""
+    accumulable_income: float
+    """Ingreso acumulable (IngresoAcumulable)."""
+    non_accumulable_income: float
+    """Ingreso no acumulable (IngresoNoAcumulable)."""
+
+
+class InvoicePayrollDisabilitiesItem(TypedDict):
+    days: int
+    """Días pagados (NumDiasPagados). Por omisión, todos los del periodo que le tocan."""
+    type: str
+    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    amount: float | None
+    """Importe."""
+
+
+class InvoicePayrollTotals(TypedDict):
+    """Totales: percepciones, deducciones, otros pagos y el neto a pagar."""
+    salaries: float
+    """Total de sueldos, salarios y asimilados (TotalSueldos)."""
+    taxed: float
+    """Total gravado (TotalGravado)."""
+    exempt: float
+    """Total exento (TotalExento)."""
+    separation: float
+    """Total de separación e indemnización (TotalSeparacionIndemnizacion)."""
+    retirement: float
+    """Total de jubilación, pensión o retiro (TotalJubilacionPensionRetiro)."""
+    perceptions: float
+    """Total de percepciones (TotalPercepciones)."""
+    other_deductions: float
+    """Otras deducciones (TotalOtrasDeducciones)."""
+    taxes_withheld: float
+    """Impuestos retenidos (TotalImpuestosRetenidos)."""
+    deductions: float
+    """Total de deducciones (TotalDeducciones)."""
+    other_payments: float
+    """Total de otros pagos (TotalOtrosPagos)."""
+    subtotal: float
+    """Subtotal del comprobante: percepciones más otros pagos."""
+    net: float
+    """Neto a pagar al empleado."""
+
+
+class InvoicePayroll(TypedDict):
+    """El complemento de nómina 1.2 como se timbró: tipo, periodo, patrón, empleado, percepciones, deducciones, otros pagos, sus nodos y los totales."""
+    type: Literal["O", "E"]
+    """TipoNomina: O ordinaria, E extraordinaria."""
+    calculation: Literal["fiscalisto", "external"]
+    """fiscalisto: lo calculó Fiscalisto (POST /v1/payroll_receipts); external: lo calculó su sistema de nómina y se timbró tal cual (POST /v1/payroll_receipts/external)."""
+    periodicity: str
+    """Periodicidad del pago (PeriodicidadPago): 02 semanal, 03 catorcenal, 04 quincenal (por omisión), 05 mensual."""
+    period: InvoicePayrollPeriod
+    """Periodo pagado: FechaInicialPago, FechaFinalPago y FechaPago."""
+    days: float
+    """Días pagados (NumDiasPagados). Por omisión, todos los del periodo que le tocan."""
+    references: InvoicePayrollReferences | None
+    """Los ids de su sistema de nómina (solo en recibos external)."""
+    employer: InvoicePayrollEmployer
+    """El patrón (Emisor del complemento): registro patronal y CURP si es persona física."""
+    employee: InvoicePayrollEmployee
+    """El empleado (Nomina/Receptor), como se timbró."""
+    perceptions: list[InvoicePayrollPerceptionsItem]
+    """Percepciones (Percepcion): sueldo y demás, gravado y exento."""
+    deductions: list[InvoicePayrollDeductionsItem]
+    """Deducciones (Deduccion): ISR, cuotas IMSS y demás."""
+    other_payments: list[InvoicePayrollOtherPaymentsItem]
+    """Otros pagos (OtroPago): subsidio para el empleo."""
+    separation: NotRequired[InvoicePayrollSeparation]
+    """SeparacionIndemnizacion (percepciones 022, 023, 025)."""
+    retirement: NotRequired[InvoicePayrollRetirement]
+    """JubilacionPensionRetiro (percepciones 039, 044)."""
+    disabilities: NotRequired[list[InvoicePayrollDisabilitiesItem]]
+    """Incapacidades (percepción 014 o deducción 006)."""
+    totals: InvoicePayrollTotals
+    """Totales: percepciones, deducciones, otros pagos y el neto a pagar."""
+
+
 class InvoiceCustomer(TypedDict):
-    """Cliente (Receptor): el id de uno de su catálogo (cus_…) o sus datos en un objeto."""
+    """El cliente (Receptor) como quedó en el CFDI: RFC, nombre, régimen fiscal y código postal (y foreign si es extranjero)."""
     tax_id: str | None
     """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
     legal_name: str | None
@@ -656,117 +948,6 @@ class InvoicePayment(TypedDict):
     """Número de operación del pago (NumOperacion), como el rastreo SPEI."""
     documents: list[InvoicePaymentDocumentsItem]
     """Las facturas que paga (DoctoRelacionado)."""
-
-
-class InvoicePayrollPeriod(TypedDict):
-    """Periodo (Periodo): mes inicial, mes final y año."""
-    start: str
-    """Primer día del periodo (FechaInicialPago), AAAA-MM-DD."""
-    end: str
-    """Último día del periodo (FechaFinalPago), AAAA-MM-DD."""
-    payment_date: str
-    """Fecha de pago (FechaPago), AAAA-MM-DD. Por omisión el último día del periodo."""
-
-
-class InvoicePayrollEmployer(TypedDict):
-    """El patrón (Emisor del complemento): registro patronal y CURP si es persona física."""
-    employer_registration: str | None
-    """Registro patronal ante el IMSS (RegistroPatronal), 11 caracteres. Necesario para timbrar nómina."""
-    curp: str | None
-    """CURP, 18 caracteres."""
-
-
-class InvoicePayrollEmployee(TypedDict):
-    """El empleado (emp_…)."""
-    id: str | None
-    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
-    number: str
-    """Número de empleado (NumEmpleado)."""
-    curp: str
-    """CURP, 18 caracteres."""
-    social_security_number: str | None
-    """Número de seguridad social (NumSeguridadSocial), 11 dígitos."""
-    start_date: str
-    """Fecha de inicio de la relación laboral (FechaInicioRelLaboral), AAAA-MM-DD."""
-    contract_type: str
-    """Tipo de contrato (TipoContrato), c_TipoContrato. Por omisión 01, por tiempo indeterminado."""
-    unionized: bool
-    """true si es sindicalizado (Sindicalizado)."""
-    workday_type: str
-    """Tipo de jornada (TipoJornada), c_TipoJornada. Por omisión 01, diurna."""
-    regime_type: str
-    """Tipo de régimen (TipoRegimen): 02 sueldos y salarios."""
-    department: NotRequired[str | None]
-    """Departamento (Departamento)."""
-    position: NotRequired[str | None]
-    """Puesto (Puesto)."""
-    risk_class: str | None
-    """Clase de riesgo del puesto ante el IMSS (RiesgoPuesto), 1 a 5. Por omisión 1."""
-    contribution_base_salary: float | None
-    """Salario base de cotización (SalarioBaseCotApor)."""
-    integrated_daily_salary: float | None
-    """Salario diario integrado (SalarioDiarioIntegrado): no menor al salario diario."""
-    state: str
-    """Entidad federativa donde trabaja (ClaveEntFed): JAL, CMX, NLE…"""
-
-
-class InvoicePayrollPerceptionsItem(TypedDict):
-    type: str
-    """Tipo de percepción (TipoPercepcion), c_TipoPercepcion: 001 sueldos…"""
-    key: str
-    """Clave del patrón (Clave)."""
-    concept: str
-    """Concepto (Concepto)."""
-    taxed: float
-    """Importe gravado (ImporteGravado)."""
-    exempt: float
-    """Importe exento (ImporteExento)."""
-
-
-class InvoicePayrollDeductionsItem(TypedDict):
-    type: str
-    """Tipo de deducción (TipoDeduccion), c_TipoDeduccion: 001 IMSS, 002 ISR…"""
-    key: str
-    """Clave del patrón (Clave)."""
-    concept: str
-    """Concepto (Concepto)."""
-    amount: float
-    """Importe (Importe)."""
-
-
-class InvoicePayrollOtherPaymentsItem(TypedDict):
-    type: str
-    """Tipo de otro pago (TipoOtroPago), c_TipoOtroPago: 002 subsidio para el empleo."""
-    key: str
-    """Clave del patrón (Clave)."""
-    concept: str
-    """Concepto (Concepto)."""
-    amount: float
-    """Importe pagado (Importe)."""
-    subsidy_caused: NotRequired[float]
-    """Subsidio causado (SubsidioCausado)."""
-    subsidy_applied: NotRequired[float]
-    """Del subsidio causado, el ISR que evitó (no va en el XML)."""
-
-
-class InvoicePayroll(TypedDict):
-    """Solo en un recibo de nómina (type N)."""
-    periodicity: str
-    """Periodicidad del pago (PeriodicidadPago): 02 semanal, 03 catorcenal, 04 quincenal (por omisión), 05 mensual."""
-    period: InvoicePayrollPeriod
-    """Periodo (Periodo): mes inicial, mes final y año."""
-    days: float
-    """Días pagados (NumDiasPagados). Por omisión, todos los del periodo que le tocan."""
-    employer: InvoicePayrollEmployer
-    """El patrón (Emisor del complemento): registro patronal y CURP si es persona física."""
-    employee: InvoicePayrollEmployee
-    """El empleado (emp_…)."""
-    perceptions: list[InvoicePayrollPerceptionsItem]
-    """Percepciones (Percepcion): sueldo y demás, gravado y exento."""
-    deductions: list[InvoicePayrollDeductionsItem]
-    """Deducciones (Deduccion): ISR, cuotas IMSS y demás."""
-    other_payments: list[InvoicePayrollOtherPaymentsItem]
-    """Otros pagos (OtroPago): subsidio para el empleo."""
 
 
 class InvoiceCancellation(TypedDict):
@@ -958,7 +1139,7 @@ class Retention(TypedDict):
     uuid: str | None
     """Folio fiscal que asigna el SAT (UUID del Timbre Fiscal Digital), en mayúsculas."""
     folio: int | None
-    """Folio (Folio). Fiscalisto asigna el siguiente de la serie; mande uno solo si debe ser ese."""
+    """El número de la constancia en la serie del emisor (internal_folio es el que se imprime, RET1…)."""
     internal_folio: str | None
     """Folio interno (FolioInt): RET1, RET2…"""
     date: str | None
@@ -1172,13 +1353,32 @@ class Employee(TypedDict):
 
 
 class PayrollReceiptPreviewPeriod(TypedDict):
-    """Periodo (Periodo): mes inicial, mes final y año."""
+    """El periodo de pago: primer y último día y el día de pago (FechaInicialPago, FechaFinalPago y FechaPago)."""
     start: str
     """Primer día del periodo (FechaInicialPago), AAAA-MM-DD."""
     end: str
     """Último día del periodo (FechaFinalPago), AAAA-MM-DD."""
     payment_date: str
     """Fecha de pago (FechaPago), AAAA-MM-DD. Por omisión el último día del periodo."""
+
+
+class PayrollReceiptPreviewPerceptionsItemOvertimeItem(TypedDict):
+    days: int
+    """Días con horas extra (Dias)."""
+    hours_type: str
+    """c_TipoHoras: 01 dobles, 02 triples, 03 simples."""
+    hours: int
+    """Horas extra (HorasExtra)."""
+    amount_paid: float
+    """Importe pagado (ImportePagado)."""
+
+
+class PayrollReceiptPreviewPerceptionsItemStockOptions(TypedDict):
+    """Acciones o títulos (AccionesOTitulos), con la percepción 045."""
+    market_value: float
+    """Valor de mercado (ValorMercado)."""
+    grant_price: float
+    """Precio al otorgarse (PrecioAlOtorgarse)."""
 
 
 class PayrollReceiptPreviewPerceptionsItem(TypedDict):
@@ -1192,6 +1392,10 @@ class PayrollReceiptPreviewPerceptionsItem(TypedDict):
     """Importe gravado (ImporteGravado)."""
     exempt: float
     """Importe exento (ImporteExento)."""
+    overtime: NotRequired[list[PayrollReceiptPreviewPerceptionsItemOvertimeItem]]
+    """Horas extra (HorasExtra), con la percepción 019."""
+    stock_options: NotRequired[PayrollReceiptPreviewPerceptionsItemStockOptions]
+    """Acciones o títulos (AccionesOTitulos), con la percepción 045."""
 
 
 class PayrollReceiptPreviewDeductionsItem(TypedDict):
@@ -1203,6 +1407,16 @@ class PayrollReceiptPreviewDeductionsItem(TypedDict):
     """Concepto (Concepto)."""
     amount: float
     """Importe (Importe)."""
+
+
+class PayrollReceiptPreviewOtherPaymentsItemBalanceCompensation(TypedDict):
+    """Compensación del saldo a favor (CompensacionSaldosAFavor), con el 004."""
+    balance: float
+    """Saldo a favor (SaldoAFavor)."""
+    year: int
+    """Año del saldo a favor (Año)."""
+    remaining: float
+    """Remanente del saldo a favor (RemanenteSalFav)."""
 
 
 class PayrollReceiptPreviewOtherPaymentsItem(TypedDict):
@@ -1218,14 +1432,16 @@ class PayrollReceiptPreviewOtherPaymentsItem(TypedDict):
     """Subsidio causado (SubsidioCausado)."""
     subsidy_applied: NotRequired[float]
     """Del subsidio causado, el ISR que evitó (no va en el XML)."""
+    balance_compensation: NotRequired[PayrollReceiptPreviewOtherPaymentsItemBalanceCompensation]
+    """Compensación del saldo a favor (CompensacionSaldosAFavor), con el 004."""
 
 
 class PayrollReceiptPreviewIsrAdjustment(TypedDict):
     """El ajuste de fin de mes: subsidio revertido y el ISR que retiene."""
     reversed: float
-    """Subsidio causado antes en el mes que se revierte."""
+    """El subsidio para el empleo que se revierte en el ajuste."""
     isr: float
-    """El cálculo del ISR del periodo: base, tarifa, subsidio y resultado."""
+    """El ISR que se retiene después del ajuste."""
 
 
 class PayrollReceiptPreviewIsr(TypedDict):
@@ -1250,6 +1466,10 @@ class PayrollReceiptPreviewTotals(TypedDict):
     """Total gravado (TotalGravado)."""
     exempt: float
     """Total exento (TotalExento)."""
+    separation: float
+    """Total de separación e indemnización (TotalSeparacionIndemnizacion)."""
+    retirement: float
+    """Total de jubilación, pensión o retiro (TotalJubilacionPensionRetiro)."""
     perceptions: float
     """Total de percepciones (TotalPercepciones)."""
     other_deductions: float
@@ -1275,7 +1495,7 @@ class PayrollReceiptPreview(TypedDict):
     periodicity: str
     """Periodicidad del pago (PeriodicidadPago): 02 semanal, 03 catorcenal, 04 quincenal (por omisión), 05 mensual."""
     period: PayrollReceiptPreviewPeriod
-    """Periodo (Periodo): mes inicial, mes final y año."""
+    """El periodo de pago: primer y último día y el día de pago (FechaInicialPago, FechaFinalPago y FechaPago)."""
     days: float
     """Días pagados (NumDiasPagados). Por omisión, todos los del periodo que le tocan."""
     contribution_base_salary: float
@@ -1292,8 +1512,51 @@ class PayrollReceiptPreview(TypedDict):
     """Totales: percepciones, deducciones, otros pagos y el neto a pagar."""
 
 
+class ExternalPayrollReceiptPreviewCustomer(TypedDict):
+    """El empleado como receptor del CFDI (Receptor)."""
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    legal_name: str
+    """Nombre o razón social tal como está en la constancia de situación fiscal, sin el régimen de capital (sin «S.A. de C.V.»)."""
+    zip: str
+    """Código postal del domicilio fiscal del cliente (DomicilioFiscalReceptor), 5 dígitos."""
+
+
+class ExternalPayrollReceiptPreviewWarningsItem(TypedDict):
+    param: str
+    """El campo de la solicitud."""
+    code: str
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) aún no se puede emitir."""
+    message: str
+    """Qué pasó y cómo corregirlo, para una persona."""
+
+
+class ExternalPayrollReceiptPreview(TypedDict):
+    """Un recibo calculado por su sistema, revisado y sin timbrar: lo que se timbraría, tal cual."""
+    object: Literal["payroll_receipt_preview"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    calculation: Literal["external"]
+    """external: los importes son los que calculó su sistema."""
+    issuer: str
+    """El emisor (iss_…)."""
+    customer: ExternalPayrollReceiptPreviewCustomer
+    """El empleado como receptor del CFDI (Receptor)."""
+    payroll: InvoicePayroll
+    """El recibo de nómina 1.2: empleado, periodo, percepciones, deducciones y otros pagos."""
+    subtotal: float
+    """SubTotal: percepciones más otros pagos."""
+    discount: float
+    """Descuento: las deducciones."""
+    total: float
+    """Total: el neto a pagar."""
+    warnings: list[ExternalPayrollReceiptPreviewWarningsItem]
+    """Lo que el SAT podría observar; no impide timbrar."""
+    unsigned_xml: str
+    """El XML que se mandaría al PAC, sin sello ni timbre: sus importes son exactamente los que mandó."""
+
+
 class AdvanceCustomer(TypedDict):
-    """Cliente (Receptor): el id de uno de su catálogo (cus_…) o sus datos en un objeto."""
+    """El cliente del anticipo: RFC y nombre."""
     tax_id: str
     """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
     legal_name: str | None
@@ -1309,11 +1572,11 @@ class Advance(TypedDict):
     date: str
     """Fecha de emisión (Fecha), hora de la Ciudad de México."""
     series: str | None
-    """Serie (Serie), hasta 25 caracteres. Cada serie lleva sus propios folios."""
+    """La serie (Serie) del anticipo, o null."""
     folio: str | None
-    """Folio (Folio). Fiscalisto asigna el siguiente de la serie; mande uno solo si debe ser ese."""
+    """El folio (Folio) del anticipo, o null."""
     customer: AdvanceCustomer
-    """Cliente (Receptor): el id de uno de su catálogo (cus_…) o sus datos en un objeto."""
+    """El cliente del anticipo: RFC y nombre."""
     amount: float
     """El anticipo antes de impuestos."""
     total: float
@@ -1715,7 +1978,7 @@ class SatDeclarationSectionsItemFieldsItem(TypedDict):
     label: str
     """El renglón como lo imprime el SAT."""
     value: float | str
-    """Valor de la mercancía (ValorMercancia); obligatorio en transporte aéreo."""
+    """El valor del renglón como lo trae la declaración (número o texto)."""
 
 
 class SatDeclarationSectionsItem(TypedDict):
@@ -1727,7 +1990,7 @@ class SatDeclarationSectionsItem(TypedDict):
 
 class SatDeclarationReceiptConceptsItem(TypedDict):
     concept: str
-    """Concepto del pago (ConceptoPago), c_TipoContribuyenteSujetoRetencion."""
+    """El concepto de la línea de captura (ISR, IVA…) como lo da el SAT."""
     due: float | None
     """Lo que resultó a cargo."""
     amount_due: float | None
@@ -2001,7 +2264,7 @@ class StockLevel(TypedDict):
 class StockMovementSource(TypedDict):
     """Lo que lo causó: type invoice (id es el UUID del CFDI), adjustment (adj_…), receipt, transfer, count o ticket."""
     type: str
-    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    """Qué lo movió: invoice (una factura; id es su UUID), adjustment (un ajuste, adj_…), count (un conteo) u otro origen."""
     id: str
     """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
 
@@ -2487,7 +2750,7 @@ class FinancialStatementsIncomeStatementMonthSectionsItemGroupsItem(TypedDict):
 
 class FinancialStatementsIncomeStatementMonthSectionsItem(TypedDict):
     key: Literal["ingresos", "costos", "gastos", "financiamiento", "otros"]
-    """El archivo .key en base64 (puede traer el prefijo data:)."""
+    """La sección: ingresos, costos, gastos, financiamiento u otros."""
     name: str
     """Nombre."""
     total: float
@@ -2526,7 +2789,7 @@ class FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItem(TypedDi
 
 class FinancialStatementsIncomeStatementYearToDateSectionsItem(TypedDict):
     key: Literal["ingresos", "costos", "gastos", "financiamiento", "otros"]
-    """El archivo .key en base64 (puede traer el prefijo data:)."""
+    """La sección: ingresos, costos, gastos, financiamiento u otros."""
     name: str
     """Nombre."""
     total: float
@@ -3064,7 +3327,7 @@ class BankTransactionSuggestedMatch(TypedDict):
     amounts: dict[str, float]
     """Lo que el depósito pagaría de cada factura (por inv_…)."""
     method: Literal["PPD", "PUE"]
-    """egreso (la factura completa y después una nota de crédito por el anticipo, opción A) o remanente (la factura solo por lo que falta, opción B)."""
+    """PUE: facturas por cobrar que quedan pagadas al conciliar; PPD: se pagan con su complemento de pago (POST /v1/payments)."""
     confidence: Literal["high", "medium"]
     """high (el monto y además el RFC, el nombre o el folio coinciden) o medium (revíselo antes)."""
     reasons: list[str]
@@ -3747,7 +4010,7 @@ class Deleted(TypedDict):
 
 
 class ApiErrorError(TypedDict):
-    """Por qué el SAT o el PAC no lo aceptaron: mensaje, código del SAT y texto original."""
+    """El error: type, code, message (en el idioma pedido), param (el campo a corregir), doc_url y request_id."""
     type: Literal["invalid_request_error", "authentication_error", "permission_error", "not_found_error", "idempotency_error", "rate_limit_error", "invoice_error", "balance_error", "api_error"]
     """La familia del error: invalid_request_error, authentication_error, permission_error, not_found_error, idempotency_error, rate_limit_error, invoice_error, balance_error o api_error."""
     code: str
@@ -3769,7 +4032,7 @@ class ApiErrorError(TypedDict):
 class ApiError(TypedDict):
     """Todos los errores tienen esta forma."""
     error: ApiErrorError
-    """Por qué el SAT o el PAC no lo aceptaron: mensaje, código del SAT y texto original."""
+    """El error: type, code, message (en el idioma pedido), param (el campo a corregir), doc_url y request_id."""
 
 
 class SandboxList(TypedDict):
@@ -5060,6 +5323,274 @@ InvoiceCreate = TypedDict(
 )
 
 
+class ExternalPayrollReceiptCreatePeriod(TypedDict):
+    """FechaInicialPago, FechaFinalPago y FechaPago."""
+    start: str
+    """Primer día del periodo (FechaInicialPago), AAAA-MM-DD."""
+    end: str
+    """Último día del periodo (FechaFinalPago), AAAA-MM-DD."""
+    payment_date: str
+    """Fecha de pago (FechaPago), AAAA-MM-DD. Por omisión el último día del periodo."""
+
+
+class ExternalPayrollReceiptCreateEmployerSncf(TypedDict):
+    """EntidadSNCF, solo para entidades adheridas al SNCF."""
+    resource_origin: str
+    """OrigenRecurso: IP, IF o IM."""
+    own_resource_amount: NotRequired[float]
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+
+
+class ExternalPayrollReceiptCreateEmployer(TypedDict):
+    """El patrón (Emisor del complemento): registro patronal y CURP si es persona física."""
+    registration: NotRequired[str | None]
+    """Registro patronal. Sin el campo: el del emisor cuando el contrato es 01–08. null: sin registro patronal."""
+    curp: NotRequired[str | None]
+    """CURP del patrón persona física. Sin el campo: la guardada en el emisor."""
+    origin_tax_id: NotRequired[str]
+    """RfcPatronOrigen."""
+    sncf: NotRequired[ExternalPayrollReceiptCreateEmployerSncf]
+    """EntidadSNCF, solo para entidades adheridas al SNCF."""
+
+
+class ExternalPayrollReceiptCreateEmployeeSubcontractingItem(TypedDict):
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    percentage: float
+    """PorcentajeTiempo."""
+
+
+class ExternalPayrollReceiptCreateEmployee(TypedDict):
+    """El empleado (Receptor y Nomina/Receptor) con los datos de su sistema de nómina; no usa ni cambia los empleados de Fiscalisto."""
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    name: str
+    """Nombre."""
+    zip: str
+    """Código postal del domicilio fiscal, 5 dígitos, como en la constancia de situación fiscal. El de un emisor es el lugar de expedición (LugarExpedicion) de sus comprobantes."""
+    curp: str
+    """CURP, 18 caracteres."""
+    number: str
+    """NumEmpleado."""
+    email: NotRequired[str | None]
+    """Para send_email; no va en el XML."""
+    social_security_number: NotRequired[str]
+    """Número de seguridad social (NumSeguridadSocial), 11 dígitos."""
+    start_date: NotRequired[str]
+    """FechaInicioRelLaboral."""
+    seniority: NotRequired[str]
+    """Antigüedad (P52W o P1Y2M3D). Sin el campo y con registro patronal: semanas desde start_date hasta el fin del periodo."""
+    contract_type: str
+    """Tipo de contrato (TipoContrato), c_TipoContrato. Por omisión 01, por tiempo indeterminado."""
+    regime_type: str
+    """Tipo de régimen (TipoRegimen): 02 sueldos y salarios."""
+    unionized: NotRequired[bool]
+    """true si es sindicalizado (Sindicalizado)."""
+    workday_type: NotRequired[str]
+    """Tipo de jornada (TipoJornada), c_TipoJornada. Por omisión 01, diurna."""
+    risk_class: NotRequired[str]
+    """Clase de riesgo del puesto ante el IMSS (RiesgoPuesto), 1 a 5. Por omisión 1."""
+    department: NotRequired[str]
+    """Departamento (Departamento)."""
+    position: NotRequired[str]
+    """Puesto (Puesto)."""
+    contribution_base_salary: NotRequired[float]
+    """SalarioBaseCotApor."""
+    integrated_daily_salary: NotRequired[float]
+    """SalarioDiarioIntegrado."""
+    state: str
+    """ClaveEntFed (c_Estado): JAL, CMX, NLE…"""
+    bank: NotRequired[str]
+    """Banco (c_Banco); no va con una CLABE."""
+    bank_account: NotRequired[str]
+    """CuentaBancaria: CLABE de 18 dígitos, tarjeta o cuenta."""
+    subcontracting: NotRequired[list[ExternalPayrollReceiptCreateEmployeeSubcontractingItem]]
+    """SubContratacion: el porcentaje suma 100."""
+
+
+class ExternalPayrollReceiptCreatePerceptionsItemOvertimeItem(TypedDict):
+    days: float
+    """Días con horas extra (Dias)."""
+    hours_type: str
+    """c_TipoHoras: 01 dobles, 02 triples, 03 simples."""
+    hours: float
+    """Horas extra (HorasExtra)."""
+    amount_paid: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+
+
+class ExternalPayrollReceiptCreatePerceptionsItemStockOptions(TypedDict):
+    """AccionesOTitulos: solo con la percepción 045."""
+    market_value: float
+    """Valor de mercado (ValorMercado)."""
+    grant_price: float
+    """Precio al otorgarse (PrecioAlOtorgarse)."""
+
+
+class ExternalPayrollReceiptCreatePerceptionsItem(TypedDict):
+    type: str
+    """TipoPercepcion (c_TipoPercepcion): 001 sueldos, 002 aguinaldo…"""
+    key: str
+    """Clave del patrón (3 a 15 caracteres)."""
+    concept: str
+    """Concepto del pago (ConceptoPago), c_TipoContribuyenteSujetoRetencion."""
+    taxed: float
+    """ImporteGravado."""
+    exempt: float
+    """ImporteExento."""
+    overtime: NotRequired[list[ExternalPayrollReceiptCreatePerceptionsItemOvertimeItem]]
+    """HorasExtra: solo con la percepción 019."""
+    stock_options: NotRequired[ExternalPayrollReceiptCreatePerceptionsItemStockOptions]
+    """AccionesOTitulos: solo con la percepción 045."""
+
+
+class ExternalPayrollReceiptCreateSeparation(TypedDict):
+    """SeparacionIndemnizacion: con las percepciones 022, 023 o 025."""
+    total_paid: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    years_of_service: float
+    """NumAñosServicio."""
+    last_monthly_salary: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    accumulable_income: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    non_accumulable_income: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+
+
+class ExternalPayrollReceiptCreateRetirement(TypedDict):
+    """JubilacionPensionRetiro: con las percepciones 039 o 044."""
+    total_one_payment: NotRequired[float]
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    total_installment: NotRequired[float]
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    daily_amount: NotRequired[float]
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    accumulable_income: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    non_accumulable_income: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+
+
+class ExternalPayrollReceiptCreateDeductionsItem(TypedDict):
+    type: str
+    """TipoDeduccion (c_TipoDeduccion): 001 IMSS, 002 ISR, 010 Infonavit…"""
+    key: str
+    """El archivo .key en base64 (puede traer el prefijo data:)."""
+    concept: str
+    """Concepto de los egresos (IntegracEgresos/ConceptoS), hasta 100 caracteres."""
+    amount: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+
+
+class ExternalPayrollReceiptCreateOtherPaymentsItemBalanceCompensation(TypedDict):
+    """CompensacionSaldosAFavor: solo con el 004."""
+    balance: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    year: float
+    """Año (Ejercicio)."""
+    remaining: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+
+
+class ExternalPayrollReceiptCreateOtherPaymentsItem(TypedDict):
+    type: str
+    """TipoOtroPago (c_TipoOtroPago): 002 subsidio para el empleo…"""
+    key: str
+    """El archivo .key en base64 (puede traer el prefijo data:)."""
+    concept: str
+    """Concepto del pago (ConceptoPago), c_TipoContribuyenteSujetoRetencion."""
+    amount: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    subsidy_caused: NotRequired[float]
+    """SubsidioCausado: solo con el 002."""
+    balance_compensation: NotRequired[ExternalPayrollReceiptCreateOtherPaymentsItemBalanceCompensation]
+    """CompensacionSaldosAFavor: solo con el 004."""
+
+
+class ExternalPayrollReceiptCreateDisabilitiesItem(TypedDict):
+    days: float
+    """Días pagados (NumDiasPagados). Por omisión, todos los del periodo que le tocan."""
+    type: str
+    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    amount: NotRequired[float]
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+
+
+class ExternalPayrollReceiptCreateTotals(TypedDict):
+    """Los totales que calculó su sistema: Fiscalisto los compara al centavo con las líneas y rechaza el recibo si no cuadran."""
+    perceptions: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    deductions: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    other_payments: float
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    net: float
+    """Neto: percepciones más otros pagos menos deducciones."""
+    salaries: NotRequired[float]
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    separation: NotRequired[float]
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    retirement: NotRequired[float]
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    taxed: NotRequired[float]
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    exempt: NotRequired[float]
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    taxes_withheld: NotRequired[float]
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+    other_deductions: NotRequired[float]
+    """Pesos con hasta 2 decimales, como se timbran: Fiscalisto no los redondea."""
+
+
+class ExternalPayrollReceiptCreateReferences(TypedDict):
+    """Sus ids: el empleado y la corrida de nómina. payroll_run_id es obligatorio en un recibo extraordinario."""
+    employee_id: NotRequired[str]
+    """El id del empleado en su sistema."""
+    payroll_run_id: NotRequired[str]
+    """El id de la corrida de nómina en su sistema."""
+
+
+class ExternalPayrollReceiptCreate(TypedDict):
+    """Un recibo de nómina que calculó su sistema, con todos sus conceptos e importes: se timbra tal cual."""
+    issuer: NotRequired[str]
+    """El emisor (patrón) del recibo; sin él, el único emisor de su cuenta en este modo."""
+    type: Literal["O", "E"]
+    """TipoNomina: O ordinaria (periodicidad 01–10) o E extraordinaria (periodicidad 99)."""
+    periodicity: str
+    """PeriodicidadPago (c_PeriodicidadPago)."""
+    period: ExternalPayrollReceiptCreatePeriod
+    """FechaInicialPago, FechaFinalPago y FechaPago."""
+    days: float
+    """NumDiasPagados: de 0.001 a 36160, hasta 3 decimales."""
+    employer: NotRequired[ExternalPayrollReceiptCreateEmployer]
+    """El patrón (Emisor del complemento): registro patronal y CURP si es persona física."""
+    employee: ExternalPayrollReceiptCreateEmployee
+    """El empleado (Receptor y Nomina/Receptor) con los datos de su sistema de nómina; no usa ni cambia los empleados de Fiscalisto."""
+    perceptions: NotRequired[list[ExternalPayrollReceiptCreatePerceptionsItem]]
+    """Percepciones (Percepcion): sueldo y demás, gravado y exento."""
+    separation: NotRequired[ExternalPayrollReceiptCreateSeparation]
+    """SeparacionIndemnizacion: con las percepciones 022, 023 o 025."""
+    retirement: NotRequired[ExternalPayrollReceiptCreateRetirement]
+    """JubilacionPensionRetiro: con las percepciones 039 o 044."""
+    deductions: NotRequired[list[ExternalPayrollReceiptCreateDeductionsItem]]
+    """Deducciones (Deduccion): ISR, cuotas IMSS y demás."""
+    other_payments: NotRequired[list[ExternalPayrollReceiptCreateOtherPaymentsItem]]
+    """Otros pagos (OtroPago): subsidio para el empleo."""
+    disabilities: NotRequired[list[ExternalPayrollReceiptCreateDisabilitiesItem]]
+    """Incapacidades: con la percepción 014 o la deducción 006."""
+    totals: ExternalPayrollReceiptCreateTotals
+    """Los totales que calculó su sistema: Fiscalisto los compara al centavo con las líneas y rechaza el recibo si no cuadran."""
+    references: NotRequired[ExternalPayrollReceiptCreateReferences]
+    """Sus ids: el empleado y la corrida de nómina. payroll_run_id es obligatorio en un recibo extraordinario."""
+    replaces: NotRequired[str]
+    """El recibo vigente (inv_… o UUID) que este sustituye: relación 04 y se cancela con motivo 01."""
+    send_email: NotRequired[bool]
+    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
+
+
 class UpdateAccountParams(TypedDict):
     api_version: str
     """La versión de la API de la cuenta: la que reciben sus solicitudes sin Fiscalisto-Version y sus webhooks sin api_version propio. Pruebe antes la nueva con el encabezado."""
@@ -5318,7 +5849,7 @@ class CreateCreditNoteParams(TypedDict):
     payment_form: str
     """Forma de pago (FormaPago), clave de c_FormaPago: 01 efectivo, 03 transferencia, 04 tarjeta de crédito, 28 débito, 99 por definir… Obligatoria con PUE; con PPD es 99."""
     relationship: NotRequired[Literal["01", "03"]]
-    """Tipo de relación (TipoRelacion): 01 nota de crédito, 03 devolución, 04 sustitución, 07 anticipo…"""
+    """Tipo de relación (TipoRelacion) con la factura: 01 nota de crédito (por omisión) o 03 devolución de mercancía."""
     send_email: NotRequired[bool]
     """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
     email: NotRequired[str]
@@ -5827,7 +6358,7 @@ class UpdateEmployeeParams(TypedDict):
 
 
 class CreatePayrollReceiptParamsPeriod(TypedDict):
-    """Periodo (Periodo): mes inicial, mes final y año."""
+    """El periodo de pago: primer y último día (FechaInicialPago, FechaFinalPago) y, si no es el último, el día de pago (FechaPago)."""
     start: str
     """Primer día del periodo (FechaInicialPago), AAAA-MM-DD."""
     end: str
@@ -5840,7 +6371,7 @@ class CreatePayrollReceiptParams(TypedDict):
     employee: str
     """El empleado (emp_…)."""
     period: CreatePayrollReceiptParamsPeriod
-    """Periodo (Periodo): mes inicial, mes final y año."""
+    """El periodo de pago: primer y último día (FechaInicialPago, FechaFinalPago) y, si no es el último, el día de pago (FechaPago)."""
     days: NotRequired[float]
     """Días pagados (NumDiasPagados). Por omisión, todos los del periodo que le tocan."""
     send_email: NotRequired[bool]
@@ -5850,7 +6381,7 @@ class CreatePayrollReceiptParams(TypedDict):
 
 
 class PreviewPayrollReceiptParamsPeriod(TypedDict):
-    """Periodo (Periodo): mes inicial, mes final y año."""
+    """El periodo de pago: primer y último día (FechaInicialPago, FechaFinalPago) y, si no es el último, el día de pago (FechaPago)."""
     start: str
     """Primer día del periodo (FechaInicialPago), AAAA-MM-DD."""
     end: str
@@ -5863,7 +6394,7 @@ class PreviewPayrollReceiptParams(TypedDict):
     employee: str
     """El empleado (emp_…)."""
     period: PreviewPayrollReceiptParamsPeriod
-    """Periodo (Periodo): mes inicial, mes final y año."""
+    """El periodo de pago: primer y último día (FechaInicialPago, FechaFinalPago) y, si no es el último, el día de pago (FechaPago)."""
     days: NotRequired[float]
     """Días pagados (NumDiasPagados). Por omisión, todos los del periodo que le tocan."""
     send_email: NotRequired[bool]
@@ -5923,7 +6454,7 @@ class CreateBranchParamsAddress(TypedDict):
 
 
 class CreateBranchParamsSeries(TypedDict):
-    """Serie (Serie), hasta 25 caracteres. Cada serie lleva sus propios folios."""
+    """La serie de cada tipo de CFDI que se timbra desde ella (invoice, credit_note, payment, transfer), hasta 25 caracteres cada una; la que no mande usa la del emisor."""
     invoice: NotRequired[str | None]
     """Serie de sus facturas (tipo I); sin ella, la del emisor."""
     credit_note: NotRequired[str | None]
@@ -5948,7 +6479,7 @@ class CreateBranchParams(TypedDict):
     email: NotRequired[str | None]
     """Correo, para el PDF."""
     series: NotRequired[CreateBranchParamsSeries]
-    """Serie (Serie), hasta 25 caracteres. Cada serie lleva sus propios folios."""
+    """La serie de cada tipo de CFDI que se timbra desde ella (invoice, credit_note, payment, transfer), hasta 25 caracteres cada una; la que no mande usa la del emisor."""
 
 
 class ListBranchesParams(TypedDict):
@@ -5982,7 +6513,7 @@ class UpdateBranchParamsAddress(TypedDict):
 
 
 class UpdateBranchParamsSeries(TypedDict):
-    """Serie (Serie), hasta 25 caracteres. Cada serie lleva sus propios folios."""
+    """La serie de cada tipo de CFDI que se timbra desde ella (invoice, credit_note, payment, transfer), hasta 25 caracteres cada una; la que no mande usa la del emisor."""
     invoice: NotRequired[str | None]
     """Serie de sus facturas (tipo I); sin ella, la del emisor."""
     credit_note: NotRequired[str | None]
@@ -6005,7 +6536,7 @@ class UpdateBranchParams(TypedDict):
     email: NotRequired[str | None]
     """Correo, para el PDF."""
     series: NotRequired[UpdateBranchParamsSeries]
-    """Serie (Serie), hasta 25 caracteres. Cada serie lleva sus propios folios."""
+    """La serie de cada tipo de CFDI que se timbra desde ella (invoice, credit_note, payment, transfer), hasta 25 caracteres cada una; la que no mande usa la del emisor."""
     archived: NotRequired[bool]
     """true la archiva: ya no se puede facturar desde ella, y sus facturas la siguen nombrando. false la restaura."""
 

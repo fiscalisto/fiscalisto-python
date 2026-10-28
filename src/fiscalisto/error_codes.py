@@ -32,6 +32,9 @@ class ErrorCode:
     BROWSER_NOT_SUPPORTED: Final = "browser_not_supported"
     """La API se llama desde su servidor, nunca desde el navegador: la llave secreta quedaría expuesta."""
 
+    CALCULATION_MODE_AMBIGUOUS: Final = "calculation_mode_ambiguous"
+    """Mezcló las dos formas de emitir un recibo de nómina: POST /v1/payroll_receipts calcula el recibo con los datos del empleado (emp_…); POST /v1/payroll_receipts/external timbra los importes que calculó su sistema. Use el endpoint que corresponde."""
+
     CANCELLATION_FAILED: Final = "cancellation_failed"
     """El SAT no aceptó la solicitud de cancelación; message dice por qué."""
 
@@ -66,7 +69,7 @@ class ErrorCode:
     """Para pedirle al SAT las facturas de un emisor en producción, guarde antes su e.firma: POST /v1/issuers/{id}/efirma con keep_for_downloads: true. También si la guardada venció."""
 
     EMAIL_FAILED: Final = "email_failed"
-    """No se pudo mandar el correo; el comprobante sí está timbrado."""
+    """No se pudo mandar el correo; lo demás sí se hizo: el comprobante está timbrado o la cotización quedó enviada (su url funciona). Repita el envío con su ruta /send."""
 
     ENDPOINT_EXISTS: Final = "endpoint_exists"
     """Ya hay un webhook con esa dirección en este modo; el mensaje dice cuál. Cámbielo en vez de crear otro."""
@@ -162,7 +165,16 @@ class ErrorCode:
     """Mandó un campo o un parámetro de la URL que no existe (casi siempre un nombre mal escrito, como legalName en vez de legal_name, o ?statuss= en vez de ?status=). Nunca se ignora en silencio."""
 
     PAYROLL_INVALID: Final = "payroll_invalid"
-    """El recibo de nómina no se puede calcular o timbrar con esos datos (periodo, días, registro patronal del emisor…)."""
+    """El recibo de nómina no se puede calcular o timbrar con esos datos (periodo, días, registro patronal del emisor…). En un recibo calculado por su sistema (/v1/payroll_receipts/external), errors trae todos los problemas, cada uno con su param, code (missing, not_allowed, invalid, catalog, totals_mismatch, rule) y message. No se usó ningún timbre."""
+
+    PAYROLL_PERIOD_OVERLAP: Final = "payroll_period_overlap"
+    """El empleado ya tiene un recibo ordinario cuyo periodo se cruza con este (invoice). Un pago adicional del periodo va como recibo extraordinario (type E); para corregir aquel, use replaces."""
+
+    PAYROLL_RECEIPT_EXISTS: Final = "payroll_receipt_exists"
+    """El empleado ya tiene un recibo vigente de ese periodo (ordinario) o de esa corrida (payroll_run_id, extraordinario) con otros importes. invoice es ese recibo: corríjalo con replaces o cancélelo antes. Con los mismos importes se devuelve el mismo recibo, sin error."""
+
+    PAYROLL_REPLACEMENT_INVALID: Final = "payroll_replacement_invalid"
+    """replaces no es un recibo de nómina vigente del mismo emisor y del mismo empleado."""
 
     QUOTE_CUSTOMER_MISSING: Final = "quote_customer_missing"
     """La cotización no tiene los datos fiscales del cliente: agrégueselos con POST /v1/quotes/{id} (customer) o mándela con auto_invoice para que los dé al aceptarla."""
@@ -240,7 +252,7 @@ class ErrorCode:
     """Esa plataforma aún no está disponible en Fiscalisto."""
 
     SUBSTITUTION_UNSUPPORTED: Final = "substitution_unsupported"
-    """Los complementos de pago y las notas de crédito no se sustituyen: se cancelan y se emite otro."""
+    """Los complementos de pago y las notas de crédito no se sustituyen: se cancelan y se emite otro. Un recibo de nómina se sustituye con POST /v1/payroll_receipts/external y replaces."""
 
     TEST_CLOCK_ADVANCING: Final = "test_clock_advancing"
     """El reloj se está adelantando en otra solicitud (409, con Retry-After). Espere a test_clock.ready y repita."""
@@ -284,6 +296,7 @@ ErrorCodeValue = Literal[
     "branch_exists",
     "branch_has_invoices",
     "browser_not_supported",
+    "calculation_mode_ambiguous",
     "cancellation_failed",
     "catalog_unavailable",
     "certificate_invalid",
@@ -328,6 +341,9 @@ ErrorCodeValue = Literal[
     "parameter_missing",
     "parameter_unknown",
     "payroll_invalid",
+    "payroll_period_overlap",
+    "payroll_receipt_exists",
+    "payroll_replacement_invalid",
     "quote_customer_missing",
     "quote_invalid",
     "quote_not_draft",

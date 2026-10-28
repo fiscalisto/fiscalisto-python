@@ -56,6 +56,8 @@ if TYPE_CHECKING:
         Diot,
         Employee,
         Event,
+        ExternalPayrollReceiptCreate,
+        ExternalPayrollReceiptPreview,
         FinancialStatements,
         GetCrossCheckCfdiParams,
         GetCrossChecksParams,
@@ -1626,6 +1628,48 @@ class PayrollReceiptsResource:
         """
         result: PayrollReceiptPreview = self._client.request(
             "POST", "/v1/payroll_receipts/preview", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create_external(
+        self,
+        params: ExternalPayrollReceiptCreate,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Invoice:
+        """Timbrar un recibo calculado por su sistema
+
+        Para un sistema de nómina que ya calculó el recibo: timbra exactamente sus percepciones (gravado y exento), deducciones, otros pagos, horas extra, incapacidades, separación o jubilación, ordinario (type O) o extraordinario (type E: aguinaldo, PTU, finiquito). Fiscalisto no recalcula ni redondea nada: revisa el XSD, los catálogos del SAT, la Matriz de errores y que sus totales cuadren, y si algo falla responde payroll_invalid con todos los problemas en errors[] (cada uno con su param). Un recibo ordinario por empleado (RFC) y periodo; uno extraordinario por empleado y payroll_run_id. Repetirlo con los mismos importes devuelve el mismo recibo; con otros importes, 409 payroll_receipt_exists (corríjalo con replaces). Queda como factura tipo N.
+
+        POST /v1/payroll_receipts/external
+        https://fiscalisto.com/docs/api/referencia/nomina/create-external-payroll-receipt
+        """
+        result: Invoice = self._client.request(
+            "POST", "/v1/payroll_receipts/external", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def preview_external(
+        self,
+        params: ExternalPayrollReceiptCreate,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExternalPayrollReceiptPreview:
+        """Revisar un recibo calculado por su sistema, sin timbrar
+
+        Las mismas revisiones que al timbrar, sin timbrar ni usar timbres: devuelve el recibo como se timbraría, los avisos y el XML sin sellar (unsigned_xml), con sus importes tal cual. Si algo falla, payroll_invalid con errors[].
+
+        POST /v1/payroll_receipts/external/preview
+        https://fiscalisto.com/docs/api/referencia/nomina/preview-external-payroll-receipt
+        """
+        result: ExternalPayrollReceiptPreview = self._client.request(
+            "POST", "/v1/payroll_receipts/external/preview", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
