@@ -188,11 +188,14 @@ class ErrorCode:
     QUOTE_INVALID: Final = "quote_invalid"
     """La cotización no se pudo guardar o ya no cambia (aceptada, rechazada o facturada), o no se puede mandar así. El mensaje dice por qué."""
 
-    QUOTE_NOT_DRAFT: Final = "quote_not_draft"
-    """Solo se borra una cotización que nunca se envió."""
+    QUOTE_NOT_DELETABLE: Final = "quote_not_deletable"
+    """La cotización ya se aceptó o se facturó: no se borra. Para cerrar una que no se aceptó, también puede retirarla (POST /v1/quotes/{id}/withdraw)."""
 
     QUOTE_NOT_INVOICEABLE: Final = "quote_not_invoiceable"
-    """La cotización se rechazó o venció: no se factura. Si venció, cámbiele valid_until (es una versión nueva)."""
+    """La cotización se rechazó, se retiró o venció: no se factura. Si venció o se retiró, cámbiela (es una versión nueva) y vuelva a mandarla."""
+
+    QUOTE_NOT_SENT: Final = "quote_not_sent"
+    """La cotización nunca se envió, así que no se retira ni se marca rechazada: bórrela con DELETE /v1/quotes/{id}."""
 
     RATE_LIMIT: Final = "rate_limit"
     """Demasiadas solicitudes con la llave. Espere lo que dice Retry-After y reintente."""
@@ -354,8 +357,9 @@ ErrorCodeValue = Literal[
     "payroll_replacement_invalid",
     "quote_customer_missing",
     "quote_invalid",
-    "quote_not_draft",
+    "quote_not_deletable",
     "quote_not_invoiceable",
+    "quote_not_sent",
     "rate_limit",
     "recurring_invalid",
     "recurring_limit",

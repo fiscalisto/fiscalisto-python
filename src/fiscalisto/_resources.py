@@ -122,6 +122,7 @@ if TYPE_CHECKING:
         Receivable,
         RecurringInvoice,
         RefreshSatDeclarationsParams,
+        RejectQuoteParams,
         ResetTestDataParams,
         Retention,
         RollWebhookSecretParams,
@@ -173,6 +174,7 @@ if TYPE_CHECKING:
         WarehouseList,
         WebhookEndpoint,
         WebhookTest,
+        WithdrawQuoteParams,
     )
 
 
@@ -3473,7 +3475,7 @@ class QuotesResource:
     ) -> Quote:
         """Cambiar una cotización
 
-        Solo lo que mande cambia. Un borrador cambia ahí mismo; una que ya se envió se vuelve una versión nueva en borrador (mismo número, version + 1) que el cliente ve al mandarla; mientras, su liga muestra la anterior. Una aceptada, rechazada o facturada ya no cambia.
+        Solo lo que mande cambia. Un borrador cambia ahí mismo; una que ya se envió (también si venció, se rechazó o se retiró) se vuelve una versión nueva en borrador (mismo número, version + 1) que el cliente ve al mandarla; mientras, su liga muestra la anterior. Una aceptada o facturada ya no cambia.
 
         POST /v1/quotes/{id}
         https://fiscalisto.com/docs/api/referencia/cotizaciones/update-quote
@@ -3493,7 +3495,7 @@ class QuotesResource:
     ) -> Deleted:
         """Borrar una cotización
 
-        Solo una que nunca se envió; si no, 400 quote_not_draft.
+        Borra la cotización con todas sus versiones; si ya se envió, su url deja de funcionar. Una aceptada o facturada no se borra: 400 quote_not_deletable. Para cerrarla sin borrarla, POST /v1/quotes/{id}/withdraw.
 
         DELETE /v1/quotes/{id}
         https://fiscalisto.com/docs/api/referencia/cotizaciones/delete-quote
@@ -3543,6 +3545,50 @@ class QuotesResource:
         """
         result: Quote = self._client.request(
             "POST", f"/v1/quotes/{_path(id)}/accept", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def withdraw(
+        self,
+        id: str,
+        params: WithdrawQuoteParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Quote:
+        """Retirar una cotización
+
+        Usted ya no la ofrece: su liga dice que se retiró y el cliente ya no la puede aceptar (status withdrawn, decided_by user). Llega quote.withdrawn. Para ofrecerla de nuevo, cámbiela con POST /v1/quotes/{id} (una versión nueva) y mándela. Una que nunca se envió se borra: 400 quote_not_sent.
+
+        POST /v1/quotes/{id}/withdraw
+        https://fiscalisto.com/docs/api/referencia/cotizaciones/withdraw-quote
+        """
+        result: Quote = self._client.request(
+            "POST", f"/v1/quotes/{_path(id)}/withdraw", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def reject(
+        self,
+        id: str,
+        params: RejectQuoteParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Quote:
+        """Marcar rechazada
+
+        El cliente le dijo que no por teléfono, en persona… (status rejected, decided_by user; su nota en customer_comment). Llega quote.rejected. También para una vencida que ya no va a seguir.
+
+        POST /v1/quotes/{id}/reject
+        https://fiscalisto.com/docs/api/referencia/cotizaciones/reject-quote
+        """
+        result: Quote = self._client.request(
+            "POST", f"/v1/quotes/{_path(id)}/reject", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
