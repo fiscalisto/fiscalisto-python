@@ -103,6 +103,7 @@ if TYPE_CHECKING:
         ListRetentionsParams,
         ListSatDeclarationsParams,
         ListSatDownloadsParams,
+        ListSatFindingCounterpartiesParams,
         ListSatFindingsParams,
         ListSatInvoicesParams,
         ListSatMailboxMessagesParams,
@@ -133,6 +134,7 @@ if TYPE_CHECKING:
         SatDeclarationCalendar,
         SatDeclarationsRefresh,
         SatDownload,
+        SatFindingCounterparty,
         SatFindingList,
         SatInvoice,
         SatListCheck,
@@ -2334,6 +2336,30 @@ class SatFindingsResource:
         return result
 
 
+class SatFindingCounterpartiesResource:
+    """Cumplimiento SAT: fiscalisto.sat_finding_counterparties."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListSatFindingCounterpartiesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[SatFindingCounterparty]:
+        """Listar proveedores y clientes con hallazgos
+
+        Los proveedores (en recibidos) y clientes (en emitidos) con hallazgos sin revisar en los CFDI del emisor, del más grave al más leve y después por cuántos CFDI, cada uno con sus tipos de hallazgo. Con code, quién tiene ese hallazgo. No usa timbres.
+
+        GET /v1/sat_finding_counterparties
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/list-sat-finding-counterparties
+        """
+        return self._client.list("/v1/sat_finding_counterparties", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+
 class WarehousesResource:
     """Inventario: fiscalisto.warehouses."""
 
@@ -3950,6 +3976,11 @@ class FiscalistoApi(Core):
     def sat_findings(self) -> SatFindingsResource:
         """Cumplimiento SAT."""
         return SatFindingsResource(self)
+
+    @cached_property
+    def sat_finding_counterparties(self) -> SatFindingCounterpartiesResource:
+        """Cumplimiento SAT."""
+        return SatFindingCounterpartiesResource(self)
 
     @cached_property
     def warehouses(self) -> WarehousesResource:

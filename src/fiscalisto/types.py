@@ -325,6 +325,7 @@ __all__ = [
     "ListRetentionsParams",
     "ListSatDeclarationsParams",
     "ListSatDownloadsParams",
+    "ListSatFindingCounterpartiesParams",
     "ListSatFindingsParams",
     "ListSatInvoicesParams",
     "ListSatMailboxMessagesParams",
@@ -418,6 +419,9 @@ __all__ = [
     "SatDownloadFailedEvent",
     "SatDownloadList",
     "SatFinding",
+    "SatFindingCounterparty",
+    "SatFindingCounterpartyFindingsItem",
+    "SatFindingCounterpartyList",
     "SatFindingList",
     "SatInvoice",
     "SatInvoiceIssuedBy",
@@ -2585,8 +2589,49 @@ class SatFinding(TypedDict):
     """Por qué importa y qué hacer, o null."""
     invoices: int
     """Cuántos CFDI lo tienen, sin revisar."""
+    counterparties: int
+    """De cuántos proveedores o clientes son esos CFDI."""
     amount: float
-    """La suma de sus totales."""
+    """La suma de sus totales, en pesos (los de otra moneda, a su tipo de cambio)."""
+    last_date: str | None
+    """La fecha del CFDI más reciente que lo tiene (AAAA-MM-DD)."""
+
+
+class SatFindingCounterpartyFindingsItem(TypedDict):
+    code: str
+    """El código del hallazgo (el code de GET /v1/sat_findings)."""
+    severity: Literal["critical", "warning", "info"]
+    """critical (grave), warning (revisar) o info."""
+    title: str
+    """Qué es, en palabras."""
+    invoices: int
+    """En cuántos de sus CFDI está, sin revisar."""
+
+
+class SatFindingCounterparty(TypedDict):
+    """Un proveedor o cliente con hallazgos sin revisar en los CFDI del emisor: cuántos CFDI, cuánto suman y qué tipos de hallazgo tiene."""
+    id: str
+    """Su RFC (el mismo que rfc). Sirve como starting_after."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["sat_finding_counterparty"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    rfc: str
+    """El RFC del proveedor (en recibidos) o del cliente (en emitidos)."""
+    name: str | None
+    """Su nombre como viene en el CFDI, o null."""
+    severity: Literal["critical", "warning", "info"]
+    """Su hallazgo más grave: critical, warning o info."""
+    invoices: int
+    """Cuántos de sus CFDI tienen algún hallazgo sin revisar."""
+    amount: float
+    """La suma de los totales de esos CFDI, en pesos, cada uno una vez aunque tenga varios hallazgos."""
+    last_date: str | None
+    """La fecha del más reciente de esos CFDI (AAAA-MM-DD)."""
+    findings: list[SatFindingCounterpartyFindingsItem]
+    """Sus tipos de hallazgo, del más grave al más leve."""
 
 
 class TicketLinesItem(TypedDict):
@@ -4428,6 +4473,17 @@ class SatFindingList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[SatFinding]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class SatFindingCounterpartyList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[SatFindingCounterparty]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -7061,6 +7117,30 @@ class ListSatFindingsParams(TypedDict):
     """CFDI desde este día (AAAA-MM-DD)."""
     date_lte: NotRequired[str]
     """CFDI hasta este día (AAAA-MM-DD, completo)."""
+    severity: NotRequired[Literal["critical", "warning", "info"]]
+    """Solo los de esta gravedad: critical, warning o info."""
+    counterparty: NotRequired[str]
+    """Solo los CFDI de este proveedor o cliente (su RFC): qué hallazgos tiene."""
+
+
+class ListSatFindingCounterpartiesParams(TypedDict):
+    """Los parámetros de GET /v1/sat_finding_counterparties."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    direction: NotRequired[Literal["issued", "received"]]
+    """issued (emitidos: clientes) o received (recibidos: proveedores); sin él, los dos."""
+    date_gte: NotRequired[str]
+    """CFDI desde este día (AAAA-MM-DD)."""
+    date_lte: NotRequired[str]
+    """CFDI hasta este día (AAAA-MM-DD, completo)."""
+    severity: NotRequired[Literal["critical", "warning", "info"]]
+    """Solo los de esta gravedad: critical, warning o info."""
+    code: NotRequired[str]
+    """Solo quienes tienen este hallazgo (efos_definitivo, cancelado, regla_12…; el code de GET /v1/sat_findings)."""
 
 
 class ListWarehousesParams(TypedDict):
