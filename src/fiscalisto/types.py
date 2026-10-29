@@ -107,6 +107,7 @@ __all__ = [
     "CreateStoreConnectionParamsSettings",
     "CreateTestClockParams",
     "CreateTicketParams",
+    "CreateTicketParamsLinesItem",
     "CreateWebhookEndpointParams",
     "CrossCheckCfdi",
     "CrossCheckCfdiCfdiItem",
@@ -461,6 +462,7 @@ __all__ = [
     "TicketCustomer",
     "TicketIncludedInGlobalEvent",
     "TicketInvoicedEvent",
+    "TicketLinesItem",
     "TicketList",
     "TrialBalance",
     "TrialBalanceAccountsItem",
@@ -2584,6 +2586,23 @@ class SatFinding(TypedDict):
     """La suma de sus totales."""
 
 
+class TicketLinesItem(TypedDict):
+    product: str | None
+    """Un producto de su catálogo (prd_…): toma su clave, unidad, precio e impuestos."""
+    description: str
+    """Descripción."""
+    product_key: str
+    """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
+    unit_key: str
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    iva: str | None
+    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    quantity: float
+    """Cantidad (Cantidad). Por omisión 1."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+
+
 class TicketCustomer(TypedDict):
     tax_id: str
     """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
@@ -2616,9 +2635,11 @@ class Ticket(TypedDict):
     payment_form: str
     """c_FormaPago de la venta."""
     description: str
-    """El concepto de la factura."""
+    """El concepto de la factura (el primero, si lleva varios)."""
     product_key: str
-    """c_ClaveProdServ del concepto."""
+    """c_ClaveProdServ del concepto (el primero, si lleva varios)."""
+    lines: list[TicketLinesItem]
+    """Sus conceptos, en orden: uno solo si se registró sin lines. Cada uno con su producto (prd_… o null), descripción, claves del SAT, IVA (null si no es objeto de impuesto), unidades y lo que se cobró por él, impuestos incluidos."""
     sold_at: str
     """Cuándo se vendió."""
     invoiceable_until: str
@@ -2649,6 +2670,14 @@ class SelfInvoicing(TypedDict):
     """Días para facturar con window: days."""
     global_periodicity: Literal["01", "02", "03", "04"]
     """Cada cuánto se timbra sola la factura global con lo que nadie facturó: 01 diaria, 02 semanal, 03 quincenal, 04 mensual."""
+    ask_total: bool
+    """Si el portal pide el total para encontrar el ticket (true) o solo su código (false)."""
+    portal_title: str | None
+    """El título del portal, o null para «Facture su ticket»."""
+    portal_message: str | None
+    """El mensaje bajo el título, o null."""
+    code_hint: str | None
+    """Dónde encuentra el comprador su código, bajo el campo; null para el texto de Fiscalisto."""
 
 
 class RecurringInvoiceSchedule(TypedDict):
@@ -7173,13 +7202,30 @@ class GetSatDeclarationCalendarParams(TypedDict):
     """El ejercicio, como 2026. Por omisión, el actual."""
 
 
+class CreateTicketParamsLinesItem(TypedDict):
+    product: NotRequired[str]
+    """Un producto (prd_…) de su catálogo: sus claves, IVA e impuestos locales."""
+    description: NotRequired[str]
+    """El concepto. Con `product`, reemplaza su descripción; sin él, va con `product_key`."""
+    product_key: NotRequired[str]
+    """c_ClaveProdServ (8 dígitos), si no usa `product`."""
+    unit_key: NotRequired[str]
+    """c_ClaveUnidad. Por omisión, la de la clave del producto."""
+    iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
+    """Tasa de IVA incluida en su total. Por omisión 0.16."""
+    quantity: NotRequired[float]
+    """Unidades (noches, piezas). Por omisión 1."""
+    total: float
+    """Lo que se cobró por este concepto, impuestos incluidos."""
+
+
 class CreateTicketParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…) que vendió. Por omisión, su único emisor."""
     folio: str
     """El folio de la venta en su sistema, único por emisor: letras, números, - _ / y punto. Registrar el mismo folio con el mismo total responde el ticket que ya existe."""
-    total: float
-    """Lo que se cobró, impuestos incluidos y sin propina."""
+    total: NotRequired[float]
+    """Lo que se cobró, impuestos incluidos y sin propina. Con `lines` puede omitirlo (es su suma); si lo manda, debe ser igual."""
     tip: NotRequired[float]
     """Propina: no va en la factura. El cliente puede escribir el total con ella o sin ella."""
     payment_form: str
@@ -7196,6 +7242,8 @@ class CreateTicketParams(TypedDict):
     """c_ClaveUnidad. Por omisión, la de la clave del producto."""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
     """Tasa de IVA incluida en el total. Por omisión 0.16."""
+    lines: NotRequired[list[CreateTicketParamsLinesItem]]
+    """Una venta de varios conceptos (el folio de un hotel: noches, desayunos, lavandería), cada uno con su producto o sus claves, sus impuestos y lo que se cobró por él; hasta 200. En lugar de `product`, `description`, `product_key`, `unit_key` e `iva`. La factura del cliente lleva un concepto por línea; la factura global, uno por cada combinación de impuestos del ticket."""
 
 
 class ListTicketsParams(TypedDict):
@@ -7221,6 +7269,14 @@ class UpdateSelfInvoicingParams(TypedDict):
     """Días para facturar con `window: days`."""
     global_periodicity: NotRequired[Literal["01", "02", "03", "04"]]
     """c_Periodicidad de la factura global con los tickets que nadie facturó: 01 diaria, 02 semanal, 03 quincenal, 04 mensual."""
+    ask_total: NotRequired[bool]
+    """`true` (por omisión): el comprador busca su ticket con el código y el total. `false`: solo con el código (sus 4 caracteres al azar; cada ticket se bloquea tras varios intentos fallidos)."""
+    portal_title: NotRequired[str | None]
+    """El título del portal, en lugar de «Facture su ticket». `null` lo quita."""
+    portal_message: NotRequired[str | None]
+    """Un mensaje bajo el título (instrucciones, horario, a quién escribir). `null` lo quita."""
+    code_hint: NotRequired[str | None]
+    """Dónde encuentra el comprador su código, bajo el campo («Viene en su correo de salida»). `null` pone el de Fiscalisto."""
 
 
 class ListJournalEntriesParams(TypedDict):
