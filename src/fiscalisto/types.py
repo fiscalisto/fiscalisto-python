@@ -2673,6 +2673,8 @@ class SelfInvoicing(TypedDict):
     """Días para facturar con window: days."""
     global_periodicity: Literal["01", "02", "03", "04"]
     """Cada cuánto se timbra sola la factura global con lo que nadie facturó: 01 diaria, 02 semanal, 03 quincenal, 04 mensual."""
+    global_invoice: Literal["auto", "off"]
+    """auto: los tickets que nadie facturó van solos a la factura global de su periodo. off: Fiscalisto no hace factura global de estos tickets (la hace usted en otro lado)."""
     ask_total: bool
     """Si el portal pide el total para encontrar el ticket (true) o solo su código (false)."""
     portal_title: str | None
@@ -7294,6 +7296,8 @@ class UpdateSelfInvoicingParams(TypedDict):
     """Días para facturar con `window: days`."""
     global_periodicity: NotRequired[Literal["01", "02", "03", "04"]]
     """c_Periodicidad de la factura global con los tickets que nadie facturó: 01 diaria, 02 semanal, 03 quincenal, 04 mensual."""
+    global_invoice: NotRequired[Literal["auto", "off"]]
+    """`auto` (por omisión): los tickets que nadie facturó van solos a la factura global al terminar su periodo. `off`: Fiscalisto no hace factura global de los tickets (por ejemplo, porque su punto de venta ya la hace); quedan pendientes y usted responde por ellos ante el SAT."""
     ask_total: NotRequired[bool]
     """`true` (por omisión): el comprador busca su ticket con el código y el total. `false`: solo con el código (sus 4 caracteres al azar; cada ticket se bloquea tras varios intentos fallidos)."""
     portal_title: NotRequired[str | None]
