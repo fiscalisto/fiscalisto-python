@@ -182,6 +182,9 @@ class ErrorCode:
     PAYROLL_REPLACEMENT_INVALID: Final = "payroll_replacement_invalid"
     """replaces no es un recibo de nómina vigente del mismo emisor y del mismo empleado."""
 
+    PDF_UNAVAILABLE: Final = "pdf_unavailable"
+    """No se pudo dibujar el PDF de ese CFDI (su XML trae algo que el generador no lee). Descargue el XML: es el documento válido ante el SAT."""
+
     QUOTE_CUSTOMER_MISSING: Final = "quote_customer_missing"
     """La cotización no tiene los datos fiscales del cliente: agrégueselos con POST /v1/quotes/{id} (customer) o mándela con auto_invoice para que los dé al aceptarla."""
 
@@ -355,6 +358,7 @@ ErrorCodeValue = Literal[
     "payroll_period_overlap",
     "payroll_receipt_exists",
     "payroll_replacement_invalid",
+    "pdf_unavailable",
     "quote_customer_missing",
     "quote_invalid",
     "quote_not_deletable",

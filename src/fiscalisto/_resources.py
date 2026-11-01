@@ -2737,6 +2737,25 @@ class SatInvoicesResource:
         )
         return result
 
+    def pdf(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> bytes:
+        """Descargar el PDF de una factura del SAT
+
+        El CFDI en PDF, como lo ofrece Facturas: si se timbró en Fiscalisto, el mismo que recibió el cliente; si no, dibujado con el diseño de PDF del emisor (el de un proveedor, con su estilo y color, nunca con su logo). El XML es el documento válido ante el SAT.
+
+        GET /v1/sat_invoices/{id}/pdf
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/get-sat-invoice-pdf
+        """
+        result: bytes = self._client.request(
+            "GET", f"/v1/sat_invoices/{_path(id)}/pdf", result="bytes", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
 
 class SatDeclarationsResource:
     """Declaraciones del SAT: fiscalisto.sat_declarations."""
