@@ -89,6 +89,10 @@ __all__ = [
     "CreateRetentionParamsInterest",
     "CreateRetentionParamsMortgageInterest",
     "CreateRetentionParamsPeriod",
+    "CreateRetentionParamsPlatform",
+    "CreateRetentionParamsPlatformServicesItem",
+    "CreateRetentionParamsPlatformServicesItemCommission",
+    "CreateRetentionParamsPlatformServicesItemContribution",
     "CreateRetentionParamsPrize",
     "CreateRetentionParamsRecipient",
     "CreateRetentionParamsRetirementPlan",
@@ -1202,7 +1206,7 @@ class Retention(TypedDict):
     date: str | None
     """Fecha de emisión (Fecha), hora de la Ciudad de México."""
     code: str
-    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) aún no se puede emitir."""
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones."""
     description: str | None
     """Descripción de la retención (DescRetenc)."""
     recipient: RetentionRecipient
@@ -1233,6 +1237,8 @@ class Retention(TypedDict):
     """Complemento de intereses reales deducibles por créditos hipotecarios (Intereseshipotecarios 1.0), obligatorio con code 23."""
     financial_derivatives: NotRequired[dict[str, Any]]
     """Complemento de operaciones financieras derivadas de capital (Operacionesconderivados 1.0), obligatorio con code 24."""
+    platform: NotRequired[dict[str, Any]]
+    """Complemento de servicios de plataformas tecnológicas (ServiciosPlataformasTecnologicas 1.0), obligatorio con code 26: una constancia por mes, receptor y tipo de servicio. totals y taxes se calculan de services con las tasas del SAT (ISR de LISR 113-A y LIF 2026 art. 25; IVA 50% o 100%; IEPS en apuestas); si los manda, deben coincidir."""
     cancellation: RetentionCancellation | None
     """La cancelación, si se pidió: estado, motivo, sustituto y cuándo."""
     email: RetentionEmail | None
@@ -1594,7 +1600,7 @@ class ExternalPayrollReceiptPreviewWarningsItem(TypedDict):
     param: str
     """El campo de la solicitud."""
     code: str
-    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) aún no se puede emitir."""
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones."""
     message: str
     """Qué pasó y cómo corregirlo, para una persona."""
 
@@ -6479,6 +6485,53 @@ class CreateRetentionParamsTaxesItem(TypedDict):
     """Tipo de pago de la retención (TipoPagoRet): 01 definitivo IVA, 02 definitivo IEPS, 03 definitivo ISR, 04 provisional ISR. Por omisión el usual de cada impuesto."""
 
 
+class CreateRetentionParamsPlatformServicesItemCommission(TypedDict):
+    amount: float
+    """Importe."""
+    percent: NotRequired[float | None]
+    """El porcentaje de la comisión sobre el precio, de 0.001 a 1 (0.25 es 25%). Opcional."""
+
+
+class CreateRetentionParamsPlatformServicesItemContribution(TypedDict):
+    amount: float
+    """Importe."""
+    state: str
+    """Entidad federativa donde trabaja (ClaveEntFed): JAL, CMX, NLE…"""
+
+
+class CreateRetentionParamsPlatformServicesItem(TypedDict):
+    date: str
+    """Fecha en que el cliente pagó (FechaServ), AAAA-MM-DD, dentro del mes del periodo."""
+    payment_form: str
+    """Forma de pago de la operación (FormaPagoServ), c_FormaPagoServ: 01 efectivo, 02 transferencia, 03 tarjeta de crédito, 04 monedero, 05 dinero electrónico, 06 débito, 07 tarjeta de servicios, 08 intermediario de pagos, 09 premios o bonificaciones."""
+    price: float
+    """Precio sin IVA (PrecioServSinIVA)."""
+    rate: NotRequired[float | str | None]
+    """Tasa del impuesto trasladado (TasaCuota): 0.16 (por omisión), 0.08 o 0 de IVA; 0.5 de IEPS solo con type 11, donde cada jugada va dos veces: una operación con su IVA y otra con su IEPS (el SAT pide un impuesto por operación). Sin tasa en premios (09), que desde 2026 no suman en totals."""
+    subtype: NotRequired[str | None]
+    """Subtipo (SubTipServ), c_SubTipoServ: con type 01, 01 personal (por omisión), 02 compartido, 03 plus o 04 cancelación; con type 11, 08 apuestas (por omisión) o 09 sorteos."""
+    authorized_tax_id: NotRequired[str | None]
+    """RFC (persona física) del tercero autorizado que prestó el servicio (RFCTerceroAutorizado)."""
+    commission: NotRequired[CreateRetentionParamsPlatformServicesItemCommission | None]
+    """Comisión de la plataforma por la operación (ComisionDelServicio): amount mayor que cero y percent opcional (0.001 a 1). Obligatoria en cada operación con IVA; no va en premios ni en las de IEPS."""
+    contribution: NotRequired[CreateRetentionParamsPlatformServicesItemContribution | None]
+    """Contribución gubernamental pagada, como el impuesto sobre hospedaje (ContribucionGubernamental): amount de al menos 1.00 y state (01 a 32)."""
+
+
+class CreateRetentionParamsPlatform(TypedDict):
+    """Complemento de servicios de plataformas tecnológicas (ServiciosPlataformasTecnologicas 1.0), obligatorio con code 26: una constancia por mes, receptor y tipo de servicio. totals y taxes se calculan de services con las tasas del SAT (ISR de LISR 113-A y LIF 2026 art. 25; IVA 50% o 100%; IEPS en apuestas); si los manda, deben coincidir."""
+    type: str
+    """Tipo de servicio (TipoDeServ), c_TipoDeServ: 01 transporte de pasajeros, 02 entrega de alimentos, 03 entrega de bienes, 04 hospedaje, 05 comercio de bienes, 06 otros servicios, 07 a 09 servicios digitales de extranjeros, 11 apuestas y sorteos (desde 2026)."""
+    periodicity: NotRequired[str]
+    """Cada cuánto paga la plataforma (Periodicidad): 01 semanal, 02 mensual (por omisión), 03 diaria, 04 quincenal, 05 otra."""
+    isr_definitive: NotRequired[bool]
+    """true si la persona física optó por que el ISR retenido sea pago definitivo (LISR 113-B): TipoPagoRet 03 en lugar de 04."""
+    foreign_account: NotRequired[bool]
+    """true si se le deposita en una cuenta en el extranjero: se retiene el 100% del IVA (LIF 2026 art. 25-IX-c)."""
+    services: list[CreateRetentionParamsPlatformServicesItem]
+    """Cada operación (DetallesDelServicio), hasta 5,000. Lo pagado en efectivo (payment_form 01) va en la constancia pero no en las bases."""
+
+
 class CreateRetentionParamsDividends(TypedDict):
     """Complemento de dividendos."""
     type: Literal["01", "02", "03", "04", "05", "06"]
@@ -6674,17 +6727,19 @@ class CreateRetentionParams(TypedDict):
     issuer: NotRequired[str]
     """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
     code: str
-    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) aún no se puede emitir."""
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones."""
     description: NotRequired[str | None]
     """Descripción de la retención (DescRetenc); obligatoria con la clave 25 (otro tipo)."""
     recipient: CreateRetentionParamsRecipient
     """Receptor de la constancia (Receptor): nacional con RFC y código postal, o extranjero."""
     period: CreateRetentionParamsPeriod
     """Periodo (Periodo): mes inicial, mes final y año."""
-    totals: CreateRetentionParamsTotals
+    totals: NotRequired[CreateRetentionParamsTotals]
     """Totales (Totales)."""
-    taxes: list[CreateRetentionParamsTaxesItem]
+    taxes: NotRequired[list[CreateRetentionParamsTaxesItem]]
     """Impuestos del comprobante, por tipo."""
+    platform: NotRequired[CreateRetentionParamsPlatform]
+    """Complemento de servicios de plataformas tecnológicas (ServiciosPlataformasTecnologicas 1.0), obligatorio con code 26: una constancia por mes, receptor y tipo de servicio. totals y taxes se calculan de services con las tasas del SAT (ISR de LISR 113-A y LIF 2026 art. 25; IVA 50% o 100%; IEPS en apuestas); si los manda, deben coincidir."""
     dividends: NotRequired[CreateRetentionParamsDividends]
     """Complemento de dividendos."""
     interest: NotRequired[CreateRetentionParamsInterest]
