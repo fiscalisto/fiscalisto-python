@@ -68,6 +68,8 @@ __all__ = [
     "CreatePayrollReceiptParamsPeriod",
     "CreateProductParams",
     "CreateProductParamsLocalTaxesItem",
+    "CreatePurchaseReceiptParams",
+    "CreatePurchaseReceiptParamsFieldsItem",
     "CreateQuoteParams",
     "CreateQuoteParamsCustomer1",
     "CreateQuoteParamsCustomer1Foreign",
@@ -319,6 +321,7 @@ __all__ = [
     "ListLedgerAccountsParams",
     "ListPayrollBatchesParams",
     "ListProductsParams",
+    "ListPurchaseReceiptsParams",
     "ListQuotesParams",
     "ListReceivablesParams",
     "ListRecurringInvoicesParams",
@@ -336,6 +339,7 @@ __all__ = [
     "ListWarehouseStockParams",
     "ListWarehousesParams",
     "ListWebhookEndpointsParams",
+    "MarkPurchaseReceiptInvoicedParams",
     "MatchBankTransactionParams",
     "PayrollBatch",
     "PayrollBatchCompletedEvent",
@@ -359,6 +363,11 @@ __all__ = [
     "Product",
     "ProductList",
     "ProductLocalTaxesItem",
+    "PurchaseReceipt",
+    "PurchaseReceiptFieldsItem",
+    "PurchaseReceiptList",
+    "PurchaseReceiptRequested",
+    "PurchaseReceiptStore",
     "Quote",
     "QuoteAcceptedEvent",
     "QuoteChangesRequestedEvent",
@@ -380,6 +389,7 @@ __all__ = [
     "RecurringInvoiceSchedule",
     "RefreshSatDeclarationsParams",
     "RejectQuoteParams",
+    "RequestPurchaseReceiptInvoiceParams",
     "ResetTestDataParams",
     "Retention",
     "RetentionCanceledEvent",
@@ -483,6 +493,8 @@ __all__ = [
     "UpdateIssuerParams",
     "UpdateProductParams",
     "UpdateProductParamsLocalTaxesItem",
+    "UpdatePurchaseReceiptParams",
+    "UpdatePurchaseReceiptParamsFieldsItem",
     "UpdateQuoteParams",
     "UpdateQuoteParamsCustomer1",
     "UpdateQuoteParamsCustomer1Foreign",
@@ -3339,7 +3351,9 @@ class StoreConnectionSettings(TypedDict):
     payment_forms: dict[str, str]
     """c_FormaPago por pasarela o tipo de pago."""
     auto_invoice: bool | None
-    """Mercado Libre: si se timbra al momento con los datos fiscales del comprador; null en Shopify."""
+    """Mercado Libre: si se timbra al momento con los datos fiscales del comprador; null en las demás plataformas."""
+    notify_buyer: bool | None
+    """WooCommerce y Tiendanube: si el comprador recibe su enlace para facturar (nota del pedido o correo); null en las demás plataformas."""
 
 
 class StoreConnectionLastError(TypedDict):
@@ -3350,7 +3364,7 @@ class StoreConnectionLastError(TypedDict):
 
 
 class StoreConnection(TypedDict):
-    """Una tienda de Shopify o Mercado Libre cuyos pedidos pagados se vuelven tickets de autofactura del emisor."""
+    """Una tienda de Shopify, WooCommerce, Tiendanube, Mercado Libre o Amazon cuyos pedidos pagados se vuelven tickets de autofactura del emisor."""
     id: str
     """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
@@ -3359,14 +3373,16 @@ class StoreConnection(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     issuer: str
     """El emisor dueño de la tienda."""
-    platform: Literal["shopify", "mercadolibre"]
-    """shopify o mercadolibre."""
+    platform: Literal["shopify", "mercadolibre", "amazon", "tiendanube", "woocommerce"]
+    """shopify, woocommerce, tiendanube, mercadolibre o amazon."""
     shop: str | None
-    """El dominio de la tienda de Shopify, o el id del vendedor en Mercado Libre (al autorizar)."""
+    """El dominio de la tienda (Shopify, WooCommerce), o el id de la tienda en Tiendanube o del vendedor en Mercado Libre y Amazon (al autorizar)."""
+    name: str | None
+    """El nombre de la tienda según su plataforma, o null."""
     status: Literal["pending", "active", "disconnected"]
-    """pending (Mercado Libre espera que el vendedor autorice en authorize_url), active o disconnected."""
+    """pending (Mercado Libre, Tiendanube o Amazon esperan que se autorice en authorize_url), active o disconnected."""
     authorize_url: str | None
-    """Si está pending: la página de Mercado Libre donde el vendedor autoriza (vale un día; cada consulta da una nueva). Si no, null."""
+    """Si está pending: la página de la plataforma donde el vendedor autoriza (vale un día; cada consulta da una nueva). Si no, null."""
     settings: StoreConnectionSettings
     """Cómo se vuelve ticket cada pedido."""
     orders_count: int
@@ -3578,6 +3594,88 @@ class BankImport(TypedDict):
     """Cuántos ya estaban (se omitieron)."""
     data: list[BankTransaction]
     """Los depósitos agregados."""
+
+
+class PurchaseReceiptStore(TypedDict):
+    """La tienda: name, tax_id (su RFC), email, portal_url (su portal o la liga del QR) y on_fiscalisto (factura con Fiscalisto: method fiscalisto la timbra al momento)."""
+    name: str | None
+    """Nombre."""
+    tax_id: str | None
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    email: str | None
+    """Correo a donde se envía (varios separados por comas). Solo se usa si se pide enviarlo."""
+    portal_url: str | None
+    """Su portal de facturación o la liga del QR, o null."""
+    on_fiscalisto: bool
+    """true si factura con Fiscalisto: method fiscalisto timbra la factura al momento."""
+
+
+class PurchaseReceiptFieldsItem(TypedDict):
+    label: str
+    """Cómo lo llama el ticket (Web ID, Sucursal…)."""
+    value: str
+    """Lo que dice el ticket en ese dato."""
+
+
+class PurchaseReceiptRequested(TypedDict):
+    method: str | None
+    """egreso (la factura completa y después una nota de crédito por el anticipo, opción A) o remanente (la factura solo por lo que falta, opción B)."""
+    to: str | None
+    """A quién (correos separados por comas)."""
+    at: str | None
+    """Cuándo se pidió."""
+
+
+class PurchaseReceipt(TypedDict):
+    """Un ticket de compra del emisor sin factura: lo que se leyó de su foto y si ya se pidió, llegó o no es deducible."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["purchase_receipt"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (el que compró)."""
+    status: Literal["pending", "requested", "invoiced", "non_deductible"]
+    """pending (por pedir), requested (pedida a la tienda), invoiced (ya tiene factura) o non_deductible (no hubo factura)."""
+    store: PurchaseReceiptStore
+    """La tienda: name, tax_id (su RFC), email, portal_url (su portal o la liga del QR) y on_fiscalisto (factura con Fiscalisto: method fiscalisto la timbra al momento)."""
+    date: str | None
+    """El día de la compra (AAAA-MM-DD), o null."""
+    total: float | None
+    """El total pagado, en pesos, o null."""
+    payment_method: Literal["efectivo", "tarjeta", "otro"] | None
+    """efectivo, tarjeta u otro, o null."""
+    folio: str | None
+    """El folio o número de ticket, o null."""
+    fields: list[PurchaseReceiptFieldsItem]
+    """Otros datos que pide el portal de la tienda para facturar (Web ID, sucursal, caja…)."""
+    use: str | None
+    """El uso de la factura que se pide, o null: G03 si el régimen del emisor lo permite, si no S01."""
+    note: str | None
+    """Una nota, o null."""
+    read_by: Literal["ai", "manual"] | None
+    """ai (lo leyó la IA), manual (se mandaron los datos) o null."""
+    read_note: str | None
+    """Por qué no se leyó o qué revisar (foto borrosa, no parece un ticket…), o null."""
+    file_type: str | None
+    """El tipo del archivo guardado (image/jpeg, application/pdf…)."""
+    cash_over_limit: bool
+    """true si se pagó en efectivo más de $2,000: aunque tenga factura, no es deducible (LISR art. 27 fr. III)."""
+    days_left_in_month: int | None
+    """Por pedir: los días que le quedan al mes de la compra, en hora de México (muchas tiendas solo facturan dentro del mes); si no, null."""
+    requested: PurchaseReceiptRequested | None
+    """Cuándo y cómo se pidió (method: fiscalisto, email, portal o manual; to: la tienda o su correo), o null."""
+    invoice_uuid: str | None
+    """El folio fiscal de la factura que lo cubre, o null."""
+    invoice: str | None
+    """La factura recibida (sat_…) que lo cubre, si ya llegó con las descargas del SAT, o null."""
+    invoiced_at: str | None
+    """Cuándo quedó facturado, o null."""
+    non_deductible_at: str | None
+    """Cuándo se marcó no deducible, o null."""
+    created_at: str | None
+    """Cuándo se guardó."""
 
 
 class IssuerOnboardingLink(TypedDict):
@@ -4352,6 +4450,17 @@ class BankTransactionList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[BankTransaction]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class PurchaseReceiptList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[PurchaseReceipt]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -6092,6 +6201,108 @@ class ClassifyBankTransactionParams(TypedDict):
     """Una nota para su equipo (de dónde vino, por qué)."""
 
 
+class CreatePurchaseReceiptParamsFieldsItem(TypedDict):
+    label: str
+    """Cómo lo llama el ticket (Web ID, Sucursal…)."""
+    value: str
+    """Lo que dice el ticket en ese dato."""
+
+
+class CreatePurchaseReceiptParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    file: str
+    """La foto (JPG, PNG o WebP) o el PDF, en base64; hasta 8 MB."""
+    file_type: Literal["image/jpeg", "image/png", "image/webp", "application/pdf"]
+    """image/jpeg, image/png, image/webp o application/pdf."""
+    qr_text: NotRequired[str]
+    """Lo que dice el código QR del ticket, si ya lo leyó (suele ser la liga del portal)."""
+    read: NotRequired[bool]
+    """false para no leerlo con IA y mandar los datos usted. Por omisión se lee y se llena lo que no mandó."""
+    store_name: NotRequired[str | None]
+    """El nombre de la tienda."""
+    store_tax_id: NotRequired[str | None]
+    """El RFC de la tienda (el que factura)."""
+    date: NotRequired[str | None]
+    """El día de la compra (AAAA-MM-DD)."""
+    total: NotRequired[float | None]
+    """El total pagado, en pesos."""
+    payment_method: NotRequired[Literal["efectivo", "tarjeta", "otro"] | None]
+    """efectivo, tarjeta u otro."""
+    folio: NotRequired[str | None]
+    """El folio o número de ticket."""
+    fields: NotRequired[list[CreatePurchaseReceiptParamsFieldsItem]]
+    """Otros datos que pide el portal de la tienda (Web ID, sucursal, caja…), hasta 8."""
+    portal_url: NotRequired[str | None]
+    """La dirección del portal de facturación de la tienda (o la liga de autofactura de su QR)."""
+    store_email: NotRequired[str | None]
+    """El correo de facturación de la tienda."""
+    use: NotRequired[str | None]
+    """El uso de la factura (G03, I01…). Por omisión G03 si el régimen del emisor lo permite."""
+    note: NotRequired[str | None]
+    """Una nota para su equipo."""
+
+
+class ListPurchaseReceiptsParams(TypedDict):
+    """Los parámetros de GET /v1/purchase_receipts."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    status: NotRequired[Literal["pending", "requested", "invoiced", "non_deductible"]]
+    """pending, requested, invoiced o non_deductible."""
+
+
+class UpdatePurchaseReceiptParamsFieldsItem(TypedDict):
+    label: str
+    """Cómo lo llama el ticket (Web ID, Sucursal…)."""
+    value: str
+    """Lo que dice el ticket en ese dato."""
+
+
+class UpdatePurchaseReceiptParams(TypedDict):
+    store_name: NotRequired[str | None]
+    """El nombre de la tienda."""
+    store_tax_id: NotRequired[str | None]
+    """El RFC de la tienda (el que factura)."""
+    date: NotRequired[str | None]
+    """El día de la compra (AAAA-MM-DD)."""
+    total: NotRequired[float | None]
+    """El total pagado, en pesos."""
+    payment_method: NotRequired[Literal["efectivo", "tarjeta", "otro"] | None]
+    """efectivo, tarjeta u otro."""
+    folio: NotRequired[str | None]
+    """El folio o número de ticket."""
+    fields: NotRequired[list[UpdatePurchaseReceiptParamsFieldsItem]]
+    """Otros datos que pide el portal de la tienda (Web ID, sucursal, caja…), hasta 8."""
+    portal_url: NotRequired[str | None]
+    """La dirección del portal de facturación de la tienda (o la liga de autofactura de su QR)."""
+    store_email: NotRequired[str | None]
+    """El correo de facturación de la tienda."""
+    use: NotRequired[str | None]
+    """El uso de la factura (G03, I01…). Por omisión G03 si el régimen del emisor lo permite."""
+    note: NotRequired[str | None]
+    """Una nota para su equipo."""
+
+
+class RequestPurchaseReceiptInvoiceParams(TypedDict):
+    method: Literal["fiscalisto", "email", "portal", "manual"]
+    """fiscalisto (la tienda factura con Fiscalisto: se timbra al momento), email (le mandamos a la tienda sus datos y la foto), portal o manual (usted la pidió; solo se marca pedida)."""
+    to: NotRequired[str]
+    """email: el correo de la tienda. Por omisión, store_email."""
+    message: NotRequired[str]
+    """email: unas líneas para la tienda."""
+    reply_to: NotRequired[str]
+    """email y fiscalisto: el correo al que la tienda manda la factura. Por omisión, el correo de respuesta del emisor."""
+
+
+class MarkPurchaseReceiptInvoicedParams(TypedDict):
+    invoice: NotRequired[str]
+    """La factura recibida que lo cubre: su id (sat_…) o su folio fiscal (UUID). Sin ella, solo se marca facturado."""
+
+
 class CreatePaymentParamsDocumentsItem(TypedDict):
     invoice: str
     """La factura (inv_… o su UUID)."""
@@ -7494,13 +7705,15 @@ class CreateStoreConnectionParamsSettings(TypedDict):
     """c_FormaPago por pasarela de Shopify (shopify_payments, paypal, manual…) o tipo de pago de Mercado Libre (credit_card, debit_card, account_money, ticket, bank_transfer)."""
     auto_invoice: NotRequired[bool]
     """Mercado Libre: timbrar en cuanto se paga si el comprador dejó sus datos fiscales completos. Por omisión true."""
+    notify_buyer: NotRequired[bool]
+    """WooCommerce y Tiendanube: mandar al comprador el enlace para facturar (WooCommerce, como nota al cliente del pedido; Tiendanube, por correo). Por omisión true."""
 
 
 class CreateStoreConnectionParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…) dueño de la tienda. Por omisión, su único emisor."""
-    platform: Literal["shopify", "mercadolibre"]
-    """shopify o mercadolibre."""
+    platform: Literal["shopify", "mercadolibre", "amazon", "tiendanube", "woocommerce"]
+    """shopify, woocommerce, mercadolibre, tiendanube o amazon."""
     shop: NotRequired[str]
     """Shopify: el dominio de la tienda (mi-tienda.myshopify.com)."""
     client_id: NotRequired[str]
@@ -7509,8 +7722,14 @@ class CreateStoreConnectionParams(TypedDict):
     """Shopify: el Client secret de esa app; con él se firman los webhooks. Se guarda cifrado y nunca se muestra."""
     access_token: NotRequired[str]
     """Shopify, solo apps personalizadas antiguas: su token de la Admin API (shpat_…); client_secret es entonces su API secret key."""
+    site: NotRequired[str]
+    """WooCommerce: la dirección de la tienda (https://mitienda.com)."""
+    consumer_key: NotRequired[str]
+    """WooCommerce: la Clave de cliente (ck_…) de una llave de la API REST con permisos de Lectura/Escritura."""
+    consumer_secret: NotRequired[str]
+    """WooCommerce: la Clave secreta de cliente (cs_…) de esa llave. Se guarda cifrada y nunca se muestra."""
     return_url: NotRequired[str]
-    """Mercado Libre: a dónde volver después de autorizar (se agregan store_connection y status)."""
+    """Mercado Libre, Tiendanube y Amazon: a dónde volver después de autorizar (se agregan store_connection y status)."""
     settings: NotRequired[CreateStoreConnectionParamsSettings]
     """Cómo se vuelve ticket cada pedido."""
 
@@ -7543,6 +7762,8 @@ class UpdateStoreConnectionParamsSettings(TypedDict):
     """c_FormaPago por pasarela de Shopify (shopify_payments, paypal, manual…) o tipo de pago de Mercado Libre (credit_card, debit_card, account_money, ticket, bank_transfer)."""
     auto_invoice: NotRequired[bool]
     """Mercado Libre: timbrar en cuanto se paga si el comprador dejó sus datos fiscales completos. Por omisión true."""
+    notify_buyer: NotRequired[bool]
+    """WooCommerce y Tiendanube: mandar al comprador el enlace para facturar (WooCommerce, como nota al cliente del pedido; Tiendanube, por correo). Por omisión true."""
 
 
 class UpdateStoreConnectionParams(TypedDict):

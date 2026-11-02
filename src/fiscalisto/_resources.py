@@ -39,6 +39,7 @@ if TYPE_CHECKING:
         CreatePayrollBatchParams,
         CreatePayrollReceiptParams,
         CreateProductParams,
+        CreatePurchaseReceiptParams,
         CreateQuoteParams,
         CreateRecurringInvoiceParams,
         CreateRetentionParams,
@@ -97,6 +98,7 @@ if TYPE_CHECKING:
         ListLedgerAccountsParams,
         ListPayrollBatchesParams,
         ListProductsParams,
+        ListPurchaseReceiptsParams,
         ListQuotesParams,
         ListReceivablesParams,
         ListRecurringInvoicesParams,
@@ -114,16 +116,19 @@ if TYPE_CHECKING:
         ListWarehouseStockParams,
         ListWarehousesParams,
         ListWebhookEndpointsParams,
+        MarkPurchaseReceiptInvoicedParams,
         MatchBankTransactionParams,
         PayrollBatch,
         PayrollReceiptPreview,
         PreviewPayrollReceiptParams,
         Product,
+        PurchaseReceipt,
         Quote,
         Receivable,
         RecurringInvoice,
         RefreshSatDeclarationsParams,
         RejectQuoteParams,
+        RequestPurchaseReceiptInvoiceParams,
         ResetTestDataParams,
         Retention,
         RollWebhookSecretParams,
@@ -165,6 +170,7 @@ if TYPE_CHECKING:
         UpdateEmployeeParams,
         UpdateIssuerParams,
         UpdateProductParams,
+        UpdatePurchaseReceiptParams,
         UpdateQuoteParams,
         UpdateRecurringInvoiceParams,
         UpdateSelfInvoicingParams,
@@ -1203,6 +1209,220 @@ class BankTransactionsResource:
         """
         result: BankTransaction = self._client.request(
             "POST", f"/v1/bank_transactions/{_path(id)}/reopen", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PurchaseReceiptsResource:
+    """Tickets de compra: fiscalisto.purchase_receipts."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreatePurchaseReceiptParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PurchaseReceipt:
+        """Guardar un ticket de compra
+
+        La foto o el PDF de un ticket que el emisor pagó sin factura, en base64. La IA lee la tienda, su RFC, la fecha, el total, la forma de pago, el folio, los datos que pide su portal y la liga de facturación; lo que usted mande gana a lo que se lea. El mismo archivo dos veces devuelve el ticket que ya estaba, sin leerlo otra vez. Si llega una factura de esa tienda por el mismo total con las descargas del SAT, el ticket queda invoiced solo.
+
+        POST /v1/purchase_receipts
+        https://fiscalisto.com/docs/api/referencia/tickets-de-compra/create-purchase-receipt
+        """
+        result: PurchaseReceipt = self._client.request(
+            "POST", "/v1/purchase_receipts", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListPurchaseReceiptsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[PurchaseReceipt]:
+        """Listar tickets de compra
+
+        Los más recientes primero.
+
+        GET /v1/purchase_receipts
+        https://fiscalisto.com/docs/api/referencia/tickets-de-compra/list-purchase-receipts
+        """
+        return self._client.list("/v1/purchase_receipts", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PurchaseReceipt:
+        """Ver un ticket de compra
+
+        Con la factura recibida que lo cubre, si ya llegó.
+
+        GET /v1/purchase_receipts/{id}
+        https://fiscalisto.com/docs/api/referencia/tickets-de-compra/get-purchase-receipt
+        """
+        result: PurchaseReceipt = self._client.request(
+            "GET", f"/v1/purchase_receipts/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdatePurchaseReceiptParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PurchaseReceipt:
+        """Corregir un ticket de compra
+
+        Corrige o llena sus datos; solo cambia lo que mande (null borra un dato). Con store_tax_id y total corregidos se vuelve a buscar su factura.
+
+        POST /v1/purchase_receipts/{id}
+        https://fiscalisto.com/docs/api/referencia/tickets-de-compra/update-purchase-receipt
+        """
+        result: PurchaseReceipt = self._client.request(
+            "POST", f"/v1/purchase_receipts/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar un ticket de compra
+
+        El ticket y su archivo, para siempre.
+
+        DELETE /v1/purchase_receipts/{id}
+        https://fiscalisto.com/docs/api/referencia/tickets-de-compra/delete-purchase-receipt
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/purchase_receipts/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def read(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PurchaseReceipt:
+        """Leer el ticket de nuevo
+
+        La IA vuelve a leer el archivo y llena solo los datos que siguen vacíos. Cuenta en el límite diario de tickets de compra.
+
+        POST /v1/purchase_receipts/{id}/read
+        https://fiscalisto.com/docs/api/referencia/tickets-de-compra/read-purchase-receipt
+        """
+        result: PurchaseReceipt = self._client.request(
+            "POST", f"/v1/purchase_receipts/{_path(id)}/read", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def request_invoice(
+        self,
+        id: str,
+        params: RequestPurchaseReceiptInvoiceParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PurchaseReceipt:
+        """Pedir la factura a la tienda
+
+        fiscalisto: la tienda factura con Fiscalisto (store.on_fiscalisto), se timbra al momento con los datos fiscales del emisor y el ticket queda invoiced. email: le manda a la tienda los datos fiscales y la foto; las respuestas van a reply_to. portal o manual: usted la pidió, solo queda requested. Pide el uso de use (G03 por omisión).
+
+        POST /v1/purchase_receipts/{id}/request
+        https://fiscalisto.com/docs/api/referencia/tickets-de-compra/request-purchase-receipt-invoice
+        """
+        result: PurchaseReceipt = self._client.request(
+            "POST", f"/v1/purchase_receipts/{_path(id)}/request", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def mark_invoiced(
+        self,
+        id: str,
+        params: MarkPurchaseReceiptInvoicedParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PurchaseReceipt:
+        """Ya llegó la factura
+
+        Para una factura que llegó por otro lado. Con invoice (sat_… o UUID), la factura recibida que lo cubre; una factura cubre un solo ticket.
+
+        POST /v1/purchase_receipts/{id}/mark_invoiced
+        https://fiscalisto.com/docs/api/referencia/tickets-de-compra/mark-purchase-receipt-invoiced
+        """
+        result: PurchaseReceipt = self._client.request(
+            "POST", f"/v1/purchase_receipts/{_path(id)}/mark_invoiced", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def mark_non_deductible(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PurchaseReceipt:
+        """Marcar como no deducible
+
+        La tienda no dio factura: el gasto queda como no deducible.
+
+        POST /v1/purchase_receipts/{id}/mark_non_deductible
+        https://fiscalisto.com/docs/api/referencia/tickets-de-compra/mark-purchase-receipt-non-deductible
+        """
+        result: PurchaseReceipt = self._client.request(
+            "POST", f"/v1/purchase_receipts/{_path(id)}/mark_non_deductible", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def reopen(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PurchaseReceipt:
+        """Volver a pedir la factura
+
+        Deshace mark_non_deductible o mark_invoiced: vuelve a requested si ya se había pedido, si no a pending.
+
+        POST /v1/purchase_receipts/{id}/reopen
+        https://fiscalisto.com/docs/api/referencia/tickets-de-compra/reopen-purchase-receipt
+        """
+        result: PurchaseReceipt = self._client.request(
+            "POST", f"/v1/purchase_receipts/{_path(id)}/reopen", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -3183,7 +3403,7 @@ class StoreConnectionsResource:
     ) -> StoreConnection:
         """Conectar una tienda
 
-        Shopify: con el dominio y las llaves de la app de la tienda (Dev Dashboard, permisos read_orders y write_orders) registra los webhooks y queda active. Mercado Libre: queda pending hasta que el vendedor autorice en authorize_url. Desde entonces cada pedido pagado es un ticket (folio SHOP-1001 o ML-…), que su comprador factura en el portal o entra en la factura global; un pedido cancelado o reembolsado completo cancela su ticket.
+        Shopify: con el dominio y las llaves de la app de la tienda (Dev Dashboard, permisos read_orders y write_orders) registra los webhooks y queda active. WooCommerce: con la dirección de la tienda y una llave de su API REST de Lectura/Escritura, igual. Mercado Libre, Tiendanube y Amazon: queda pending hasta que el vendedor autorice en authorize_url (Amazon no tiene webhooks: sus pedidos se leen cada hora). Desde entonces cada pedido pagado es un ticket (folio SHOP-1001, WEB-1001, TN-1001, ML-… o AMZ-…), que su comprador factura en el portal o entra en la factura global; un pedido cancelado o reembolsado completo cancela su ticket.
 
         POST /v1/store_connections
         https://fiscalisto.com/docs/api/referencia/tiendas-en-linea/create-store-connection
@@ -3920,6 +4140,11 @@ class FiscalistoApi(Core):
     def bank_transactions(self) -> BankTransactionsResource:
         """Conciliación bancaria."""
         return BankTransactionsResource(self)
+
+    @cached_property
+    def purchase_receipts(self) -> PurchaseReceiptsResource:
+        """Tickets de compra."""
+        return PurchaseReceiptsResource(self)
 
     @cached_property
     def payments(self) -> PaymentsResource:

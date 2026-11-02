@@ -185,6 +185,9 @@ class ErrorCode:
     PDF_UNAVAILABLE: Final = "pdf_unavailable"
     """No se pudo dibujar el PDF de ese CFDI (su XML trae algo que el generador no lee). Descargue el XML: es el documento válido ante el SAT."""
 
+    PURCHASE_RECEIPT_INVALID: Final = "purchase_receipt_invalid"
+    """El ticket de compra no se puede guardar, corregir o pedir así (un archivo que no es foto ni PDF, un RFC o uso que no corresponde, una tienda que no factura con Fiscalisto, faltan datos fiscales del emisor…). El mensaje dice por qué."""
+
     QUOTE_CUSTOMER_MISSING: Final = "quote_customer_missing"
     """La cotización no tiene los datos fiscales del cliente: agrégueselos con POST /v1/quotes/{id} (customer) o mándela con auto_invoice para que los dé al aceptarla."""
 
@@ -359,6 +362,7 @@ ErrorCodeValue = Literal[
     "payroll_receipt_exists",
     "payroll_replacement_invalid",
     "pdf_unavailable",
+    "purchase_receipt_invalid",
     "quote_customer_missing",
     "quote_invalid",
     "quote_not_deletable",
