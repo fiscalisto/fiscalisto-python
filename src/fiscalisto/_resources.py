@@ -1269,7 +1269,7 @@ class PurchaseReceiptsResource:
     ) -> PurchaseReceipt:
         """Guardar un ticket de compra
 
-        La foto o el PDF de un ticket que el emisor pagó sin factura, en base64. La IA lee la tienda, su RFC, la fecha, el total, la forma de pago, el folio, los datos que pide su portal y la liga de facturación; lo que usted mande gana a lo que se lea. El mismo archivo dos veces devuelve el ticket que ya estaba, sin leerlo otra vez. Si llega una factura de esa tienda por el mismo total con las descargas del SAT, el ticket queda invoiced solo.
+        La foto o el PDF de un ticket que el emisor pagó sin factura, en base64, con los datos que usted tenga: la tienda, su RFC, la fecha, el total, la forma de pago, el folio, los datos que pide su portal y la liga de facturación. Si qr_text es la liga de una tienda que factura con Fiscalisto, el folio y el total se llenan solos. El mismo archivo dos veces devuelve el ticket que ya estaba. Si llega una factura de esa tienda por el mismo total con las descargas del SAT, el ticket queda invoiced solo.
 
         POST /v1/purchase_receipts
         https://fiscalisto.com/docs/api/referencia/tickets-de-compra/create-purchase-receipt
@@ -1355,27 +1355,6 @@ class PurchaseReceiptsResource:
         """
         result: Deleted = self._client.request(
             "DELETE", f"/v1/purchase_receipts/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
-        )
-        return result
-
-    def read(
-        self,
-        id: str,
-        *,
-        idempotency_key: str | None = None,
-        timeout: float | None = None,
-        max_retries: int | None = None,
-        expand: Sequence[str] | None = None,
-    ) -> PurchaseReceipt:
-        """Leer el ticket de nuevo
-
-        La IA vuelve a leer el archivo y llena solo los datos que siguen vacíos. Cuenta en el límite diario de tickets de compra.
-
-        POST /v1/purchase_receipts/{id}/read
-        https://fiscalisto.com/docs/api/referencia/tickets-de-compra/read-purchase-receipt
-        """
-        result: PurchaseReceipt = self._client.request(
-            "POST", f"/v1/purchase_receipts/{_path(id)}/read", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 

@@ -3871,10 +3871,6 @@ class PurchaseReceipt(TypedDict):
     """El uso de la factura que se pide, o null: G03 si el régimen del emisor lo permite, si no S01."""
     note: str | None
     """Una nota, o null."""
-    read_by: Literal["ai", "manual"] | None
-    """ai (lo leyó la IA), manual (se mandaron los datos) o null."""
-    read_note: str | None
-    """Por qué no se leyó o qué revisar (foto borrosa, no parece un ticket…), o null."""
     file_type: str | None
     """El tipo del archivo guardado (image/jpeg, application/pdf…)."""
     cash_over_limit: bool
@@ -6464,8 +6460,6 @@ class CreatePurchaseReceiptParams(TypedDict):
     """image/jpeg, image/png, image/webp o application/pdf."""
     qr_text: NotRequired[str]
     """Lo que dice el código QR del ticket, si ya lo leyó (suele ser la liga del portal)."""
-    read: NotRequired[bool]
-    """false para no leerlo con IA y mandar los datos usted. Por omisión se lee y se llena lo que no mandó."""
     store_name: NotRequired[str | None]
     """El nombre de la tienda."""
     store_tax_id: NotRequired[str | None]
