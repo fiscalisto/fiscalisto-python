@@ -25,9 +25,11 @@ if TYPE_CHECKING:
         CheckSatListsParams,
         ClassifyBankTransactionParams,
         ComplianceOpinion,
+        CostCenter,
         CreateAdvanceParams,
         CreateBankTransactionsParams,
         CreateBranchParams,
+        CreateCostCenterParams,
         CreateCreditNoteParams,
         CreateCustomerDataRequestParams,
         CreateCustomerParams,
@@ -57,6 +59,7 @@ if TYPE_CHECKING:
         CrossChecks,
         Customer,
         CustomerDataRequest,
+        DeleteCostCenterParams,
         Deleted,
         Diot,
         Employee,
@@ -93,6 +96,7 @@ if TYPE_CHECKING:
         ListAdvancesParams,
         ListBankTransactionsParams,
         ListBranchesParams,
+        ListCostCentersParams,
         ListCustomerDataRequestsParams,
         ListCustomersParams,
         ListEmployeesParams,
@@ -175,14 +179,17 @@ if TYPE_CHECKING:
         TrialBalance,
         UpdateAccountParams,
         UpdateBranchParams,
+        UpdateCostCenterParams,
         UpdateCustomerParams,
         UpdateEmployeeParams,
         UpdateImssMovementParams,
+        UpdateInvoiceParams,
         UpdateIssuerParams,
         UpdateProductParams,
         UpdatePurchaseReceiptParams,
         UpdateQuoteParams,
         UpdateRecurringInvoiceParams,
+        UpdateSatInvoiceParams,
         UpdateSelfInvoicingParams,
         UpdateStoreConnectionParams,
         UpdateWebhookEndpointParams,
@@ -917,6 +924,28 @@ class InvoicesResource:
         """
         result: Invoice = self._client.request(
             "GET", f"/v1/invoices/{_path(id)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateInvoiceParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Invoice:
+        """Actualizar una factura
+
+        Lo que se puede cambiar de una factura timbrada sin tocar el CFDI: su centro de costo (cost_center, o null para quitárselo). Los complementos de pago y los traslados no llevan.
+
+        POST /v1/invoices/{id}
+        https://fiscalisto.com/docs/api/referencia/facturas/update-invoice
+        """
+        result: Invoice = self._client.request(
+            "POST", f"/v1/invoices/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2360,6 +2389,114 @@ class BranchesResource:
         return result
 
 
+class CostCentersResource:
+    """Centros de costo: fiscalisto.cost_centers."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateCostCenterParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CostCenter:
+        """Crear un centro de costo
+
+        Una parte del negocio del emisor que quiere ver por separado: una obra, un proyecto, una sucursal, un área. Sus facturas lo toman con cost_center al crearlas, o después con POST /v1/invoices/{id} y POST /v1/sat_invoices/{id}. Un nombre que ya existe contesta cost_center_exists. Hasta 500 por emisor.
+
+        POST /v1/cost_centers
+        https://fiscalisto.com/docs/api/referencia/centros-de-costo/create-cost-center
+        """
+        result: CostCenter = self._client.request(
+            "POST", "/v1/cost_centers", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListCostCentersParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[CostCenter]:
+        """Listar centros de costo
+
+        Los centros de costo del emisor, los más recientes primero, con cuántas facturas tiene cada uno. Los archivados solo con include_archived=true.
+
+        GET /v1/cost_centers
+        https://fiscalisto.com/docs/api/referencia/centros-de-costo/list-cost-centers
+        """
+        return self._client.list("/v1/cost_centers", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CostCenter:
+        """Ver un centro de costo
+
+        Un centro de costo del emisor.
+
+        GET /v1/cost_centers/{id}
+        https://fiscalisto.com/docs/api/referencia/centros-de-costo/get-cost-center
+        """
+        result: CostCenter = self._client.request(
+            "GET", f"/v1/cost_centers/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateCostCenterParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CostCenter:
+        """Actualizar un centro de costo
+
+        Cambia solo lo que manda. archived: true lo archiva (ya no se ponen facturas en él y las suyas lo conservan), false lo restaura.
+
+        POST /v1/cost_centers/{id}
+        https://fiscalisto.com/docs/api/referencia/centros-de-costo/update-cost-center
+        """
+        result: CostCenter = self._client.request(
+            "POST", f"/v1/cost_centers/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        params: DeleteCostCenterParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar un centro de costo
+
+        Sus facturas pasan a move_to (así junta dos en uno) o se quedan sin centro de costo. No se puede deshacer; para dejar de usarlo sin tocar sus facturas, archívelo.
+
+        DELETE /v1/cost_centers/{id}
+        https://fiscalisto.com/docs/api/referencia/centros-de-costo/delete-cost-center
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/cost_centers/{_path(id)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class CustomersResource:
     """Clientes: fiscalisto.customers."""
 
@@ -3129,6 +3266,28 @@ class SatInvoicesResource:
         """
         result: SatInvoice = self._client.request(
             "GET", f"/v1/sat_invoices/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateSatInvoiceParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatInvoice:
+        """Actualizar una factura del SAT
+
+        Lo que se puede cambiar de un CFDI del SAT sin tocarlo: su centro de costo (cost_center, o null para quitárselo), para ver sus gastos por obra, proyecto o área.
+
+        POST /v1/sat_invoices/{id}
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/update-sat-invoice
+        """
+        result: SatInvoice = self._client.request(
+            "POST", f"/v1/sat_invoices/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -4404,6 +4563,11 @@ class FiscalistoApi(Core):
     def branches(self) -> BranchesResource:
         """Sucursales."""
         return BranchesResource(self)
+
+    @cached_property
+    def cost_centers(self) -> CostCentersResource:
+        """Centros de costo."""
+        return CostCentersResource(self)
 
     @cached_property
     def customers(self) -> CustomersResource:

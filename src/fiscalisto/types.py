@@ -40,6 +40,8 @@ __all__ = [
     "CheckSatListsParams",
     "ClassifyBankTransactionParams",
     "ComplianceOpinion",
+    "CostCenter",
+    "CostCenterList",
     "CreateAdvanceParams",
     "CreateAdvanceParamsCustomer",
     "CreateAdvanceParamsCustomerForeign",
@@ -48,6 +50,7 @@ __all__ = [
     "CreateBranchParams",
     "CreateBranchParamsAddress",
     "CreateBranchParamsSeries",
+    "CreateCostCenterParams",
     "CreateCreditNoteParams",
     "CreateCustomerDataRequestParams",
     "CreateCustomerParams",
@@ -134,6 +137,7 @@ __all__ = [
     "CustomerDataRequestSubmission",
     "CustomerForeign",
     "CustomerList",
+    "DeleteCostCenterParams",
     "Deleted",
     "Diot",
     "DiotLinesItem",
@@ -322,6 +326,7 @@ __all__ = [
     "ListAdvancesParams",
     "ListBankTransactionsParams",
     "ListBranchesParams",
+    "ListCostCentersParams",
     "ListCustomerDataRequestsParams",
     "ListCustomersParams",
     "ListEmployeesParams",
@@ -504,10 +509,12 @@ __all__ = [
     "UpdateBranchParams",
     "UpdateBranchParamsAddress",
     "UpdateBranchParamsSeries",
+    "UpdateCostCenterParams",
     "UpdateCustomerParams",
     "UpdateCustomerParamsForeign",
     "UpdateEmployeeParams",
     "UpdateImssMovementParams",
+    "UpdateInvoiceParams",
     "UpdateIssuerParams",
     "UpdateProductParams",
     "UpdateProductParamsLocalTaxesItem",
@@ -525,6 +532,7 @@ __all__ = [
     "UpdateRecurringInvoiceParams",
     "UpdateRecurringInvoiceParamsInvoice",
     "UpdateRecurringInvoiceParamsSchedule",
+    "UpdateSatInvoiceParams",
     "UpdateSelfInvoicingParams",
     "UpdateStoreConnectionParams",
     "UpdateStoreConnectionParamsSettings",
@@ -1089,6 +1097,7 @@ Invoice = TypedDict(
         "object": "Literal[\"invoice\"]",
         "issuer": "str",
         "branch": "str | None",
+        "cost_center": "str | None",
         "type": "Literal[\"I\", \"E\", \"P\", \"T\", \"N\"]",
         "status": "Literal[\"processing\", \"pending\", \"valid\", \"rejected\", \"canceled\"]",
         "uuid": "str | None",
@@ -2280,6 +2289,8 @@ class SatInvoice(TypedDict):
     """Impuestos del comprobante: trasladados (iva, ieps), retenidos (iva_withheld, isr_withheld, ieps_withheld) y locales."""
     sat_status: Literal["active", "canceled"] | None
     """Su estado en el SAT cuando se revisó: active (vigente) o canceled. null si aún no se revisa."""
+    cost_center: str | None
+    """Su centro de costo (ccn_…), o null. Póngalo o cámbielo con POST /v1/sat_invoices/{id}."""
     sat_download: str | None
     """La descarga (sdl_…) que la trajo, o null."""
     downloaded_at: str | None
@@ -2517,6 +2528,30 @@ class Branch(TypedDict):
     """La serie de cada tipo de CFDI que se timbra desde ella; null usa la del emisor."""
     archived: bool
     """true si está archivada: ya no se factura desde ella."""
+    created_at: str | None
+    """Cuándo se creó."""
+    updated_at: str | None
+    """Cuándo cambió por última vez."""
+
+
+class CostCenter(TypedDict):
+    """Un centro de costo del emisor: una obra, proyecto, sucursal o área por la que separa sus ingresos y gastos."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["cost_center"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor del centro de costo."""
+    name: str
+    """Cómo lo llama su equipo, por ejemplo «Obra Norte»."""
+    code: str | None
+    """Su clave (por ejemplo «CC-01»), o null."""
+    archived: bool
+    """true si está archivado: ya no se ponen facturas en él, pero las suyas lo conservan."""
+    invoices: int
+    """Cuántas facturas tiene, emitidas y recibidas."""
     created_at: str | None
     """Cuándo se creó."""
     updated_at: str | None
@@ -4727,6 +4762,17 @@ class BranchList(TypedDict):
     """La ruta de esta lista."""
 
 
+class CostCenterList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[CostCenter]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class CustomerList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -5883,6 +5929,7 @@ InvoiceCreate = TypedDict(
     {
         "issuer": "NotRequired[str]",
         "branch": "NotRequired[str]",
+        "cost_center": "NotRequired[str]",
         "warehouse": "NotRequired[str]",
         "customer": "str | InvoiceCreateCustomer",
         "items": "list[InvoiceCreateItemsItem]",
@@ -6300,6 +6347,8 @@ class ListInvoicesParams(TypedDict):
     """Creadas desde, en ISO 8601. Un día solo (2026-10-01) cuenta desde su inicio en hora de la Ciudad de México."""
     created_lte: NotRequired[str]
     """Creadas hasta, en ISO 8601. Un día solo (2026-10-31) incluye el día completo en hora de la Ciudad de México."""
+    cost_center: NotRequired[str]
+    """Solo las de este centro de costo (ccn_…), o none para las que no tienen."""
 
 
 class GetInvoiceParams(TypedDict):
@@ -6308,6 +6357,11 @@ class GetInvoiceParams(TypedDict):
     """Con un UUID en vez del id, el emisor (iss_…) si la cuenta tiene varios."""
     refresh: NotRequired[bool]
     """true para preguntar su estado al SAT ahora (cancelaciones en espera)."""
+
+
+class UpdateInvoiceParams(TypedDict):
+    cost_center: NotRequired[str | None]
+    """Su centro de costo (ccn_…), o null para quitárselo. Solo facturas, notas de crédito y recibos de nómina timbrados."""
 
 
 class GetInvoicePdfParams(TypedDict):
@@ -7454,6 +7508,42 @@ class UpdateBranchParams(TypedDict):
     """true la archiva: ya no se puede facturar desde ella, y sus facturas la siguen nombrando. false la restaura."""
 
 
+class CreateCostCenterParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    name: str
+    """Cómo lo llama su equipo, por ejemplo «Obra Norte». No se repite en el emisor (sin importar mayúsculas)."""
+    code: NotRequired[str | None]
+    """Su clave, si su contabilidad usa claves (por ejemplo «CC-01»)."""
+
+
+class ListCostCentersParams(TypedDict):
+    """Los parámetros de GET /v1/cost_centers."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    include_archived: NotRequired[bool]
+    """true para incluir los archivados."""
+
+
+class UpdateCostCenterParams(TypedDict):
+    name: NotRequired[str]
+    """Cómo lo llama su equipo, por ejemplo «Obra Norte». No se repite en el emisor (sin importar mayúsculas)."""
+    code: NotRequired[str | None]
+    """Su clave, si su contabilidad usa claves (por ejemplo «CC-01»)."""
+    archived: NotRequired[bool]
+    """true lo archiva: ya no se pueden poner facturas en él, pero las suyas lo conservan. false lo restaura."""
+
+
+class DeleteCostCenterParams(TypedDict):
+    """Los parámetros de DELETE /v1/cost_centers/{id}."""
+    move_to: NotRequired[str]
+    """Otro centro de costo (ccn_…) que se queda con sus facturas."""
+
+
 class CreateCustomerParamsForeign(TypedDict):
     country: str
     """País de residencia fiscal, clave de 3 letras de c_Pais (USA, CAN…)."""
@@ -7838,6 +7928,13 @@ class ListSatInvoicesParams(TypedDict):
     """Con fecha desde este día (AAAA-MM-DD)."""
     date_lte: NotRequired[str]
     """Con fecha hasta este día (AAAA-MM-DD), incluido."""
+    cost_center: NotRequired[str]
+    """Solo las de este centro de costo (ccn_…), o none para las que no tienen."""
+
+
+class UpdateSatInvoiceParams(TypedDict):
+    cost_center: NotRequired[str | None]
+    """Su centro de costo (ccn_…), o null para quitárselo. Los complementos de pago y los traslados no llevan."""
 
 
 class RefreshSatDeclarationsParams(TypedDict):

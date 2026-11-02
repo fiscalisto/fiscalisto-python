@@ -50,6 +50,12 @@ class ErrorCode:
     CONNECTION_FAILED: Final = "connection_failed"
     """No se pudo conectar con la API (connection_error)."""
 
+    COST_CENTER_EXISTS: Final = "cost_center_exists"
+    """El emisor ya tiene un centro de costo con ese nombre (sin importar mayúsculas). Si está archivado, restáurelo con archived: false."""
+
+    COST_CENTER_LIMIT: Final = "cost_center_limit"
+    """El emisor llegó a 500 centros de costo: archive o borre los que ya no use."""
+
     CUSTOMER_EXISTS: Final = "customer_exists"
     """Ya hay un cliente con ese RFC en el catálogo del emisor (o un producto con ese SKU)."""
 
@@ -317,6 +323,8 @@ ErrorCodeValue = Literal[
     "certificate_invalid",
     "certificate_required",
     "connection_failed",
+    "cost_center_exists",
+    "cost_center_limit",
     "customer_exists",
     "daily_limit",
     "data_request_completed",
