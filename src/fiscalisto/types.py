@@ -53,12 +53,15 @@ __all__ = [
     "CreateCustomerParams",
     "CreateCustomerParamsForeign",
     "CreateEmployeeParams",
+    "CreateImssFilesParams",
+    "CreateImssMovementParams",
     "CreateInvoiceBatchParams",
     "CreateInvoiceBatchParamsInvoicesItem",
     "CreateIssuerOnboardingLinkParams",
     "CreateIssuerParams",
     "CreatePaymentParams",
     "CreatePaymentParamsDocumentsItem",
+    "CreatePayrollBankFileParams",
     "CreatePayrollBatchParams",
     "CreatePayrollBatchParamsExternalReceiptsItem",
     "CreatePayrollBatchParamsPeriod",
@@ -197,6 +200,11 @@ __all__ = [
     "GetSatDeclarationCalendarParams",
     "GetTrialBalanceParams",
     "ImportStoreOrdersParams",
+    "ImssFiles",
+    "ImssFilesFilesItem",
+    "ImssFilesRefusedItem",
+    "ImssMovement",
+    "ImssMovementList",
     "Invoice",
     "InvoiceAdvanceApplication",
     "InvoiceBatch",
@@ -318,6 +326,7 @@ __all__ = [
     "ListCustomersParams",
     "ListEmployeesParams",
     "ListEventsParams",
+    "ListImssMovementsParams",
     "ListInvoiceBatchesParams",
     "ListInvoicesParams",
     "ListIssuersParams",
@@ -345,6 +354,9 @@ __all__ = [
     "ListWebhookEndpointsParams",
     "MarkPurchaseReceiptInvoicedParams",
     "MatchBankTransactionParams",
+    "PayrollBankFile",
+    "PayrollBankFileExcludedItem",
+    "PayrollBankFilePaymentsItem",
     "PayrollBatch",
     "PayrollBatchCompletedEvent",
     "PayrollBatchList",
@@ -393,6 +405,7 @@ __all__ = [
     "RecurringInvoiceSchedule",
     "RefreshSatDeclarationsParams",
     "RejectQuoteParams",
+    "ReportImssMovementsParams",
     "RequestPurchaseReceiptInvoiceParams",
     "ResetTestDataParams",
     "Retention",
@@ -494,6 +507,7 @@ __all__ = [
     "UpdateCustomerParams",
     "UpdateCustomerParamsForeign",
     "UpdateEmployeeParams",
+    "UpdateImssMovementParams",
     "UpdateIssuerParams",
     "UpdateProductParams",
     "UpdateProductParamsLocalTaxesItem",
@@ -1409,6 +1423,24 @@ class Employee(TypedDict):
     """Departamento (Departamento)."""
     position: str | None
     """Puesto (Puesto)."""
+    clabe: str | None
+    """CLABE de su cuenta, a donde le paga el archivo para el banco, o null."""
+    given_names: str | None
+    """Nombre(s) como en su CURP, o null (los archivos del IMSS lo separan con la CURP)."""
+    first_surname: str | None
+    """Primer apellido como en su CURP, o null."""
+    second_surname: str | None
+    """Segundo apellido, o null."""
+    imss_worker_type: str
+    """Tipo de trabajador del IMSS: 1 permanente, 2 eventual de la ciudad, 3 eventual de la construcción, 4 eventual del campo."""
+    imss_salary_type: str
+    """Tipo de salario del IMSS: 0 fijo, 1 variable, 2 mixto."""
+    imss_reduced_week: str
+    """Semana o jornada reducida: 0 normal, 1 a 5 días a la semana, 6 jornada de menos de 8 horas."""
+    family_medicine_unit: str | None
+    """Unidad de medicina familiar del IMSS, o null."""
+    exit_reason: str | None
+    """Causa de la baja ante el IMSS cuando tiene end_date (2 separación voluntaria por omisión), o null."""
     warnings: list[str]
     """Lo que el SAT podría observar de sus datos, antes de timbrar."""
     created_at: str
@@ -1768,6 +1800,150 @@ class PayrollBatch(TypedDict):
     """Cuándo terminó."""
     receipts: NotRequired[list[PayrollBatchReceiptsItem]]
     """El recibo de cada empleado, en el orden en que los mandó (no viene en listas)."""
+
+
+class PayrollBankFilePaymentsItem(TypedDict):
+    employee: str | None
+    """El empleado (emp_…); null si el recibo lo timbró otro sistema y no hay empleado con ese RFC."""
+    number: str | None
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    amount: float
+    """El neto a pagar: la suma de sus recibos con esa fecha de pago."""
+    clabe: str
+    """La CLABE a donde se paga."""
+    spei: bool
+    """true: a otro banco por SPEI; false: a una cuenta del mismo banco."""
+    receipts: list[str]
+    """Serie y folio de los recibos que paga."""
+
+
+class PayrollBankFileExcludedItem(TypedDict):
+    employee: str | None
+    """El empleado (emp_…); null si el recibo lo timbró otro sistema y no hay empleado con ese RFC."""
+    number: str | None
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    amount: float
+    """El neto a pagar: la suma de sus recibos con esa fecha de pago."""
+    reason: str
+    """Por qué no va en el archivo."""
+
+
+class PayrollBankFile(TypedDict):
+    """El archivo para pagar la nómina desde el portal del banco (no cobra nada)."""
+    object: Literal["payroll_bank_file"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    layout: Literal["bbva", "banamex", "banorte", "santander", "spei"]
+    """El formato del banco: bbva, banamex, banorte, santander o spei (CSV)."""
+    payment_date: str
+    """Fecha de pago (FechaPago), AAAA-MM-DD. Por omisión el último día del periodo."""
+    account: str | None
+    """La CLABE de la cuenta de cargo."""
+    file_name: str
+    """El nombre con que el portal del banco lo espera."""
+    content_type: Literal["text/plain", "text/csv"]
+    """text/plain para los portales de los bancos, text/csv para spei."""
+    content: str
+    """El archivo como texto, con renglones terminados en CR LF."""
+    content_base64: str
+    """El mismo archivo en Windows-1252 (ANSI), en base64: guárdelo tal cual para subirlo."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    count: int
+    """Cuántos pagos lleva."""
+    payments: list[PayrollBankFilePaymentsItem]
+    """Cada pago del archivo, en el orden en que va."""
+    excluded: list[PayrollBankFileExcludedItem]
+    """Quién no va en el archivo y por qué (sin CLABE, otro banco…)."""
+
+
+class ImssMovement(TypedDict):
+    """Un movimiento afiliatorio del IMSS de un empleado: alta, modificación de salario, baja o reingreso."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["imss_movement"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (iss_…)."""
+    employee: str
+    """El empleado (emp_…)."""
+    employee_number: str
+    """Su número de empleado."""
+    employee_name: str
+    """Su nombre completo."""
+    social_security_number: str
+    """Número de seguridad social (NumSeguridadSocial), 11 dígitos."""
+    kind: Literal["alta", "reingreso", "modificacion", "baja"]
+    """alta, reingreso, modificacion (de salario) o baja."""
+    movement_type: Literal["08", "07", "02"]
+    """El tipo de movimiento del IMSS: 08 alta o reingreso, 07 modificación, 02 baja."""
+    date: str
+    """Fecha de emisión (Fecha), hora de la Ciudad de México."""
+    integrated_daily_salary: float | None
+    """Salario diario integrado (SalarioDiarioIntegrado): no menor al salario diario."""
+    exit_reason: str | None
+    """En bajas, la causa (1 a 9 o A); null en los demás."""
+    source: Literal["automatic", "manual"]
+    """automatic: lo registró el alta o el cambio del empleado; manual: se agregó a mano."""
+    status: Literal["pending", "reported"]
+    """pending: falta presentarlo al IMSS; reported: ya se presentó (ya no cambia)."""
+    reported_at: str | None
+    """Cuándo se marcó como presentado, o null."""
+    problems: list[str]
+    """Lo que el IMSS rechazaría en su renglón (vacío: listo para el archivo)."""
+
+
+class ImssFilesFilesItem(TypedDict):
+    file_name: str
+    """El nombre del archivo."""
+    description: str
+    """Qué lleva, en palabras."""
+    count: int
+    """Cuántos movimientos lleva."""
+    content: str
+    """El archivo como texto, renglones terminados en CR LF."""
+    content_base64: str
+    """El archivo en Windows-1252 (ANSI, como lo leen IDSE y SUA), en base64."""
+
+
+class ImssFilesRefusedItem(TypedDict):
+    movement: str
+    """El movimiento (imv_…)."""
+    employee_name: str
+    """El nombre del empleado."""
+    problems: list[str]
+    """Lo que el IMSS rechazaría en su renglón."""
+
+
+class ImssFiles(TypedDict):
+    """Los archivos para presentar movimientos en IDSE o importarlos en SUA."""
+    object: Literal["imss_files"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    format: Literal["idse", "sua"]
+    """idse o sua."""
+    files: list[ImssFilesFilesItem]
+    """Los archivos: en IDSE uno por tipo de movimiento; en SUA ASEG.TXT y MOVT.TXT."""
+    movements: list[str]
+    """Los movimientos que van en los archivos."""
+    refused: list[ImssFilesRefusedItem]
+    """Los que se quedaron fuera y por qué (un NSS inválido…)."""
 
 
 class SatCatalogEntry(TypedDict):
@@ -4518,6 +4694,17 @@ class PayrollBatchList(TypedDict):
     """La ruta de esta lista."""
 
 
+class ImssMovementList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[ImssMovement]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class InvoiceBatchList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -6859,6 +7046,24 @@ class CreateEmployeeParams(TypedDict):
     """Departamento (Departamento)."""
     position: NotRequired[str | None]
     """Puesto (Puesto)."""
+    clabe: NotRequired[str | None]
+    """CLABE de 18 dígitos de la cuenta del empleado: a donde le paga el archivo para el banco (POST /v1/payroll_bank_files)."""
+    given_names: NotRequired[str | None]
+    """Nombre(s), como en su CURP. Con first_surname y second_surname, los archivos del IMSS (IDSE y SUA) escriben el nombre en sus tres partes; sin ellos, Fiscalisto lo separa con la CURP."""
+    first_surname: NotRequired[str | None]
+    """Primer apellido, como en su CURP."""
+    second_surname: NotRequired[str | None]
+    """Segundo apellido (vacío si tiene uno)."""
+    imss_worker_type: NotRequired[Literal["1", "2", "3", "4"]]
+    """Tipo de trabajador del IMSS: 1 permanente, 2 eventual de la ciudad, 3 eventual de la construcción, 4 eventual del campo. Por omisión 1."""
+    imss_salary_type: NotRequired[Literal["0", "1", "2"]]
+    """Tipo de salario del IMSS: 0 fijo, 1 variable, 2 mixto. Por omisión 0."""
+    imss_reduced_week: NotRequired[Literal["0", "1", "2", "3", "4", "5", "6"]]
+    """Semana o jornada reducida: 0 normal, 1 a 5 los días que trabaja a la semana, 6 jornada de menos de 8 horas. Por omisión 0."""
+    family_medicine_unit: NotRequired[str | None]
+    """Unidad de medicina familiar (UMF) del IMSS, opcional."""
+    exit_reason: NotRequired[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9", "A"] | None]
+    """Causa de la baja ante el IMSS, con end_date: 1 término de contrato, 2 separación voluntaria (la usual), 3 abandono, 4 defunción, 5 clausura, 6 otras, 7 ausentismo, 8 rescisión, 9 jubilación, A pensión."""
 
 
 class ListEmployeesParams(TypedDict):
@@ -6912,6 +7117,24 @@ class UpdateEmployeeParams(TypedDict):
     """Departamento (Departamento)."""
     position: NotRequired[str | None]
     """Puesto (Puesto)."""
+    clabe: NotRequired[str | None]
+    """CLABE de 18 dígitos de la cuenta del empleado: a donde le paga el archivo para el banco (POST /v1/payroll_bank_files)."""
+    given_names: NotRequired[str | None]
+    """Nombre(s), como en su CURP. Con first_surname y second_surname, los archivos del IMSS (IDSE y SUA) escriben el nombre en sus tres partes; sin ellos, Fiscalisto lo separa con la CURP."""
+    first_surname: NotRequired[str | None]
+    """Primer apellido, como en su CURP."""
+    second_surname: NotRequired[str | None]
+    """Segundo apellido (vacío si tiene uno)."""
+    imss_worker_type: NotRequired[Literal["1", "2", "3", "4"]]
+    """Tipo de trabajador del IMSS: 1 permanente, 2 eventual de la ciudad, 3 eventual de la construcción, 4 eventual del campo. Por omisión 1."""
+    imss_salary_type: NotRequired[Literal["0", "1", "2"]]
+    """Tipo de salario del IMSS: 0 fijo, 1 variable, 2 mixto. Por omisión 0."""
+    imss_reduced_week: NotRequired[Literal["0", "1", "2", "3", "4", "5", "6"]]
+    """Semana o jornada reducida: 0 normal, 1 a 5 los días que trabaja a la semana, 6 jornada de menos de 8 horas. Por omisión 0."""
+    family_medicine_unit: NotRequired[str | None]
+    """Unidad de medicina familiar (UMF) del IMSS, opcional."""
+    exit_reason: NotRequired[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9", "A"] | None]
+    """Causa de la baja ante el IMSS, con end_date: 1 término de contrato, 2 separación voluntaria (la usual), 3 abandono, 4 defunción, 5 clausura, 6 otras, 7 ausentismo, 8 rescisión, 9 jubilación, A pensión."""
 
 
 class CreatePayrollReceiptParamsPeriod(TypedDict):
@@ -7018,6 +7241,79 @@ class ListPayrollBatchesParams(TypedDict):
     """El id del último de la página anterior, para la siguiente."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreatePayrollBankFileParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    payment_date: str
+    """La fecha de pago de los recibos (FechaPago): se pagan los recibos de nómina timbrados con esa fecha, sumados por empleado. También es el día en que el banco aplica el archivo."""
+    layout: NotRequired[Literal["bbva", "banamex", "banorte", "santander", "spei"]]
+    """El formato del banco: bbva (Net Cash), banamex (BancaNet, layout D), banorte (Banorte en su Empresa), santander (Enlace, solo cuentas Santander) o spei (CSV para cualquier banco). Por omisión, el del banco de account."""
+    account: NotRequired[str]
+    """La CLABE de la cuenta de cargo del emisor. Por omisión, la que se usó la última vez en la app, o su primera cuenta bancaria."""
+    sequence: NotRequired[int]
+    """El archivo del día (1 a 99): un segundo archivo el mismo día lleva otro número. Por omisión 1."""
+    client_number: NotRequired[str]
+    """Banamex: su número de cliente de BancaNet (12 dígitos)."""
+    issuer_number: NotRequired[str]
+    """Banorte: su número de emisora (5 dígitos)."""
+
+
+class CreateImssMovementParams(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    kind: Literal["alta", "reingreso", "modificacion", "baja"]
+    """alta (o reingreso): tipo 08; modificacion: cambio de salario, tipo 07; baja: tipo 02."""
+    date: str
+    """El día en que surte efecto (AAAA-MM-DD, hora de México). El IMSS no acepta más de unos días de anticipación."""
+    integrated_daily_salary: NotRequired[float | None]
+    """El salario diario integrado que se declara (en altas, reingresos y modificaciones). El archivo lo topa a 25 UMA y nunca baja del salario mínimo."""
+    exit_reason: NotRequired[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9", "A"] | None]
+    """Solo en bajas: 1 término de contrato, 2 separación voluntaria, 3 abandono, 4 defunción, 5 clausura, 6 otras, 7 ausentismo, 8 rescisión, 9 jubilación, A pensión."""
+
+
+class ListImssMovementsParams(TypedDict):
+    """Los parámetros de GET /v1/imss_movements."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    status: NotRequired[Literal["pending", "reported"]]
+    """pending (por omisión) o reported."""
+
+
+class ReportImssMovementsParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    movements: list[str]
+    """Los movimientos (imv_…) que el IMSS ya recibió, hasta 1,000."""
+    reported: NotRequired[bool]
+    """true (por omisión): marcarlos como presentados; false: devolverlos a pendientes (si los marcó por error)."""
+
+
+class UpdateImssMovementParams(TypedDict):
+    kind: NotRequired[Literal["alta", "reingreso", "modificacion", "baja"]]
+    """alta (o reingreso): tipo 08; modificacion: cambio de salario, tipo 07; baja: tipo 02."""
+    date: NotRequired[str]
+    """El día en que surte efecto (AAAA-MM-DD, hora de México). El IMSS no acepta más de unos días de anticipación."""
+    integrated_daily_salary: NotRequired[float | None]
+    """El salario diario integrado que se declara (en altas, reingresos y modificaciones). El archivo lo topa a 25 UMA y nunca baja del salario mínimo."""
+    exit_reason: NotRequired[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9", "A"] | None]
+    """Solo en bajas: 1 término de contrato, 2 separación voluntaria, 3 abandono, 4 defunción, 5 clausura, 6 otras, 7 ausentismo, 8 rescisión, 9 jubilación, A pensión."""
+
+
+class CreateImssFilesParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    format: Literal["idse", "sua"]
+    """idse: los archivos de IDSE (uno por tipo: reingresos, modificaciones, bajas); sua: ASEG.TXT (altas) y MOVT.TXT (los demás) para importar en SUA."""
+    movements: NotRequired[list[str]]
+    """Los movimientos (imv_…) pendientes que van en los archivos. Por omisión, todos los pendientes."""
+    guide: NotRequired[str]
+    """IDSE: la guía de 5 dígitos de su subdelegación. Por omisión, la que se guardó en la app."""
 
 
 class CreateInvoiceBatchParams(TypedDict):

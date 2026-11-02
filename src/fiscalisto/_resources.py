@@ -32,10 +32,13 @@ if TYPE_CHECKING:
         CreateCustomerDataRequestParams,
         CreateCustomerParams,
         CreateEmployeeParams,
+        CreateImssFilesParams,
+        CreateImssMovementParams,
         CreateInvoiceBatchParams,
         CreateIssuerOnboardingLinkParams,
         CreateIssuerParams,
         CreatePaymentParams,
+        CreatePayrollBankFileParams,
         CreatePayrollBatchParams,
         CreatePayrollReceiptParams,
         CreateProductParams,
@@ -77,6 +80,9 @@ if TYPE_CHECKING:
         GetSatDeclarationCalendarParams,
         GetTrialBalanceParams,
         ImportStoreOrdersParams,
+        ImssFiles,
+        ImssMovement,
+        ImssMovementList,
         Invoice,
         InvoiceBatch,
         InvoiceCreate,
@@ -91,6 +97,7 @@ if TYPE_CHECKING:
         ListCustomersParams,
         ListEmployeesParams,
         ListEventsParams,
+        ListImssMovementsParams,
         ListInvoiceBatchesParams,
         ListInvoicesParams,
         ListIssuersParams,
@@ -118,6 +125,7 @@ if TYPE_CHECKING:
         ListWebhookEndpointsParams,
         MarkPurchaseReceiptInvoicedParams,
         MatchBankTransactionParams,
+        PayrollBankFile,
         PayrollBatch,
         PayrollReceiptPreview,
         PreviewPayrollReceiptParams,
@@ -128,6 +136,7 @@ if TYPE_CHECKING:
         RecurringInvoice,
         RefreshSatDeclarationsParams,
         RejectQuoteParams,
+        ReportImssMovementsParams,
         RequestPurchaseReceiptInvoiceParams,
         ResetTestDataParams,
         Retention,
@@ -168,6 +177,7 @@ if TYPE_CHECKING:
         UpdateBranchParams,
         UpdateCustomerParams,
         UpdateEmployeeParams,
+        UpdateImssMovementParams,
         UpdateIssuerParams,
         UpdateProductParams,
         UpdatePurchaseReceiptParams,
@@ -1962,6 +1972,190 @@ class PayrollBatchesResource:
         """
         result: PayrollBatch = self._client.request(
             "GET", f"/v1/payroll_batches/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PayrollBankFilesResource:
+    """Nómina: fiscalisto.payroll_bank_files."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreatePayrollBankFileParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollBankFile:
+        """Archivo para pagar la nómina en el banco
+
+        El archivo de dispersión que paga el neto de cada empleado desde el portal de su banco: BBVA (Net Cash), Banamex (BancaNet, layout D), Banorte (Banorte en su Empresa), Santander (Enlace) o un CSV de SPEI para cualquier banco. Toma los recibos de nómina timbrados (y no cancelados) con esa fecha de pago, los suma por empleado y le paga a la CLABE de su ficha (clabe en el empleado): a la misma institución por cuenta, a otra por SPEI. No cobra ni mueve dinero: usted lo sube al banco y lo autoriza ahí. Quien no se puede pagar (sin CLABE, otro banco en Santander) va en excluded con su razón. Suba el primero como prueba: cada portal lo valida antes de cargar nada.
+
+        POST /v1/payroll_bank_files
+        https://fiscalisto.com/docs/api/referencia/nomina/create-payroll-bank-file
+        """
+        result: PayrollBankFile = self._client.request(
+            "POST", "/v1/payroll_bank_files", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class ImssMovementsResource:
+    """Nómina: fiscalisto.imss_movements."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateImssMovementParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ImssMovement:
+        """Agregar un movimiento del IMSS
+
+        Un movimiento afiliatorio a mano. Casi nunca hace falta: al crear un empleado se registra su alta, al cambiar su integrated_daily_salary la modificación (con fecha de hoy), al ponerle end_date su baja y al volver a contratarlo su reingreso. Queda pendiente de presentar.
+
+        POST /v1/imss_movements
+        https://fiscalisto.com/docs/api/referencia/nomina/create-imss-movement
+        """
+        result: ImssMovement = self._client.request(
+            "POST", "/v1/imss_movements", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListImssMovementsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[ImssMovement]:
+        """Listar movimientos del IMSS
+
+        Los movimientos del emisor por presentar (status=pending, por omisión: todos, del más antiguo al más reciente, como van en los archivos) o ya presentados (status=reported: los 500 más recientes).
+
+        GET /v1/imss_movements
+        https://fiscalisto.com/docs/api/referencia/nomina/list-imss-movements
+        """
+        return self._client.list("/v1/imss_movements", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def report(
+        self,
+        params: ReportImssMovementsParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ImssMovementList:
+        """Marcar movimientos como presentados
+
+        Cuando el IMSS ya los recibió (el acuse de IDSE o la importación en SUA): pasan a reported y ya no cambian ni se borran. Con reported false vuelven a pendientes. Devuelve los movimientos como quedaron.
+
+        POST /v1/imss_movements/report
+        https://fiscalisto.com/docs/api/referencia/nomina/report-imss-movements
+        """
+        result: ImssMovementList = self._client.request(
+            "POST", "/v1/imss_movements/report", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ImssMovement:
+        """Ver un movimiento del IMSS
+
+        El movimiento con lo que el IMSS rechazaría en problems.
+
+        GET /v1/imss_movements/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/get-imss-movement
+        """
+        result: ImssMovement = self._client.request(
+            "GET", f"/v1/imss_movements/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateImssMovementParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ImssMovement:
+        """Cambiar un movimiento del IMSS
+
+        Solo uno pendiente: uno ya presentado se queda como lo tiene el IMSS.
+
+        POST /v1/imss_movements/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/update-imss-movement
+        """
+        result: ImssMovement = self._client.request(
+            "POST", f"/v1/imss_movements/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar un movimiento del IMSS
+
+        Solo uno pendiente (por ejemplo, un alta registrada por error).
+
+        DELETE /v1/imss_movements/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/delete-imss-movement
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/imss_movements/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class ImssFilesResource:
+    """Nómina: fiscalisto.imss_files."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateImssFilesParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ImssFiles:
+        """Archivos para IDSE o SUA
+
+        Los archivos de los movimientos pendientes: para IDSE (formato de 168 posiciones, un archivo por tipo: reingresos, modificaciones de salario y bajas; necesita la guía de su subdelegación) o para importar en SUA (ASEG.TXT con las altas y MOVT.TXT con los demás). El salario se declara topado a 25 UMA y nunca abajo del mínimo. El emisor necesita employer_registration. Los que el IMSS rechazaría van en refused con su razón. No los marca como presentados: hágalo con POST /v1/imss_movements/report cuando el IMSS los reciba.
+
+        POST /v1/imss_files
+        https://fiscalisto.com/docs/api/referencia/nomina/create-imss-files
+        """
+        result: ImssFiles = self._client.request(
+            "POST", "/v1/imss_files", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -4180,6 +4374,21 @@ class FiscalistoApi(Core):
     def payroll_batches(self) -> PayrollBatchesResource:
         """Nómina."""
         return PayrollBatchesResource(self)
+
+    @cached_property
+    def payroll_bank_files(self) -> PayrollBankFilesResource:
+        """Nómina."""
+        return PayrollBankFilesResource(self)
+
+    @cached_property
+    def imss_movements(self) -> ImssMovementsResource:
+        """Nómina."""
+        return ImssMovementsResource(self)
+
+    @cached_property
+    def imss_files(self) -> ImssFilesResource:
+        """Nómina."""
+        return ImssFilesResource(self)
 
     @cached_property
     def invoice_batches(self) -> InvoiceBatchesResource:
