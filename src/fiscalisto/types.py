@@ -2957,6 +2957,12 @@ class SelfInvoicing(TypedDict):
     """El mensaje bajo el título, o null."""
     code_hint: str | None
     """Dónde encuentra el comprador su código, bajo el campo; null para el texto de Fiscalisto."""
+    portal_theme: Literal["auto", "light", "dark"]
+    """auto: el tema del dispositivo del comprador, que puede cambiarlo. light o dark: siempre ese, en la página del portal, sus QR y dentro de su sitio."""
+    portal_accent: str | None
+    """El color de los botones del portal («#rrggbb»), o null para el de Fiscalisto."""
+    portal_radius: int | None
+    """Las esquinas del portal en píxeles (0 a 24), o null para las de Fiscalisto."""
 
 
 class RecurringInvoiceSchedule(TypedDict):
@@ -8039,6 +8045,12 @@ class UpdateSelfInvoicingParams(TypedDict):
     """Un mensaje bajo el título (instrucciones, horario, a quién escribir). `null` lo quita."""
     code_hint: NotRequired[str | None]
     """Dónde encuentra el comprador su código, bajo el campo («Viene en su correo de salida»). `null` pone el de Fiscalisto."""
+    portal_theme: NotRequired[Literal["auto", "light", "dark"]]
+    """El tema del portal: `auto` (por omisión), el del dispositivo del comprador, que puede cambiarlo; `light` o `dark`, siempre ese. Vale en su página, sus QR y dentro de su sitio (salvo que el código para incrustarlo elija otro)."""
+    portal_accent: NotRequired[str | None]
+    """El color de los botones del portal, como `#0b7c77`. `null` pone el de Fiscalisto."""
+    portal_radius: NotRequired[int | None]
+    """Lo redondo de las esquinas del portal, en píxeles (0 a 24). `null` pone el de Fiscalisto (10)."""
 
 
 class ListJournalEntriesParams(TypedDict):
