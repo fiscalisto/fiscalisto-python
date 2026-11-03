@@ -2505,7 +2505,7 @@ class BranchSeries(TypedDict):
 
 
 class Branch(TypedDict):
-    """Una sucursal del emisor: otro lugar desde donde factura, con su código postal (LugarExpedicion), su dirección en el PDF y sus series."""
+    """Una sucursal del emisor: otro lugar desde donde factura, con su código postal (LugarExpedicion), su dirección en el PDF, sus series y, si quiere, su propia marca (nombre comercial, logo, color y estilo del PDF)."""
     id: str
     """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
     livemode: bool
@@ -2526,6 +2526,14 @@ class Branch(TypedDict):
     """Correo, en el PDF, o null."""
     series: BranchSeries
     """La serie de cada tipo de CFDI que se timbra desde ella; null usa la del emisor."""
+    trade_name: str | None
+    """Su nombre comercial propio (PDF, correo y página de la factura); null: el del emisor."""
+    logo_url: str | None
+    """Su logo propio, para el PDF (se sube en Ajustes › Sucursales); null: el del emisor."""
+    pdf_color: str | None
+    """Color de su PDF, como #2563EB; null: el del emisor."""
+    pdf_style: Literal["clasico", "moderno", "compacto", "minimalista"] | None
+    """Estilo de su PDF; null: el del emisor."""
     archived: bool
     """true si está archivada: ya no se factura desde ella."""
     created_at: str | None
@@ -7447,6 +7455,12 @@ class CreateBranchParams(TypedDict):
     """Correo, para el PDF."""
     series: NotRequired[CreateBranchParamsSeries]
     """La serie de cada tipo de CFDI que se timbra desde ella (invoice, credit_note, payment, transfer), hasta 25 caracteres cada una; la que no mande usa la del emisor."""
+    trade_name: NotRequired[str | None]
+    """Su nombre comercial, si se presenta con otra marca: va en grande en el PDF de lo que se factura desde ella, en el correo y en la página de la factura. null toma el del emisor."""
+    pdf_color: NotRequired[str | None]
+    """Color del PDF de sus facturas, como #2563EB. null toma el del emisor."""
+    pdf_style: NotRequired[Literal["clasico", "moderno", "compacto", "minimalista"] | None]
+    """Estilo del PDF de sus facturas: clasico, moderno, compacto o minimalista. null toma el del emisor."""
 
 
 class ListBranchesParams(TypedDict):
@@ -7504,6 +7518,12 @@ class UpdateBranchParams(TypedDict):
     """Correo, para el PDF."""
     series: NotRequired[UpdateBranchParamsSeries]
     """La serie de cada tipo de CFDI que se timbra desde ella (invoice, credit_note, payment, transfer), hasta 25 caracteres cada una; la que no mande usa la del emisor."""
+    trade_name: NotRequired[str | None]
+    """Su nombre comercial, si se presenta con otra marca: va en grande en el PDF de lo que se factura desde ella, en el correo y en la página de la factura. null toma el del emisor."""
+    pdf_color: NotRequired[str | None]
+    """Color del PDF de sus facturas, como #2563EB. null toma el del emisor."""
+    pdf_style: NotRequired[Literal["clasico", "moderno", "compacto", "minimalista"] | None]
+    """Estilo del PDF de sus facturas: clasico, moderno, compacto o minimalista. null toma el del emisor."""
     archived: NotRequired[bool]
     """true la archiva: ya no se puede facturar desde ella, y sus facturas la siguen nombrando. false la restaura."""
 
