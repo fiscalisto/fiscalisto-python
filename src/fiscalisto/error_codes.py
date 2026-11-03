@@ -23,9 +23,6 @@ class ErrorCode:
     BODY_TOO_LARGE: Final = "body_too_large"
     """El cuerpo pasa de 10 MB. Divida el trabajo en varios lotes."""
 
-    BRANCH_EXISTS: Final = "branch_exists"
-    """El emisor ya tiene una sucursal con ese código postal (cada una lleva el suyo); el mensaje dice cuál. Si está archivada, restáurela con archived: false."""
-
     BRANCH_HAS_INVOICES: Final = "branch_has_invoices"
     """La sucursal ya facturó, así que no se borra: archívela con archived: true y sus facturas la siguen nombrando."""
 
@@ -314,7 +311,6 @@ ErrorCodeValue = Literal[
     "bank_transaction_invalid",
     "batch_invalid",
     "body_too_large",
-    "branch_exists",
     "branch_has_invoices",
     "browser_not_supported",
     "calculation_mode_ambiguous",

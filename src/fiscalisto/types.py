@@ -7446,7 +7446,7 @@ class CreateBranchParams(TypedDict):
     name: str
     """Cómo la llama su equipo, por ejemplo «Sucursal Monterrey». Va en el PDF."""
     zip: str
-    """Su código postal (LugarExpedicion de sus CFDI): uno por sucursal, distinto del domicilio fiscal del emisor."""
+    """Su código postal (LugarExpedicion de sus CFDI). Varias sucursales pueden compartirlo, y también el del domicilio fiscal del emisor."""
     address: NotRequired[CreateBranchParamsAddress]
     """La dirección que va en el PDF de sus facturas."""
     phone: NotRequired[str | None]
@@ -7509,7 +7509,7 @@ class UpdateBranchParams(TypedDict):
     name: NotRequired[str]
     """Cómo la llama su equipo, por ejemplo «Sucursal Monterrey». Va en el PDF."""
     zip: NotRequired[str]
-    """Su código postal (LugarExpedicion de sus CFDI): uno por sucursal, distinto del domicilio fiscal del emisor."""
+    """Su código postal (LugarExpedicion de sus CFDI). Varias sucursales pueden compartirlo, y también el del domicilio fiscal del emisor."""
     address: NotRequired[UpdateBranchParamsAddress]
     """La dirección que va en el PDF de sus facturas."""
     phone: NotRequired[str | None]
