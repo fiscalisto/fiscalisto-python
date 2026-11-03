@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "fiscalisto"
-version = "0.1.25"
+version = "0.1.26"
 description = "SDK de la API de facturación electrónica (CFDI 4.0) de Fiscalisto, para Python."
 readme = "README.md"
 license = "MIT"
@@ -20,7 +20,7 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://fiscalisto.com/docs/api/sdk/python"
+Homepage = "https://fiscalisto.com/docs/api/sdk"
 Documentation = "https://fiscalisto.com/docs/api"
 Source = "https://github.com/fiscalisto/fiscalisto-python"
 
