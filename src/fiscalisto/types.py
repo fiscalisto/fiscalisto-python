@@ -5873,9 +5873,9 @@ class InvoiceCreateComercioExteriorGoodsItem(TypedDict):
     id: NotRequired[str]
     """Número de identificación de la mercancía (NoIdentificacion): el sku de su concepto."""
     tariff: NotRequired[str]
-    """Fracción arancelaria (FraccionArancelaria), 10 dígitos. Transporte internacional."""
-    unit: str
-    """Unidad aduana (UnidadAduana), c_UnidadAduana."""
+    """Fracción arancelaria (FraccionArancelaria), 10 dígitos con el NICO, vigente en c_FraccionArancelaria (búsquela en `GET /v1/sat_catalogs/customs_tariffs`); una que no lo esté se rechaza antes de timbrar."""
+    unit: NotRequired[str]
+    """Unidad aduana (UnidadAduana), c_UnidadAduana; 99 en un servicio. Con `tariff` puede omitirse: va la UMT de la fracción en el catálogo del SAT (otra la rechaza el SAT con CCE161)."""
     quantity: NotRequired[float]
     """Cantidad en la unidad aduana (CantidadAduana)."""
     unit_value_usd: NotRequired[float]
