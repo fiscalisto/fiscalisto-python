@@ -35,6 +35,9 @@ class ErrorCode:
     CANCELLATION_FAILED: Final = "cancellation_failed"
     """El SAT no aceptó la solicitud de cancelación; message dice por qué."""
 
+    CANCELLATION_TOO_EARLY: Final = "cancellation_too_early"
+    """El SAT todavía no registra el comprobante: tarda unos minutos después de timbrarlo (en pruebas, hasta 5). No se canceló ni costó nada: repita la misma solicitud después de Retry-After."""
+
     CATALOG_UNAVAILABLE: Final = "catalog_unavailable"
     """El catálogo del SAT no respondió (503). Reintente en unos segundos."""
 
@@ -54,7 +57,7 @@ class ErrorCode:
     """El emisor llegó a 500 centros de costo: archive o borre los que ya no use."""
 
     CUSTOMER_EXISTS: Final = "customer_exists"
-    """Ya hay un cliente con ese RFC en el catálogo del emisor (o un producto con ese SKU)."""
+    """Ya hay un cliente con ese RFC en el catálogo del emisor (o un producto con ese SKU). Para un cliente, customer es su id (cus_…): úselo, o cámbielo con POST /v1/customers/{id}."""
 
     DAILY_LIMIT: Final = "daily_limit"
     """Llegó al tope del día de algo que no se paga con timbres: comprobantes en pruebas (1,000), RFC revisados en las listas del SAT o constancias consultadas. Retry-After dice cuántos segundos faltan para la medianoche de la Ciudad de México."""
@@ -315,6 +318,7 @@ ErrorCodeValue = Literal[
     "browser_not_supported",
     "calculation_mode_ambiguous",
     "cancellation_failed",
+    "cancellation_too_early",
     "catalog_unavailable",
     "certificate_invalid",
     "certificate_required",

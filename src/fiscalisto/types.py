@@ -6597,6 +6597,8 @@ class CreatePaymentParams(TypedDict):
 
 
 class CreateCreditNoteParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
     invoice: str
     """La factura (inv_… o su UUID)."""
     amount: float
