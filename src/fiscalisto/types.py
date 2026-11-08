@@ -23,6 +23,7 @@ __all__ = [
     "ApiErrorError",
     "ApplyAdvanceParams",
     "ApplyAdvanceParamsRemainder",
+    "ApproveExpenseReportParams",
     "Balance",
     "BalanceAutoRecharge",
     "BalanceLowEvent",
@@ -56,6 +57,11 @@ __all__ = [
     "CreateCustomerParams",
     "CreateCustomerParamsForeign",
     "CreateEmployeeParams",
+    "CreateExpenseItemParams",
+    "CreateExpenseMovementParams",
+    "CreateExpensePersonLinkParams",
+    "CreateExpensePersonParams",
+    "CreateExpenseReportParams",
     "CreateImssFilesParams",
     "CreateImssMovementParams",
     "CreateInvoiceBatchParams",
@@ -137,6 +143,12 @@ __all__ = [
     "CustomerDataRequestSubmission",
     "CustomerForeign",
     "CustomerList",
+    "CustomerPaymentBehavior",
+    "CustomerPaymentBehaviorLastPayment",
+    "CustomerPaymentBehaviorMonthsItem",
+    "CustomerPaymentBehaviorOpenInvoicesItem",
+    "CustomerPaymentBehaviorPaymentFormsItem",
+    "CustomerPaymentBehaviorTrend",
     "DeleteCostCenterParams",
     "Deleted",
     "Diot",
@@ -148,6 +160,18 @@ __all__ = [
     "Event",
     "EventList",
     "EventType",
+    "ExpenseItem",
+    "ExpenseItemIssuesItem",
+    "ExpenseMovement",
+    "ExpensePerson",
+    "ExpensePersonLink",
+    "ExpensePersonList",
+    "ExpensePolicy",
+    "ExpensePolicyLimitsValue",
+    "ExpenseReport",
+    "ExpenseReportIssuesItem",
+    "ExpenseReportList",
+    "ExpenseReportPayroll",
     "ExternalPayrollReceiptCreate",
     "ExternalPayrollReceiptCreateDeductionsItem",
     "ExternalPayrollReceiptCreateDisabilitiesItem",
@@ -193,6 +217,7 @@ __all__ = [
     "GetDiotFileParams",
     "GetDiotParams",
     "GetElectronicAccountingParams",
+    "GetExpensePolicyParams",
     "GetFinancialStatementsParams",
     "GetInvoiceParams",
     "GetInvoicePdfParams",
@@ -203,6 +228,7 @@ __all__ = [
     "GetSatCatalogParams",
     "GetSatDeclarationCalendarParams",
     "GetTrialBalanceParams",
+    "GetVatRefundParams",
     "ImportStoreOrdersParams",
     "ImssFiles",
     "ImssFilesFilesItem",
@@ -331,6 +357,8 @@ __all__ = [
     "ListCustomersParams",
     "ListEmployeesParams",
     "ListEventsParams",
+    "ListExpensePeopleParams",
+    "ListExpenseReportsParams",
     "ListImssMovementsParams",
     "ListInvoiceBatchesParams",
     "ListInvoicesParams",
@@ -425,6 +453,7 @@ __all__ = [
     "RetentionStampedEvent",
     "RetentionTaxesItem",
     "RetentionTotals",
+    "ReturnExpenseReportParams",
     "RollWebhookSecretParams",
     "Sandbox",
     "SandboxKey",
@@ -513,6 +542,11 @@ __all__ = [
     "UpdateCustomerParams",
     "UpdateCustomerParamsForeign",
     "UpdateEmployeeParams",
+    "UpdateExpenseItemParams",
+    "UpdateExpensePersonParams",
+    "UpdateExpensePolicyParams",
+    "UpdateExpensePolicyParamsLimitsValue",
+    "UpdateExpenseReportParams",
     "UpdateImssMovementParams",
     "UpdateInvoiceParams",
     "UpdateIssuerParams",
@@ -539,6 +573,13 @@ __all__ = [
     "UpdateWebhookEndpointParams",
     "UploadCertificateParams",
     "ValidateTaxIdParams",
+    "VatRefund",
+    "VatRefundBalancesItem",
+    "VatRefundBalancesItemCreditedInItem",
+    "VatRefundReview",
+    "VatRefundReviewChecksItem",
+    "VatRefundReviewCustomers",
+    "VatRefundReviewSuppliers",
     "Warehouse",
     "WarehouseList",
     "WebhookEndpoint",
@@ -2566,6 +2607,253 @@ class CostCenter(TypedDict):
     """Cuándo cambió por última vez."""
 
 
+class ExpensePerson(TypedDict):
+    """Alguien que viaja o gasta por el emisor: un empleado (de Nómina) o alguien por honorarios. Tiene un enlace propio para subir sus facturas sin cuenta."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["expense_person"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor por el que gasta."""
+    kind: Literal["empleado", "honorarios"]
+    """empleado (sueldos y salarios: viáticos exentos en su recibo de nómina) o honorarios."""
+    employee: str | None
+    """Su empleado de Nómina (emp_…), o null si es por honorarios."""
+    name: str
+    """Su nombre."""
+    tax_id: str | None
+    """Su RFC, o null."""
+    email: str | None
+    """Su correo, a donde se le manda su enlace y los avisos, o null."""
+    base_city: str | None
+    """Dónde trabaja: un viaje a más de 50 km de ahí es de viáticos."""
+    department: str | None
+    """Su área, o null."""
+    link_active: bool
+    """true si tiene un enlace que funciona para subir sus facturas."""
+    archived: bool
+    """true si está archivada."""
+    created_at: str | None
+    """Cuándo se agregó."""
+
+
+class ExpensePersonLink(TypedDict):
+    """El enlace de una persona: ahí ve solo sus comprobaciones y sube sus facturas desde el teléfono, sin cuenta."""
+    object: Literal["expense_person_link"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    person: str
+    """La persona (exp_…)."""
+    url: str | None
+    """Su enlace, o null si está apagado."""
+
+
+class ExpenseItemIssuesItem(TypedDict):
+    level: Literal["error", "warning", "policy", "info"]
+    """error (impide enviarla), warning, policy (pasa la política) o info."""
+    code: str
+    """Qué es, como código estable."""
+    message: str
+    """Qué es, en palabras."""
+
+
+class ExpenseItem(TypedDict):
+    """Un gasto de una comprobación."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["expense_item"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    date: str
+    """Cuándo se gastó (AAAA-MM-DD)."""
+    category: Literal["hospedaje", "alimentos", "avion", "transporte", "auto", "combustible", "comidas", "papeleria", "mensajeria", "software", "otros"]
+    """De qué es: hospedaje, alimentos, avion, transporte, auto, combustible, comidas, papeleria, mensajeria, software u otros."""
+    description: str | None
+    """Qué fue (el proveedor), o null."""
+    amount: float
+    """En pesos."""
+    foreign_amount: float | None
+    """En su moneda, o null."""
+    foreign_currency: str | None
+    """Su moneda (USD, EUR…), o null."""
+    people: int
+    """Cuántas personas comieron (en alimentos el tope es por persona)."""
+    payment: Literal["tarjeta_empresa", "tarjeta_propia", "efectivo", "transferencia", "otro"] | None
+    """Cómo se pagó: tarjeta_empresa, tarjeta_propia, efectivo, transferencia u otro, o null."""
+    receipt: Literal["cfdi", "extranjero", "ticket", "ninguno"]
+    """Su comprobante: cfdi, extranjero, ticket o ninguno."""
+    uuid: str | None
+    """El UUID de su factura, o null."""
+    note: str | None
+    """La nota de la persona, o null."""
+    rejected: bool
+    """true si quien aprueba lo rechazó."""
+    reject_reason: str | None
+    """Por qué se rechazó, o null."""
+    deductible: float
+    """Lo que se deduce de este gasto."""
+    non_deductible: float
+    """Lo que no se deduce."""
+    over_policy: bool
+    """true si pasa un tope de la política."""
+    issues: list[ExpenseItemIssuesItem]
+    """Sus avisos contra la ley y la política."""
+    created_at: str | None
+    """Cuándo se agregó."""
+
+
+class ExpenseMovement(TypedDict):
+    """Dinero que se le dio a la persona (anticipo, reembolso) o que devolvió."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["expense_movement"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    kind: Literal["anticipo", "reembolso", "devolucion"]
+    """anticipo, reembolso o devolucion."""
+    amount: float
+    """En pesos."""
+    date: str
+    """Cuándo se pagó (AAAA-MM-DD)."""
+    method: Literal["transferencia", "efectivo", "tarjeta", "nomina"]
+    """transferencia, efectivo, tarjeta o nomina (en su recibo de nómina)."""
+    reference: str | None
+    """Su referencia, o null."""
+    in_payroll: bool
+    """true si ya se pagó en un recibo de nómina."""
+    created_at: str | None
+    """Cuándo se registró."""
+
+
+class ExpenseReportIssuesItem(TypedDict):
+    level: Literal["error", "warning", "policy", "info"]
+    """error (impide enviarla), warning, policy (pasa la política) o info."""
+    code: str
+    """Qué es, como código estable."""
+    message: str
+    """Qué es, en palabras."""
+
+
+class ExpenseReportPayroll(TypedDict):
+    exempt: float
+    """Viáticos exentos comprobados (OtroPago/Percepción 050, ImporteExento)."""
+    taxed: float
+    """Lo que grava como sueldo (050, ImporteGravado): lo gastado sin comprobar."""
+    adjustment: float
+    """Lo que se descuenta (deducción 081) por lo que ya se le dio y sobró."""
+    net: float
+    """Lo que neto cobra o paga en el recibo por esta comprobación."""
+
+
+class ExpenseReport(TypedDict):
+    """Una comprobación de viáticos (un viaje) o de gastos de un periodo: sus gastos revisados contra la ley y la política, y el dinero dado o devuelto. Al aprobarla sus facturas se deducen y entra en las pólizas por 107.01."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["expense_report"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    number: int
+    """Su número, consecutivo por emisor."""
+    label: str
+    """Cómo se muestra, por ejemplo «VIA-0012»."""
+    person: str
+    """Quién la comprueba (exp_…)."""
+    person_name: str
+    """El nombre de esa persona."""
+    kind: Literal["viaje", "gastos"]
+    """viaje o gastos (de oficina, de un periodo)."""
+    title: str
+    """Su nombre."""
+    purpose: str | None
+    """Para qué fue, o null."""
+    destination: str | None
+    """A dónde, o null."""
+    abroad: bool
+    """true si fue al extranjero."""
+    far: bool
+    """true si fue a más de 50 km de donde trabaja la persona."""
+    start_date: str | None
+    """La salida o el inicio del periodo (AAAA-MM-DD), o null."""
+    end_date: str | None
+    """El regreso o el fin del periodo (AAAA-MM-DD), o null."""
+    status: Literal["draft", "submitted", "rejected", "approved", "closed"]
+    """draft (abierta), submitted (por aprobar), rejected (devuelta para corregir), approved (por liquidar) o closed (cerrada, con el saldo en cero)."""
+    due_date: str | None
+    """Hasta cuándo hay para comprobarla (la política), o null."""
+    submitted_at: str | None
+    """Cuándo se envió a aprobar, o null."""
+    decided_at: str | None
+    """Cuándo se aprobó o se devolvió, o null."""
+    decision_note: str | None
+    """La nota de quien la aprobó o la devolvió, o null."""
+    closed_at: str | None
+    """Cuándo se cerró, o null."""
+    in_payroll: bool
+    """true si ya se reportó en un recibo de nómina (viáticos 050 y 081)."""
+    spent: float
+    """Lo gastado, sin los gastos rechazados."""
+    rejected: float
+    """Lo de los gastos rechazados."""
+    proven: float
+    """Lo comprobado con factura o comprobante del extranjero."""
+    deductible: float
+    """Lo que se deduce, con los topes de la ley."""
+    non_deductible: float
+    """Lo que no se deduce (pasa los topes o no tiene comprobante)."""
+    advances: float
+    """Lo que se le dio en anticipos."""
+    reimbursed: float
+    """Lo que se le reembolsó."""
+    returned: float
+    """Lo que devolvió."""
+    balance: float
+    """Positivo, lo que la persona debe devolver; negativo, lo que la empresa le debe reembolsar; 0, liquidada. Lo pagado con la tarjeta de la empresa no cuenta."""
+    ready: bool
+    """true si se puede enviar o aprobar: ningún gasto tiene errores."""
+    issues: list[ExpenseReportIssuesItem]
+    """Avisos de la comprobación entera."""
+    payroll: ExpenseReportPayroll | None
+    """Para un empleado, cómo irá en su recibo de nómina (o null)."""
+    items: list[ExpenseItem]
+    """Sus gastos."""
+    movements: list[ExpenseMovement]
+    """El dinero que se le dio o devolvió."""
+    created_at: str | None
+    """Cuándo se abrió."""
+    updated_at: str | None
+    """Cuándo cambió por última vez."""
+
+
+class ExpensePolicyLimitsValue(TypedDict):
+    domestic: float | None
+    abroad: float | None
+    per: Literal["dia", "gasto"]
+
+
+class ExpensePolicy(TypedDict):
+    """La política de viáticos y gastos del emisor: topes por categoría, hasta cuánto sin factura y en cuántos días se comprueba."""
+    object: Literal["expense_policy"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    limits: dict[str, ExpensePolicyLimitsValue]
+    """Topes por categoría (hospedaje, alimentos…): las que no están no tienen tope."""
+    ticket_limit: float
+    """Hasta cuánto se acepta un gasto sin factura; 0: todos la piden."""
+    due_days: int
+    """Días después del regreso para comprobar."""
+    note_over_limit: bool
+    """true si pide una nota en cada gasto que pase un tope."""
+    notify_approvers: bool
+    """true si avisa por correo a quien aprueba."""
+    notify_people: bool
+    """true si avisa a la persona cuando se aprueba, se devuelve o se le paga."""
+
+
 class Warehouse(TypedDict):
     """Un almacén del emisor: el de la Matriz y uno por sucursal se crean solos; cada factura saca existencias del de su sucursal."""
     id: str
@@ -3076,8 +3364,8 @@ class JournalEntry(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     issuer: str
     """El emisor."""
-    type: Literal["invoice", "payment_received", "payment_made", "payroll", "depreciation"]
-    """De qué es: invoice (un CFDI de ingreso o egreso), payment_received o payment_made (un pago de un complemento), payroll (un recibo de nómina) o depreciation (la depreciación del mes de los activos fijos)."""
+    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation"]
+    """De qué es: invoice (un CFDI de ingreso o egreso), payment_received o payment_made (un pago de un complemento), payroll (un recibo de nómina), employee_expenses (un anticipo, reembolso, devolución o comprobación de viáticos, contra 107.01 «Funcionarios y empleados») o depreciation (la depreciación del mes de los activos fijos)."""
     date: str
     """La fecha del CFDI o del pago; en la depreciación, el último día del mes."""
     description: str
@@ -3565,6 +3853,106 @@ class Diot(TypedDict):
     """Lo que conviene revisar antes de presentarla."""
 
 
+class VatRefundBalancesItemCreditedInItem(TypedDict):
+    month: str
+    """El mes en que se acreditó esa parte (AAAA-MM)."""
+    amount: float
+    """Lo acreditado ese mes."""
+
+
+class VatRefundBalancesItem(TypedDict):
+    month: str
+    """El mes del saldo (AAAA-MM)."""
+    source: Literal["declaration", "cfdi"]
+    """declaration si sale de la declaración leída; cfdi si se calculó con sus CFDI."""
+    amount: float
+    """El saldo a favor del mes."""
+    operation_number: str | None
+    """El número de operación de la declaración, o null."""
+    credited: float
+    """Lo que de este saldo se acreditó en meses posteriores, del saldo más antiguo primero."""
+    credited_in: list[VatRefundBalancesItemCreditedInItem]
+    """En qué mes se acreditó cada parte y cuánto."""
+    available: float
+    """Lo que queda de este saldo para pedir de vuelta."""
+    status: Literal["available", "credited", "in_refund", "refunded", "denied", "prescribed"]
+    """available (se puede pedir), credited (ya se acreditó), in_refund (con solicitud), refunded (depositado), denied (negado) o prescribed (pasaron cinco años)."""
+    prescribes_on: str
+    """Cuándo prescribe el derecho a pedirlo: cinco años desde su declaración (AAAA-MM-DD)."""
+
+
+class VatRefundReviewChecksItem(TypedDict):
+    key: str
+    """Qué se revisó, estable para su código."""
+    result: Literal["ok", "warning", "blocking", "pending"]
+    """ok, warning (conviene revisar), blocking (el SAT la rechazaría) o pending (falta un dato)."""
+    title: str
+    """La revisión, en una línea."""
+    detail: str
+    """Qué encontró y qué hacer."""
+    amount: float | None
+    """Los pesos que toca, como el IVA en riesgo, o null."""
+
+
+class VatRefundReviewSuppliers(TypedDict):
+    """Los proveedores del mes, para la relación que pide el SAT."""
+    count: int
+    """Cuántos proveedores tuvo en el mes."""
+    cfdi: int
+    """Cuántos CFDI recibidos suman al IVA acreditable."""
+    main: int
+    """Cuántos proveedores juntan el 80% del IVA acreditable."""
+    vat_at_risk: float
+    """El IVA de CFDI de proveedores que el SAT no reconocería: cancelados, de EFOS o con otros hallazgos."""
+
+
+class VatRefundReviewCustomers(TypedDict):
+    """Los clientes del mes."""
+    count: int
+    """Cuántos clientes tuvo en el mes."""
+    cfdi: int
+    """Cuántos CFDI emitidos suman al IVA cobrado."""
+
+
+class VatRefundReview(TypedDict):
+    month: str
+    """El mes revisado (AAAA-MM)."""
+    amount_to_request: float
+    """Lo que conviene pedir, en pesos sin centavos como lo pide el SAT."""
+    remainder: bool
+    """true si ya acreditó parte del saldo y lo que pide es el remanente."""
+    ready: bool
+    """true si ninguna revisión bloquea la solicitud."""
+    checks: list[VatRefundReviewChecksItem]
+    """Cada revisión, de la más grave a la que está bien."""
+    suppliers: VatRefundReviewSuppliers
+    """Los proveedores del mes, para la relación que pide el SAT."""
+    customers: VatRefundReviewCustomers
+    """Los clientes del mes."""
+
+
+class VatRefund(TypedDict):
+    """El IVA a favor del emisor mes por mes, qué pasó con cada saldo y, con un mes, la revisión antes de pedir su devolución."""
+    object: Literal["vat_refund"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    available: float
+    """El IVA a favor que todavía puede pedir de vuelta: lo que queda de cada saldo sin acreditar, sin solicitud y sin prescribir."""
+    in_refund: float
+    """Lo pedido en solicitudes que siguen en trámite o ya se resolvieron sin depósito."""
+    refunded: float
+    """Lo que el SAT ya depositó."""
+    estimated: bool
+    """true si algún mes sale de sus CFDI porque su declaración no se ha leído (POST /v1/sat_declarations/refresh)."""
+    balances: list[VatRefundBalancesItem]
+    """Cada mes con IVA a favor en los últimos cinco años, del más reciente al más antiguo."""
+    review: VatRefundReview | None
+    """Con month, la revisión de ese mes antes de pedirlo; null sin month."""
+
+
 class StoreConnectionSettings(TypedDict):
     """Cómo se vuelve ticket cada pedido."""
     product_key: str | None
@@ -3758,6 +4146,103 @@ class Receivable(TypedDict):
     """Cuántas facturas tiene abiertas."""
     oldest_invoice_date: str
     """La fecha (AAAA-MM-DD) de su factura abierta más antigua."""
+
+
+class CustomerPaymentBehaviorTrend(TypedDict):
+    direction: Literal["slower", "faster", "steady"]
+    """slower: tarda 7 días o más que antes; faster: 7 o más menos."""
+    recent_days: float
+    """Días promedio para pagar de los últimos 3 meses."""
+    earlier_days: float
+    """Días promedio de los 9 meses anteriores."""
+
+
+class CustomerPaymentBehaviorPaymentFormsItem(TypedDict):
+    payment_form: str
+    """Clave de forma de pago del SAT (c_FormaPago): 03 transferencia, 02 cheque…"""
+    amount: float
+    """Lo pagado así, en pesos."""
+    share: float
+    """Su parte de lo pagado (0 a 1)."""
+
+
+class CustomerPaymentBehaviorMonthsItem(TypedDict):
+    month: str
+    """El mes de los pagos (AAAA-MM)."""
+    average_days_to_pay: float | None
+    """Días promedio (por monto) de los pagos de ese mes; null sin pagos."""
+    amount: float
+    """Lo pagado ese mes, en pesos."""
+    paid_invoices: int
+    """Facturas con un pago ese mes."""
+
+
+class CustomerPaymentBehaviorLastPayment(TypedDict):
+    date: str
+    """El día (AAAA-MM-DD)."""
+    amount: float
+    """Lo pagado ese día, en pesos."""
+
+
+class CustomerPaymentBehaviorOpenInvoicesItem(TypedDict):
+    uuid: str
+    """El UUID (folio fiscal) de la factura."""
+    date: str
+    """Su fecha (AAAA-MM-DD)."""
+    payment_method: Literal["PPD", "PUE"]
+    """PPD a crédito; PUE que le pagan este mes."""
+    amount_due: float
+    """Lo que falta, en pesos."""
+    due_date: str
+    """Cuándo vence: su fecha más los días de crédito (una PUE, al fin de su mes)."""
+    expected_payment_date: str
+    """Cuándo le llegaría: su fecha más lo que el cliente suele tardar (sin historial, el vencimiento)."""
+
+
+class CustomerPaymentBehavior(TypedDict):
+    """Cómo paga un cliente: de sus facturas a crédito (PPD) de los últimos 12 meses y sus complementos de pago, en pesos."""
+    object: Literal["customer_payment_behavior"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    customer: str
+    """El cliente (cus_…)."""
+    tax_id: str
+    """Su RFC."""
+    credit_days: int
+    """Sus días de crédito: los suyos (Clientes) o los de la empresa (Ajustes › Cobranza automática). Contra ellos se mide el atraso."""
+    rating: Literal["on_time", "sometimes_late", "late", "very_late", "no_history"]
+    """on_time (80 % o más llega a tiempo y atraso promedio de 5 días o menos), sometimes_late (hasta 15 días), late (hasta 45), very_late (más) o no_history (menos de 2 facturas pagadas y nada vencido)."""
+    paid_invoices: int
+    """Facturas PPD con un pago en los últimos 12 meses."""
+    average_days_to_pay: float | None
+    """Días de la factura a su pago, en promedio por monto; null sin pagos."""
+    median_days_to_pay: int | None
+    """La factura típica: la mitad se pagó en estos días o menos."""
+    p75_days_to_pay: int | None
+    """3 de cada 4 facturas se pagaron en estos días o menos."""
+    on_time_share: float | None
+    """La parte (0 a 1) de lo pagado que llegó antes de vencer; lo vencido sin pagar cuenta como tarde."""
+    average_days_late: float | None
+    """Días después del vencimiento, en promedio por monto; lo vencido sin pagar cuenta con sus días de atraso hasta hoy."""
+    trend: CustomerPaymentBehaviorTrend | None
+    """Los últimos 3 meses contra los 9 anteriores; null con menos de 2 facturas pagadas en cada lado."""
+    overdue_amount: float
+    """Lo que debe ya vencido, en pesos."""
+    overdue_invoices: int
+    """Cuántas facturas tiene vencidas."""
+    payment_forms: list[CustomerPaymentBehaviorPaymentFormsItem]
+    """Cómo le pagó, la mayor primero."""
+    months: list[CustomerPaymentBehaviorMonthsItem]
+    """Cada uno de los últimos 12 meses, el más antiguo primero."""
+    last_payment: CustomerPaymentBehaviorLastPayment | None
+    """Su último pago; null sin pagos en 12 meses."""
+    cash_invoices: int
+    """Facturas de contado (PUE) de los últimos 12 meses: se pagan al emitirse y no cuentan en lo demás."""
+    open_invoices: list[CustomerPaymentBehaviorOpenInvoicesItem]
+    """Lo que debe ahora, la factura más antigua primero."""
 
 
 class BankTransactionSuggestedMatch(TypedDict):
@@ -4776,6 +5261,28 @@ class CostCenterList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[CostCenter]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class ExpensePersonList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[ExpensePerson]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class ExpenseReportList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[ExpenseReport]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -7566,6 +8073,220 @@ class DeleteCostCenterParams(TypedDict):
     """Otro centro de costo (ccn_…) que se queda con sus facturas."""
 
 
+class CreateExpensePersonParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    kind: Literal["empleado", "honorarios"]
+    """empleado (sus viáticos van en su recibo de nómina; sus facturas pueden ir a su nombre en un viaje) o honorarios (sus facturas deben ir a nombre del emisor)."""
+    employee: NotRequired[str | None]
+    """Un empleado de Nómina (emp_…): su nombre, RFC y correo se toman de ahí y sus viáticos van en su recibo. Solo con kind empleado."""
+    name: NotRequired[str | None]
+    """Su nombre. Obligatorio sin employee."""
+    tax_id: NotRequired[str | None]
+    """Su RFC."""
+    email: NotRequired[str | None]
+    """Su correo: para mandarle su enlace y avisarle cuando se aprueba o se le paga."""
+    base_city: NotRequired[str | None]
+    """Dónde trabaja (por ejemplo «Guadalajara, Jal.»): un viaje a menos de 50 km no es deducible como viáticos."""
+    department: NotRequired[str | None]
+    """Su área."""
+
+
+class ListExpensePeopleParams(TypedDict):
+    """Los parámetros de GET /v1/expense_people."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    include_archived: NotRequired[bool]
+    """true para incluir las archivadas."""
+
+
+class UpdateExpensePersonParams(TypedDict):
+    kind: NotRequired[Literal["empleado", "honorarios"]]
+    """empleado (sus viáticos van en su recibo de nómina; sus facturas pueden ir a su nombre en un viaje) o honorarios (sus facturas deben ir a nombre del emisor)."""
+    employee: NotRequired[str | None]
+    """Un empleado de Nómina (emp_…): su nombre, RFC y correo se toman de ahí y sus viáticos van en su recibo. Solo con kind empleado."""
+    name: NotRequired[str | None]
+    """Su nombre. Obligatorio sin employee."""
+    tax_id: NotRequired[str | None]
+    """Su RFC."""
+    email: NotRequired[str | None]
+    """Su correo: para mandarle su enlace y avisarle cuando se aprueba o se le paga."""
+    base_city: NotRequired[str | None]
+    """Dónde trabaja (por ejemplo «Guadalajara, Jal.»): un viaje a menos de 50 km no es deducible como viáticos."""
+    department: NotRequired[str | None]
+    """Su área."""
+    archived: NotRequired[bool]
+    """true la archiva (y apaga su enlace): ya no se le abren comprobaciones. false la restaura."""
+
+
+class CreateExpensePersonLinkParams(TypedDict):
+    renew: NotRequired[bool]
+    """true le da un enlace nuevo: el anterior deja de funcionar en ese momento (por ejemplo, si se compartió por error)."""
+
+
+class CreateExpenseReportParams(TypedDict):
+    person: str
+    """La persona (exp_…)."""
+    kind: NotRequired[Literal["viaje", "gastos"]]
+    """viaje (por omisión) o gastos (gastos de oficina de un periodo que la empresa reembolsa)."""
+    title: NotRequired[str | None]
+    """Su nombre. Por omisión, «Viaje a {destination}» o el periodo."""
+    purpose: NotRequired[str | None]
+    """Para qué fue: el SAT pide que el viaje sea por el negocio."""
+    destination: NotRequired[str | None]
+    """A dónde."""
+    abroad: NotRequired[bool]
+    """Al extranjero: cambian los topes de alimentos y hospedaje."""
+    far: NotRequired[bool]
+    """A más de 50 km de donde trabaja la persona (por omisión, true). Más cerca, no son viáticos deducibles."""
+    start_date: NotRequired[str | None]
+    """La salida (o el inicio del periodo)."""
+    end_date: NotRequired[str | None]
+    """El regreso (o el fin del periodo)."""
+
+
+class ListExpenseReportsParams(TypedDict):
+    """Los parámetros de GET /v1/expense_reports."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    status: NotRequired[str]
+    """Solo las de un estado: draft, submitted, rejected, approved o closed."""
+    person: NotRequired[str]
+    """Solo las de una persona (exp_…)."""
+
+
+class UpdateExpenseReportParams(TypedDict):
+    title: NotRequired[str | None]
+    """Su nombre. Por omisión, «Viaje a {destination}» o el periodo."""
+    purpose: NotRequired[str | None]
+    """Para qué fue: el SAT pide que el viaje sea por el negocio."""
+    destination: NotRequired[str | None]
+    """A dónde."""
+    abroad: NotRequired[bool]
+    """Al extranjero: cambian los topes de alimentos y hospedaje."""
+    far: NotRequired[bool]
+    """A más de 50 km de donde trabaja la persona (por omisión, true). Más cerca, no son viáticos deducibles."""
+    start_date: NotRequired[str | None]
+    """La salida (o el inicio del periodo)."""
+    end_date: NotRequired[str | None]
+    """El regreso (o el fin del periodo)."""
+
+
+class ApproveExpenseReportParams(TypedDict):
+    note: NotRequired[str | None]
+    """Una nota para la persona."""
+
+
+class ReturnExpenseReportParams(TypedDict):
+    note: str
+    """Qué debe corregir: se le manda a la persona."""
+
+
+class CreateExpenseItemParams(TypedDict):
+    uuid: NotRequired[str]
+    """El UUID de una factura recibida del emisor (GET /v1/sat_invoices): la fecha, el monto, el proveedor y la forma de pago salen de ella."""
+    category: Literal["hospedaje", "alimentos", "avion", "transporte", "auto", "combustible", "comidas", "papeleria", "mensajeria", "software", "otros"]
+    """De qué es: hospedaje, alimentos, avion, transporte, auto, combustible (gasolina, casetas y estacionamiento), comidas (en restaurante, fuera de viaje), papeleria, mensajeria, software u otros."""
+    date: NotRequired[str]
+    """Cuándo se gastó. Con uuid, la fecha de la factura."""
+    description: NotRequired[str | None]
+    """Qué fue (el proveedor). Con uuid, su emisor."""
+    amount: NotRequired[float]
+    """En pesos. Con uuid, el total de la factura."""
+    foreign_amount: NotRequired[float | None]
+    """En su moneda, si fue en otra."""
+    foreign_currency: NotRequired[str | None]
+    """La moneda (USD, EUR…)."""
+    people: NotRequired[int]
+    """En alimentos, cuántas personas comieron: el tope es por persona."""
+    payment: NotRequired[Literal["tarjeta_empresa", "tarjeta_propia", "efectivo", "transferencia", "otro"] | None]
+    """Cómo se pagó: tarjeta_empresa (no se le reembolsa), tarjeta_propia, efectivo, transferencia u otro."""
+    receipt: NotRequired[Literal["cfdi", "extranjero", "ticket", "ninguno"]]
+    """Su comprobante: cfdi, extranjero, ticket o ninguno. Con uuid, cfdi."""
+    note: NotRequired[str | None]
+    """Por qué, si pasa la política (la política puede pedirla)."""
+
+
+class UpdateExpenseItemParams(TypedDict):
+    category: NotRequired[Literal["hospedaje", "alimentos", "avion", "transporte", "auto", "combustible", "comidas", "papeleria", "mensajeria", "software", "otros"]]
+    """De qué es: hospedaje, alimentos, avion, transporte, auto, combustible (gasolina, casetas y estacionamiento), comidas (en restaurante, fuera de viaje), papeleria, mensajeria, software u otros."""
+    date: NotRequired[str]
+    """Cuándo se gastó. Con uuid, la fecha de la factura."""
+    description: NotRequired[str | None]
+    """Qué fue (el proveedor). Con uuid, su emisor."""
+    amount: NotRequired[float]
+    """En pesos. Con uuid, el total de la factura."""
+    foreign_amount: NotRequired[float | None]
+    """En su moneda, si fue en otra."""
+    foreign_currency: NotRequired[str | None]
+    """La moneda (USD, EUR…)."""
+    people: NotRequired[int]
+    """En alimentos, cuántas personas comieron: el tope es por persona."""
+    payment: NotRequired[Literal["tarjeta_empresa", "tarjeta_propia", "efectivo", "transferencia", "otro"] | None]
+    """Cómo se pagó: tarjeta_empresa (no se le reembolsa), tarjeta_propia, efectivo, transferencia u otro."""
+    receipt: NotRequired[Literal["cfdi", "extranjero", "ticket", "ninguno"]]
+    """Su comprobante: cfdi, extranjero, ticket o ninguno. Con uuid, cfdi."""
+    note: NotRequired[str | None]
+    """Por qué, si pasa la política (la política puede pedirla)."""
+    rejected: NotRequired[bool]
+    """Al aprobar: true lo rechaza (no se paga ni se deduce), false lo vuelve a incluir. Solo en una comprobación enviada."""
+    reject_reason: NotRequired[str | None]
+    """Por qué se rechaza."""
+
+
+class CreateExpenseMovementParams(TypedDict):
+    kind: Literal["anticipo", "reembolso", "devolucion"]
+    """anticipo (dinero que se le da antes o durante; hasta que se aprueba), reembolso (lo que la empresa le debe, ya aprobada) o devolucion (lo que le sobró, ya aprobada)."""
+    amount: float
+    """En pesos."""
+    date: str
+    """Cuándo se pagó."""
+    method: NotRequired[Literal["transferencia", "efectivo", "tarjeta", "nomina"]]
+    """transferencia (por omisión), efectivo, tarjeta o nomina (en el siguiente recibo de nómina del empleado; solo si está en Nómina)."""
+    reference: NotRequired[str | None]
+    """Su referencia (folio de la transferencia)."""
+
+
+class GetExpensePolicyParams(TypedDict):
+    """Los parámetros de GET /v1/expense_policy."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateExpensePolicyParamsLimitsValue(TypedDict):
+    domestic: float | None
+    """En México; null sin tope."""
+    abroad: float | None
+    """En el extranjero; null sin tope."""
+    per: Literal["dia", "gasto"]
+    """dia (al día y por persona) o gasto."""
+
+
+class UpdateExpensePolicyParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    limits: NotRequired[dict[str, UpdateExpensePolicyParamsLimitsValue | None]]
+    """Topes por categoría. Una categoría con null deja de tener tope; las que no manda no cambian. Un gasto que pase un tope no se rechaza: se marca para quien aprueba."""
+    ticket_limit: NotRequired[float]
+    """Hasta cuánto se acepta un gasto sin factura; 0: todos la piden."""
+    due_days: NotRequired[int]
+    """Días después del regreso para comprobar."""
+    note_over_limit: NotRequired[bool]
+    """Pedir una nota en cada gasto que pase un tope."""
+    notify_approvers: NotRequired[bool]
+    """Avisar por correo a quien aprueba cuando le envían una comprobación."""
+    notify_people: NotRequired[bool]
+    """Avisar a la persona cuando se aprueba, se devuelve o se le paga."""
+
+
 class CreateCustomerParamsForeign(TypedDict):
     country: str
     """País de residencia fiscal, clave de 3 letras de c_Pais (USA, CAN…)."""
@@ -8107,6 +8828,14 @@ class GetCrossChecksParams(TypedDict):
     """Los parámetros de GET /v1/accounting/cross_checks."""
     year: NotRequired[int]
     """El ejercicio. Por omisión, el actual."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetVatRefundParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/vat_refund."""
+    month: NotRequired[str]
+    """El mes del saldo a revisar (AAAA-MM). Sin él, solo los saldos."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 

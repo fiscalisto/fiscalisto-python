@@ -59,6 +59,9 @@ class ErrorCode:
     CUSTOMER_EXISTS: Final = "customer_exists"
     """Ya hay un cliente con ese RFC en el catálogo del emisor (o un producto con ese SKU). Para un cliente, customer es su id (cus_…): úselo, o cámbielo con POST /v1/customers/{id}."""
 
+    CUSTOMER_GENERIC_TAX_ID: Final = "customer_generic_tax_id"
+    """Público en general (XAXX010101000) y extranjeros (XEXX010101000) comparten RFC: GET /v1/customers/{id}/payment_behavior no aplica a ellos."""
+
     DAILY_LIMIT: Final = "daily_limit"
     """Llegó al tope del día de algo que no se paga con timbres: comprobantes en pruebas (1,000), RFC revisados en las listas del SAT o constancias consultadas. Retry-After dice cuántos segundos faltan para la medianoche de la Ciudad de México."""
 
@@ -86,6 +89,9 @@ class ErrorCode:
     EXPAND_INVALID: Final = "expand_invalid"
     """Un campo de expand[] no existe en la respuesta, no es el id de otro objeto, o se pidieron demasiados (hasta 10 campos, 4 niveles). Vea Expandir objetos."""
 
+    EXPENSE_REPORT_INVALID: Final = "expense_report_invalid"
+    """Viáticos y gastos no lo permite en ese momento: el mensaje dice por qué (un gasto con errores al enviarla, un reembolso antes de aprobarla, aprobar lo que usted mismo envió)."""
+
     IDEMPOTENCY_KEY_INVALID: Final = "idempotency_key_invalid"
     """Idempotency-Key es de 1 a 255 caracteres ASCII, sin acentos ni ñ: el id de su pedido o un UUID."""
 
@@ -96,7 +102,7 @@ class ErrorCode:
     """Esa Idempotency-Key ya se usó en las últimas 24 horas con otra solicitud (otra ruta u otro cuerpo). Use una nueva para cada operación distinta."""
 
     INSUFFICIENT_BALANCE: Final = "insufficient_balance"
-    """La cuenta no tiene timbres de producción: para timbrar, revisar RFC en las listas, consultar constancias o pedir descargas al SAT. Compre un paquete en Desarrolladores › Timbres. En pruebas nunca pasa. Para enterarse antes, escuche balance.low o active la recarga automática."""
+    """La cuenta no tiene timbres de producción: para timbrar, revisar RFC en las listas, consultar constancias, pedir descargas o traer declaraciones, opinión o buzón del SAT. Compre un paquete en Desarrolladores › Timbres. En pruebas nunca pasa. Para enterarse antes, escuche balance.low o active la recarga automática."""
 
     INTERNAL_ERROR: Final = "internal_error"
     """Algo falló de nuestro lado. Repita la solicitud con la misma Idempotency-Key: nunca se timbra dos veces. Si sigue, escríbanos con el request_id."""
@@ -139,6 +145,9 @@ class ErrorCode:
 
     ISSUER_NOT_ALLOWED: Final = "issuer_not_allowed"
     """La llave no puede usar ese emisor."""
+
+    ISSUER_NOT_READY: Final = "issuer_not_ready"
+    """Al emisor le falta su RFC (sus datos fiscales): regístrelos antes, con el CSD o la e.firma."""
 
     ISSUER_REQUIRED: Final = "issuer_required"
     """La cuenta tiene varios emisores y la solicitud no dice cuál: mande issuer (iss_…)."""
@@ -326,6 +335,7 @@ ErrorCodeValue = Literal[
     "cost_center_exists",
     "cost_center_limit",
     "customer_exists",
+    "customer_generic_tax_id",
     "daily_limit",
     "data_request_completed",
     "diot_empty",
@@ -335,6 +345,7 @@ ErrorCodeValue = Literal[
     "endpoint_exists",
     "endpoint_limit",
     "expand_invalid",
+    "expense_report_invalid",
     "idempotency_key_invalid",
     "idempotency_key_missing",
     "idempotency_key_reused",
@@ -353,6 +364,7 @@ ErrorCodeValue = Literal[
     "issuer_exists",
     "issuer_missing",
     "issuer_not_allowed",
+    "issuer_not_ready",
     "issuer_required",
     "key_in_sandbox",
     "key_read_only",

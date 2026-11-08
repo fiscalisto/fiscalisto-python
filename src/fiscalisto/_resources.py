@@ -16,6 +16,7 @@ if TYPE_CHECKING:
         AdvanceList,
         AdvanceTestClockParams,
         ApplyAdvanceParams,
+        ApproveExpenseReportParams,
         Balance,
         BankImport,
         BankTransaction,
@@ -34,6 +35,11 @@ if TYPE_CHECKING:
         CreateCustomerDataRequestParams,
         CreateCustomerParams,
         CreateEmployeeParams,
+        CreateExpenseItemParams,
+        CreateExpenseMovementParams,
+        CreateExpensePersonLinkParams,
+        CreateExpensePersonParams,
+        CreateExpenseReportParams,
         CreateImssFilesParams,
         CreateImssMovementParams,
         CreateInvoiceBatchParams,
@@ -59,11 +65,16 @@ if TYPE_CHECKING:
         CrossChecks,
         Customer,
         CustomerDataRequest,
+        CustomerPaymentBehavior,
         DeleteCostCenterParams,
         Deleted,
         Diot,
         Employee,
         Event,
+        ExpensePerson,
+        ExpensePersonLink,
+        ExpensePolicy,
+        ExpenseReport,
         ExternalPayrollReceiptCreate,
         ExternalPayrollReceiptPreview,
         FinancialStatements,
@@ -72,6 +83,7 @@ if TYPE_CHECKING:
         GetDiotFileParams,
         GetDiotParams,
         GetElectronicAccountingParams,
+        GetExpensePolicyParams,
         GetFinancialStatementsParams,
         GetInvoiceParams,
         GetInvoicePdfParams,
@@ -82,6 +94,7 @@ if TYPE_CHECKING:
         GetSatCatalogParams,
         GetSatDeclarationCalendarParams,
         GetTrialBalanceParams,
+        GetVatRefundParams,
         ImportStoreOrdersParams,
         ImssFiles,
         ImssMovement,
@@ -101,6 +114,8 @@ if TYPE_CHECKING:
         ListCustomersParams,
         ListEmployeesParams,
         ListEventsParams,
+        ListExpensePeopleParams,
+        ListExpenseReportsParams,
         ListImssMovementsParams,
         ListInvoiceBatchesParams,
         ListInvoicesParams,
@@ -144,6 +159,7 @@ if TYPE_CHECKING:
         RequestPurchaseReceiptInvoiceParams,
         ResetTestDataParams,
         Retention,
+        ReturnExpenseReportParams,
         RollWebhookSecretParams,
         Sandbox,
         SandboxList,
@@ -182,6 +198,10 @@ if TYPE_CHECKING:
         UpdateCostCenterParams,
         UpdateCustomerParams,
         UpdateEmployeeParams,
+        UpdateExpenseItemParams,
+        UpdateExpensePersonParams,
+        UpdateExpensePolicyParams,
+        UpdateExpenseReportParams,
         UpdateImssMovementParams,
         UpdateInvoiceParams,
         UpdateIssuerParams,
@@ -195,6 +215,7 @@ if TYPE_CHECKING:
         UpdateWebhookEndpointParams,
         UploadCertificateParams,
         ValidateTaxIdParams,
+        VatRefund,
         Warehouse,
         WarehouseList,
         WebhookEndpoint,
@@ -1120,6 +1141,133 @@ class ReceivablesResource:
         https://fiscalisto.com/docs/api/referencia/cuentas-por-cobrar/list-receivables
         """
         return self._client.list("/v1/receivables", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+
+class CustomersResource:
+    """Cuentas por cobrar: fiscalisto.customers."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def payment_behavior(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CustomerPaymentBehavior:
+        """Ver cómo paga un cliente
+
+        Cuántos días tarda en pagar, qué parte llega a tiempo con sus días de crédito, si paga más lento que antes, cómo le paga y cuándo le llegaría lo que debe. De sus facturas a crédito (PPD) de los últimos 12 meses y sus complementos de pago, como «Cómo paga» en la app. No aplica a XAXX010101000 ni XEXX010101000.
+
+        GET /v1/customers/{id}/payment_behavior
+        https://fiscalisto.com/docs/api/referencia/cuentas-por-cobrar/get-customer-payment-behavior
+        """
+        result: CustomerPaymentBehavior = self._client.request(
+            "GET", f"/v1/customers/{_path(id)}/payment_behavior", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create(
+        self,
+        params: CreateCustomerParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Customer:
+        """Crear un cliente
+
+        Un cliente del catálogo del emisor, con sus datos fiscales como vienen en su constancia. Un RFC que ya está en el catálogo contesta customer_exists.
+
+        POST /v1/customers
+        https://fiscalisto.com/docs/api/referencia/clientes/create-customer
+        """
+        result: Customer = self._client.request(
+            "POST", "/v1/customers", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListCustomersParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[Customer]:
+        """Listar clientes
+
+        Los clientes del emisor, los más recientes primero. Con tax_id, el de ese RFC.
+
+        GET /v1/customers
+        https://fiscalisto.com/docs/api/referencia/clientes/list-customers
+        """
+        return self._client.list("/v1/customers", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Customer:
+        """Ver un cliente
+
+        Un cliente del catálogo.
+
+        GET /v1/customers/{id}
+        https://fiscalisto.com/docs/api/referencia/clientes/get-customer
+        """
+        result: Customer = self._client.request(
+            "GET", f"/v1/customers/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateCustomerParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Customer:
+        """Actualizar un cliente
+
+        Cambia solo los campos que manda. Las facturas ya timbradas no cambian.
+
+        POST /v1/customers/{id}
+        https://fiscalisto.com/docs/api/referencia/clientes/update-customer
+        """
+        result: Customer = self._client.request(
+            "POST", f"/v1/customers/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar un cliente
+
+        Lo quita del catálogo. Sus facturas timbradas siguen igual.
+
+        DELETE /v1/customers/{id}
+        https://fiscalisto.com/docs/api/referencia/clientes/delete-customer
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/customers/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
 
 
 class BankTransactionsResource:
@@ -2476,49 +2624,49 @@ class CostCentersResource:
         return result
 
 
-class CustomersResource:
-    """Clientes: fiscalisto.customers."""
+class ExpensePeopleResource:
+    """Viáticos y gastos: fiscalisto.expense_people."""
 
     def __init__(self, client: Core) -> None:
         self._client = client
 
     def create(
         self,
-        params: CreateCustomerParams,
+        params: CreateExpensePersonParams,
         *,
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
         expand: Sequence[str] | None = None,
-    ) -> Customer:
-        """Crear un cliente
+    ) -> ExpensePerson:
+        """Agregar a una persona
 
-        Un cliente del catálogo del emisor, con sus datos fiscales como vienen en su constancia. Un RFC que ya está en el catálogo contesta customer_exists.
+        Alguien que viaja o gasta por el emisor: un empleado (employee, emp_…: sus anticipos y reembolsos «En la nómina» van en su siguiente recibo) o alguien por honorarios (name y tax_id). Con email, Fiscalisto le puede mandar su enlace.
 
-        POST /v1/customers
-        https://fiscalisto.com/docs/api/referencia/clientes/create-customer
+        POST /v1/expense_people
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/create-expense-person
         """
-        result: Customer = self._client.request(
-            "POST", "/v1/customers", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        result: ExpensePerson = self._client.request(
+            "POST", "/v1/expense_people", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
     def list(
         self,
-        params: ListCustomersParams | None = None,
+        params: ListExpensePeopleParams | None = None,
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
         expand: Sequence[str] | None = None,
-    ) -> ListObject[Customer]:
-        """Listar clientes
+    ) -> ListObject[ExpensePerson]:
+        """Listar personas
 
-        Los clientes del emisor, los más recientes primero. Con tax_id, el de ese RFC.
+        Las personas que comprueban gastos del emisor, las más recientes primero. Las archivadas solo con include_archived=true.
 
-        GET /v1/customers
-        https://fiscalisto.com/docs/api/referencia/clientes/list-customers
+        GET /v1/expense_people
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/list-expense-people
         """
-        return self._client.list("/v1/customers", params, timeout=timeout, max_retries=max_retries, expand=expand)
+        return self._client.list("/v1/expense_people", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -2527,38 +2675,167 @@ class CustomersResource:
         timeout: float | None = None,
         max_retries: int | None = None,
         expand: Sequence[str] | None = None,
-    ) -> Customer:
-        """Ver un cliente
+    ) -> ExpensePerson:
+        """Ver una persona
 
-        Un cliente del catálogo.
+        Una persona que comprueba gastos del emisor.
 
-        GET /v1/customers/{id}
-        https://fiscalisto.com/docs/api/referencia/clientes/get-customer
+        GET /v1/expense_people/{id}
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/get-expense-person
         """
-        result: Customer = self._client.request(
-            "GET", f"/v1/customers/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        result: ExpensePerson = self._client.request(
+            "GET", f"/v1/expense_people/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
     def update(
         self,
         id: str,
-        params: UpdateCustomerParams | None = None,
+        params: UpdateExpensePersonParams | None = None,
         *,
         idempotency_key: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
         expand: Sequence[str] | None = None,
-    ) -> Customer:
-        """Actualizar un cliente
+    ) -> ExpensePerson:
+        """Actualizar una persona
 
-        Cambia solo los campos que manda. Las facturas ya timbradas no cambian.
+        Cambia solo lo que manda. archived: true la archiva (ya no se le abren comprobaciones y su enlace deja de funcionar), false la restaura.
 
-        POST /v1/customers/{id}
-        https://fiscalisto.com/docs/api/referencia/clientes/update-customer
+        POST /v1/expense_people/{id}
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/update-expense-person
         """
-        result: Customer = self._client.request(
-            "POST", f"/v1/customers/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        result: ExpensePerson = self._client.request(
+            "POST", f"/v1/expense_people/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create_link(
+        self,
+        id: str,
+        params: CreateExpensePersonLinkParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpensePersonLink:
+        """Dar su enlace a una persona
+
+        El enlace donde la persona ve solo sus comprobaciones y sube sus facturas desde el teléfono, sin cuenta. Con renew: true le da uno nuevo y el anterior deja de funcionar.
+
+        POST /v1/expense_people/{id}/link
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/create-expense-person-link
+        """
+        result: ExpensePersonLink = self._client.request(
+            "POST", f"/v1/expense_people/{_path(id)}/link", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete_link(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpensePersonLink:
+        """Apagar el enlace de una persona
+
+        Su enlace deja de funcionar (url: null). Puede darle uno nuevo después con POST /v1/expense_people/{id}/link.
+
+        DELETE /v1/expense_people/{id}/link
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/delete-expense-person-link
+        """
+        result: ExpensePersonLink = self._client.request(
+            "DELETE", f"/v1/expense_people/{_path(id)}/link", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class ExpenseReportsResource:
+    """Viáticos y gastos: fiscalisto.expense_reports."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateExpenseReportParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpenseReport:
+        """Abrir una comprobación
+
+        Una por viaje (kind viaje) o una por periodo de gastos de oficina que la empresa reembolsa (kind gastos). Queda abierta (draft): se le agregan gastos y anticipos, y se envía con POST /v1/expense_reports/{id}/submit.
+
+        POST /v1/expense_reports
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/create-expense-report
+        """
+        result: ExpenseReport = self._client.request(
+            "POST", "/v1/expense_reports", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListExpenseReportsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[ExpenseReport]:
+        """Listar comprobaciones
+
+        Las comprobaciones del emisor, las más recientes primero, con sus gastos y movimientos.
+
+        GET /v1/expense_reports
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/list-expense-reports
+        """
+        return self._client.list("/v1/expense_reports", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpenseReport:
+        """Ver una comprobación
+
+        Una comprobación con sus gastos, lo deducible de cada uno, sus avisos (issues) contra la ley y la política, y su saldo.
+
+        GET /v1/expense_reports/{id}
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/get-expense-report
+        """
+        result: ExpenseReport = self._client.request(
+            "GET", f"/v1/expense_reports/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateExpenseReportParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpenseReport:
+        """Actualizar una comprobación
+
+        Cambia solo lo que manda: su nombre, el propósito, el destino y las fechas. Mientras no esté aprobada.
+
+        POST /v1/expense_reports/{id}
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/update-expense-report
+        """
+        result: ExpenseReport = self._client.request(
+            "POST", f"/v1/expense_reports/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -2570,15 +2847,258 @@ class CustomersResource:
         max_retries: int | None = None,
         expand: Sequence[str] | None = None,
     ) -> Deleted:
-        """Borrar un cliente
+        """Borrar una comprobación
 
-        Lo quita del catálogo. Sus facturas timbradas siguen igual.
+        Una que no esté aprobada y no tenga anticipos ni pagos (quítelos antes). No se puede deshacer.
 
-        DELETE /v1/customers/{id}
-        https://fiscalisto.com/docs/api/referencia/clientes/delete-customer
+        DELETE /v1/expense_reports/{id}
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/delete-expense-report
         """
         result: Deleted = self._client.request(
-            "DELETE", f"/v1/customers/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+            "DELETE", f"/v1/expense_reports/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def submit(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpenseReport:
+        """Enviar a aprobar
+
+        La persona termina: pasa a submitted (por aprobar). Contesta expense_report_invalid si un gasto tiene un error (issues con level error).
+
+        POST /v1/expense_reports/{id}/submit
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/submit-expense-report
+        """
+        result: ExpenseReport = self._client.request(
+            "POST", f"/v1/expense_reports/{_path(id)}/submit", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def approve(
+        self,
+        id: str,
+        params: ApproveExpenseReportParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpenseReport:
+        """Aprobar una comprobación
+
+        Pasa a approved (por liquidar): sus facturas se deducen en los impuestos del emisor y entra en las pólizas contra 107.01 Funcionarios y empleados. Con el saldo en cero se cierra sola; si no, liquide con un reembolso o una devolución.
+
+        POST /v1/expense_reports/{id}/approve
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/approve-expense-report
+        """
+        result: ExpenseReport = self._client.request(
+            "POST", f"/v1/expense_reports/{_path(id)}/approve", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def send_back(
+        self,
+        id: str,
+        params: ReturnExpenseReportParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpenseReport:
+        """Devolver para corregir
+
+        Regresa a la persona (rejected, «Devuelta») con una nota de qué corregir. La corrige y la vuelve a enviar.
+
+        POST /v1/expense_reports/{id}/return
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/return-expense-report
+        """
+        result: ExpenseReport = self._client.request(
+            "POST", f"/v1/expense_reports/{_path(id)}/return", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def reopen(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpenseReport:
+        """Reabrir una comprobación
+
+        Una aprobada vuelve a abierta: sus facturas dejan de deducirse y sale de las pólizas. No si ya se reportó en la nómina.
+
+        POST /v1/expense_reports/{id}/reopen
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/reopen-expense-report
+        """
+        result: ExpenseReport = self._client.request(
+            "POST", f"/v1/expense_reports/{_path(id)}/reopen", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create_item(
+        self,
+        id: str,
+        params: CreateExpenseItemParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpenseReport:
+        """Agregar un gasto
+
+        Con uuid, una factura recibida del emisor (GET /v1/sat_invoices): la fecha, el monto y el proveedor salen de ella. Sin uuid, un gasto con su category, date y amount (un ticket, un comprobante del extranjero). Contesta la comprobación revisada.
+
+        POST /v1/expense_reports/{id}/items
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/create-expense-item
+        """
+        result: ExpenseReport = self._client.request(
+            "POST", f"/v1/expense_reports/{_path(id)}/items", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_item(
+        self,
+        id: str,
+        item: str,
+        params: UpdateExpenseItemParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpenseReport:
+        """Actualizar un gasto
+
+        Cambia solo lo que manda. Al revisarla, rejected: true con reject_reason rechaza el gasto (no se paga ni se deduce) y false lo vuelve a incluir.
+
+        POST /v1/expense_reports/{id}/items/{item}
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/update-expense-item
+        """
+        result: ExpenseReport = self._client.request(
+            "POST", f"/v1/expense_reports/{_path(id)}/items/{_path(item)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete_item(
+        self,
+        id: str,
+        item: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpenseReport:
+        """Quitar un gasto
+
+        Lo quita de la comprobación mientras no esté aprobada. Contesta la comprobación.
+
+        DELETE /v1/expense_reports/{id}/items/{item}
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/delete-expense-item
+        """
+        result: ExpenseReport = self._client.request(
+            "DELETE", f"/v1/expense_reports/{_path(id)}/items/{_path(item)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create_movement(
+        self,
+        id: str,
+        params: CreateExpenseMovementParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpenseReport:
+        """Registrar dinero dado o devuelto
+
+        Un anticipo (antes de aprobarla), un reembolso o una devolución (ya aprobada). Con method nomina va en el siguiente recibo de nómina del empleado. Con el saldo en cero, una aprobada se cierra.
+
+        POST /v1/expense_reports/{id}/movements
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/create-expense-movement
+        """
+        result: ExpenseReport = self._client.request(
+            "POST", f"/v1/expense_reports/{_path(id)}/movements", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete_movement(
+        self,
+        id: str,
+        movement: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpenseReport:
+        """Deshacer un movimiento
+
+        Lo quita (una cerrada vuelve a por liquidar). No uno que ya se pagó en la nómina.
+
+        DELETE /v1/expense_reports/{id}/movements/{movement}
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/delete-expense-movement
+        """
+        result: ExpenseReport = self._client.request(
+            "DELETE", f"/v1/expense_reports/{_path(id)}/movements/{_path(movement)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class ExpensePolicyResource:
+    """Viáticos y gastos: fiscalisto.expense_policy."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetExpensePolicyParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpensePolicy:
+        """Ver la política
+
+        La política de viáticos y gastos del emisor: topes por categoría, hasta cuánto sin factura y los días para comprobar.
+
+        GET /v1/expense_policy
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/get-expense-policy
+        """
+        result: ExpensePolicy = self._client.request(
+            "GET", "/v1/expense_policy", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        params: UpdateExpensePolicyParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExpensePolicy:
+        """Cambiar la política
+
+        Cambia solo lo que manda; en limits, una categoría con null deja de tener tope. Un gasto que pasa un tope no se rechaza: se marca para quien aprueba.
+
+        POST /v1/expense_policy
+        https://fiscalisto.com/docs/api/referencia/viaticos-y-gastos/update-expense-policy
+        """
+        result: ExpensePolicy = self._client.request(
+            "POST", "/v1/expense_policy", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -3619,6 +4139,26 @@ class AccountingResource:
         )
         return result
 
+    def vat_refund(
+        self,
+        params: GetVatRefundParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> VatRefund:
+        """Ver el IVA a favor y preparar su devolución
+
+        El IVA a favor de cada mes de los últimos cinco años (de las declaraciones leídas con POST /v1/sat_declarations/refresh o, sin ellas, de sus CFDI, con estimated en true), cuánto se acreditó después (del saldo más antiguo primero), cuánto queda, qué está en devolución y cuándo prescribe. Con `month`, la revisión de ese mes antes de pedirlo en el SAT: declaración, cruce con CFDI, DIOT, opinión de cumplimiento, Buzón Tributario, e.firma, listas del SAT, CFDI de proveedores con hallazgos y CLABE, con el monto a pedir. No presenta nada en el SAT. Gratis.
+
+        GET /v1/accounting/vat_refund
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-vat-refund
+        """
+        result: VatRefund = self._client.request(
+            "GET", "/v1/accounting/vat_refund", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
     def cross_check_cfdi(
         self,
         params: GetCrossCheckCfdiParams,
@@ -4469,6 +5009,11 @@ class FiscalistoApi(Core):
         return ReceivablesResource(self)
 
     @cached_property
+    def customers(self) -> CustomersResource:
+        """Cuentas por cobrar."""
+        return CustomersResource(self)
+
+    @cached_property
     def bank_transactions(self) -> BankTransactionsResource:
         """Conciliación bancaria."""
         return BankTransactionsResource(self)
@@ -4549,9 +5094,19 @@ class FiscalistoApi(Core):
         return CostCentersResource(self)
 
     @cached_property
-    def customers(self) -> CustomersResource:
-        """Clientes."""
-        return CustomersResource(self)
+    def expense_people(self) -> ExpensePeopleResource:
+        """Viáticos y gastos."""
+        return ExpensePeopleResource(self)
+
+    @cached_property
+    def expense_reports(self) -> ExpenseReportsResource:
+        """Viáticos y gastos."""
+        return ExpenseReportsResource(self)
+
+    @cached_property
+    def expense_policy(self) -> ExpensePolicyResource:
+        """Viáticos y gastos."""
+        return ExpensePolicyResource(self)
 
     @cached_property
     def customer_data_requests(self) -> CustomerDataRequestsResource:
