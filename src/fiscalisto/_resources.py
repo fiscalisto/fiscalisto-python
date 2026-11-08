@@ -23,8 +23,11 @@ if TYPE_CHECKING:
         Branch,
         CancelInvoiceParams,
         CancelRetentionParams,
+        CancelSalesOrderDeliveryParams,
+        CancelSalesOrderParams,
         CheckSatListsParams,
         ClassifyBankTransactionParams,
+        CloseSalesOrderParams,
         ComplianceOpinion,
         CostCenter,
         CreateAdvanceParams,
@@ -54,6 +57,8 @@ if TYPE_CHECKING:
         CreateQuoteParams,
         CreateRecurringInvoiceParams,
         CreateRetentionParams,
+        CreateSalesOrderDeliveryParams,
+        CreateSalesOrderParams,
         CreateSandboxParams,
         CreateSatDownloadParams,
         CreateStockAdjustmentParams,
@@ -102,6 +107,7 @@ if TYPE_CHECKING:
         Invoice,
         InvoiceBatch,
         InvoiceCreate,
+        InvoiceSalesOrderParams,
         Issuer,
         IssuerOnboardingLink,
         JournalEntry,
@@ -129,6 +135,7 @@ if TYPE_CHECKING:
         ListReceivablesParams,
         ListRecurringInvoicesParams,
         ListRetentionsParams,
+        ListSalesOrdersParams,
         ListSatDeclarationsParams,
         ListSatDownloadsParams,
         ListSatFindingCounterpartiesParams,
@@ -161,6 +168,7 @@ if TYPE_CHECKING:
         Retention,
         ReturnExpenseReportParams,
         RollWebhookSecretParams,
+        SalesOrder,
         Sandbox,
         SandboxList,
         SatCatalogEntryList,
@@ -179,6 +187,7 @@ if TYPE_CHECKING:
         SendInvoiceParams,
         SendQuoteParams,
         SendRetentionParams,
+        SendSalesOrderParams,
         SignEfirmaParams,
         StockAdjustment,
         StockLevel,
@@ -209,6 +218,7 @@ if TYPE_CHECKING:
         UpdatePurchaseReceiptParams,
         UpdateQuoteParams,
         UpdateRecurringInvoiceParams,
+        UpdateSalesOrderParams,
         UpdateSatInvoiceParams,
         UpdateSelfInvoicingParams,
         UpdateStoreConnectionParams,
@@ -4770,6 +4780,328 @@ class QuotesResource:
         return result
 
 
+class SalesOrdersResource:
+    """Pedidos: fiscalisto.sales_orders."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateSalesOrderParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SalesOrder:
+        """Crear un pedido
+
+        Lo que su cliente le pidió, con los conceptos y las condiciones de pago de una factura (se revisan con las mismas reglas, así que cada factura que sale de él timbra). customer es un cliente de su catálogo o uno con sus datos fiscales (se agrega a sus clientes). Con quote (quo_…) lo hace de una cotización. Queda en draft, o confirmado con confirm: true (llega sales_order.confirmed y se aparta lo pedido en el almacén).
+
+        POST /v1/sales_orders
+        https://fiscalisto.com/docs/api/referencia/pedidos/create-sales-order
+        """
+        result: SalesOrder = self._client.request(
+            "POST", "/v1/sales_orders", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListSalesOrdersParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[SalesOrder]:
+        """Listar pedidos
+
+        Los más recientes primero.
+
+        GET /v1/sales_orders
+        https://fiscalisto.com/docs/api/referencia/pedidos/list-sales-orders
+        """
+        return self._client.list("/v1/sales_orders", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SalesOrder:
+        """Ver un pedido
+
+        Con sus entregas, sus facturas y lo que se ha pagado de ellas.
+
+        GET /v1/sales_orders/{id}
+        https://fiscalisto.com/docs/api/referencia/pedidos/get-sales-order
+        """
+        result: SalesOrder = self._client.request(
+            "GET", f"/v1/sales_orders/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateSalesOrderParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SalesOrder:
+        """Cambiar un pedido
+
+        Solo lo que mande cambia. Los conceptos cambian mientras no tengan entregas ni facturas; si no, 400 sales_order_invalid.
+
+        POST /v1/sales_orders/{id}
+        https://fiscalisto.com/docs/api/referencia/pedidos/update-sales-order
+        """
+        result: SalesOrder = self._client.request(
+            "POST", f"/v1/sales_orders/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar un pedido
+
+        Solo un borrador. Uno confirmado se cancela con POST /v1/sales_orders/{id}/cancel: 400 sales_order_not_deletable.
+
+        DELETE /v1/sales_orders/{id}
+        https://fiscalisto.com/docs/api/referencia/pedidos/delete-sales-order
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/sales_orders/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def confirm(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SalesOrder:
+        """Confirmar un pedido
+
+        Es un pedido en firme: se aparta lo pedido en el almacén y ya se puede entregar y facturar. Llega sales_order.confirmed.
+
+        POST /v1/sales_orders/{id}/confirm
+        https://fiscalisto.com/docs/api/referencia/pedidos/confirm-sales-order
+        """
+        result: SalesOrder = self._client.request(
+            "POST", f"/v1/sales_orders/{_path(id)}/confirm", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def deliver(
+        self,
+        id: str,
+        params: CreateSalesOrderDeliveryParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SalesOrder:
+        """Registrar una entrega
+
+        Lo que salió, con su remisión (REM-1, REM-2…): la mercancía sale del almacén con la entrega, no con la factura. Por omisión, todo lo que falta. Si el emisor no vende sin existencias, no sale más de lo que hay (400 sales_order_invalid). Cuando ya salió todo llega sales_order.delivered.
+
+        POST /v1/sales_orders/{id}/deliveries
+        https://fiscalisto.com/docs/api/referencia/pedidos/create-sales-order-delivery
+        """
+        result: SalesOrder = self._client.request(
+            "POST", f"/v1/sales_orders/{_path(id)}/deliveries", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def cancel_delivery(
+        self,
+        id: str,
+        delivery: str,
+        params: CancelSalesOrderDeliveryParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SalesOrder:
+        """Cancelar una entrega
+
+        La mercancía regresa al almacén y lo entregado vuelve a quedar pendiente.
+
+        POST /v1/sales_orders/{id}/deliveries/{delivery}/cancel
+        https://fiscalisto.com/docs/api/referencia/pedidos/cancel-sales-order-delivery
+        """
+        result: SalesOrder = self._client.request(
+            "POST", f"/v1/sales_orders/{_path(id)}/deliveries/{_path(delivery)}/cancel", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def invoice(
+        self,
+        id: str,
+        params: InvoiceSalesOrderParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Invoice:
+        """Facturar un pedido
+
+        Timbra una factura con lo entregado y no facturado (o lo que diga items; con invoice_policy ordered, lo pedido), con los datos fiscales del cliente de hoy y la nota «Pedido PED-…» con su orden de compra. Se factura en varias partes: cada llamada, con su Idempotency-Key, timbra la que sigue. Si no queda nada, 400 sales_order_invalid. Cuando sus facturas se pagan llega sales_order.paid.
+
+        POST /v1/sales_orders/{id}/invoice
+        https://fiscalisto.com/docs/api/referencia/pedidos/invoice-sales-order
+        """
+        result: Invoice = self._client.request(
+            "POST", f"/v1/sales_orders/{_path(id)}/invoice", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def send(
+        self,
+        id: str,
+        params: SendSalesOrderParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SalesOrder:
+        """Mandar un pedido
+
+        Por correo, con su PDF y la liga donde su cliente lo confirma (llega sales_order.customer_confirmed), firma cada entrega y abre sus facturas. Con send_email: false solo contesta url. En borrador, 400 sales_order_draft.
+
+        POST /v1/sales_orders/{id}/send
+        https://fiscalisto.com/docs/api/referencia/pedidos/send-sales-order
+        """
+        result: SalesOrder = self._client.request(
+            "POST", f"/v1/sales_orders/{_path(id)}/send", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def cancel_remaining(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SalesOrder:
+        """Ya no entregar lo pendiente
+
+        El pedido se queda con lo ya entregado (lo demás pasa a canceled en cada concepto) y se libera lo apartado.
+
+        POST /v1/sales_orders/{id}/cancel_remaining
+        https://fiscalisto.com/docs/api/referencia/pedidos/cancel-sales-order-remaining
+        """
+        result: SalesOrder = self._client.request(
+            "POST", f"/v1/sales_orders/{_path(id)}/cancel_remaining", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def close(
+        self,
+        id: str,
+        params: CloseSalesOrderParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SalesOrder:
+        """Cerrar un pedido
+
+        Lo da por terminado aunque quede algo pendiente, y libera lo apartado.
+
+        POST /v1/sales_orders/{id}/close
+        https://fiscalisto.com/docs/api/referencia/pedidos/close-sales-order
+        """
+        result: SalesOrder = self._client.request(
+            "POST", f"/v1/sales_orders/{_path(id)}/close", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def cancel(
+        self,
+        id: str,
+        params: CancelSalesOrderParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SalesOrder:
+        """Cancelar un pedido
+
+        Solo sin entregas ni facturas timbradas (cancele primero las entregas, y las facturas con POST /v1/invoices/{id}/cancel). Borra sus facturas en borrador y libera lo apartado. Llega sales_order.canceled.
+
+        POST /v1/sales_orders/{id}/cancel
+        https://fiscalisto.com/docs/api/referencia/pedidos/cancel-sales-order
+        """
+        result: SalesOrder = self._client.request(
+            "POST", f"/v1/sales_orders/{_path(id)}/cancel", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def reopen(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SalesOrder:
+        """Reabrir un pedido
+
+        Uno cerrado o cancelado vuelve a estar abierto.
+
+        POST /v1/sales_orders/{id}/reopen
+        https://fiscalisto.com/docs/api/referencia/pedidos/reopen-sales-order
+        """
+        result: SalesOrder = self._client.request(
+            "POST", f"/v1/sales_orders/{_path(id)}/reopen", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def pdf(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> bytes:
+        """Descargar el PDF
+
+        El PDF del pedido, con el diseño de PDF del emisor.
+
+        GET /v1/sales_orders/{id}/pdf
+        https://fiscalisto.com/docs/api/referencia/pedidos/get-sales-order-pdf
+        """
+        result: bytes = self._client.request(
+            "GET", f"/v1/sales_orders/{_path(id)}/pdf", result="bytes", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
 class WebhookEndpointsResource:
     """Webhooks: fiscalisto.webhook_endpoints."""
 
@@ -5197,6 +5529,11 @@ class FiscalistoApi(Core):
     def quotes(self) -> QuotesResource:
         """Cotizaciones."""
         return QuotesResource(self)
+
+    @cached_property
+    def sales_orders(self) -> SalesOrdersResource:
+        """Pedidos."""
+        return SalesOrdersResource(self)
 
     @cached_property
     def webhook_endpoints(self) -> WebhookEndpointsResource:

@@ -251,6 +251,15 @@ class ErrorCode:
     ROUTE_NOT_FOUND: Final = "route_not_found"
     """No existe esa ruta. Revise la dirección y la versión (/v1)."""
 
+    SALES_ORDER_DRAFT: Final = "sales_order_draft"
+    """El pedido está en borrador: confírmelo primero con POST /v1/sales_orders/{id}/confirm."""
+
+    SALES_ORDER_INVALID: Final = "sales_order_invalid"
+    """El pedido no se pudo guardar o no se puede hacer eso en su estado (por ejemplo, ya no queda nada por entregar o facturar, o está cancelado). El mensaje dice por qué."""
+
+    SALES_ORDER_NOT_DELETABLE: Final = "sales_order_not_deletable"
+    """Solo se borra un pedido en borrador; uno confirmado se cancela con POST /v1/sales_orders/{id}/cancel."""
+
     SANDBOX_INVALID: Final = "sandbox_invalid"
     """No se pudo crear el entorno de prueba: falta su nombre o la cuenta ya tiene 25 (borre uno que ya no use)."""
 
@@ -399,6 +408,9 @@ ErrorCodeValue = Literal[
     "retention_not_stamped",
     "retention_rejected",
     "route_not_found",
+    "sales_order_draft",
+    "sales_order_invalid",
+    "sales_order_not_deletable",
     "sandbox_invalid",
     "sat_refresh_too_soon",
     "sat_request_rejected",

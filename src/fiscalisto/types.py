@@ -38,8 +38,11 @@ __all__ = [
     "BranchSeries",
     "CancelInvoiceParams",
     "CancelRetentionParams",
+    "CancelSalesOrderDeliveryParams",
+    "CancelSalesOrderParams",
     "CheckSatListsParams",
     "ClassifyBankTransactionParams",
+    "CloseSalesOrderParams",
     "ComplianceOpinion",
     "CostCenter",
     "CostCenterList",
@@ -117,6 +120,16 @@ __all__ = [
     "CreateRetentionParamsTrustIncome",
     "CreateRetentionParamsTrustLease",
     "CreateRetentionParamsTrustWithholding",
+    "CreateSalesOrderDeliveryParams",
+    "CreateSalesOrderDeliveryParamsItemsItem",
+    "CreateSalesOrderParams",
+    "CreateSalesOrderParamsCustomer",
+    "CreateSalesOrderParamsCustomerForeign",
+    "CreateSalesOrderParamsItemsItem",
+    "CreateSalesOrderParamsItemsItemIedu",
+    "CreateSalesOrderParamsItemsItemThirdParty",
+    "CreateSalesOrderParamsItemsItemUsedVehicle",
+    "CreateSalesOrderParamsItemsItemUsedVehicleCustomsItem",
     "CreateSandboxParams",
     "CreateSatDownloadParams",
     "CreateStockAdjustmentParams",
@@ -334,6 +347,8 @@ __all__ = [
     "InvoicePayrollRetirement",
     "InvoicePayrollSeparation",
     "InvoicePayrollTotals",
+    "InvoiceSalesOrderParams",
+    "InvoiceSalesOrderParamsItemsItem",
     "InvoiceStampedEvent",
     "InvoiceSubstitutes",
     "InvoiceTaxes",
@@ -372,6 +387,7 @@ __all__ = [
     "ListReceivablesParams",
     "ListRecurringInvoicesParams",
     "ListRetentionsParams",
+    "ListSalesOrdersParams",
     "ListSatDeclarationsParams",
     "ListSatDownloadsParams",
     "ListSatFindingCounterpartiesParams",
@@ -455,6 +471,18 @@ __all__ = [
     "RetentionTotals",
     "ReturnExpenseReportParams",
     "RollWebhookSecretParams",
+    "SalesOrder",
+    "SalesOrderCanceledEvent",
+    "SalesOrderConfirmedEvent",
+    "SalesOrderCustomer",
+    "SalesOrderCustomerConfirmedEvent",
+    "SalesOrderDeliveredEvent",
+    "SalesOrderDelivery",
+    "SalesOrderDeliveryItemsItem",
+    "SalesOrderInvoicesItem",
+    "SalesOrderItemsItem",
+    "SalesOrderList",
+    "SalesOrderPaidEvent",
     "Sandbox",
     "SandboxKey",
     "SandboxList",
@@ -499,6 +527,7 @@ __all__ = [
     "SendInvoiceParams",
     "SendQuoteParams",
     "SendRetentionParams",
+    "SendSalesOrderParams",
     "SignEfirmaParams",
     "StockAdjustment",
     "StockAdjustmentLinesItem",
@@ -566,6 +595,14 @@ __all__ = [
     "UpdateRecurringInvoiceParams",
     "UpdateRecurringInvoiceParamsInvoice",
     "UpdateRecurringInvoiceParamsSchedule",
+    "UpdateSalesOrderParams",
+    "UpdateSalesOrderParamsCustomer",
+    "UpdateSalesOrderParamsCustomerForeign",
+    "UpdateSalesOrderParamsItemsItem",
+    "UpdateSalesOrderParamsItemsItemIedu",
+    "UpdateSalesOrderParamsItemsItemThirdParty",
+    "UpdateSalesOrderParamsItemsItemUsedVehicle",
+    "UpdateSalesOrderParamsItemsItemUsedVehicleCustomsItem",
     "UpdateSatInvoiceParams",
     "UpdateSelfInvoicingParams",
     "UpdateStoreConnectionParams",
@@ -4118,6 +4155,169 @@ class Quote(TypedDict):
     """Cuándo se creó."""
 
 
+class SalesOrderCustomer(TypedDict):
+    """El cliente: su RFC, nombre, correo y su id en su catálogo."""
+    tax_id: str | None
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    name: str | None
+    """Nombre."""
+    email: str | None
+    """Correo a donde se envía (varios separados por comas). Solo se usa si se pide enviarlo."""
+    catalog_id: str | None
+    """El cliente (cus_…) en su catálogo, o null si no está en él."""
+
+
+class SalesOrderItemsItem(TypedDict):
+    id: int
+    """El id del concepto en el pedido: con él entrega o factura una parte (line)."""
+    description: str
+    """Descripción del concepto (Descripcion), hasta 1,000 caracteres."""
+    product_key: str | None
+    """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
+    quantity: float
+    """Cantidad (Cantidad). Por omisión 1."""
+    unit: str | None
+    """La unidad, como la ve el cliente."""
+    unit_price: float
+    """Precio unitario antes de impuestos (ValorUnitario)."""
+    discount: float
+    """El descuento del concepto, en dinero."""
+    amount: float
+    """El importe del concepto, sin impuestos."""
+    goods: bool
+    """true si sale del almacén con cada entrega; false si es un servicio (solo se factura)."""
+    delivered: float
+    """Cuánto ya se entregó."""
+    invoiced: float
+    """Cuánto ya se facturó."""
+    canceled: float
+    """Cuánto ya no se entregará (POST /v1/sales_orders/{id}/cancel_remaining)."""
+
+
+class SalesOrderInvoicesItem(TypedDict):
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    status: Literal["stamped", "canceled"]
+    """stamped, o canceled (lo que llevaba se puede volver a facturar)."""
+    total: float
+    """El total de la factura."""
+    balance: float | None
+    """Lo que falta por pagar de esa factura, o null si aún no se sabe."""
+
+
+class SalesOrder(TypedDict):
+    """Un pedido de venta: lo que su cliente pidió, cómo se entrega (remisiones) y cómo se factura y se cobra."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["sales_order"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (iss_…)."""
+    number: str
+    """Su serie y folio (PED-12)."""
+    status: Literal["draft", "confirmed", "partially_delivered", "delivered", "invoiced", "paid", "closed", "canceled"]
+    """draft (borrador), confirmed, partially_delivered, delivered (todo entregado), invoiced (todo facturado), paid (sus facturas pagadas), closed (se dio por terminado) o canceled. Cambia solo, con lo que pasa."""
+    stage: str | None
+    """La etapa del negocio en que va («Por empacar», «En ruta»…), o null. Se elige en la app."""
+    url: str | None
+    """La liga donde su cliente ve el pedido, lo confirma, firma cada entrega y abre sus facturas. null mientras sea borrador o no se haya mandado."""
+    customer: SalesOrderCustomer
+    """El cliente: su RFC, nombre, correo y su id en su catálogo."""
+    customer_po: str | None
+    """El número de orden de compra de su cliente, o null."""
+    quote: str | None
+    """La cotización (quo_…) de donde salió, o null."""
+    currency: str
+    """La moneda."""
+    items: list[SalesOrderItemsItem]
+    """Los conceptos: id (para entregar o facturar una parte), lo pedido, lo entregado, lo facturado y lo que ya no se entregará (canceled). goods es true cuando sale del almacén."""
+    subtotal: float
+    """El subtotal, sin impuestos."""
+    total: float
+    """El total con impuestos."""
+    invoiced_total: float
+    """La suma de sus facturas timbradas (sin las canceladas)."""
+    paid_total: float
+    """Lo que ya se pagó de esas facturas."""
+    expected_on: str | None
+    """La entrega estimada (AAAA-MM-DD), o null."""
+    payment_days: int
+    """Días de crédito: cada factura vence esos días después de su fecha."""
+    invoice_policy: Literal["delivered", "ordered"]
+    """delivered: cada factura lleva lo ya entregado; ordered: se factura lo pedido, entregado o no."""
+    ship_to: str | None
+    """Dónde se entrega, o null."""
+    terms: str | None
+    """Las condiciones impresas en el pedido, o null."""
+    notes: str | None
+    """Las notas, como las de una factura."""
+    internal_note: str | None
+    """La nota interna (su cliente no la ve), o null."""
+    deliveries: list[SalesOrderDelivery]
+    """Sus entregas, cada una con su remisión."""
+    invoices: list[SalesOrderInvoicesItem]
+    """Sus facturas timbradas (inv_…), con lo que falta por pagar de cada una (balance)."""
+    customer_confirmed_at: str | None
+    """Cuándo su cliente lo confirmó en su liga, o null."""
+    sent_at: str | None
+    """Cuándo se mandó, o null."""
+    viewed_at: str | None
+    """Cuándo su cliente abrió la liga por primera vez, o null."""
+    confirmed_at: str | None
+    """Cuándo se confirmó, o null."""
+    delivered_at: str | None
+    """Cuándo quedó todo entregado, o null."""
+    invoiced_at: str | None
+    """Cuándo quedó todo facturado, o null."""
+    paid_at: str | None
+    """Cuándo quedaron pagadas sus facturas, o null."""
+    closed_at: str | None
+    """Cuándo se cerró, o null."""
+    canceled_at: str | None
+    """Cuándo se canceló, o null."""
+    cancel_reason: str | None
+    """Por qué se canceló, o null."""
+    created_at: str | None
+    """Cuándo se creó."""
+
+
+class SalesOrderDeliveryItemsItem(TypedDict):
+    line: int
+    """El concepto del pedido (su items[].id)."""
+    quantity: float
+    """Cuánto salió de él."""
+
+
+class SalesOrderDelivery(TypedDict):
+    """Una entrega del pedido, con su remisión (REM-1): lo que salió del almacén."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["sales_order_delivery"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    number: str
+    """Su remisión (REM-1)."""
+    status: Literal["delivered", "canceled"]
+    """delivered, o canceled (la mercancía regresó al almacén)."""
+    delivered_on: str
+    """El día en que salió (AAAA-MM-DD)."""
+    carrier: str | None
+    """El transporte, o null."""
+    tracking: str | None
+    """El número de guía, o null."""
+    note: str | None
+    """Una nota, o null."""
+    received_by: str | None
+    """Quién recibió (lo firmó en la liga o lo anotó usted), o null."""
+    received_at: str | None
+    """Cuándo se recibió, o null."""
+    items: list[SalesOrderDeliveryItemsItem]
+    """Cuánto salió de cada concepto (line es items[].id del pedido)."""
+    created_at: str | None
+    """Cuándo se registró."""
+
+
 class ReceivableCustomer(TypedDict):
     """El cliente que debe."""
     tax_id: str
@@ -4464,7 +4664,7 @@ class WebhookTest(TypedDict):
     """Cómo le fue: ok si contestó 2xx, el código, el error y el inicio de su respuesta."""
 
 
-EventType = Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.paid", "invoice.partially_paid", "invoice.email_bounced", "invoice.email_complained", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "payroll_batch.completed", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "quote.withdrawn", "issuer.ready", "balance.low", "test_clock.ready"]
+EventType = Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.paid", "invoice.partially_paid", "invoice.email_bounced", "invoice.email_complained", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "payroll_batch.completed", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "quote.withdrawn", "sales_order.confirmed", "sales_order.customer_confirmed", "sales_order.delivered", "sales_order.paid", "sales_order.canceled", "issuer.ready", "balance.low", "test_clock.ready"]
 """Lo que puede pasar: el tipo de cada evento."""
 
 
@@ -4518,6 +4718,11 @@ class QuoteEventData(TypedDict):
     """El objeto como quedó: el lote completo, como lo contesta su GET."""
 
 
+class SalesOrderEventData(TypedDict):
+    object: SalesOrder
+    """El objeto como quedó: el lote completo, como lo contesta su GET."""
+
+
 class IssuerEventData(TypedDict):
     object: Issuer
     """El objeto como quedó: el lote completo, como lo contesta su GET."""
@@ -4540,7 +4745,7 @@ class InvoiceStampedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.stamped"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4557,7 +4762,7 @@ class InvoiceFailedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.failed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4574,7 +4779,7 @@ class InvoiceCanceledEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.canceled"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4591,7 +4796,7 @@ class InvoiceCancellationPendingEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.cancellation_pending"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4608,7 +4813,7 @@ class InvoiceCancellationRejectedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.cancellation_rejected"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4625,7 +4830,7 @@ class InvoicePaidEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.paid"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4642,7 +4847,7 @@ class InvoicePartiallyPaidEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.partially_paid"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4659,7 +4864,7 @@ class InvoiceEmailBouncedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.email_bounced"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4676,7 +4881,7 @@ class InvoiceEmailComplainedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.email_complained"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4693,7 +4898,7 @@ class RetentionStampedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["retention.stamped"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4710,7 +4915,7 @@ class RetentionFailedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["retention.failed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4727,7 +4932,7 @@ class RetentionCanceledEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["retention.canceled"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4744,7 +4949,7 @@ class InvoiceBatchCompletedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice_batch.completed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4761,7 +4966,7 @@ class PayrollBatchCompletedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["payroll_batch.completed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4778,7 +4983,7 @@ class CustomerDataRequestCompletedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["customer_data_request.completed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4795,7 +5000,7 @@ class SatDownloadCompletedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["sat_download.completed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4812,7 +5017,7 @@ class SatDownloadFailedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["sat_download.failed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4829,7 +5034,7 @@ class SatDeclarationCreatedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["sat_declaration.created"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4846,7 +5051,7 @@ class SatDeclarationUpdatedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["sat_declaration.updated"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4863,7 +5068,7 @@ class TicketInvoicedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["ticket.invoiced"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4880,7 +5085,7 @@ class TicketIncludedInGlobalEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["ticket.included_in_global"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4897,7 +5102,7 @@ class RecurringInvoiceFailedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["recurring_invoice.failed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4914,7 +5119,7 @@ class QuoteViewedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["quote.viewed"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4931,7 +5136,7 @@ class QuoteAcceptedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["quote.accepted"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4948,7 +5153,7 @@ class QuoteChangesRequestedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["quote.changes_requested"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4965,7 +5170,7 @@ class QuoteRejectedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["quote.rejected"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4982,7 +5187,7 @@ class QuoteWithdrawnEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["quote.withdrawn"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -4992,6 +5197,91 @@ class QuoteWithdrawnEvent(TypedDict):
     data: QuoteEventData
 
 
+class SalesOrderConfirmedEvent(TypedDict):
+    """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["event"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    type: Literal["sales_order.confirmed"]
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
+    api_version: str
+    """Versión de la API con que se armó el objeto."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    data: SalesOrderEventData
+
+
+class SalesOrderCustomerConfirmedEvent(TypedDict):
+    """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["event"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    type: Literal["sales_order.customer_confirmed"]
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
+    api_version: str
+    """Versión de la API con que se armó el objeto."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    data: SalesOrderEventData
+
+
+class SalesOrderDeliveredEvent(TypedDict):
+    """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["event"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    type: Literal["sales_order.delivered"]
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
+    api_version: str
+    """Versión de la API con que se armó el objeto."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    data: SalesOrderEventData
+
+
+class SalesOrderPaidEvent(TypedDict):
+    """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["event"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    type: Literal["sales_order.paid"]
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
+    api_version: str
+    """Versión de la API con que se armó el objeto."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    data: SalesOrderEventData
+
+
+class SalesOrderCanceledEvent(TypedDict):
+    """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["event"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    type: Literal["sales_order.canceled"]
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
+    api_version: str
+    """Versión de la API con que se armó el objeto."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    data: SalesOrderEventData
+
+
 class IssuerReadyEvent(TypedDict):
     """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
     id: str
@@ -4999,7 +5289,7 @@ class IssuerReadyEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["issuer.ready"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -5016,7 +5306,7 @@ class BalanceLowEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["balance.low"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -5033,7 +5323,7 @@ class TestClockReadyEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["test_clock.ready"]
-    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, issuer.ready, balance.low o test_clock.ready."""
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, issuer.ready, balance.low o test_clock.ready."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
     livemode: bool
@@ -5071,6 +5361,11 @@ Event = Union[
     QuoteChangesRequestedEvent,
     QuoteRejectedEvent,
     QuoteWithdrawnEvent,
+    SalesOrderConfirmedEvent,
+    SalesOrderCustomerConfirmedEvent,
+    SalesOrderDeliveredEvent,
+    SalesOrderPaidEvent,
+    SalesOrderCanceledEvent,
     IssuerReadyEvent,
     BalanceLowEvent,
     TestClockReadyEvent,
@@ -5514,6 +5809,17 @@ class QuoteList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[Quote]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class SalesOrderList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[SalesOrder]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -9422,6 +9728,426 @@ class RejectQuoteParams(TypedDict):
     """Por qué (queda en customer_comment; el cliente no la ve)."""
 
 
+class CreateSalesOrderParamsCustomerForeign(TypedDict):
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    country: str
+    """País de residencia fiscal, clave de 3 letras de c_Pais (USA, CAN…)."""
+    tax_id: str
+    """Número de registro de identidad fiscal en su país (NumRegIdTrib)."""
+
+
+class CreateSalesOrderParamsCustomer(TypedDict):
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    legal_name: str
+    """Nombre o razón social tal como está en la constancia de situación fiscal, sin el régimen de capital (sin «S.A. de C.V.»)."""
+    tax_system: str
+    """Régimen fiscal (RegimenFiscal), clave de c_RegimenFiscal: 601, 612, 626…"""
+    zip: str
+    """Código postal del domicilio fiscal del cliente (DomicilioFiscalReceptor), 5 dígitos."""
+    email: NotRequired[str | None]
+    """Correo a donde se envía (varios separados por comas). Solo se usa si se pide enviarlo."""
+    foreign: NotRequired[CreateSalesOrderParamsCustomerForeign]
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    ieps_taxpayer: NotRequired[bool]
+    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+
+
+class CreateSalesOrderParamsItemsItemThirdParty(TypedDict):
+    """A cuenta de terceros (ACuentaTerceros): RFC, nombre, régimen y código postal."""
+    tax_id: str
+    """RFC de a cuenta de quién (RfcACuentaTerceros)."""
+    name: str
+    """Nombre (NombreACuentaTerceros)."""
+    tax_system: str
+    """Régimen fiscal (RegimenFiscalACuentaTerceros), c_RegimenFiscal."""
+    zip: str
+    """Código postal de su domicilio fiscal (DomicilioFiscalACuentaTerceros)."""
+
+
+class CreateSalesOrderParamsItemsItemIedu(TypedDict):
+    """Complemento de instituciones educativas privadas (IEDU): alumno, CURP, nivel y RVOE."""
+    student_name: str
+    """Nombre del alumno (nombreAlumno)."""
+    curp: str
+    """CURP, 18 caracteres."""
+    level: Literal["Preescolar", "Primaria", "Secundaria", "Profesional técnico", "Bachillerato o su equivalente"]
+    """Nivel educativo (nivelEducativo)."""
+    rvoe: str
+    """Reconocimiento de validez oficial de estudios (autRVOE)."""
+    payer_tax_id: NotRequired[str | None]
+    """RFC de quien paga, si no es el receptor (rfcPago)."""
+
+
+class CreateSalesOrderParamsItemsItemUsedVehicleCustomsItem(TypedDict):
+    number: str
+    """Número del documento de importación (numero)."""
+    date: str
+    """Fecha del documento (fecha), AAAA-MM-DD."""
+    office: NotRequired[str]
+    """Aduana (aduana)."""
+
+
+class CreateSalesOrderParamsItemsItemUsedVehicle(TypedDict):
+    """Complemento de vehículo usado."""
+    purchase_amount: float
+    """Monto de adquisición (montoAdquisicion)."""
+    sale_amount: float
+    """Monto de enajenación (montoEnajenacion)."""
+    vehicle_key: str
+    """Clave vehicular (claveVehicular)."""
+    make: str
+    """Marca (marca)."""
+    type: str
+    """Tipo o versión (tipo)."""
+    model: str
+    """Año del modelo (modelo), 4 dígitos."""
+    engine_number: NotRequired[str]
+    """Número de motor (numeroMotor)."""
+    serial_number: NotRequired[str]
+    """Número de serie (numeroSerie)."""
+    niv: NotRequired[str]
+    """Número de identificación vehicular (NIV)."""
+    guide_value: float
+    """Valor según la guía EBC o Libro Azul (valor)."""
+    customs: NotRequired[list[CreateSalesOrderParamsItemsItemUsedVehicleCustomsItem]]
+    """Información aduanera de la importación del vehículo (InformacionAduanera)."""
+
+
+class CreateSalesOrderParamsItemsItem(TypedDict):
+    """Un concepto. description, product_key y unit_price son obligatorios, salvo que mande product (prd_…): entonces vienen de su catálogo y lo que mande encima gana."""
+    product: NotRequired[str]
+    """Un producto de su catálogo (prd_…): toma su clave, unidad, precio e impuestos."""
+    description: NotRequired[str]
+    """Descripción del concepto (Descripcion), hasta 1,000 caracteres."""
+    product_key: NotRequired[str]
+    """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
+    unit_key: NotRequired[str]
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    unit_name: NotRequired[str | None]
+    """Nombre de la unidad (Unidad), hasta 20 caracteres."""
+    sku: NotRequired[str | None]
+    """Número de identificación o SKU (NoIdentificacion)."""
+    quantity: NotRequired[float]
+    """Cantidad (Cantidad). Por omisión 1."""
+    unit_price: NotRequired[float]
+    """Precio unitario antes de impuestos (ValorUnitario)."""
+    discount: NotRequired[float]
+    """Descuento (Descuento)."""
+    taxability: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
+    """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
+    iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
+    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    ieps: NotRequired[float]
+    """IEPS trasladado: tasa (0.265…) o cuota en pesos por unidad, según ieps_factor."""
+    ieps_factor: NotRequired[Literal["Tasa", "Cuota"]]
+    """Tasa o Cuota (TipoFactor del IEPS)."""
+    ieps_units: NotRequired[float]
+    """Unidades de IEPS a cuota (litros, cigarros…), si no son la cantidad."""
+    iva_retention: NotRequired[float]
+    """Tasa de IVA retenido (por ejemplo 0.106667, dos terceras partes del 16%)."""
+    isr_retention: NotRequired[float]
+    """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    predial: NotRequired[list[str]]
+    """Números de cuenta predial (CuentaPredial) en arrendamiento."""
+    pedimentos: NotRequired[list[str]]
+    """Números de pedimento (InformacionAduanera) de mercancía importada."""
+    third_party: NotRequired[CreateSalesOrderParamsItemsItemThirdParty]
+    """A cuenta de terceros (ACuentaTerceros): RFC, nombre, régimen y código postal."""
+    iedu: NotRequired[CreateSalesOrderParamsItemsItemIedu]
+    """Complemento de instituciones educativas privadas (IEDU): alumno, CURP, nivel y RVOE."""
+    used_vehicle: NotRequired[CreateSalesOrderParamsItemsItemUsedVehicle]
+    """Complemento de vehículo usado."""
+    addenda: NotRequired[dict[str, str]]
+    """Addenda del receptor (Walmart, Soriana…), con sus propios campos."""
+
+
+class CreateSalesOrderParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    quote: NotRequired[str]
+    """Hacerlo de una cotización (quo_…): toma su cliente y sus conceptos, y la cotización queda aceptada. Sin customer ni items."""
+    customer: NotRequired[str | CreateSalesOrderParamsCustomer]
+    """Un cliente de su catálogo (cus_…) o uno con sus datos fiscales (como en POST /v1/invoices: se agrega a sus clientes)."""
+    items: NotRequired[list[CreateSalesOrderParamsItemsItem]]
+    """Los conceptos, como en POST /v1/invoices (hasta 200)."""
+    confirm: NotRequired[bool]
+    """Confirmarlo en el mismo paso (por omisión false: queda en draft). Confirmado, aparta lo pedido en el almacén."""
+    currency: NotRequired[str]
+    """Moneda, clave ISO 4217 de c_Moneda (MXN, USD, EUR…). Por omisión MXN."""
+    exchange_rate: NotRequired[float]
+    """Tipo de cambio a pesos (TipoCambio). Obligatorio si la moneda no es MXN; use el del DOF del día anterior."""
+    payment_form: NotRequired[str]
+    """Forma de pago (FormaPago), clave de c_FormaPago: 01 efectivo, 03 transferencia, 04 tarjeta de crédito, 28 débito, 99 por definir… Obligatoria con PUE; con PPD es 99."""
+    payment_method: NotRequired[Literal["PUE", "PPD"]]
+    """Método de pago (MetodoPago): PUE (una sola exhibición, por omisión) o PPD (en parcialidades o diferido, se cobra con complementos de pago)."""
+    use: NotRequired[str]
+    """Uso del CFDI (UsoCFDI), clave de c_UsoCFDI. Por omisión G03, o S01 con régimen 616."""
+    notes: NotRequired[str]
+    """Observaciones que aparecen en el PDF (no van en el XML)."""
+    customer_po: NotRequired[str]
+    """El número de orden de compra de su cliente (va en la nota de cada factura)."""
+    email: NotRequired[str]
+    """A dónde mandarle el pedido y sus remisiones (hasta 5 correos, separados por comas). Por omisión, el del cliente."""
+    expected_on: NotRequired[str]
+    """Entrega estimada (AAAA-MM-DD)."""
+    payment_days: NotRequired[int]
+    """Días de crédito (0: de contado)."""
+    invoice_policy: NotRequired[Literal["delivered", "ordered"]]
+    """Qué se factura: delivered (por omisión), lo ya entregado; ordered, todo lo pedido desde el inicio (por ejemplo con pago por adelantado)."""
+    ship_to: NotRequired[str]
+    """Dónde se entrega."""
+    terms: NotRequired[str]
+    """Condiciones del pedido."""
+    internal_note: NotRequired[str]
+    """Nota interna (su cliente no la ve)."""
+
+
+class ListSalesOrdersParams(TypedDict):
+    """Los parámetros de GET /v1/sales_orders."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    status: NotRequired[Literal["draft", "confirmed", "partially_delivered", "delivered", "invoiced", "paid", "closed", "canceled"]]
+    """Solo los que estén en este estado."""
+    customer: NotRequired[str]
+    """Solo los de este RFC."""
+
+
+class UpdateSalesOrderParamsCustomerForeign(TypedDict):
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    country: str
+    """País de residencia fiscal, clave de 3 letras de c_Pais (USA, CAN…)."""
+    tax_id: str
+    """Número de registro de identidad fiscal en su país (NumRegIdTrib)."""
+
+
+class UpdateSalesOrderParamsCustomer(TypedDict):
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    legal_name: str
+    """Nombre o razón social tal como está en la constancia de situación fiscal, sin el régimen de capital (sin «S.A. de C.V.»)."""
+    tax_system: str
+    """Régimen fiscal (RegimenFiscal), clave de c_RegimenFiscal: 601, 612, 626…"""
+    zip: str
+    """Código postal del domicilio fiscal del cliente (DomicilioFiscalReceptor), 5 dígitos."""
+    email: NotRequired[str | None]
+    """Correo a donde se envía (varios separados por comas). Solo se usa si se pide enviarlo."""
+    foreign: NotRequired[UpdateSalesOrderParamsCustomerForeign]
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    ieps_taxpayer: NotRequired[bool]
+    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+
+
+class UpdateSalesOrderParamsItemsItemThirdParty(TypedDict):
+    """A cuenta de terceros (ACuentaTerceros): RFC, nombre, régimen y código postal."""
+    tax_id: str
+    """RFC de a cuenta de quién (RfcACuentaTerceros)."""
+    name: str
+    """Nombre (NombreACuentaTerceros)."""
+    tax_system: str
+    """Régimen fiscal (RegimenFiscalACuentaTerceros), c_RegimenFiscal."""
+    zip: str
+    """Código postal de su domicilio fiscal (DomicilioFiscalACuentaTerceros)."""
+
+
+class UpdateSalesOrderParamsItemsItemIedu(TypedDict):
+    """Complemento de instituciones educativas privadas (IEDU): alumno, CURP, nivel y RVOE."""
+    student_name: str
+    """Nombre del alumno (nombreAlumno)."""
+    curp: str
+    """CURP, 18 caracteres."""
+    level: Literal["Preescolar", "Primaria", "Secundaria", "Profesional técnico", "Bachillerato o su equivalente"]
+    """Nivel educativo (nivelEducativo)."""
+    rvoe: str
+    """Reconocimiento de validez oficial de estudios (autRVOE)."""
+    payer_tax_id: NotRequired[str | None]
+    """RFC de quien paga, si no es el receptor (rfcPago)."""
+
+
+class UpdateSalesOrderParamsItemsItemUsedVehicleCustomsItem(TypedDict):
+    number: str
+    """Número del documento de importación (numero)."""
+    date: str
+    """Fecha del documento (fecha), AAAA-MM-DD."""
+    office: NotRequired[str]
+    """Aduana (aduana)."""
+
+
+class UpdateSalesOrderParamsItemsItemUsedVehicle(TypedDict):
+    """Complemento de vehículo usado."""
+    purchase_amount: float
+    """Monto de adquisición (montoAdquisicion)."""
+    sale_amount: float
+    """Monto de enajenación (montoEnajenacion)."""
+    vehicle_key: str
+    """Clave vehicular (claveVehicular)."""
+    make: str
+    """Marca (marca)."""
+    type: str
+    """Tipo o versión (tipo)."""
+    model: str
+    """Año del modelo (modelo), 4 dígitos."""
+    engine_number: NotRequired[str]
+    """Número de motor (numeroMotor)."""
+    serial_number: NotRequired[str]
+    """Número de serie (numeroSerie)."""
+    niv: NotRequired[str]
+    """Número de identificación vehicular (NIV)."""
+    guide_value: float
+    """Valor según la guía EBC o Libro Azul (valor)."""
+    customs: NotRequired[list[UpdateSalesOrderParamsItemsItemUsedVehicleCustomsItem]]
+    """Información aduanera de la importación del vehículo (InformacionAduanera)."""
+
+
+class UpdateSalesOrderParamsItemsItem(TypedDict):
+    """Un concepto. description, product_key y unit_price son obligatorios, salvo que mande product (prd_…): entonces vienen de su catálogo y lo que mande encima gana."""
+    product: NotRequired[str]
+    """Un producto de su catálogo (prd_…): toma su clave, unidad, precio e impuestos."""
+    description: NotRequired[str]
+    """Descripción del concepto (Descripcion), hasta 1,000 caracteres."""
+    product_key: NotRequired[str]
+    """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
+    unit_key: NotRequired[str]
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    unit_name: NotRequired[str | None]
+    """Nombre de la unidad (Unidad), hasta 20 caracteres."""
+    sku: NotRequired[str | None]
+    """Número de identificación o SKU (NoIdentificacion)."""
+    quantity: NotRequired[float]
+    """Cantidad (Cantidad). Por omisión 1."""
+    unit_price: NotRequired[float]
+    """Precio unitario antes de impuestos (ValorUnitario)."""
+    discount: NotRequired[float]
+    """Descuento (Descuento)."""
+    taxability: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
+    """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
+    iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
+    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    ieps: NotRequired[float]
+    """IEPS trasladado: tasa (0.265…) o cuota en pesos por unidad, según ieps_factor."""
+    ieps_factor: NotRequired[Literal["Tasa", "Cuota"]]
+    """Tasa o Cuota (TipoFactor del IEPS)."""
+    ieps_units: NotRequired[float]
+    """Unidades de IEPS a cuota (litros, cigarros…), si no son la cantidad."""
+    iva_retention: NotRequired[float]
+    """Tasa de IVA retenido (por ejemplo 0.106667, dos terceras partes del 16%)."""
+    isr_retention: NotRequired[float]
+    """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    predial: NotRequired[list[str]]
+    """Números de cuenta predial (CuentaPredial) en arrendamiento."""
+    pedimentos: NotRequired[list[str]]
+    """Números de pedimento (InformacionAduanera) de mercancía importada."""
+    third_party: NotRequired[UpdateSalesOrderParamsItemsItemThirdParty]
+    """A cuenta de terceros (ACuentaTerceros): RFC, nombre, régimen y código postal."""
+    iedu: NotRequired[UpdateSalesOrderParamsItemsItemIedu]
+    """Complemento de instituciones educativas privadas (IEDU): alumno, CURP, nivel y RVOE."""
+    used_vehicle: NotRequired[UpdateSalesOrderParamsItemsItemUsedVehicle]
+    """Complemento de vehículo usado."""
+    addenda: NotRequired[dict[str, str]]
+    """Addenda del receptor (Walmart, Soriana…), con sus propios campos."""
+
+
+class UpdateSalesOrderParams(TypedDict):
+    customer: NotRequired[str | UpdateSalesOrderParamsCustomer]
+    """Un cliente de su catálogo (cus_…) o uno con sus datos fiscales (como en POST /v1/invoices: se agrega a sus clientes)."""
+    items: NotRequired[list[UpdateSalesOrderParamsItemsItem]]
+    """Los conceptos, como en POST /v1/invoices (hasta 200)."""
+    currency: NotRequired[str]
+    """Moneda, clave ISO 4217 de c_Moneda (MXN, USD, EUR…). Por omisión MXN."""
+    exchange_rate: NotRequired[float]
+    """Tipo de cambio a pesos (TipoCambio). Obligatorio si la moneda no es MXN; use el del DOF del día anterior."""
+    payment_form: NotRequired[str]
+    """Forma de pago (FormaPago), clave de c_FormaPago: 01 efectivo, 03 transferencia, 04 tarjeta de crédito, 28 débito, 99 por definir… Obligatoria con PUE; con PPD es 99."""
+    payment_method: NotRequired[Literal["PUE", "PPD"]]
+    """Método de pago (MetodoPago): PUE (una sola exhibición, por omisión) o PPD (en parcialidades o diferido, se cobra con complementos de pago)."""
+    use: NotRequired[str]
+    """Uso del CFDI (UsoCFDI), clave de c_UsoCFDI. Por omisión G03, o S01 con régimen 616."""
+    notes: NotRequired[str]
+    """Observaciones que aparecen en el PDF (no van en el XML)."""
+    customer_po: NotRequired[str]
+    """El número de orden de compra de su cliente (va en la nota de cada factura)."""
+    email: NotRequired[str]
+    """A dónde mandarle el pedido y sus remisiones (hasta 5 correos, separados por comas). Por omisión, el del cliente."""
+    expected_on: NotRequired[str]
+    """Entrega estimada (AAAA-MM-DD)."""
+    payment_days: NotRequired[int]
+    """Días de crédito (0: de contado)."""
+    invoice_policy: NotRequired[Literal["delivered", "ordered"]]
+    """Qué se factura: delivered (por omisión), lo ya entregado; ordered, todo lo pedido desde el inicio (por ejemplo con pago por adelantado)."""
+    ship_to: NotRequired[str]
+    """Dónde se entrega."""
+    terms: NotRequired[str]
+    """Condiciones del pedido."""
+    internal_note: NotRequired[str]
+    """Nota interna (su cliente no la ve)."""
+
+
+class CreateSalesOrderDeliveryParamsItemsItem(TypedDict):
+    line: int
+    """El id del concepto (items[].id)."""
+    quantity: float
+    """Cantidad (Cantidad). Por omisión 1."""
+
+
+class CreateSalesOrderDeliveryParams(TypedDict):
+    items: NotRequired[list[CreateSalesOrderDeliveryParamsItemsItem]]
+    """Cuánto sale de cada concepto. Por omisión, todo lo que falta por entregar."""
+    delivered_on: NotRequired[str]
+    """Por omisión, hoy."""
+    carrier: NotRequired[str]
+    """Transporte."""
+    tracking: NotRequired[str]
+    """Número de guía."""
+    note: NotRequired[str]
+    """Una nota en la remisión."""
+    received_by: NotRequired[str]
+    """Quién recibió, si ya lo sabe (si no, su cliente lo firma en url)."""
+
+
+class CancelSalesOrderDeliveryParams(TypedDict):
+    reason: NotRequired[str]
+    """Por qué (queda en el historial)."""
+
+
+class InvoiceSalesOrderParamsItemsItem(TypedDict):
+    line: int
+    """El id del concepto (items[].id)."""
+    quantity: float
+    """Cantidad (Cantidad). Por omisión 1."""
+
+
+class InvoiceSalesOrderParams(TypedDict):
+    items: NotRequired[list[InvoiceSalesOrderParamsItemsItem]]
+    """Cuánto facturar de cada concepto. Por omisión, lo entregado sin facturar (o todo lo pedido con invoice_policy ordered)."""
+    include_undelivered: NotRequired[bool]
+    """Facturar también lo que aún no se entrega (con invoice_policy delivered)."""
+    deliver: NotRequired[bool]
+    """Registrar también la entrega de lo que lleva la factura al timbrarla (venta de mostrador)."""
+
+
+class SendSalesOrderParams(TypedDict):
+    send_email: NotRequired[bool]
+    """Mandarlo por correo, con su PDF y url (por omisión true). Con false solo contesta url, para que usted la mande."""
+    to: NotRequired[str]
+    """A quién (hasta 5 correos). Por omisión, el correo del pedido."""
+    message: NotRequired[str]
+    """Qué pasó y cómo corregirlo, para una persona."""
+
+
+class CloseSalesOrderParams(TypedDict):
+    reason: NotRequired[str]
+    """Por qué (queda en el historial)."""
+
+
+class CancelSalesOrderParams(TypedDict):
+    reason: NotRequired[str]
+    """Por qué (queda en el historial)."""
+
+
 class CreateWebhookEndpointParams(TypedDict):
     url: str
     """Dirección https de su servidor que recibe los avisos."""
@@ -9460,7 +10186,7 @@ class RollWebhookSecretParams(TypedDict):
 
 
 class TestWebhookEndpointParams(TypedDict):
-    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.paid", "invoice.partially_paid", "invoice.email_bounced", "invoice.email_complained", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "payroll_batch.completed", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "quote.withdrawn", "issuer.ready", "balance.low", "test_clock.ready"]]
+    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.paid", "invoice.partially_paid", "invoice.email_bounced", "invoice.email_complained", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "payroll_batch.completed", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "quote.withdrawn", "sales_order.confirmed", "sales_order.customer_confirmed", "sales_order.delivered", "sales_order.paid", "sales_order.canceled", "issuer.ready", "balance.low", "test_clock.ready"]]
     """El evento a mandar. Por omisión invoice.stamped."""
 
 
@@ -9470,7 +10196,7 @@ class ListEventsParams(TypedDict):
     """Cuántos por página, de 1 a 100. Por omisión 10."""
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
-    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.paid", "invoice.partially_paid", "invoice.email_bounced", "invoice.email_complained", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "payroll_batch.completed", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "quote.withdrawn", "issuer.ready", "balance.low", "test_clock.ready", "invoice.*", "invoice_batch.*", "payroll_batch.*", "recurring_invoice.*", "quote.*", "ticket.*", "retention.*", "customer_data_request.*", "sat_download.*", "sat_declaration.*", "issuer.*", "balance.*", "test_clock.*"]]
+    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.paid", "invoice.partially_paid", "invoice.email_bounced", "invoice.email_complained", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "payroll_batch.completed", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "quote.withdrawn", "sales_order.confirmed", "sales_order.customer_confirmed", "sales_order.delivered", "sales_order.paid", "sales_order.canceled", "issuer.ready", "balance.low", "test_clock.ready", "invoice.*", "invoice_batch.*", "payroll_batch.*", "recurring_invoice.*", "quote.*", "sales_order.*", "ticket.*", "retention.*", "customer_data_request.*", "sat_download.*", "sat_declaration.*", "issuer.*", "balance.*", "test_clock.*"]]
     """Solo de este tipo (invoice.stamped), o todos los de un recurso con un comodín (invoice.*)."""
     object: NotRequired[str]
     """Solo los de este objeto (inv_…, ret_…, bat_…)."""
