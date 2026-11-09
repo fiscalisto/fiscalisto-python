@@ -57,6 +57,7 @@ __all__ = [
     "CreateCostCenterParams",
     "CreateCreditNoteParams",
     "CreateCustomerDataRequestParams",
+    "CreateCustomerGroupParams",
     "CreateCustomerParams",
     "CreateCustomerParamsForeign",
     "CreateEmployeeParams",
@@ -81,6 +82,8 @@ __all__ = [
     "CreatePayrollBatchParamsReceiptsItemPeriod",
     "CreatePayrollReceiptParams",
     "CreatePayrollReceiptParamsPeriod",
+    "CreatePriceListParams",
+    "CreatePriceListParamsItemsItem",
     "CreateProductParams",
     "CreateProductParamsLocalTaxesItem",
     "CreatePurchaseReceiptParams",
@@ -155,6 +158,8 @@ __all__ = [
     "CustomerDataRequestList",
     "CustomerDataRequestSubmission",
     "CustomerForeign",
+    "CustomerGroup",
+    "CustomerGroupList",
     "CustomerList",
     "CustomerPaymentBehavior",
     "CustomerPaymentBehaviorLastPayment",
@@ -369,6 +374,7 @@ __all__ = [
     "ListBranchesParams",
     "ListCostCentersParams",
     "ListCustomerDataRequestsParams",
+    "ListCustomerGroupsParams",
     "ListCustomersParams",
     "ListEmployeesParams",
     "ListEventsParams",
@@ -381,6 +387,7 @@ __all__ = [
     "ListJournalEntriesParams",
     "ListLedgerAccountsParams",
     "ListPayrollBatchesParams",
+    "ListPriceListsParams",
     "ListProductsParams",
     "ListPurchaseReceiptsParams",
     "ListQuotesParams",
@@ -425,6 +432,12 @@ __all__ = [
     "PayrollReceiptPreviewWarningsItem",
     "PreviewPayrollReceiptParams",
     "PreviewPayrollReceiptParamsPeriod",
+    "PriceList",
+    "PriceListItemsItem",
+    "PriceListList",
+    "PriceQuote",
+    "PriceQuoteItemsItem",
+    "PriceQuoteItemsItemNextStep",
     "Product",
     "ProductList",
     "ProductLocalTaxesItem",
@@ -439,6 +452,8 @@ __all__ = [
     "QuoteCustomer",
     "QuoteItemsItem",
     "QuoteList",
+    "QuotePricesParams",
+    "QuotePricesParamsItemsItem",
     "QuoteRejectedEvent",
     "QuoteViewedEvent",
     "QuoteWithdrawnEvent",
@@ -568,6 +583,7 @@ __all__ = [
     "UpdateBranchParamsAddress",
     "UpdateBranchParamsSeries",
     "UpdateCostCenterParams",
+    "UpdateCustomerGroupParams",
     "UpdateCustomerParams",
     "UpdateCustomerParamsForeign",
     "UpdateEmployeeParams",
@@ -579,6 +595,8 @@ __all__ = [
     "UpdateImssMovementParams",
     "UpdateInvoiceParams",
     "UpdateIssuerParams",
+    "UpdatePriceListParams",
+    "UpdatePriceListParamsItemsItem",
     "UpdateProductParams",
     "UpdateProductParamsLocalTaxesItem",
     "UpdatePurchaseReceiptParams",
@@ -1389,6 +1407,12 @@ class Customer(TypedDict):
     """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
     ieps_taxpayer: bool
     """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+    group: str | None
+    """Su grupo de clientes (cgr_…), o null si no está en ninguno."""
+    price_list: str | None
+    """Lista de precios (prl_…). En un cliente, la suya propia, que gana a la de su grupo; null para usar la de su grupo o la de todos."""
+    discount_percent: float | None
+    """Porcentaje de descuento sobre el precio, de 0 a 100; en el CFDI va como Descuento de cada concepto."""
     created_at: str
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
     updated_at: str | None
@@ -1452,6 +1476,12 @@ class Product(TypedDict):
     """Su código de barras, o null."""
     min_stock: float | None
     """Su existencia mínima, o null."""
+    portal_visible: bool
+    """true si se ofrece en el Portal del cliente para hacer pedidos."""
+    min_order_qty: float | None
+    """Lo mínimo que se pide de él en el Portal del cliente, o null sin mínimo."""
+    order_step: float | None
+    """De cuántos en cuántos se pide en el Portal del cliente (6 para pedir 6, 12, 18…), o null de uno en uno."""
     created_at: str
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
     updated_at: str | None
@@ -2642,6 +2672,127 @@ class CostCenter(TypedDict):
     """Cuándo se creó."""
     updated_at: str | None
     """Cuándo cambió por última vez."""
+
+
+class PriceListItemsItem(TypedDict):
+    product: str
+    """Un producto de su catálogo (prd_…): toma su clave, unidad, precio e impuestos."""
+    unit: str | None
+    """Unidad aduana (UnidadAduana), c_UnidadAduana."""
+    min_quantity: float
+    """Desde cuántas unidades (de su presentación) vale este precio: un escalón de mayoreo. 1 por omisión."""
+    unit_price: float | None
+    """Precio unitario antes de impuestos (ValorUnitario)."""
+    discount_percent: float | None
+    """Porcentaje que baja el precio de la lista para este producto, en vez de un precio fijo."""
+
+
+class PriceList(TypedDict):
+    """Una lista de precios: parte del precio del catálogo (o de otra lista), lo mueve un porcentaje y lo redondea, con precios propios por producto, presentación y desde cierta cantidad (escalones de mayoreo). items solo viene al ver una lista."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["price_list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (iss_…)."""
+    name: str
+    """Nombre."""
+    description: str | None
+    """Descripción."""
+    base_list: str | None
+    """La lista (prl_…) de la que parte; null parte del precio del catálogo de cada producto."""
+    adjust_percent: float
+    """Cuánto sube (positivo) o baja (negativo) el precio del que parte, en porcentaje."""
+    round_to: float | None
+    """A cuánto redondea los precios que calcula (0.5, 1, 10…), o null sin redondear."""
+    starts_on: str | None
+    """Desde qué día vale (YYYY-MM-DD, Ciudad de México), o null desde siempre."""
+    ends_on: str | None
+    """Hasta qué día vale, ese día incluido (YYYY-MM-DD), o null sin fin."""
+    is_default: bool
+    """true si es la lista de todos los clientes que no tienen otra (solo puede haber una)."""
+    active: bool
+    """false la pausa; true la reanuda desde hoy."""
+    groups: int
+    """Cuántos grupos de clientes la usan."""
+    customers: int
+    """Cuántos clientes la tienen como suya."""
+    items: list[PriceListItemsItem] | None
+    """Conceptos (Conceptos), al menos uno."""
+    created_at: str | None
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    updated_at: str | None
+    """Cuándo cambió por última vez, ISO 8601 (-06:00)."""
+
+
+class CustomerGroup(TypedDict):
+    """Un grupo de clientes: su lista de precios, descuento, días de crédito, pedido mínimo y si piden desde su Portal del cliente."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["customer_group"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (iss_…)."""
+    name: str
+    """Nombre."""
+    color: str
+    """Color de su etiqueta en la app: info, warning, positive, critical o muted."""
+    price_list: str | None
+    """Lista de precios (prl_…). En un cliente, la suya propia, que gana a la de su grupo; null para usar la de su grupo o la de todos."""
+    discount_percent: float
+    """Porcentaje de descuento sobre el precio, de 0 a 100; en el CFDI va como Descuento de cada concepto."""
+    credit_days: int | None
+    """Días de crédito que se le dan, de 0 a 365, o null para no cambiar los del cliente."""
+    min_order: float | None
+    """Pedido mínimo, sin IVA, para pedir desde el Portal del cliente, o null sin mínimo."""
+    portal_ordering: bool
+    """true si sus clientes pueden hacer pedidos desde su Portal del cliente."""
+    customers: int
+    """Cuántos clientes hay en el grupo."""
+    created_at: str | None
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+
+
+class PriceQuoteItemsItemNextStep(TypedDict):
+    min_quantity: float
+    """Desde cuántas unidades (de su presentación) vale este precio: un escalón de mayoreo. 1 por omisión."""
+    unit_price: float
+    """Precio unitario antes de impuestos (ValorUnitario)."""
+
+
+class PriceQuoteItemsItem(TypedDict):
+    product: str
+    """Un producto de su catálogo (prd_…): toma su clave, unidad, precio e impuestos."""
+    quantity: float
+    """Cantidad (Cantidad). Por omisión 1."""
+    unit: str | None
+    """Unidad aduana (UnidadAduana), c_UnidadAduana."""
+    unit_price: float
+    """Precio unitario antes de impuestos (ValorUnitario)."""
+    catalog_price: float
+    """Su precio del catálogo, por unidad y sin IVA, antes de su lista."""
+    discount_percent: float
+    """El descuento del cliente (el suyo, o el de su grupo) sobre ese precio; va como Descuento en el CFDI."""
+    price_list: str | None
+    """La lista (prl_…) de donde sale el precio, o null si es el del catálogo."""
+    next_step: PriceQuoteItemsItemNextStep | None
+    """El siguiente escalón de mayoreo: desde qué cantidad y a qué precio. null si no hay."""
+
+
+class PriceQuote(TypedDict):
+    """Lo que un cliente paga por unos productos a una cantidad: su precio por unidad sin IVA (de su lista), su descuento y el siguiente escalón de mayoreo."""
+    object: Literal["price_quote"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    customer: str
+    """El cliente (cus_…) cuyos precios se calcularon."""
+    items: list[PriceQuoteItemsItem]
+    """Conceptos (Conceptos), al menos uno."""
 
 
 class ExpensePerson(TypedDict):
@@ -5563,6 +5714,28 @@ class CostCenterList(TypedDict):
     """La ruta de esta lista."""
 
 
+class PriceListList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[PriceList]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class CustomerGroupList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[CustomerGroup]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class ExpensePersonList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -8379,6 +8552,150 @@ class DeleteCostCenterParams(TypedDict):
     """Otro centro de costo (ccn_…) que se queda con sus facturas."""
 
 
+class CreatePriceListParamsItemsItem(TypedDict):
+    product: str
+    """El producto (prd_…)."""
+    unit: NotRequired[str | None]
+    """Una presentación del producto (su id de unidad, un entero de GET /v1/products/{id}/units), por ejemplo una caja de 12; null o sin él: su propia unidad."""
+    min_quantity: NotRequired[float]
+    """Desde cuántas aplica (1 por omisión): varios renglones del mismo producto son sus escalones de mayoreo."""
+    unit_price: NotRequired[float]
+    """Su precio por unidad sin IVA. Mande este o discount_percent."""
+    discount_percent: NotRequired[float]
+    """Un descuento sobre el precio de la lista. Mande este o unit_price."""
+
+
+class CreatePriceListParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    name: str
+    """Mayoreo, Distribuidor, Buen Fin…"""
+    description: NotRequired[str | None]
+    """Descripción."""
+    base_list: NotRequired[str | None]
+    """Otra lista (prl_…) de la que parte; null o sin ella: el precio del catálogo."""
+    adjust_percent: NotRequired[float]
+    """Cuánto mueve el precio del que parte: −10 lo baja 10 %, 5 lo sube 5 %."""
+    round_to: NotRequired[float | None]
+    """Redondea a: 0.5, 1, 5, 10… (null: a centavos)."""
+    starts_on: NotRequired[str | None]
+    """Desde qué día vale (YYYY-MM-DD, Ciudad de México), o null desde siempre."""
+    ends_on: NotRequired[str | None]
+    """Hasta qué día vale, ese día incluido (YYYY-MM-DD), o null sin fin."""
+    is_default: NotRequired[bool]
+    """La tienen los clientes sin otra lista (ni ellos ni su grupo). Solo una lo es."""
+    items: NotRequired[list[CreatePriceListParamsItemsItem]]
+    """Sus precios propios; al mandarlos reemplazan a los que tenía."""
+
+
+class ListPriceListsParams(TypedDict):
+    """Los parámetros de GET /v1/price_lists."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdatePriceListParamsItemsItem(TypedDict):
+    product: str
+    """El producto (prd_…)."""
+    unit: NotRequired[str | None]
+    """Una presentación del producto (su id de unidad, un entero de GET /v1/products/{id}/units), por ejemplo una caja de 12; null o sin él: su propia unidad."""
+    min_quantity: NotRequired[float]
+    """Desde cuántas aplica (1 por omisión): varios renglones del mismo producto son sus escalones de mayoreo."""
+    unit_price: NotRequired[float]
+    """Su precio por unidad sin IVA. Mande este o discount_percent."""
+    discount_percent: NotRequired[float]
+    """Un descuento sobre el precio de la lista. Mande este o unit_price."""
+
+
+class UpdatePriceListParams(TypedDict):
+    name: NotRequired[str]
+    """Mayoreo, Distribuidor, Buen Fin…"""
+    description: NotRequired[str | None]
+    """Descripción."""
+    base_list: NotRequired[str | None]
+    """Otra lista (prl_…) de la que parte; null o sin ella: el precio del catálogo."""
+    adjust_percent: NotRequired[float]
+    """Cuánto mueve el precio del que parte: −10 lo baja 10 %, 5 lo sube 5 %."""
+    round_to: NotRequired[float | None]
+    """Redondea a: 0.5, 1, 5, 10… (null: a centavos)."""
+    starts_on: NotRequired[str | None]
+    """Desde qué día vale (YYYY-MM-DD, Ciudad de México), o null desde siempre."""
+    ends_on: NotRequired[str | None]
+    """Hasta qué día vale, ese día incluido (YYYY-MM-DD), o null sin fin."""
+    is_default: NotRequired[bool]
+    """La tienen los clientes sin otra lista (ni ellos ni su grupo). Solo una lo es."""
+    items: NotRequired[list[UpdatePriceListParamsItemsItem]]
+    """Sus precios propios; al mandarlos reemplazan a los que tenía."""
+
+
+class CreateCustomerGroupParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    name: str
+    """Nombre."""
+    color: NotRequired[Literal["info", "warning", "positive", "critical", "muted"]]
+    """Color de su etiqueta en la app: info, warning, positive, critical o muted."""
+    price_list: NotRequired[str | None]
+    """Su lista (prl_…); null: la que aplica a todos."""
+    discount_percent: NotRequired[float]
+    """Un descuento en cada concepto, como descuento del CFDI."""
+    credit_days: NotRequired[int | None]
+    """Días de crédito que se le dan, de 0 a 365, o null para no cambiar los del cliente."""
+    min_order: NotRequired[float | None]
+    """El pedido mínimo antes de IVA desde el Portal del cliente."""
+    portal_ordering: NotRequired[bool]
+    """Sus clientes pueden hacer pedidos desde su Portal del cliente (true por omisión)."""
+
+
+class ListCustomerGroupsParams(TypedDict):
+    """Los parámetros de GET /v1/customer_groups."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateCustomerGroupParams(TypedDict):
+    name: NotRequired[str]
+    """Nombre."""
+    color: NotRequired[Literal["info", "warning", "positive", "critical", "muted"]]
+    """Color de su etiqueta en la app: info, warning, positive, critical o muted."""
+    price_list: NotRequired[str | None]
+    """Su lista (prl_…); null: la que aplica a todos."""
+    discount_percent: NotRequired[float]
+    """Un descuento en cada concepto, como descuento del CFDI."""
+    credit_days: NotRequired[int | None]
+    """Días de crédito que se le dan, de 0 a 365, o null para no cambiar los del cliente."""
+    min_order: NotRequired[float | None]
+    """El pedido mínimo antes de IVA desde el Portal del cliente."""
+    portal_ordering: NotRequired[bool]
+    """Sus clientes pueden hacer pedidos desde su Portal del cliente (true por omisión)."""
+
+
+class QuotePricesParamsItemsItem(TypedDict):
+    product: str
+    """El producto (prd_…)."""
+    quantity: NotRequired[float]
+    """Cantidad (Cantidad). Por omisión 1."""
+    unit: NotRequired[str | None]
+    """Unidad aduana (UnidadAduana), c_UnidadAduana."""
+
+
+class QuotePricesParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    customer: str
+    """El cliente (cus_…) o su RFC."""
+    items: list[QuotePricesParamsItemsItem]
+    """Conceptos (Conceptos), al menos uno."""
+
+
 class CreateExpensePersonParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…). Por omisión, su único emisor."""
@@ -8617,6 +8934,12 @@ class CreateCustomerParams(TypedDict):
     """Uso del CFDI (UsoCFDI), clave de c_UsoCFDI. Por omisión G03, o S01 con régimen 616."""
     foreign: NotRequired[CreateCustomerParamsForeign | None]
     """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    group: NotRequired[str | None]
+    """Su grupo de clientes (cgr_…), o null para ninguno."""
+    price_list: NotRequired[str | None]
+    """Su propia lista de precios (prl_…), que gana sobre la de su grupo; null: la de su grupo o la de todos."""
+    discount_percent: NotRequired[float | None]
+    """Su propio descuento en cada concepto, en %; null: el de su grupo."""
     ieps_taxpayer: NotRequired[bool]
     """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
 
@@ -8655,6 +8978,12 @@ class UpdateCustomerParams(TypedDict):
     """Uso del CFDI (UsoCFDI), clave de c_UsoCFDI. Por omisión G03, o S01 con régimen 616."""
     foreign: NotRequired[UpdateCustomerParamsForeign | None]
     """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    group: NotRequired[str | None]
+    """Su grupo de clientes (cgr_…), o null para ninguno."""
+    price_list: NotRequired[str | None]
+    """Su propia lista de precios (prl_…), que gana sobre la de su grupo; null: la de su grupo o la de todos."""
+    discount_percent: NotRequired[float | None]
+    """Su propio descuento en cada concepto, en %; null: el de su grupo."""
     ieps_taxpayer: NotRequired[bool]
     """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
 
@@ -8730,6 +9059,12 @@ class CreateProductParams(TypedDict):
     """Código de barras (EAN, UPC o el suyo). Una factura cuyo concepto lo trae como NoIdentificacion saca existencias de este producto."""
     min_stock: NotRequired[float | None]
     """Existencia mínima: por debajo, el aviso de existencias bajas lo incluye."""
+    portal_visible: NotRequired[bool]
+    """Se vende en el Portal del cliente: sus clientes lo piden desde ahí, a sus precios (listas de precios), y el pedido llega por confirmar."""
+    min_order_qty: NotRequired[float | None]
+    """Lo menos que se le pide desde el portal, en su unidad."""
+    order_step: NotRequired[float | None]
+    """Se pide de tantos en tantos desde el portal (12: de 12 en 12)."""
 
 
 class ListProductsParams(TypedDict):
@@ -8794,6 +9129,12 @@ class UpdateProductParams(TypedDict):
     """Código de barras (EAN, UPC o el suyo). Una factura cuyo concepto lo trae como NoIdentificacion saca existencias de este producto."""
     min_stock: NotRequired[float | None]
     """Existencia mínima: por debajo, el aviso de existencias bajas lo incluye."""
+    portal_visible: NotRequired[bool]
+    """Se vende en el Portal del cliente: sus clientes lo piden desde ahí, a sus precios (listas de precios), y el pedido llega por confirmar."""
+    min_order_qty: NotRequired[float | None]
+    """Lo menos que se le pide desde el portal, en su unidad."""
+    order_step: NotRequired[float | None]
+    """Se pide de tantos en tantos desde el portal (12: de 12 en 12)."""
 
 
 class ListSatMailboxMessagesParams(TypedDict):

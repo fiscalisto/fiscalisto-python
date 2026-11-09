@@ -36,6 +36,7 @@ if TYPE_CHECKING:
         CreateCostCenterParams,
         CreateCreditNoteParams,
         CreateCustomerDataRequestParams,
+        CreateCustomerGroupParams,
         CreateCustomerParams,
         CreateEmployeeParams,
         CreateExpenseItemParams,
@@ -52,6 +53,7 @@ if TYPE_CHECKING:
         CreatePayrollBankFileParams,
         CreatePayrollBatchParams,
         CreatePayrollReceiptParams,
+        CreatePriceListParams,
         CreateProductParams,
         CreatePurchaseReceiptParams,
         CreateQuoteParams,
@@ -70,6 +72,7 @@ if TYPE_CHECKING:
         CrossChecks,
         Customer,
         CustomerDataRequest,
+        CustomerGroup,
         CustomerPaymentBehavior,
         DeleteCostCenterParams,
         Deleted,
@@ -117,6 +120,7 @@ if TYPE_CHECKING:
         ListBranchesParams,
         ListCostCentersParams,
         ListCustomerDataRequestsParams,
+        ListCustomerGroupsParams,
         ListCustomersParams,
         ListEmployeesParams,
         ListEventsParams,
@@ -129,6 +133,7 @@ if TYPE_CHECKING:
         ListJournalEntriesParams,
         ListLedgerAccountsParams,
         ListPayrollBatchesParams,
+        ListPriceListsParams,
         ListProductsParams,
         ListPurchaseReceiptsParams,
         ListQuotesParams,
@@ -155,9 +160,12 @@ if TYPE_CHECKING:
         PayrollBatch,
         PayrollReceiptPreview,
         PreviewPayrollReceiptParams,
+        PriceList,
+        PriceQuote,
         Product,
         PurchaseReceipt,
         Quote,
+        QuotePricesParams,
         Receivable,
         RecurringInvoice,
         RefreshSatDeclarationsParams,
@@ -205,6 +213,7 @@ if TYPE_CHECKING:
         UpdateAccountParams,
         UpdateBranchParams,
         UpdateCostCenterParams,
+        UpdateCustomerGroupParams,
         UpdateCustomerParams,
         UpdateEmployeeParams,
         UpdateExpenseItemParams,
@@ -214,6 +223,7 @@ if TYPE_CHECKING:
         UpdateImssMovementParams,
         UpdateInvoiceParams,
         UpdateIssuerParams,
+        UpdatePriceListParams,
         UpdateProductParams,
         UpdatePurchaseReceiptParams,
         UpdateQuoteParams,
@@ -2630,6 +2640,248 @@ class CostCentersResource:
         """
         result: Deleted = self._client.request(
             "DELETE", f"/v1/cost_centers/{_path(id)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PriceListsResource:
+    """Listas de precios: fiscalisto.price_lists."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreatePriceListParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PriceList:
+        """Crear una lista de precios
+
+        Parte del precio del catálogo (o de base_list, otra lista), lo mueve adjust_percent y lo redondea a round_to; con starts_on y ends_on es una promoción. items le pone precios propios por producto, por presentación (unit, una caja) y desde min_quantity (escalones de mayoreo), cada uno con unit_price o discount_percent. is_default: la tienen los clientes sin otra. Hasta 100.
+
+        POST /v1/price_lists
+        https://fiscalisto.com/docs/api/referencia/listas-de-precios/create-price-list
+        """
+        result: PriceList = self._client.request(
+            "POST", "/v1/price_lists", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListPriceListsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[PriceList]:
+        """Listar listas de precios
+
+        Las listas de precios en el orden de la app, con cuántos grupos y clientes la tienen. items viene al ver una.
+
+        GET /v1/price_lists
+        https://fiscalisto.com/docs/api/referencia/listas-de-precios/list-price-lists
+        """
+        return self._client.list("/v1/price_lists", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PriceList:
+        """Ver una lista de precios
+
+        Una lista de precios con sus precios propios (items).
+
+        GET /v1/price_lists/{id}
+        https://fiscalisto.com/docs/api/referencia/listas-de-precios/get-price-list
+        """
+        result: PriceList = self._client.request(
+            "GET", f"/v1/price_lists/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdatePriceListParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PriceList:
+        """Actualizar una lista de precios
+
+        Cambia solo lo que manda; items reemplaza todos sus precios propios. Las facturas, cotizaciones y pedidos ya hechos no cambian.
+
+        POST /v1/price_lists/{id}
+        https://fiscalisto.com/docs/api/referencia/listas-de-precios/update-price-list
+        """
+        result: PriceList = self._client.request(
+            "POST", f"/v1/price_lists/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Quitar una lista de precios
+
+        La archiva: sus grupos y clientes pasan a la lista que aplica a todos (o al precio del catálogo).
+
+        DELETE /v1/price_lists/{id}
+        https://fiscalisto.com/docs/api/referencia/listas-de-precios/delete-price-list
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/price_lists/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class CustomerGroupsResource:
+    """Listas de precios: fiscalisto.customer_groups."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateCustomerGroupParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CustomerGroup:
+        """Crear un grupo de clientes
+
+        Lo que tienen todos sus clientes: price_list, discount_percent (el descuento de cada concepto en el CFDI), credit_days, min_order (antes de IVA, desde el portal) y portal_ordering. Un cliente entra con group en POST /v1/customers/{id}.
+
+        POST /v1/customer_groups
+        https://fiscalisto.com/docs/api/referencia/listas-de-precios/create-customer-group
+        """
+        result: CustomerGroup = self._client.request(
+            "POST", "/v1/customer_groups", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListCustomerGroupsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[CustomerGroup]:
+        """Listar grupos de clientes
+
+        Los grupos de clientes, con cuántos clientes tiene cada uno.
+
+        GET /v1/customer_groups
+        https://fiscalisto.com/docs/api/referencia/listas-de-precios/list-customer-groups
+        """
+        return self._client.list("/v1/customer_groups", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CustomerGroup:
+        """Ver un grupo de clientes
+
+        Un grupo de clientes.
+
+        GET /v1/customer_groups/{id}
+        https://fiscalisto.com/docs/api/referencia/listas-de-precios/get-customer-group
+        """
+        result: CustomerGroup = self._client.request(
+            "GET", f"/v1/customer_groups/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateCustomerGroupParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CustomerGroup:
+        """Actualizar un grupo de clientes
+
+        Cambia solo lo que manda.
+
+        POST /v1/customer_groups/{id}
+        https://fiscalisto.com/docs/api/referencia/listas-de-precios/update-customer-group
+        """
+        result: CustomerGroup = self._client.request(
+            "POST", f"/v1/customer_groups/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Quitar un grupo de clientes
+
+        Sus clientes se quedan sin grupo.
+
+        DELETE /v1/customer_groups/{id}
+        https://fiscalisto.com/docs/api/referencia/listas-de-precios/delete-customer-group
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/customer_groups/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PricesResource:
+    """Listas de precios: fiscalisto.prices."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def quote(
+        self,
+        params: QuotePricesParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PriceQuote:
+        """Ver los precios de un cliente
+
+        Lo que un cliente paga por unos productos a una cantidad: el precio por unidad sin IVA de su lista (la suya, la de su grupo o la de todos), su descuento y el siguiente escalón de mayoreo. No guarda nada.
+
+        POST /v1/prices
+        https://fiscalisto.com/docs/api/referencia/listas-de-precios/quote-prices
+        """
+        result: PriceQuote = self._client.request(
+            "POST", "/v1/prices", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -5424,6 +5676,21 @@ class FiscalistoApi(Core):
     def cost_centers(self) -> CostCentersResource:
         """Centros de costo."""
         return CostCentersResource(self)
+
+    @cached_property
+    def price_lists(self) -> PriceListsResource:
+        """Listas de precios."""
+        return PriceListsResource(self)
+
+    @cached_property
+    def customer_groups(self) -> CustomerGroupsResource:
+        """Listas de precios."""
+        return CustomerGroupsResource(self)
+
+    @cached_property
+    def prices(self) -> PricesResource:
+        """Listas de precios."""
+        return PricesResource(self)
 
     @cached_property
     def expense_people(self) -> ExpensePeopleResource:
