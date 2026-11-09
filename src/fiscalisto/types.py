@@ -141,6 +141,7 @@ __all__ = [
     "CreateStoreConnectionParamsSettings",
     "CreateTestClockParams",
     "CreateTicketParams",
+    "CreateTicketParamsBuyer",
     "CreateTicketParamsLinesItem",
     "CreateWebhookEndpointParams",
     "CrossCheckCfdi",
@@ -570,6 +571,7 @@ __all__ = [
     "TestDataReset",
     "TestWebhookEndpointParams",
     "Ticket",
+    "TicketBuyer",
     "TicketCustomer",
     "TicketIncludedInGlobalEvent",
     "TicketInvoicedEvent",
@@ -3371,6 +3373,13 @@ class TicketCustomer(TypedDict):
     """Nombre o razón social tal como está en la constancia de situación fiscal, sin el régimen de capital (sin «S.A. de C.V.»)."""
 
 
+class TicketBuyer(TypedDict):
+    name: str | None
+    """Nombre."""
+    email: str | None
+    """Correo a donde se envía (varios separados por comas). Solo se usa si se pide enviarlo."""
+
+
 class Ticket(TypedDict):
     """Una venta que su comprador puede facturar él mismo en el portal del emisor (autofactura)."""
     id: str
@@ -3411,6 +3420,8 @@ class Ticket(TypedDict):
     """La factura global (inv_…) en que entró, o null."""
     customer: TicketCustomer | None
     """A quién se facturó, o null."""
+    buyer: TicketBuyer | None
+    """Quién pagó, como lo conoce el origen de la venta (el `buyer` que mandó, o el cliente de un pago de Stripe). No es el receptor de la factura (`customer`)."""
     created_at: str | None
     """Cuándo se registró."""
 
@@ -9358,6 +9369,14 @@ class GetSatDeclarationCalendarParams(TypedDict):
     """El ejercicio, como 2026. Por omisión, el actual."""
 
 
+class CreateTicketParamsBuyer(TypedDict):
+    """Quién pagó, para reconocer la venta en Tickets. No es el receptor de la factura (eso lo escribe el comprador en el portal) y no se le manda nada."""
+    name: NotRequired[str]
+    """Su nombre o el de su empresa, como lo conoce su sistema."""
+    email: NotRequired[str]
+    """Su correo."""
+
+
 class CreateTicketParamsLinesItem(TypedDict):
     product: NotRequired[str]
     """Un producto (prd_…) de su catálogo: sus claves, IVA e impuestos locales."""
@@ -9398,6 +9417,8 @@ class CreateTicketParams(TypedDict):
     """c_ClaveUnidad. Por omisión, la de la clave del producto."""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
     """Tasa de IVA incluida en el total. Por omisión 0.16."""
+    buyer: NotRequired[CreateTicketParamsBuyer]
+    """Quién pagó, para reconocer la venta en Tickets. No es el receptor de la factura (eso lo escribe el comprador en el portal) y no se le manda nada."""
     lines: NotRequired[list[CreateTicketParamsLinesItem]]
     """Una venta de varios conceptos (el folio de un hotel: noches, desayunos, lavandería), cada uno con su producto o sus claves, sus impuestos y lo que se cobró por él; hasta 200. En lugar de `product`, `description`, `product_key`, `unit_key` e `iva`. La factura del cliente lleva un concepto por línea; la factura global, uno por cada combinación de impuestos del ticket."""
 
