@@ -157,6 +157,7 @@ if TYPE_CHECKING:
         ListWarehouseStockParams,
         ListWarehousesParams,
         ListWebhookEndpointsParams,
+        MarkInvoicePaidParams,
         MarkPurchaseReceiptInvoicedParams,
         MarkSupplierInvoicePaidParams,
         MatchBankTransactionParams,
@@ -1107,6 +1108,7 @@ class InvoicesResource:
     def mark_paid(
         self,
         id: str,
+        params: MarkInvoicePaidParams | None = None,
         *,
         idempotency_key: str | None = None,
         timeout: float | None = None,
@@ -1115,13 +1117,13 @@ class InvoicesResource:
     ) -> Invoice:
         """Marcar pagada
 
-        Una factura PUE timbrada con paid_later (o marcada por cobrar) ya se pagó: queda paid y llega invoice.paid. Una PPD se paga con su complemento de pago (POST /v1/payments).
+        Una factura PUE timbrada con paid_later (o marcada por cobrar) ya se pagó: queda paid, con paid_on el día que indique (hoy si no), y llega invoice.paid. Una PPD se paga con su complemento de pago (POST /v1/payments).
 
         POST /v1/invoices/{id}/mark_paid
         https://fiscalisto.com/docs/api/referencia/cuentas-por-cobrar/mark-invoice-paid
         """
         result: Invoice = self._client.request(
-            "POST", f"/v1/invoices/{_path(id)}/mark_paid", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+            "POST", f"/v1/invoices/{_path(id)}/mark_paid", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 

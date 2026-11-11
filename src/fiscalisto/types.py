@@ -412,6 +412,7 @@ __all__ = [
     "ListWarehouseStockParams",
     "ListWarehousesParams",
     "ListWebhookEndpointsParams",
+    "MarkInvoicePaidParams",
     "MarkPurchaseReceiptInvoicedParams",
     "MarkSupplierInvoicePaidParams",
     "MatchBankTransactionParams",
@@ -1269,6 +1270,7 @@ Invoice = TypedDict(
         "payment_status": "Literal[\"paid\", \"partial\", \"unpaid\"] | None",
         "amount_due": "float | None",
         "amount_paid": "float | None",
+        "paid_on": "str | None",
         "related": "dict[str, Any] | None",
         "payment": "NotRequired[InvoicePayment | None]",
         "payroll": "NotRequired[InvoicePayroll]",
@@ -7865,6 +7867,11 @@ class CancelInvoiceParams(TypedDict):
     """Motivo de cancelación (c_MotivoCancelacion): 01 con errores con relación (lleva substitution), 02 con errores sin relación (por omisión), 03 no se llevó a cabo, 04 solo en una factura global, cuando una venta incluida se facturó a nombre del cliente."""
     substitution: NotRequired[str]
     """El comprobante que sustituye a este (su id o su UUID), con el motivo 01."""
+
+
+class MarkInvoicePaidParams(TypedDict):
+    paid_on: NotRequired[str]
+    """El día en que el cliente pagó (AAAA-MM-DD, no antes de la factura ni después de hoy); hoy si no se indica. Queda en paid_on."""
 
 
 class ListReceivablesParams(TypedDict):
