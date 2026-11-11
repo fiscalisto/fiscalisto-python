@@ -774,6 +774,8 @@ class Issuer(TypedDict):
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["issuer"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
+    source: Literal["api", "empresa"]
+    """api si lo creó con la API o en Desarrolladores; empresa si es una empresa de la app conectada a su cuenta (Desarrolladores › Emisores › Conectar una empresa): con ella solo se usa su Portal de proveedores, y status siempre es active."""
     tax_id: str
     """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
     legal_name: str | None

@@ -143,6 +143,9 @@ class ErrorCode:
     ISSUER_EXISTS: Final = "issuer_exists"
     """Ese RFC ya es un emisor de la cuenta en este modo."""
 
+    ISSUER_LINKED_EMPRESA: Final = "issuer_linked_empresa"
+    """El emisor es una empresa de la app conectada a la cuenta (source empresa): con la API solo se usa su Portal de proveedores."""
+
     ISSUER_MISSING: Final = "issuer_missing"
     """No existe ese emisor en la cuenta (o es del otro modo)."""
 
@@ -378,6 +381,7 @@ ErrorCodeValue = Literal[
     "issuer_archived",
     "issuer_creation_limit",
     "issuer_exists",
+    "issuer_linked_empresa",
     "issuer_missing",
     "issuer_not_allowed",
     "issuer_not_ready",
