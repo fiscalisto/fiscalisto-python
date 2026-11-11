@@ -95,6 +95,9 @@ class ErrorCode:
     EXPENSE_REPORT_INVALID: Final = "expense_report_invalid"
     """Viáticos y gastos no lo permite en ese momento: el mensaje dice por qué (un gasto con errores al enviarla, un reembolso antes de aprobarla, aprobar lo que usted mismo envió)."""
 
+    FEATURE_NOT_IN_PLAN: Final = "feature_not_in_plan"
+    """En producción, inventario avanzado, portal de proveedores, pedidos de venta y comprobación de gastos siguen el plan de la empresa, como en la app: vienen del plan Negocio en adelante. En modo de pruebas están todos."""
+
     IDEMPOTENCY_KEY_INVALID: Final = "idempotency_key_invalid"
     """Idempotency-Key es de 1 a 255 caracteres ASCII, sin acentos ni ñ: el id de su pedido o un UUID."""
 
@@ -155,6 +158,9 @@ class ErrorCode:
     ISSUER_NOT_READY: Final = "issuer_not_ready"
     """Al emisor le falta su RFC (sus datos fiscales): regístrelos antes, con el CSD o la e.firma."""
 
+    ISSUER_OWN_RFC: Final = "issuer_own_rfc"
+    """El emisor es un RFC de la propia empresa (Desarrolladores de la empresa): es emisor mientras la empresa lo tenga y no se archiva."""
+
     ISSUER_REQUIRED: Final = "issuer_required"
     """La cuenta tiene varios emisores y la solicitud no dice cuál: mande issuer (iss_…)."""
 
@@ -175,6 +181,9 @@ class ErrorCode:
 
     MISSING_API_KEY: Final = "missing_api_key"
     """Falta el encabezado Authorization: Bearer fk_test_… o fk_live_…."""
+
+    MONTHLY_ALLOWANCE: Final = "monthly_allowance"
+    """En el plan Gratis, la API ya hizo sus solicitudes de producción de los últimos 30 días: 10,000 más 500 por cada timbre que usó. Con un plan de paga son 100,000 más 500 por timbre, y al pasarlas la API solo va más despacio (10 solicitudes cada 10 segundos, rate_limit). Use webhooks en vez de consultar seguido; para más, escriba a soporte@fiscalisto.com."""
 
     PARAMETER_INVALID: Final = "parameter_invalid"
     """Un campo tiene un valor que no se acepta (formato, catálogo del SAT, rango). param dice cuál y message cómo corregirlo."""
@@ -365,6 +374,7 @@ ErrorCodeValue = Literal[
     "endpoint_limit",
     "expand_invalid",
     "expense_report_invalid",
+    "feature_not_in_plan",
     "idempotency_key_invalid",
     "idempotency_key_missing",
     "idempotency_key_reused",
@@ -385,6 +395,7 @@ ErrorCodeValue = Literal[
     "issuer_missing",
     "issuer_not_allowed",
     "issuer_not_ready",
+    "issuer_own_rfc",
     "issuer_required",
     "key_in_sandbox",
     "key_read_only",
@@ -392,6 +403,7 @@ ErrorCodeValue = Literal[
     "livemode_mismatch",
     "method_not_allowed",
     "missing_api_key",
+    "monthly_allowance",
     "parameter_invalid",
     "parameter_missing",
     "parameter_unknown",
