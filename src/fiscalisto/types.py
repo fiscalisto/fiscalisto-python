@@ -1481,6 +1481,8 @@ class Product(TypedDict):
     """Nombre de la unidad (Unidad), hasta 20 caracteres."""
     sku: str | None
     """Número de identificación o SKU (NoIdentificacion)."""
+    category: str | None
+    """Su categoría, con las de arriba separadas por › («Ferretería › Tornillos»), o null si no tiene."""
     unit_price: float
     """Precio unitario antes de impuestos (ValorUnitario)."""
     open_price: bool
@@ -9497,6 +9499,8 @@ class CreateProductParams(TypedDict):
     """Lo menos que se le pide desde el portal, en su unidad."""
     order_step: NotRequired[float | None]
     """Se pide de tantos en tantos desde el portal (12: de 12 en 12)."""
+    category: NotRequired[str | None]
+    """Su categoría, con las de arriba separadas por › (también > o /): «Ferretería › Tornillos». Si no existe, se crea. null la quita."""
 
 
 class ListProductsParams(TypedDict):
@@ -9511,6 +9515,8 @@ class ListProductsParams(TypedDict):
     """Solo el de este SKU."""
     product_key: NotRequired[str]
     """Solo los de esta clave del SAT."""
+    category: NotRequired[str]
+    """Solo los de esta categoría y sus subcategorías: «Ferretería» o «Ferretería › Tornillos»."""
 
 
 class UpdateProductParamsLocalTaxesItem(TypedDict):
@@ -9567,6 +9573,8 @@ class UpdateProductParams(TypedDict):
     """Lo menos que se le pide desde el portal, en su unidad."""
     order_step: NotRequired[float | None]
     """Se pide de tantos en tantos desde el portal (12: de 12 en 12)."""
+    category: NotRequired[str | None]
+    """Su categoría, con las de arriba separadas por › (también > o /): «Ferretería › Tornillos». Si no existe, se crea. null la quita."""
 
 
 class ListSatMailboxMessagesParams(TypedDict):

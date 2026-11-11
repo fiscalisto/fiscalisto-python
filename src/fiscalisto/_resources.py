@@ -3495,7 +3495,7 @@ class ProductsResource:
     ) -> ListObject[Product]:
         """Listar productos
 
-        Los productos del emisor, los más recientes primero. Filtre por sku o product_key.
+        Los productos del emisor, los más recientes primero. Filtre por sku, product_key o category.
 
         GET /v1/products
         https://fiscalisto.com/docs/api/referencia/productos/list-products
