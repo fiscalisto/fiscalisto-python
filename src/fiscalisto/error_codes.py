@@ -296,6 +296,9 @@ class ErrorCode:
     SUBSTITUTION_UNSUPPORTED: Final = "substitution_unsupported"
     """Los complementos de pago y las notas de crédito no se sustituyen: se cancelan y se emite otro. Un recibo de nómina se sustituye con POST /v1/payroll_receipts/external y replaces."""
 
+    SUPPLIER_INVOICE_INVALID: Final = "supplier_invoice_invalid"
+    """La factura del proveedor no admite eso en su estado (por ejemplo, programar una que no está aprobada, una fecha de pago pasada o marcar pagada una ya pagada), o el SAT la reporta cancelada. El mensaje dice por qué."""
+
     TEST_CLOCK_ADVANCING: Final = "test_clock_advancing"
     """El reloj se está adelantando en otra solicitud (409, con Retry-After). Espere a test_clock.ready y repita."""
 
@@ -426,6 +429,7 @@ ErrorCodeValue = Literal[
     "store_not_authorized",
     "store_platform_unavailable",
     "substitution_unsupported",
+    "supplier_invoice_invalid",
     "test_clock_advancing",
     "test_clock_exists",
     "test_clock_invalid",

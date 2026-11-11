@@ -133,6 +133,7 @@ if TYPE_CHECKING:
         ListJournalEntriesParams,
         ListLedgerAccountsParams,
         ListPayrollBatchesParams,
+        ListPortalSuppliersParams,
         ListPriceListsParams,
         ListProductsParams,
         ListPurchaseReceiptsParams,
@@ -151,15 +152,18 @@ if TYPE_CHECKING:
         ListStockAdjustmentsParams,
         ListStockMovementsParams,
         ListStoreConnectionsParams,
+        ListSupplierInvoicesParams,
         ListTicketsParams,
         ListWarehouseStockParams,
         ListWarehousesParams,
         ListWebhookEndpointsParams,
         MarkPurchaseReceiptInvoicedParams,
+        MarkSupplierInvoicePaidParams,
         MatchBankTransactionParams,
         PayrollBankFile,
         PayrollBatch,
         PayrollReceiptPreview,
+        PortalSupplier,
         PreviewPayrollReceiptParams,
         PriceList,
         PriceQuote,
@@ -193,6 +197,7 @@ if TYPE_CHECKING:
         SatMailboxMessage,
         SatRefresh,
         SatRetention,
+        ScheduleSupplierInvoiceParams,
         SelfInvoicing,
         SendInvoiceParams,
         SendQuoteParams,
@@ -205,6 +210,7 @@ if TYPE_CHECKING:
         StockMovement,
         StoreConnection,
         StoreImport,
+        SupplierInvoice,
         TaxIdValidation,
         TaxStatusCertificate,
         TestClock,
@@ -4175,6 +4181,138 @@ class SatRetentionsResource:
         return result
 
 
+class PortalSuppliersResource:
+    """Portal de proveedores: fiscalisto.portal_suppliers."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListPortalSuppliersParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[PortalSupplier]:
+        """Listar proveedores del portal
+
+        Los proveedores invitados o registrados en el Portal de proveedores del emisor, los más recientes primero: su alta, sus documentos, la cuenta a la que se le paga y su calificación.
+
+        GET /v1/portal_suppliers
+        https://fiscalisto.com/docs/api/referencia/portal-de-proveedores/list-portal-suppliers
+        """
+        return self._client.list("/v1/portal_suppliers", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PortalSupplier:
+        """Ver un proveedor del portal
+
+        Su alta, sus documentos, su cuenta bancaria y su calificación por partes.
+
+        GET /v1/portal_suppliers/{id}
+        https://fiscalisto.com/docs/api/referencia/portal-de-proveedores/get-portal-supplier
+        """
+        result: PortalSupplier = self._client.request(
+            "GET", f"/v1/portal_suppliers/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class SupplierInvoicesResource:
+    """Portal de proveedores: fiscalisto.supplier_invoices."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListSupplierInvoicesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[SupplierInvoice]:
+        """Listar facturas de proveedores
+
+        Las facturas que mandaron sus proveedores por el portal, las más recientes primero. Para llevar a su ERP lo aprobado: status=approved, o escuche supplier_invoice.approved.
+
+        GET /v1/supplier_invoices
+        https://fiscalisto.com/docs/api/referencia/portal-de-proveedores/list-supplier-invoices
+        """
+        return self._client.list("/v1/supplier_invoices", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SupplierInvoice:
+        """Ver una factura de proveedor
+
+        Con su estado, su orden de compra, su contrarecibo y sus fechas de pago. Su XML y su PDF: GET /v1/sat_invoices/{sat_invoice}/xml y /pdf.
+
+        GET /v1/supplier_invoices/{id}
+        https://fiscalisto.com/docs/api/referencia/portal-de-proveedores/get-supplier-invoice
+        """
+        result: SupplierInvoice = self._client.request(
+            "GET", f"/v1/supplier_invoices/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def schedule(
+        self,
+        id: str,
+        params: ScheduleSupplierInvoiceParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SupplierInvoice:
+        """Programar el pago de una factura de proveedor
+
+        El día en que la pagará, como «Programar pago» en la app: el proveedor lo ve en su portal y llega supplier_invoice.scheduled. Solo una aprobada o ya programada; si el SAT la reporta cancelada, 400 supplier_invoice_invalid.
+
+        POST /v1/supplier_invoices/{id}/schedule
+        https://fiscalisto.com/docs/api/referencia/portal-de-proveedores/schedule-supplier-invoice
+        """
+        result: SupplierInvoice = self._client.request(
+            "POST", f"/v1/supplier_invoices/{_path(id)}/schedule", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def mark_paid(
+        self,
+        id: str,
+        params: MarkSupplierInvoicePaidParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SupplierInvoice:
+        """Marcar pagada una factura de proveedor
+
+        El pago que hizo su ERP o su banco, como «Marcar pagada» en la app: el proveedor lo ve, y si es PPD le pedimos su complemento de pago. Llega supplier_invoice.paid.
+
+        POST /v1/supplier_invoices/{id}/mark_paid
+        https://fiscalisto.com/docs/api/referencia/portal-de-proveedores/mark-supplier-invoice-paid
+        """
+        result: SupplierInvoice = self._client.request(
+            "POST", f"/v1/supplier_invoices/{_path(id)}/mark_paid", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class SatDeclarationsResource:
     """Declaraciones del SAT: fiscalisto.sat_declarations."""
 
@@ -5855,6 +5993,16 @@ class FiscalistoApi(Core):
     def sat_retentions(self) -> SatRetentionsResource:
         """Descargas del SAT."""
         return SatRetentionsResource(self)
+
+    @cached_property
+    def portal_suppliers(self) -> PortalSuppliersResource:
+        """Portal de proveedores."""
+        return PortalSuppliersResource(self)
+
+    @cached_property
+    def supplier_invoices(self) -> SupplierInvoicesResource:
+        """Portal de proveedores."""
+        return SupplierInvoicesResource(self)
 
     @cached_property
     def sat_declarations(self) -> SatDeclarationsResource:
