@@ -402,6 +402,7 @@ __all__ = [
     "ListSatFindingsParams",
     "ListSatInvoicesParams",
     "ListSatMailboxMessagesParams",
+    "ListSatRetentionsParams",
     "ListStockAdjustmentsParams",
     "ListStockMovementsParams",
     "ListStoreConnectionsParams",
@@ -539,6 +540,13 @@ __all__ = [
     "SatMailboxMessage",
     "SatMailboxMessageList",
     "SatRefresh",
+    "SatRetention",
+    "SatRetentionIssuedBy",
+    "SatRetentionIssuedTo",
+    "SatRetentionList",
+    "SatRetentionPeriod",
+    "SatRetentionTotals",
+    "SatRetentionWithheldTaxesItem",
     "SelfInvoicing",
     "SendInvoiceParams",
     "SendQuoteParams",
@@ -2405,6 +2413,94 @@ class SatInvoice(TypedDict):
     """La descarga (sdl_…) que la trajo, o null."""
     downloaded_at: str | None
     """Cuándo llegó."""
+
+
+class SatRetentionIssuedBy(TypedDict):
+    """Quien retuvo (Emisor)."""
+    tax_id: str | None
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    legal_name: str | None
+    """Nombre o razón social tal como está en la constancia de situación fiscal, sin el régimen de capital (sin «S.A. de C.V.»)."""
+
+
+class SatRetentionIssuedTo(TypedDict):
+    """A quien le retuvieron (Receptor)."""
+    tax_id: str | None
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    legal_name: str | None
+    """Nombre o razón social tal como está en la constancia de situación fiscal, sin el régimen de capital (sin «S.A. de C.V.»)."""
+
+
+class SatRetentionPeriod(TypedDict):
+    year: int
+    """Ejercicio (Ejercicio)."""
+    month_start: int
+    """Mes inicial (MesIni), 1 a 12."""
+    month_end: int
+    """Mes final (MesFin), 1 a 12."""
+
+
+class SatRetentionTotals(TypedDict):
+    """Los montos de Totales."""
+    operation: float | None
+    """Monto total de la operación (MontoTotOperacion)."""
+    taxed: float | None
+    """Monto gravado (MontoTotGrav). Por omisión, operation menos exempt."""
+    exempt: float | None
+    """Monto exento (MontoTotExent). Por omisión 0."""
+    withheld: float | None
+    """Total retenido (MontoTotRet)."""
+
+
+class SatRetentionWithheldTaxesItem(TypedDict):
+    base: float | None
+    """Base del impuesto retenido (BaseRet)."""
+    tax: str | None
+    """Impuesto: isr, iva o ieps (ImpuestoRet 001, 002, 003)."""
+    amount: float | None
+    """Importe."""
+    payment_type: str | None
+    """Tipo de pago de la retención (TipoPagoRet): 01 definitivo IVA, 02 definitivo IEPS, 03 definitivo ISR, 04 provisional ISR. Por omisión el usual de cada impuesto."""
+
+
+class SatRetention(TypedDict):
+    """Un CFDI de retenciones e información de pagos del emisor, recibido (la constancia que le dio un banco, una plataforma o quien le pagó) o emitido, como lo muestra Facturas › Retenciones."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["sat_retention"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor de su cuenta (iss_…) a quien pertenece esta constancia."""
+    uuid: str
+    """El folio fiscal (UUID del timbre)."""
+    direction: Literal["received", "issued"]
+    """received (se la dieron al emisor: un banco, una plataforma, quien le pagó) o issued (la emitió)."""
+    date: str
+    """La fecha de expedición (FechaExp)."""
+    internal_folio: str | None
+    """Folio interno (FolioInt), o null."""
+    code: str | None
+    """Clave de la retención (CveRetenc), como 14 dividendos, 16 intereses o 26 plataformas."""
+    description: str | None
+    """Descripción de la retención (DescRetenc), o null."""
+    issued_by: SatRetentionIssuedBy
+    """Quien retuvo (Emisor)."""
+    issued_to: SatRetentionIssuedTo
+    """A quien le retuvieron (Receptor)."""
+    period: SatRetentionPeriod | None
+    """Los meses y el ejercicio que cubre (Periodo), o null si no se pudo leer."""
+    totals: SatRetentionTotals
+    """Los montos de Totales."""
+    withheld_taxes: list[SatRetentionWithheldTaxesItem]
+    """Cada impuesto retenido (ImpRetenidos)."""
+    status: Literal["active", "canceled"]
+    """active o canceled: la canceló el emisor en Fiscalisto, o el SAT la reporta cancelada (se revisa cada mes). Una cancelada ya no es impuesto retenido."""
+    read_error: str | None
+    """Si su XML no se pudo leer, por qué; sus campos quedan en null. Si no, null."""
+    downloaded_at: str | None
+    """Cuándo llegó a Fiscalisto."""
 
 
 class SatDeclarationSectionsItemFieldsItem(TypedDict):
@@ -5923,6 +6019,17 @@ class SatInvoiceList(TypedDict):
     """La ruta de esta lista."""
 
 
+class SatRetentionList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[SatRetention]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class SatDeclarationList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -9336,6 +9443,28 @@ class ListSatInvoicesParams(TypedDict):
 class UpdateSatInvoiceParams(TypedDict):
     cost_center: NotRequired[str | None]
     """Su centro de costo (ccn_…), o null para quitárselo. Los complementos de pago y los traslados no llevan."""
+
+
+class ListSatRetentionsParams(TypedDict):
+    """Los parámetros de GET /v1/sat_retentions."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    direction: NotRequired[Literal["received", "issued"]]
+    """received (por omisión) o issued."""
+    status: NotRequired[Literal["active", "canceled"]]
+    """active o canceled. Sin él, las dos."""
+    counterparty_tax_id: NotRequired[str]
+    """El RFC de quien retuvo (recibidas) o a quien le retuvo (emitidas)."""
+    code: NotRequired[str]
+    """Clave de la retención (CveRetenc) de dos dígitos, como 16 o 26."""
+    year: NotRequired[int]
+    """Solo las de un ejercicio, como 2025."""
+    month: NotRequired[int]
+    """Solo las que cubren este mes (1 a 12): una anual de enero a diciembre cubre todos."""
 
 
 class RefreshSatDeclarationsParams(TypedDict):

@@ -147,6 +147,7 @@ if TYPE_CHECKING:
         ListSatFindingsParams,
         ListSatInvoicesParams,
         ListSatMailboxMessagesParams,
+        ListSatRetentionsParams,
         ListStockAdjustmentsParams,
         ListStockMovementsParams,
         ListStoreConnectionsParams,
@@ -191,6 +192,7 @@ if TYPE_CHECKING:
         SatListCheckList,
         SatMailboxMessage,
         SatRefresh,
+        SatRetention,
         SelfInvoicing,
         SendInvoiceParams,
         SendQuoteParams,
@@ -4091,6 +4093,88 @@ class SatInvoicesResource:
         return result
 
 
+class SatRetentionsResource:
+    """Descargas del SAT: fiscalisto.sat_retentions."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListSatRetentionsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[SatRetention]:
+        """Listar constancias de retenciones
+
+        Los CFDI de retenciones e información de pagos del emisor, como los muestra Facturas › Retenciones: los que recibió (descargados del SAT o subidos) o los que emitió, del más reciente al más antiguo, con las canceladas marcadas. Las que emite por la API también están en GET /v1/retentions.
+
+        GET /v1/sat_retentions
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/list-sat-retentions
+        """
+        return self._client.list("/v1/sat_retentions", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatRetention:
+        """Ver una constancia de retenciones
+
+        Una constancia de retenciones del emisor, con sus montos, impuestos y estado.
+
+        GET /v1/sat_retentions/{id}
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/get-sat-retention
+        """
+        result: SatRetention = self._client.request(
+            "GET", f"/v1/sat_retentions/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def xml(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> str:
+        """Descargar el XML de una constancia de retenciones
+
+        El CFDI de retenciones tal como llegó.
+
+        GET /v1/sat_retentions/{id}/xml
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/get-sat-retention-xml
+        """
+        result: str = self._client.request(
+            "GET", f"/v1/sat_retentions/{_path(id)}/xml", result="text", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def pdf(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> bytes:
+        """Descargar el PDF de una constancia de retenciones
+
+        La constancia en PDF, como la ofrece Facturas › Retenciones. El XML es el documento válido ante el SAT.
+
+        GET /v1/sat_retentions/{id}/pdf
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/get-sat-retention-pdf
+        """
+        result: bytes = self._client.request(
+            "GET", f"/v1/sat_retentions/{_path(id)}/pdf", result="bytes", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
 class SatDeclarationsResource:
     """Declaraciones del SAT: fiscalisto.sat_declarations."""
 
@@ -5766,6 +5850,11 @@ class FiscalistoApi(Core):
     def sat_invoices(self) -> SatInvoicesResource:
         """Descargas del SAT."""
         return SatInvoicesResource(self)
+
+    @cached_property
+    def sat_retentions(self) -> SatRetentionsResource:
+        """Descargas del SAT."""
+        return SatRetentionsResource(self)
 
     @cached_property
     def sat_declarations(self) -> SatDeclarationsResource:
