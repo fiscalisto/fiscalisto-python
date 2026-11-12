@@ -780,9 +780,9 @@ class IssuerCertificate(TypedDict):
 
 
 class IssuerSatDownloads(TypedDict):
-    """Si puede pedirle al SAT sus facturas (POST /v1/sat_downloads): available es true en pruebas, y en producción mientras su e.firma guardada esté vigente (efirma_expires_at)."""
+    """Si puede pedirle al SAT sus facturas (POST /v1/sat_downloads): available es true en pruebas, y en producción mientras su e.firma guardada esté vigente (efirma_expires_at); un RFC de su empresa (type own) usa la que la empresa guardó en la app."""
     available: bool
-    """true si puede pedir descargas al SAT ahora: siempre en pruebas; en producción con su e.firma guardada y vigente."""
+    """true si puede pedir descargas al SAT ahora: siempre en pruebas; en producción con su e.firma guardada y vigente (la de la app, en un RFC de su empresa)."""
     efirma_expires_at: str | None
     """Cuándo vence la e.firma guardada para las descargas, o null si no hay una."""
 
@@ -826,7 +826,7 @@ class Issuer(TypedDict):
     certificate: IssuerCertificate | None
     """El sello digital (CSD) cargado: número de serie y vencimiento."""
     sat_downloads: IssuerSatDownloads
-    """Si puede pedirle al SAT sus facturas (POST /v1/sat_downloads): available es true en pruebas, y en producción mientras su e.firma guardada esté vigente (efirma_expires_at)."""
+    """Si puede pedirle al SAT sus facturas (POST /v1/sat_downloads): available es true en pruebas, y en producción mientras su e.firma guardada esté vigente (efirma_expires_at); un RFC de su empresa (type own) usa la que la empresa guardó en la app."""
     employer_registration: str | None
     """Registro patronal ante el IMSS (RegistroPatronal), 11 caracteres. Necesario para timbrar nómina."""
     curp: str | None
