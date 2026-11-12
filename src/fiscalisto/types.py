@@ -834,7 +834,7 @@ class Issuer(TypedDict):
     donation_authorization: IssuerDonationAuthorization | None
     """Donataria autorizada (régimen 603): el oficio del SAT que la autoriza a recibir donativos deducibles (o su renovación). Va en cada recibo de donativo (`donation` de POST /v1/invoices); null lo quita. El emisor debe tener tax_system 603. En pruebas sirve cualquier número y una fecha pasada."""
     stamps_as: str
-    """RFC con el que se timbra: el del emisor en producción y el de pruebas del SAT (EKU9003173C9) en pruebas, con régimen 601 o, si el emisor es donataria (tax_system 603), 603."""
+    """RFC con el que se timbra: el del emisor en producción y, en pruebas, el contribuyente de pruebas del SAT de su tipo: EKU9003173C9 para una persona moral, CACX7605101P8 para una persona física (con su CURP en la nómina). Se timbra con el régimen y el código postal del emisor."""
     sandbox: str | None
     """El entorno de prueba (sbx_…) al que pertenece, o null si es de la cuenta. Vea /v1/sandboxes."""
     test_clock: IssuerTestClock | None
@@ -7422,7 +7422,7 @@ InvoiceCreate = TypedDict(
         "branch": "NotRequired[str]",
         "cost_center": "NotRequired[str]",
         "warehouse": "NotRequired[str]",
-        "customer": "str | InvoiceCreateCustomer",
+        "customer": "NotRequired[str | InvoiceCreateCustomer]",
         "items": "list[InvoiceCreateItemsItem]",
         "type": "NotRequired[Literal[\"I\", \"T\"]]",
         "carta_porte": "NotRequired[InvoiceCreateCartaPorte]",
@@ -8152,7 +8152,7 @@ class CreateAdvanceParams(TypedDict):
     issuer: NotRequired[str]
     """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
     customer: str | CreateAdvanceParamsCustomer
-    """Cliente (Receptor): el id de uno de su catálogo (cus_…) o sus datos en un objeto."""
+    """El cliente (Receptor): el id de uno de su catálogo (cus_…) o sus datos. Obligatorio salvo en un traslado (type T), cuyo receptor es el propio emisor."""
     use: NotRequired[str]
     """Uso del CFDI (UsoCFDI), clave de c_UsoCFDI. Por omisión G03, o S01 con régimen 616."""
     amount: float
