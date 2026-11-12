@@ -156,7 +156,7 @@ class ErrorCode:
     """La llave no puede usar ese emisor."""
 
     ISSUER_NOT_READY: Final = "issuer_not_ready"
-    """Al emisor le falta su RFC (sus datos fiscales): regístrelos antes, con el CSD o la e.firma."""
+    """El emisor aún no puede hacer eso: el mensaje dice qué le falta (su sello digital, CSD, o uno vigente al timbrar; su RFC con sus datos fiscales en viáticos). Súbalo y repita la solicitud con la misma Idempotency-Key."""
 
     ISSUER_OWN_RFC: Final = "issuer_own_rfc"
     """El emisor es un RFC de la propia empresa (Desarrolladores de la empresa): es emisor mientras la empresa lo tenga y no se archiva."""

@@ -724,6 +724,8 @@ class BalanceAutoRecharge(TypedDict):
 
 
 class BalancePacksItem(TypedDict):
+    type: Literal["welcome", "purchase", "referral"]
+    """welcome: los timbres de bienvenida (no vencen); purchase: un paquete comprado o una recarga automática; referral: los de una recomendación."""
     timbres: int
     """Timbres del paquete."""
     remaining: int
@@ -748,6 +750,8 @@ class Balance(TypedDict):
     """Con esta cantidad o menos llega balance.low (y otra vez al acabarse). Se elige en Desarrolladores › Timbres."""
     auto_recharge: BalanceAutoRecharge | None
     """La recarga automática con la tarjeta guardada, o null si está apagada."""
+    use_plan_timbres: bool
+    """true si, al acabarse `available`, la API sigue timbrando con los timbres del plan de la empresa (Desarrolladores › Timbres › Si se acaban, usar los timbres de la empresa). false: responde 402 insufficient_balance."""
     packs: list[BalancePacksItem]
     """Los paquetes con timbres, el que vence antes primero (en ese orden se usan)."""
 
