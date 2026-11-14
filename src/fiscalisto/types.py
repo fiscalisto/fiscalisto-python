@@ -40,6 +40,10 @@ __all__ = [
     "CancelRetentionParams",
     "CancelSalesOrderDeliveryParams",
     "CancelSalesOrderParams",
+    "CfdiSeals",
+    "CfdiSealsCertificate",
+    "CfdiSealsProblemsItem",
+    "CfdiSealsStamp",
     "CfdiVerification",
     "CfdiVerificationSat",
     "CfdiVerificationXml",
@@ -243,6 +247,7 @@ __all__ = [
     "GetElectronicAccountingParams",
     "GetExpensePolicyParams",
     "GetFinancialStatementsParams",
+    "GetInvoiceCancellationReceiptParams",
     "GetInvoiceParams",
     "GetInvoicePdfParams",
     "GetInvoiceXmlParams",
@@ -358,12 +363,17 @@ __all__ = [
     "InvoicePayrollRetirement",
     "InvoicePayrollSeparation",
     "InvoicePayrollTotals",
+    "InvoicePreview",
+    "InvoicePreviewCustomer",
+    "InvoicePreviewTaxes",
+    "InvoicePreviewWarningsItem",
     "InvoiceSalesOrderParams",
     "InvoiceSalesOrderParamsItemsItem",
     "InvoiceStampedEvent",
     "InvoiceSubstitutes",
     "InvoiceTaxes",
     "Issuer",
+    "IssuerBranding",
     "IssuerCertificate",
     "IssuerDonationAuthorization",
     "IssuerList",
@@ -417,6 +427,7 @@ __all__ = [
     "ListTicketsParams",
     "ListWarehouseStockParams",
     "ListWarehousesParams",
+    "ListWebhookDeliveriesParams",
     "ListWebhookEndpointsParams",
     "MarkInvoicePaidParams",
     "MarkPurchaseReceiptInvoicedParams",
@@ -631,6 +642,7 @@ __all__ = [
     "UpdateExpenseReportParams",
     "UpdateImssMovementParams",
     "UpdateInvoiceParams",
+    "UpdateIssuerBrandingParams",
     "UpdateIssuerParams",
     "UpdateIssuerParamsDonationAuthorization",
     "UpdatePriceListParams",
@@ -665,6 +677,7 @@ __all__ = [
     "UpdateStoreConnectionParamsSettings",
     "UpdateWebhookEndpointParams",
     "UploadCertificateParams",
+    "UploadIssuerLogoParams",
     "Usage",
     "UsageHighEvent",
     "ValidateTaxIdParams",
@@ -678,6 +691,8 @@ __all__ = [
     "VerifyCfdiParams",
     "Warehouse",
     "WarehouseList",
+    "WebhookDelivery",
+    "WebhookDeliveryList",
     "WebhookEndpoint",
     "WebhookEndpointList",
     "WebhookTest",
@@ -1859,6 +1874,88 @@ class ExternalPayrollReceiptPreview(TypedDict):
     """El XML que se mandaría al PAC, sin sello ni timbre: sus importes son exactamente los que mandó."""
 
 
+class InvoicePreviewCustomer(TypedDict):
+    """Cliente (Receptor): el id de uno de su catálogo (cus_…) o sus datos en un objeto."""
+    tax_id: str | None
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    legal_name: str | None
+    """Nombre o razón social tal como está en la constancia de situación fiscal, sin el régimen de capital (sin «S.A. de C.V.»)."""
+    tax_system: NotRequired[str]
+    """Régimen fiscal (RegimenFiscal), clave de c_RegimenFiscal: 601, 612, 626…"""
+    zip: NotRequired[str]
+    """Código postal del domicilio fiscal del cliente (DomicilioFiscalReceptor), 5 dígitos."""
+    foreign: NotRequired[dict[str, Any]]
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+
+
+class InvoicePreviewTaxes(TypedDict):
+    iva: float | None
+    """IVA trasladado."""
+    ieps: float | None
+    """IEPS trasladado."""
+    iva_withheld: float | None
+    """IVA retenido."""
+    isr_withheld: float | None
+    """ISR retenido."""
+    local_transferred: float | None
+    """Impuestos locales trasladados."""
+    local_withheld: float | None
+    """Impuestos locales retenidos."""
+
+
+class InvoicePreviewWarningsItem(TypedDict):
+    code: str
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones."""
+    message: str
+    """Qué pasó y cómo corregirlo, para una persona."""
+
+
+class InvoicePreview(TypedDict):
+    """Una factura revisada y sin timbrar: lo que se timbraría ahora con POST /v1/invoices y el mismo cuerpo."""
+    object: Literal["invoice_preview"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    branch: str | None
+    """Sucursal (brn_…) desde donde se factura: su código postal va en LugarExpedicion, su dirección en el PDF y, si las tiene, sus series. Sin ella, el domicilio fiscal del emisor (la Matriz)."""
+    type: Literal["I", "E", "T"]
+    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    series: str | None
+    """Serie (Serie), hasta 25 caracteres. Cada serie lleva sus propios folios."""
+    folio: str | None
+    """El folio que tendría si se timbrara ahora; otra factura timbrada antes puede tomarlo."""
+    date: str | None
+    """Fecha de emisión (Fecha), hora de la Ciudad de México."""
+    customer: InvoicePreviewCustomer
+    """Cliente (Receptor): el id de uno de su catálogo (cus_…) o sus datos en un objeto."""
+    use: str | None
+    """Uso del CFDI (UsoCFDI), clave de c_UsoCFDI. Por omisión G03, o S01 con régimen 616."""
+    payment_form: str | None
+    """Forma de pago (FormaPago), clave de c_FormaPago: 01 efectivo, 03 transferencia, 04 tarjeta de crédito, 28 débito, 99 por definir… Obligatoria con PUE; con PPD es 99."""
+    payment_method: str | None
+    """Método de pago (MetodoPago): PUE (una sola exhibición, por omisión) o PPD (en parcialidades o diferido, se cobra con complementos de pago)."""
+    currency: str
+    """Moneda, clave ISO 4217 de c_Moneda (MXN, USD, EUR…). Por omisión MXN."""
+    exchange_rate: float | None
+    """Tipo de cambio a pesos (TipoCambio). Obligatorio si la moneda no es MXN; use el del DOF del día anterior."""
+    items: list[InvoiceItem]
+    """Conceptos (Conceptos), al menos uno."""
+    subtotal: float | None
+    """Suma de los importes antes de impuestos y descuentos (SubTotal)."""
+    discount: float | None
+    """Descuento (Descuento)."""
+    taxes: InvoicePreviewTaxes | None
+    """Los impuestos de la factura, por tipo: IVA e IEPS trasladados, IVA e ISR retenidos e impuestos locales."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    warnings: list[InvoicePreviewWarningsItem]
+    """Lo que conviene revisar antes de timbrar (un cliente en las listas 69 o 69-B del SAT, una factura que parece duplicada); no impide timbrar."""
+    unsigned_xml: str
+    """El XML que se mandaría al PAC, sin sello ni timbre."""
+
+
 class AdvanceCustomer(TypedDict):
     """El cliente del anticipo: RFC y nombre."""
     tax_id: str
@@ -2187,6 +2284,53 @@ class SatListCheck(TypedDict):
     """Cuándo se actualizaron las listas por última vez (cada día a las 00:00 de la Ciudad de México)."""
     lists_unavailable: list[str]
     """Las listas que no se pudieron confirmar (su última actualización falló, falta o tiene más de dos días). Vacía si todas están al día."""
+
+
+class CfdiSealsCertificate(TypedDict):
+    number: str
+    """El número del certificado (20 dígitos), como lo da el SAT."""
+    tax_id: str | None
+    """El RFC dueño del certificado."""
+    name: str | None
+    """El nombre o razón social en el certificado."""
+    kind: Literal["csd", "fiel"]
+    """csd si es un sello digital; fiel si es una e.firma (no se debe sellar con ella)."""
+    valid_from: str
+    """Desde cuándo vale el certificado."""
+    valid_to: str
+    """Hasta cuándo vale el certificado."""
+
+
+class CfdiSealsStamp(TypedDict):
+    sat_seal_valid: bool | None
+    """Si el SelloSAT firma el timbre con el certificado del SAT (NoCertificadoSAT). null si el certificado del SAT no se pudo obtener en ese momento."""
+    sat_certificate_number: str
+    """El número del certificado del SAT que selló el timbre."""
+    pac_tax_id: str | None
+    """El RFC del PAC que timbró (RfcProvCertif)."""
+
+
+class CfdiSealsProblemsItem(TypedDict):
+    code: Literal["malformed_xml", "missing_seal", "certificate_unreadable", "certificate_number_mismatch", "certificate_not_issuer", "certificate_not_csd", "certificate_not_valid_at_issue", "seal_mismatch", "stamp_not_for_this_seal", "sat_seal_mismatch"]
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones."""
+    message: str
+    """Qué pasó y cómo corregirlo, para una persona."""
+
+
+class CfdiSeals(TypedDict):
+    """Si los sellos del XML son auténticos, como los revisa el SAT: el Sello del emisor contra la cadena original y su certificado, y el SelloSAT del timbre contra el certificado del SAT."""
+    valid: bool
+    """true si no hay ningún problema: el Sello corresponde a los datos y al certificado del emisor (un CSD de su RFC, vigente en la fecha de emisión) y el timbre es de este comprobante y del SAT."""
+    issuer_seal_valid: bool
+    """Si el Sello del emisor firma la cadena original de este XML con la llave del certificado que trae. false si alguien cambió un monto, un nombre o una fecha después de sellar."""
+    certificate: CfdiSealsCertificate | None
+    """El certificado del emisor que trae el XML (Certificado): número, RFC, nombre, si es CSD o e.firma y su vigencia. null si no se pudo leer."""
+    stamp: CfdiSealsStamp | None
+    """El timbre (TimbreFiscalDigital): si su SelloSAT es del SAT, con qué certificado del SAT y qué PAC lo timbró. null si el XML no está timbrado."""
+    problems: list[CfdiSealsProblemsItem]
+    """Cada problema, con su código y qué significa. Vacía si valid es true."""
+    original_string: str | None
+    """La cadena original del comprobante, como la arma el SAT con sus XSLT. null si el XML no se pudo leer."""
 
 
 class TaxIdValidationErrorsItem(TypedDict):
@@ -5156,6 +5300,56 @@ class EventResend(TypedDict):
     """A cuántos webhooks salió. 0 si ninguno encendido escucha ese tipo de evento."""
 
 
+class IssuerBranding(TypedDict):
+    """Cómo se ven los documentos de un emisor: nombre comercial, estilo y color del PDF, y logo."""
+    object: Literal["issuer_branding"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (iss_…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    trade_name: str | None
+    """Su nombre comercial: va en grande en el PDF, el correo y la página de la factura; null: la razón social."""
+    pdf_style: Literal["clasico", "moderno", "compacto", "minimalista"] | None
+    """Estilo del PDF: clasico, moderno, compacto o minimalista; null: clasico."""
+    pdf_color: str | None
+    """Color del PDF (#RRGGBB); null: el de Fiscalisto (#5B48EE)."""
+    logo_url: str | None
+    """Dirección pública del logo; null si no tiene."""
+
+
+class WebhookDelivery(TypedDict):
+    """Lo que pasó con un evento en un webhook: su último intento, cuántos lleva y cuándo va el siguiente."""
+    object: Literal["webhook_delivery"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    id: str
+    """El último intento (whd_…). Úselo en starting_after para la página siguiente."""
+    webhook_endpoint: str
+    """El webhook (whe_…)."""
+    event: str
+    """El evento (evt_…). Reenvíelo con POST /v1/events/{id}/resend."""
+    event_type: str | None
+    """El tipo del evento (invoice.stamped…)."""
+    succeeded: bool
+    """true si su servidor contestó 2xx en el último intento."""
+    status: int | None
+    """El código HTTP que contestó su servidor; null si no se pudo conectar."""
+    error: str | None
+    """Qué falló (tiempo de espera, DNS, o el inicio de su respuesta); null si llegó."""
+    duration_ms: int
+    """Cuánto tardó su servidor en contestar el último intento."""
+    attempts: int
+    """Cuántas veces se ha mandado a este webhook, reenvíos incluidos."""
+    resent: bool
+    """true si el último intento fue un reenvío (POST /v1/events/{id}/resend)."""
+    test: bool
+    """true si es un evento de prueba (POST /v1/webhook_endpoints/{id}/test); no se reintenta."""
+    created_at: str
+    """Cuándo fue el último intento."""
+    next_retry_at: str | None
+    """Cuándo va el siguiente reintento automático; null si llegó o ya no hay más."""
+
+
 class CfdiVerificationSat(TypedDict):
     """La respuesta del SAT tal cual (CodigoEstatus, Estado, EsCancelable, EstatusCancelacion, ValidacionEFOS), por si la necesita igual que el SAT."""
     code: str
@@ -5215,6 +5409,8 @@ class CfdiVerification(TypedDict):
     """La respuesta del SAT tal cual (CodigoEstatus, Estado, EsCancelable, EstatusCancelacion, ValidacionEFOS), por si la necesita igual que el SAT."""
     xml: CfdiVerificationXml | None
     """Lo que trae el XML además (versión, tipo, fechas, nombres, moneda), si mandó xml; null si no."""
+    seals: CfdiSeals | None
+    """Los sellos del XML, si mandó xml de un CFDI 4.0: si el comprobante no se modificó después de sellarse y si el timbre es del SAT. null con qr o fields, o con un CFDI 3.3."""
     issuer_sat_lists: SatListCheck | None
     """El emisor en las listas del SAT (69-B, 69-B Bis y art. 69), como GET /v1/sat_lists/{tax_id}, sin costo. Solo cuando el SAT tiene el comprobante (active o canceled); null si no, o si las listas no se pudieron leer."""
     receiver_sat_lists: SatListCheck | None
@@ -6593,6 +6789,17 @@ class WebhookEndpointList(TypedDict):
     """La ruta de esta lista."""
 
 
+class WebhookDeliveryList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[WebhookDelivery]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class EventList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -7907,6 +8114,20 @@ class UploadCertificateParams(TypedDict):
     """La contraseña de la llave privada (.key). Se usa para abrirla y no se guarda en texto."""
 
 
+class UpdateIssuerBrandingParams(TypedDict):
+    trade_name: NotRequired[str | None]
+    """Su nombre comercial, si se presenta con otra marca: va en grande en el PDF, en el correo y en la página de la factura. null: la razón social."""
+    pdf_style: NotRequired[Literal["clasico", "moderno", "compacto", "minimalista"] | None]
+    """Estilo del PDF: clasico (por omisión), moderno (encabezado y total con color, renglones alternados), compacto (letra chica, márgenes cortos) o minimalista (sin rellenos, el color solo en el total)."""
+    pdf_color: NotRequired[str | None]
+    """Color del PDF, como #2563EB. null: el de Fiscalisto (#5B48EE)."""
+
+
+class UploadIssuerLogoParams(TypedDict):
+    file: str
+    """El logo, PNG o JPG de hasta 1 MB, en base64 (con o sin el prefijo data:image/png;base64,). Uno muy grande se reduce para el PDF."""
+
+
 class SignEfirmaParams(TypedDict):
     cer: str
     """El archivo .cer en base64 (puede traer el prefijo data:)."""
@@ -7970,6 +8191,12 @@ class GetInvoicePdfParams(TypedDict):
 
 class GetInvoiceXmlParams(TypedDict):
     """Los parámetros de GET /v1/invoices/{id}/xml."""
+    issuer: NotRequired[str]
+    """Con un UUID en vez del id, el emisor (iss_…) si la cuenta tiene varios."""
+
+
+class GetInvoiceCancellationReceiptParams(TypedDict):
+    """Los parámetros de GET /v1/invoices/{id}/cancellation_receipt."""
     issuer: NotRequired[str]
     """Con un UUID en vez del id, el emisor (iss_…) si la cuenta tiene varios."""
 
@@ -11231,6 +11458,16 @@ class RollWebhookSecretParams(TypedDict):
 class TestWebhookEndpointParams(TypedDict):
     type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.paid", "invoice.partially_paid", "invoice.email_bounced", "invoice.email_complained", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "payroll_batch.completed", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "quote.withdrawn", "sales_order.confirmed", "sales_order.customer_confirmed", "sales_order.delivered", "sales_order.paid", "sales_order.canceled", "supplier_invoice.received", "supplier_invoice.approved", "supplier_invoice.rejected", "supplier_invoice.scheduled", "supplier_invoice.paid", "portal_supplier.approved", "issuer.ready", "balance.low", "usage.high", "test_clock.ready"]]
     """El evento a mandar. Por omisión invoice.stamped."""
+
+
+class ListWebhookDeliveriesParams(TypedDict):
+    """Los parámetros de GET /v1/webhook_endpoints/{id}/deliveries."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    succeeded: NotRequired[bool]
+    """false: solo los que fallaron en su último intento. true: solo los que llegaron."""
 
 
 class ListEventsParams(TypedDict):

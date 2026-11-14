@@ -95,6 +95,7 @@ if TYPE_CHECKING:
         GetElectronicAccountingParams,
         GetExpensePolicyParams,
         GetFinancialStatementsParams,
+        GetInvoiceCancellationReceiptParams,
         GetInvoiceParams,
         GetInvoicePdfParams,
         GetInvoiceXmlParams,
@@ -112,8 +113,10 @@ if TYPE_CHECKING:
         Invoice,
         InvoiceBatch,
         InvoiceCreate,
+        InvoicePreview,
         InvoiceSalesOrderParams,
         Issuer,
+        IssuerBranding,
         IssuerOnboardingLink,
         JournalEntry,
         LedgerAccountList,
@@ -158,6 +161,7 @@ if TYPE_CHECKING:
         ListTicketsParams,
         ListWarehouseStockParams,
         ListWarehousesParams,
+        ListWebhookDeliveriesParams,
         ListWebhookEndpointsParams,
         MarkInvoicePaidParams,
         MarkPurchaseReceiptInvoicedParams,
@@ -234,6 +238,7 @@ if TYPE_CHECKING:
         UpdateExpenseReportParams,
         UpdateImssMovementParams,
         UpdateInvoiceParams,
+        UpdateIssuerBrandingParams,
         UpdateIssuerParams,
         UpdatePriceListParams,
         UpdateProductParams,
@@ -246,11 +251,13 @@ if TYPE_CHECKING:
         UpdateStoreConnectionParams,
         UpdateWebhookEndpointParams,
         UploadCertificateParams,
+        UploadIssuerLogoParams,
         ValidateTaxIdParams,
         VatRefund,
         VerifyCfdiParams,
         Warehouse,
         WarehouseList,
+        WebhookDelivery,
         WebhookEndpoint,
         WebhookTest,
         WithdrawQuoteParams,
@@ -668,6 +675,90 @@ class IssuersResource:
         )
         return result
 
+    def get_branding(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> IssuerBranding:
+        """Ver el diseño del PDF
+
+        Cómo se ven los documentos del emisor: su nombre comercial, el estilo y el color del PDF y su logo. Es lo mismo que Ajustes › Marca y documentos en la app.
+
+        GET /v1/issuers/{id}/branding
+        https://fiscalisto.com/docs/api/referencia/emisores/get-issuer-branding
+        """
+        result: IssuerBranding = self._client.request(
+            "GET", f"/v1/issuers/{_path(id)}/branding", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_branding(
+        self,
+        id: str,
+        params: UpdateIssuerBrandingParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> IssuerBranding:
+        """Cambiar el diseño del PDF
+
+        Cambia el nombre comercial, el estilo (clasico, moderno, compacto o minimalista) y el color del PDF de las facturas, notas, pagos, recibos y cotizaciones del emisor, y de sus correos. Lo que no mande se queda como está; null vuelve al de omisión. Se ve en el siguiente PDF que pida, también de lo ya timbrado. Una sucursal puede tener el suyo (POST /v1/branches/{id}).
+
+        POST /v1/issuers/{id}/branding
+        https://fiscalisto.com/docs/api/referencia/emisores/update-issuer-branding
+        """
+        result: IssuerBranding = self._client.request(
+            "POST", f"/v1/issuers/{_path(id)}/branding", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def upload_logo(
+        self,
+        id: str,
+        params: UploadIssuerLogoParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> IssuerBranding:
+        """Subir el logo
+
+        El logo del emisor (PNG o JPG de hasta 1 MB, en base64): va en sus PDF, sus correos y la página de la factura que ve su cliente. Reemplaza el anterior.
+
+        POST /v1/issuers/{id}/logo
+        https://fiscalisto.com/docs/api/referencia/emisores/upload-issuer-logo
+        """
+        result: IssuerBranding = self._client.request(
+            "POST", f"/v1/issuers/{_path(id)}/logo", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete_logo(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> IssuerBranding:
+        """Quitar el logo
+
+        Sus PDF y correos van sin logo, con su nombre.
+
+        DELETE /v1/issuers/{id}/logo
+        https://fiscalisto.com/docs/api/referencia/emisores/delete-issuer-logo
+        """
+        result: IssuerBranding = self._client.request(
+            "DELETE", f"/v1/issuers/{_path(id)}/logo", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
     def sign_efirma(
         self,
         id: str,
@@ -960,6 +1051,27 @@ class InvoicesResource:
         """
         return self._client.list("/v1/invoices", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
+    def preview(
+        self,
+        params: InvoiceCreate,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> InvoicePreview:
+        """Revisar una factura sin timbrar
+
+        El mismo cuerpo y las mismas revisiones que POST /v1/invoices, sin timbrar ni usar timbres: devuelve la factura como se timbraría ahora (con los datos fiscales del emisor, el siguiente folio, el subtotal, los impuestos y el total que calcula Fiscalisto), los avisos (un cliente en las listas del SAT, un duplicado) y el XML sin sellar (unsigned_xml). Úsela para mostrar el total antes de cobrar o para validar en su sistema; si algo falla, invoice_invalid como al timbrar. No pide Idempotency-Key y sirve con una llave de solo lectura.
+
+        POST /v1/invoices/preview
+        https://fiscalisto.com/docs/api/referencia/facturas/preview-invoice
+        """
+        result: InvoicePreview = self._client.request(
+            "POST", "/v1/invoices/preview", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
     def get(
         self,
         id: str,
@@ -1040,6 +1152,26 @@ class InvoicesResource:
         """
         result: str = self._client.request(
             "GET", f"/v1/invoices/{_path(id)}/xml", query=params, result="text", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def cancellation_receipt(
+        self,
+        id: str,
+        params: GetInvoiceCancellationReceiptParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> str:
+        """Descargar el acuse de cancelación
+
+        El acuse de cancelación del SAT (XML firmado por el SAT) de una factura cancelada: la prueba de que el SAT la canceló y cuándo. Antes de que el SAT la cancele (status valid o pending), 409 invoice_not_canceled.
+
+        GET /v1/invoices/{id}/cancellation_receipt
+        https://fiscalisto.com/docs/api/referencia/facturas/get-invoice-cancellation-receipt
+        """
+        result: str = self._client.request(
+            "GET", f"/v1/invoices/{_path(id)}/cancellation_receipt", query=params, result="text", timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -5759,6 +5891,24 @@ class WebhookEndpointsResource:
             "POST", f"/v1/webhook_endpoints/{_path(id)}/test", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
+
+    def list_deliveries(
+        self,
+        id: str,
+        params: ListWebhookDeliveriesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[WebhookDelivery]:
+        """Listar entregas
+
+        Qué pasó con cada evento en este webhook, el más reciente primero: una fila por evento con su último intento, cuántos lleva y cuándo va el siguiente reintento. Con succeeded=false ve los que su servidor no recibió, para reenviarlos con POST /v1/events/{id}/resend.
+
+        GET /v1/webhook_endpoints/{id}/deliveries
+        https://fiscalisto.com/docs/api/referencia/webhooks/list-webhook-deliveries
+        """
+        return self._client.list(f"/v1/webhook_endpoints/{_path(id)}/deliveries", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
 
 class EventsResource:

@@ -131,6 +131,9 @@ class ErrorCode:
     INVOICE_INVALID: Final = "invoice_invalid"
     """La factura no cumple una regla del SAT que Fiscalisto revisa antes de mandarla al PAC (uso contra régimen, totales, complementos…). No se usó ningún timbre."""
 
+    INVOICE_NOT_CANCELED: Final = "invoice_not_canceled"
+    """El acuse de cancelación existe cuando el SAT ya canceló la factura (status canceled). Con una cancelación en espera del cliente (pending), espere invoice.canceled."""
+
     INVOICE_NOT_MARKABLE: Final = "invoice_not_markable"
     """Solo una factura de ingreso PUE vigente se marca pagada o por cobrar; una PPD se paga con su complemento de pago (type P)."""
 
@@ -389,6 +392,7 @@ ErrorCodeValue = Literal[
     "invalid_response",
     "inventory_refused",
     "invoice_invalid",
+    "invoice_not_canceled",
     "invoice_not_markable",
     "invoice_not_stamped",
     "invoice_rejected",
