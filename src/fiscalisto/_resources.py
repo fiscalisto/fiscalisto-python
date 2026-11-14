@@ -45,8 +45,10 @@ if TYPE_CHECKING:
         CreateExpensePersonLinkParams,
         CreateExpensePersonParams,
         CreateExpenseReportParams,
+        CreateExportParams,
         CreateImssFilesParams,
         CreateImssMovementParams,
+        CreateInvitationParams,
         CreateInvoiceBatchParams,
         CreateIssuerOnboardingLinkParams,
         CreateIssuerParams,
@@ -60,6 +62,7 @@ if TYPE_CHECKING:
         CreateQuoteParams,
         CreateRecurringInvoiceParams,
         CreateRetentionParams,
+        CreateRoleParams,
         CreateSalesOrderDeliveryParams,
         CreateSalesOrderParams,
         CreateSandboxParams,
@@ -76,6 +79,7 @@ if TYPE_CHECKING:
         CustomerGroup,
         CustomerPaymentBehavior,
         DeleteCostCenterParams,
+        DeleteRoleParams,
         Deleted,
         Diot,
         Employee,
@@ -85,6 +89,7 @@ if TYPE_CHECKING:
         ExpensePersonLink,
         ExpensePolicy,
         ExpenseReport,
+        Export,
         ExternalPayrollReceiptCreate,
         ExternalPayrollReceiptPreview,
         FinancialStatements,
@@ -110,6 +115,8 @@ if TYPE_CHECKING:
         ImssFiles,
         ImssMovement,
         ImssMovementList,
+        Invitation,
+        InvitationList,
         Invoice,
         InvoiceBatch,
         InvoiceCreate,
@@ -131,12 +138,15 @@ if TYPE_CHECKING:
         ListEventsParams,
         ListExpensePeopleParams,
         ListExpenseReportsParams,
+        ListExportsParams,
         ListImssMovementsParams,
+        ListInvitationsParams,
         ListInvoiceBatchesParams,
         ListInvoicesParams,
         ListIssuersParams,
         ListJournalEntriesParams,
         ListLedgerAccountsParams,
+        ListMembersParams,
         ListPayrollBatchesParams,
         ListPortalSuppliersParams,
         ListPriceListsParams,
@@ -146,6 +156,7 @@ if TYPE_CHECKING:
         ListReceivablesParams,
         ListRecurringInvoicesParams,
         ListRetentionsParams,
+        ListRolesParams,
         ListSalesOrdersParams,
         ListSatDeclarationsParams,
         ListSatDownloadsParams,
@@ -167,9 +178,12 @@ if TYPE_CHECKING:
         MarkPurchaseReceiptInvoicedParams,
         MarkSupplierInvoicePaidParams,
         MatchBankTransactionParams,
+        Member,
+        MemberList,
         PayrollBankFile,
         PayrollBatch,
         PayrollReceiptPreview,
+        PermissionList,
         PortalSupplier,
         PreviewPayrollReceiptParams,
         PriceList,
@@ -188,6 +202,8 @@ if TYPE_CHECKING:
         ResetTestDataParams,
         Retention,
         ReturnExpenseReportParams,
+        Role,
+        RoleList,
         RollWebhookSecretParams,
         SalesOrder,
         Sandbox,
@@ -240,11 +256,13 @@ if TYPE_CHECKING:
         UpdateInvoiceParams,
         UpdateIssuerBrandingParams,
         UpdateIssuerParams,
+        UpdateMemberParams,
         UpdatePriceListParams,
         UpdateProductParams,
         UpdatePurchaseReceiptParams,
         UpdateQuoteParams,
         UpdateRecurringInvoiceParams,
+        UpdateRoleParams,
         UpdateSalesOrderParams,
         UpdateSatInvoiceParams,
         UpdateSelfInvoicingParams,
@@ -1024,7 +1042,7 @@ class InvoicesResource:
     ) -> Invoice:
         """Timbrar una factura
 
-        Revisa la factura con las reglas del SAT, la sella y la timbra en una sola llamada. Responde con la factura timbrada (status valid) o, si el PAC tarda, en processing (escuche invoice.stamped). Lo que puede omitir tiene el valor usual: PUE, MXN, uso G03 (S01 con régimen 616), objeto de impuesto 02, IVA 16%, cantidad 1, unidad E48.
+        Revisa la factura con las reglas del SAT, la sella y la timbra en una sola llamada. Responde con la factura timbrada (status valid) o, si el PAC tarda o el SAT no responde, 202 en processing: Fiscalisto la reintenta sola y invoice.stamped avisa. Con async: true responde 202 de inmediato y timbra después. Lo que puede omitir tiene el valor usual: PUE, MXN, uso G03 (S01 con régimen 616), objeto de impuesto 02, IVA 16%, cantidad 1, unidad E48.
 
         POST /v1/invoices
         https://fiscalisto.com/docs/api/referencia/facturas/create-invoice
@@ -4096,6 +4114,364 @@ class CfdiVerificationsResource:
         return result
 
 
+class MembersResource:
+    """Equipo: fiscalisto.members."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListMembersParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> MemberList:
+        """Listar miembros
+
+        Quién entra a la empresa en la app, con su rol, sus permisos y los RFC y sucursales a su alcance, como Ajustes › Miembros. Todos, los más antiguos primero. Pide que quien creó la llave tenga el permiso de ver el equipo.
+
+        GET /v1/members
+        https://fiscalisto.com/docs/api/referencia/equipo/list-members
+        """
+        result: MemberList = self._client.request(
+            "GET", "/v1/members", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Member:
+        """Ver un miembro
+
+        Su rol, sus permisos (los agregados, los quitados y los que tiene al final) y su alcance.
+
+        GET /v1/members/{id}
+        https://fiscalisto.com/docs/api/referencia/equipo/get-member
+        """
+        result: Member = self._client.request(
+            "GET", f"/v1/members/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateMemberParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Member:
+        """Cambiar el acceso de un miembro
+
+        Su rol, los permisos que se le agregan o quitan y los RFC y sucursales a su alcance; lo que no mande se queda como está. Nadie da más de lo que tiene quien creó la llave. Dar, quitar o tocar un permiso delicado (equipo, credenciales, seguridad, plan) contesta 403 team_change_requires_app: se hace en la app, que confirma la identidad.
+
+        POST /v1/members/{id}
+        https://fiscalisto.com/docs/api/referencia/equipo/update-member
+        """
+        result: Member = self._client.request(
+            "POST", f"/v1/members/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Quitar a un miembro
+
+        La persona deja de entrar a la empresa y sus invitaciones se cancelan. Siempre queda al menos un propietario; quitar a alguien con permisos delicados se hace en la app.
+
+        DELETE /v1/members/{id}
+        https://fiscalisto.com/docs/api/referencia/equipo/delete-member
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/members/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class InvitationsResource:
+    """Equipo: fiscalisto.invitations."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListInvitationsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> InvitationList:
+        """Listar invitaciones
+
+        Las invitaciones pendientes de la empresa, las más antiguas primero.
+
+        GET /v1/invitations
+        https://fiscalisto.com/docs/api/referencia/equipo/list-invitations
+        """
+        result: InvitationList = self._client.request(
+            "GET", "/v1/invitations", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create(
+        self,
+        params: CreateInvitationParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Invitation:
+        """Invitar a alguien a la empresa
+
+        Le manda un correo con un enlace para entrar a la empresa con ese rol, válido 7 días, como Invitar en Ajustes › Miembros. Invitar otra vez al mismo correo reemplaza la invitación. Una invitación con permisos delicados (equipo, credenciales, seguridad, plan) o como propietario se hace en la app.
+
+        POST /v1/invitations
+        https://fiscalisto.com/docs/api/referencia/equipo/create-invitation
+        """
+        result: Invitation = self._client.request(
+            "POST", "/v1/invitations", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def cancel(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Invitation:
+        """Cancelar una invitación
+
+        Su enlace deja de servir. Contesta la invitación con status canceled.
+
+        DELETE /v1/invitations/{id}
+        https://fiscalisto.com/docs/api/referencia/equipo/cancel-invitation
+        """
+        result: Invitation = self._client.request(
+            "DELETE", f"/v1/invitations/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class RolesResource:
+    """Equipo: fiscalisto.roles."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListRolesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> RoleList:
+        """Listar roles
+
+        Propietario, los roles de Fiscalisto (como se editaron en la empresa) y los suyos, con sus permisos y cuántas personas los tienen.
+
+        GET /v1/roles
+        https://fiscalisto.com/docs/api/referencia/equipo/list-roles
+        """
+        result: RoleList = self._client.request(
+            "GET", "/v1/roles", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create(
+        self,
+        params: CreateRoleParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Role:
+        """Crear un rol
+
+        Un rol de la empresa con su nombre y sus permisos (GET /v1/permissions), como Ajustes › Roles. No puede tener permisos que no tenga quien creó la llave; uno con permisos delicados se hace en la app.
+
+        POST /v1/roles
+        https://fiscalisto.com/docs/api/referencia/equipo/create-role
+        """
+        result: Role = self._client.request(
+            "POST", "/v1/roles", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateRoleParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Role:
+        """Cambiar un rol
+
+        Su nombre, su descripción o sus permisos; lo que no mande se queda. Cambia el acceso de todos los que lo tienen. Propietario no se cambia.
+
+        POST /v1/roles/{id}
+        https://fiscalisto.com/docs/api/referencia/equipo/update-role
+        """
+        result: Role = self._client.request(
+            "POST", f"/v1/roles/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        params: DeleteRoleParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar un rol
+
+        Solo uno de la empresa (type custom), cuando nadie lo tiene ni lo da una invitación pendiente.
+
+        DELETE /v1/roles/{id}
+        https://fiscalisto.com/docs/api/referencia/equipo/delete-role
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/roles/{_path(id)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PermissionsResource:
+    """Equipo: fiscalisto.permissions."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PermissionList:
+        """Listar permisos
+
+        Cada permiso que un rol o una persona puede tener, con su nombre en la app, su grupo y si es delicado.
+
+        GET /v1/permissions
+        https://fiscalisto.com/docs/api/referencia/equipo/list-permissions
+        """
+        result: PermissionList = self._client.request(
+            "GET", "/v1/permissions", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class ExportsResource:
+    """Exportaciones: fiscalisto.exports."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateExportParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Export:
+        """Exportar las facturas de un mes
+
+        Un ZIP con el XML (y si quiere el PDF) de cada factura que el emisor emitió o recibió en un mes o un periodo, o un Excel con una fila por factura: los mismos archivos que Facturas › Exportar en la app, para su contador, un respaldo o una auditoría. Contesta 202 de inmediato con status processing; consulte GET /v1/exports/{id} hasta completed y descárguelo con GET /v1/exports/{id}/download durante 30 días. No usa timbres y sirve con una llave de solo lectura.
+
+        POST /v1/exports
+        https://fiscalisto.com/docs/api/referencia/exportaciones/create-export
+        """
+        result: Export = self._client.request(
+            "POST", "/v1/exports", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListExportsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[Export]:
+        """Listar exportaciones
+
+        Las exportaciones del emisor pedidas por la API, las más recientes primero.
+
+        GET /v1/exports
+        https://fiscalisto.com/docs/api/referencia/exportaciones/list-exports
+        """
+        return self._client.list("/v1/exports", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Export:
+        """Ver una exportación
+
+        Su estado (processing, completed, failed o expired), cuántas facturas lleva, su tamaño y hasta cuándo se descarga.
+
+        GET /v1/exports/{id}
+        https://fiscalisto.com/docs/api/referencia/exportaciones/get-export
+        """
+        result: Export = self._client.request(
+            "GET", f"/v1/exports/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def download(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> str:
+        """Descargar una exportación
+
+        El ZIP o el Excel, cuando status es completed. Antes, 409 export_not_ready; pasados 30 días, 410 export_expired.
+
+        GET /v1/exports/{id}/download
+        https://fiscalisto.com/docs/api/referencia/exportaciones/download-export
+        """
+        result: str = self._client.request(
+            "GET", f"/v1/exports/{_path(id)}/download", result="text", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
 class SatDownloadsResource:
     """Descargas del SAT: fiscalisto.sat_downloads."""
 
@@ -6189,6 +6565,31 @@ class FiscalistoApi(Core):
     def cfdi_verifications(self) -> CfdiVerificationsResource:
         """Verificar comprobantes."""
         return CfdiVerificationsResource(self)
+
+    @cached_property
+    def members(self) -> MembersResource:
+        """Equipo."""
+        return MembersResource(self)
+
+    @cached_property
+    def invitations(self) -> InvitationsResource:
+        """Equipo."""
+        return InvitationsResource(self)
+
+    @cached_property
+    def roles(self) -> RolesResource:
+        """Equipo."""
+        return RolesResource(self)
+
+    @cached_property
+    def permissions(self) -> PermissionsResource:
+        """Equipo."""
+        return PermissionsResource(self)
+
+    @cached_property
+    def exports(self) -> ExportsResource:
+        """Exportaciones."""
+        return ExportsResource(self)
 
     @cached_property
     def sat_downloads(self) -> SatDownloadsResource:

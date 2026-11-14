@@ -73,8 +73,10 @@ __all__ = [
     "CreateExpensePersonLinkParams",
     "CreateExpensePersonParams",
     "CreateExpenseReportParams",
+    "CreateExportParams",
     "CreateImssFilesParams",
     "CreateImssMovementParams",
+    "CreateInvitationParams",
     "CreateInvoiceBatchParams",
     "CreateInvoiceBatchParamsInvoicesItem",
     "CreateIssuerOnboardingLinkParams",
@@ -131,6 +133,7 @@ __all__ = [
     "CreateRetentionParamsTrustIncome",
     "CreateRetentionParamsTrustLease",
     "CreateRetentionParamsTrustWithholding",
+    "CreateRoleParams",
     "CreateSalesOrderDeliveryParams",
     "CreateSalesOrderDeliveryParamsItemsItem",
     "CreateSalesOrderParams",
@@ -177,6 +180,7 @@ __all__ = [
     "CustomerPaymentBehaviorPaymentFormsItem",
     "CustomerPaymentBehaviorTrend",
     "DeleteCostCenterParams",
+    "DeleteRoleParams",
     "Deleted",
     "Diot",
     "DiotLinesItem",
@@ -200,6 +204,8 @@ __all__ = [
     "ExpenseReportIssuesItem",
     "ExpenseReportList",
     "ExpenseReportPayroll",
+    "Export",
+    "ExportList",
     "ExternalPayrollReceiptCreate",
     "ExternalPayrollReceiptCreateDeductionsItem",
     "ExternalPayrollReceiptCreateDisabilitiesItem",
@@ -264,6 +270,8 @@ __all__ = [
     "ImssFilesRefusedItem",
     "ImssMovement",
     "ImssMovementList",
+    "Invitation",
+    "InvitationList",
     "Invoice",
     "InvoiceAdvanceApplication",
     "InvoiceBatch",
@@ -397,12 +405,15 @@ __all__ = [
     "ListEventsParams",
     "ListExpensePeopleParams",
     "ListExpenseReportsParams",
+    "ListExportsParams",
     "ListImssMovementsParams",
+    "ListInvitationsParams",
     "ListInvoiceBatchesParams",
     "ListInvoicesParams",
     "ListIssuersParams",
     "ListJournalEntriesParams",
     "ListLedgerAccountsParams",
+    "ListMembersParams",
     "ListPayrollBatchesParams",
     "ListPortalSuppliersParams",
     "ListPriceListsParams",
@@ -412,6 +423,7 @@ __all__ = [
     "ListReceivablesParams",
     "ListRecurringInvoicesParams",
     "ListRetentionsParams",
+    "ListRolesParams",
     "ListSalesOrdersParams",
     "ListSatDeclarationsParams",
     "ListSatDownloadsParams",
@@ -433,6 +445,8 @@ __all__ = [
     "MarkPurchaseReceiptInvoicedParams",
     "MarkSupplierInvoicePaidParams",
     "MatchBankTransactionParams",
+    "Member",
+    "MemberList",
     "PayrollBankFile",
     "PayrollBankFileExcludedItem",
     "PayrollBankFilePaymentsItem",
@@ -453,6 +467,8 @@ __all__ = [
     "PayrollReceiptPreviewPeriod",
     "PayrollReceiptPreviewTotals",
     "PayrollReceiptPreviewWarningsItem",
+    "Permission",
+    "PermissionList",
     "PortalSupplier",
     "PortalSupplierApprovedEvent",
     "PortalSupplierBankAccount",
@@ -516,6 +532,8 @@ __all__ = [
     "RetentionTaxesItem",
     "RetentionTotals",
     "ReturnExpenseReportParams",
+    "Role",
+    "RoleList",
     "RollWebhookSecretParams",
     "SalesOrder",
     "SalesOrderCanceledEvent",
@@ -645,6 +663,7 @@ __all__ = [
     "UpdateIssuerBrandingParams",
     "UpdateIssuerParams",
     "UpdateIssuerParamsDonationAuthorization",
+    "UpdateMemberParams",
     "UpdatePriceListParams",
     "UpdatePriceListParamsItemsItem",
     "UpdateProductParams",
@@ -663,6 +682,7 @@ __all__ = [
     "UpdateRecurringInvoiceParams",
     "UpdateRecurringInvoiceParamsInvoice",
     "UpdateRecurringInvoiceParamsSchedule",
+    "UpdateRoleParams",
     "UpdateSalesOrderParams",
     "UpdateSalesOrderParamsCustomer",
     "UpdateSalesOrderParamsCustomerForeign",
@@ -768,11 +788,11 @@ class Balance(TypedDict):
     unlimited: bool
     """true si la cuenta timbra sin usar timbres."""
     low_balance_at: int
-    """Con esta cantidad o menos llega balance.low (y otra vez al acabarse). Se elige en Desarrolladores › Timbres."""
+    """Con esta cantidad o menos llega balance.low (y otra vez al acabarse). Se elige en Desarrolladores › Timbres y pagos."""
     auto_recharge: BalanceAutoRecharge | None
     """La recarga automática con la tarjeta guardada, o null si está apagada."""
     use_plan_timbres: bool
-    """true si, al acabarse `available`, la API sigue timbrando con los timbres del plan de la empresa (Desarrolladores › Timbres › Si se acaban, usar los timbres de la empresa). false: responde 402 insufficient_balance."""
+    """true si, al acabarse `available`, la API sigue timbrando con los timbres del plan de la empresa (Desarrolladores › Timbres y pagos › Si se acaban, usar los timbres de la empresa). false: responde 402 insufficient_balance."""
     packs: list[BalancePacksItem]
     """Los paquetes con timbres, el que vence antes primero (en ese orden se usan)."""
 
@@ -1954,6 +1974,135 @@ class InvoicePreview(TypedDict):
     """Lo que conviene revisar antes de timbrar (un cliente en las listas 69 o 69-B del SAT, una factura que parece duplicada); no impide timbrar."""
     unsigned_xml: str
     """El XML que se mandaría al PAC, sin sello ni timbre."""
+
+
+# Las facturas de un emisor en un periodo, en un ZIP o en Excel.
+Export = TypedDict(
+    "Export",
+    {
+        "id": "str",
+        "object": "Literal[\"export\"]",
+        "livemode": "bool",
+        "issuer": "str",
+        "format": "Literal[\"zip\", \"xlsx\"]",
+        "files": "Literal[\"xml\", \"pdf\", \"xml_and_pdf\"] | None",
+        "direction": "Literal[\"issued\", \"received\"]",
+        "from": "str | None",
+        "to": "str | None",
+        "type": "Literal[\"I\", \"E\", \"P\", \"T\", \"N\"] | None",
+        "status": "Literal[\"processing\", \"completed\", \"failed\", \"expired\"]",
+        "invoice_count": "float",
+        "size_bytes": "float | None",
+        "error": "str | None",
+        "created_at": "str | None",
+        "completed_at": "str | None",
+        "expires_at": "str | None",
+    },
+)
+
+
+class Member(TypedDict):
+    """Una persona que entra a la empresa en la app."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["member"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    name: str | None
+    """Nombre."""
+    email: str
+    """Correo a donde se envía (varios separados por comas). Solo se usa si se pide enviarlo."""
+    role: str
+    """El rol (id de GET /v1/roles)."""
+    all_permissions: bool
+    """true: todos los permisos, incluidos los que se agreguen después."""
+    permissions_added: list[str]
+    """Permisos además de los del rol."""
+    permissions_removed: list[str]
+    """Permisos del rol que esta persona no tiene."""
+    tax_ids: list[str] | None
+    """Solo trabaja con estos RFC de la empresa; null: con todos."""
+    branches: list[str] | None
+    """Solo emite desde estas sucursales (brn_…, o "matriz"); null: desde todas."""
+    permissions: list[str]
+    """Lo que puede hacer al final: los permisos del rol, más los agregados, menos los quitados."""
+    two_factor_enabled: bool
+    """Si entra con verificación en dos pasos."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+
+
+class Invitation(TypedDict):
+    """Una invitación a la empresa que aún no se acepta."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["invitation"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    email: str
+    """Correo a donde se envía (varios separados por comas). Solo se usa si se pide enviarlo."""
+    role: str
+    """El rol (id de GET /v1/roles)."""
+    all_permissions: bool
+    """true: todos los permisos, incluidos los que se agreguen después."""
+    permissions_added: list[str]
+    """Permisos además de los del rol."""
+    permissions_removed: list[str]
+    """Permisos del rol que esta persona no tiene."""
+    tax_ids: list[str] | None
+    """Solo trabaja con estos RFC de la empresa; null: con todos."""
+    branches: list[str] | None
+    """Solo emite desde estas sucursales (brn_…, o "matriz"); null: desde todas."""
+    status: Literal["pending", "canceled"]
+    """pending: su enlace sirve. canceled: se canceló."""
+    expires_at: str
+    """Hasta cuándo sirve su enlace (7 días)."""
+
+
+class Role(TypedDict):
+    """Un rol de la empresa: un nombre y sus permisos."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["role"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    name: str
+    """Nombre."""
+    description: str | None
+    """Descripción."""
+    all_permissions: bool
+    """true: el rol tiene todos los permisos, incluidos los futuros."""
+    permissions: list[str]
+    """Sus permisos (vacío con all_permissions)."""
+    type: Literal["owner", "starter", "custom"]
+    """owner: Propietario. starter: uno de los de Fiscalisto (se puede cambiar, no borrar). custom: uno de la empresa."""
+    members: float
+    """Cuántos miembros lo tienen."""
+    invitations: float
+    """Cuántas invitaciones pendientes lo dan."""
+
+
+class Permission(TypedDict):
+    """Algo que una persona puede hacer en la empresa."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["permission"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    name: str
+    """Nombre."""
+    group: str
+    """Su grupo, como en Ajustes › Roles."""
+    sensitive: bool
+    """Delicado (equipo, credenciales, seguridad, plan): darlo o quitarlo se hace en la app."""
 
 
 class AdvanceCustomer(TypedDict):
@@ -6635,6 +6784,61 @@ class SatListCheckList(TypedDict):
     """La ruta de esta lista."""
 
 
+class MemberList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[Member]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class InvitationList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[Invitation]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class RoleList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[Role]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class PermissionList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[Permission]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class ExportList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[Export]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class SatDownloadList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -7746,6 +7950,7 @@ InvoiceCreate = TypedDict(
         "send_email": "NotRequired[bool]",
         "email_cc": "NotRequired[str | None]",
         "metadata": "NotRequired[dict[str, str]]",
+        "async": "NotRequired[bool]",
     },
 )
 
@@ -10129,6 +10334,115 @@ class VerifyCfdiParams(TypedDict):
     """El RFC del receptor, sin XML ni QR."""
     total: NotRequired[float]
     """El total del comprobante, sin XML ni QR. El SAT lo compara como número."""
+
+
+class ListMembersParams(TypedDict):
+    """Los parámetros de GET /v1/members."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateMemberParams(TypedDict):
+    role: NotRequired[str]
+    """El rol (id de GET /v1/roles, como admin, contador, facturista o uno suyo). owner es Propietario: solo un propietario da o quita ese rol."""
+    all_permissions: NotRequired[bool]
+    """true: todos los permisos, incluidos los que se agreguen después (además de los del rol)."""
+    permissions_added: NotRequired[list[str]]
+    """Permisos además de los del rol (GET /v1/permissions)."""
+    permissions_removed: NotRequired[list[str]]
+    """Permisos del rol que esta persona no tiene."""
+    tax_ids: NotRequired[list[str] | None]
+    """Solo trabaja con estos RFC de la empresa. null: con todos."""
+    branches: NotRequired[list[str] | None]
+    """Solo emite desde estas sucursales (brn_…, o "matriz" para el domicilio fiscal). null: desde todas."""
+
+
+class ListInvitationsParams(TypedDict):
+    """Los parámetros de GET /v1/invitations."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateInvitationParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…) de la empresa. Por omisión, su único emisor."""
+    email: str
+    """El correo de la persona: le llega la invitación, válida 7 días."""
+    role: str
+    """El rol (id de GET /v1/roles, como admin, contador, facturista o uno suyo). owner es Propietario: solo un propietario da o quita ese rol."""
+    all_permissions: NotRequired[bool]
+    """true: todos los permisos, incluidos los que se agreguen después (además de los del rol)."""
+    permissions_added: NotRequired[list[str]]
+    """Permisos además de los del rol (GET /v1/permissions)."""
+    permissions_removed: NotRequired[list[str]]
+    """Permisos del rol que esta persona no tiene."""
+    tax_ids: NotRequired[list[str] | None]
+    """Solo trabaja con estos RFC de la empresa. null: con todos."""
+    branches: NotRequired[list[str] | None]
+    """Solo emite desde estas sucursales (brn_…, o "matriz" para el domicilio fiscal). null: desde todas."""
+
+
+class ListRolesParams(TypedDict):
+    """Los parámetros de GET /v1/roles."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateRoleParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…) de la empresa. Por omisión, su único emisor."""
+    name: str
+    """Como se ve en la app."""
+    description: NotRequired[str | None]
+    """Descripción."""
+    all_permissions: NotRequired[bool]
+    """true: todos los permisos, incluidos los que se agreguen después."""
+    permissions: NotRequired[list[str]]
+    """Sus permisos (GET /v1/permissions). Los que otro necesita se agregan solos (timbrar pide ver facturas)."""
+
+
+class UpdateRoleParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…) de la empresa. Por omisión, su único emisor."""
+    description: NotRequired[str | None]
+    """Descripción."""
+    all_permissions: NotRequired[bool]
+    """true: todos los permisos, incluidos los que se agreguen después."""
+    permissions: NotRequired[list[str]]
+    """Sus permisos (GET /v1/permissions). Los que otro necesita se agregan solos (timbrar pide ver facturas)."""
+    name: NotRequired[str]
+    """Como se ve en la app."""
+
+
+class DeleteRoleParams(TypedDict):
+    """Los parámetros de DELETE /v1/roles/{id}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+CreateExportParams = TypedDict(
+    "CreateExportParams",
+    {
+        "issuer": "NotRequired[str]",
+        "month": "NotRequired[str]",
+        "from": "NotRequired[str]",
+        "to": "NotRequired[str]",
+        "direction": "NotRequired[Literal[\"issued\", \"received\"]]",
+        "type": "NotRequired[Literal[\"I\", \"E\", \"P\", \"T\", \"N\"]]",
+        "format": "NotRequired[Literal[\"zip\", \"xlsx\"]]",
+        "files": "NotRequired[Literal[\"xml\", \"pdf\", \"xml_and_pdf\"]]",
+    },
+)
+
+
+class ListExportsParams(TypedDict):
+    """Los parámetros de GET /v1/exports."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 
 
 CreateSatDownloadParams = TypedDict(

@@ -98,6 +98,18 @@ class ErrorCode:
     EXPENSE_REPORT_INVALID: Final = "expense_report_invalid"
     """Viáticos y gastos no lo permite en ese momento: el mensaje dice por qué (un gasto con errores al enviarla, un reembolso antes de aprobarla, aprobar lo que usted mismo envió)."""
 
+    EXPORT_EMPTY: Final = "export_empty"
+    """Ninguna factura del emisor coincide con el periodo y los filtros de POST /v1/exports: no se generó nada."""
+
+    EXPORT_EXPIRED: Final = "export_expired"
+    """Los archivos de una exportación se guardan 30 días. Pídala otra vez con POST /v1/exports."""
+
+    EXPORT_IN_PROGRESS: Final = "export_in_progress"
+    """Ya hay una exportación del mismo formato generándose en la empresa. Espere a que termine (GET /v1/exports) y pida la siguiente."""
+
+    EXPORT_NOT_READY: Final = "export_not_ready"
+    """La exportación aún se genera (status processing) o falló (failed). Consulte GET /v1/exports/{id}; si falló, pídala otra vez."""
+
     FEATURE_NOT_IN_PLAN: Final = "feature_not_in_plan"
     """En producción, inventario avanzado, portal de proveedores, pedidos de venta y comprobación de gastos siguen el plan de la empresa, como en la app: vienen con Operaciones (se agrega a Negocio; incluida en Corporativo). En modo de pruebas están todos."""
 
@@ -111,7 +123,7 @@ class ErrorCode:
     """Esa Idempotency-Key ya se usó en las últimas 24 horas con otra solicitud (otra ruta u otro cuerpo). Use una nueva para cada operación distinta."""
 
     INSUFFICIENT_BALANCE: Final = "insufficient_balance"
-    """La cuenta no tiene timbres de producción: para timbrar, revisar RFC en las listas, consultar constancias, pedir descargas o traer declaraciones, opinión o buzón del SAT. Compre un paquete en Desarrolladores › Timbres. En pruebas nunca pasa. Para enterarse antes, escuche balance.low o active la recarga automática."""
+    """La cuenta no tiene timbres de producción: para timbrar, revisar RFC en las listas, consultar constancias, pedir descargas o traer declaraciones, opinión o buzón del SAT. Compre un paquete en Desarrolladores › Timbres y pagos. En pruebas nunca pasa. Para enterarse antes, escuche balance.low o active la recarga automática."""
 
     INTERNAL_ERROR: Final = "internal_error"
     """Algo falló de nuestro lado. Repita la solicitud con la misma Idempotency-Key: nunca se timbra dos veces. Si sigue, escríbanos con el request_id."""
@@ -151,6 +163,9 @@ class ErrorCode:
 
     ISSUER_EXISTS: Final = "issuer_exists"
     """Ese RFC ya es un emisor de la cuenta en este modo."""
+
+    ISSUER_HAS_NO_TEAM: Final = "issuer_has_no_team"
+    """El emisor no tiene equipo: el equipo es el de una empresa, en sus emisores propios (type own) y con una llave fk_live_. Un emisor conectado o uno de pruebas no tiene miembros."""
 
     ISSUER_LINKED_EMPRESA: Final = "issuer_linked_empresa"
     """El emisor es una empresa de la app conectada a la cuenta (source empresa): con la API solo se usa su Portal de proveedores."""
@@ -317,6 +332,18 @@ class ErrorCode:
     SUPPLIER_INVOICE_INVALID: Final = "supplier_invoice_invalid"
     """La factura del proveedor no admite eso en su estado (por ejemplo, programar una que no está aprobada, una fecha de pago pasada o marcar pagada una ya pagada), o el SAT la reporta cancelada. El mensaje dice por qué."""
 
+    TEAM_CHANGE_REQUIRES_APP: Final = "team_change_requires_app"
+    """El cambio da, quita o toca un permiso delicado (equipo, credenciales, seguridad o plan), o nombra a un propietario: pide confirmar la identidad de quien lo hace, y eso se hace en la app, en Ajustes › Miembros o Ajustes › Roles."""
+
+    TEAM_INVALID: Final = "team_invalid"
+    """El cambio no se puede: la persona ya es miembro, quedaría la empresa sin propietario, ya hay un rol con ese nombre, el rol lo tiene alguien, o se mandaron demasiadas invitaciones hoy. El mensaje dice cuál."""
+
+    TEAM_PERMISSION_DENIED: Final = "team_permission_denied"
+    """La llave actúa como la persona que la creó, con su acceso en la empresa: le falta el permiso para esto, o lo que pide daría más de lo que ella tiene, o ya no es miembro."""
+
+    TEAM_SEAT_LIMIT: Final = "team_seat_limit"
+    """El plan de la empresa ya tiene todos sus usuarios (miembros más invitaciones pendientes). Cambie de plan en Ajustes › Plan y pagos o quite a alguien."""
+
     TEST_CLOCK_ADVANCING: Final = "test_clock_advancing"
     """El reloj se está adelantando en otra solicitud (409, con Retry-After). Espere a test_clock.ready y repita."""
 
@@ -381,6 +408,10 @@ ErrorCodeValue = Literal[
     "endpoint_limit",
     "expand_invalid",
     "expense_report_invalid",
+    "export_empty",
+    "export_expired",
+    "export_in_progress",
+    "export_not_ready",
     "feature_not_in_plan",
     "idempotency_key_invalid",
     "idempotency_key_missing",
@@ -399,6 +430,7 @@ ErrorCodeValue = Literal[
     "issuer_archived",
     "issuer_creation_limit",
     "issuer_exists",
+    "issuer_has_no_team",
     "issuer_linked_empresa",
     "issuer_missing",
     "issuer_not_allowed",
@@ -454,6 +486,10 @@ ErrorCodeValue = Literal[
     "store_platform_unavailable",
     "substitution_unsupported",
     "supplier_invoice_invalid",
+    "team_change_requires_app",
+    "team_invalid",
+    "team_permission_denied",
+    "team_seat_limit",
     "test_clock_advancing",
     "test_clock_exists",
     "test_clock_invalid",
