@@ -7401,6 +7401,8 @@ class InvoiceCreateGlobal(TypedDict):
     """Meses (Meses), c_Meses: 01 a 12, o 13 a 18 bimestres."""
     year: int
     """Año (Año)."""
+    keep_concepts: NotRequired[bool]
+    """Solo emisores con régimen 603 (donatarias y asociaciones): true conserva la descripción, claves, unidad y cantidad de cada concepto en vez de «Venta», 01010101, ACT."""
 
 
 class InvoiceCreateAddenda(TypedDict):
