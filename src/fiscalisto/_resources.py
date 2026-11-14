@@ -25,6 +25,7 @@ if TYPE_CHECKING:
         CancelRetentionParams,
         CancelSalesOrderDeliveryParams,
         CancelSalesOrderParams,
+        CfdiVerification,
         CheckSatListsParams,
         ClassifyBankTransactionParams,
         CloseSalesOrderParams,
@@ -79,6 +80,7 @@ if TYPE_CHECKING:
         Diot,
         Employee,
         Event,
+        EventResend,
         ExpensePerson,
         ExpensePersonLink,
         ExpensePolicy,
@@ -178,6 +180,7 @@ if TYPE_CHECKING:
         RejectQuoteParams,
         ReportImssMovementsParams,
         RequestPurchaseReceiptInvoiceParams,
+        ResendEventParams,
         ResetTestDataParams,
         Retention,
         ReturnExpenseReportParams,
@@ -245,6 +248,7 @@ if TYPE_CHECKING:
         UploadCertificateParams,
         ValidateTaxIdParams,
         VatRefund,
+        VerifyCfdiParams,
         Warehouse,
         WarehouseList,
         WebhookEndpoint,
@@ -3932,6 +3936,34 @@ class SatListsResource:
         return result
 
 
+class CfdiVerificationsResource:
+    """Verificar comprobantes: fiscalisto.cfdi_verifications."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: VerifyCfdiParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CfdiVerification:
+        """Verificar un CFDI en el SAT
+
+        Si cualquier CFDI (suyo, de un proveedor o de un cliente) existe en el SAT y está vigente o cancelado, si se puede cancelar, y si su emisor y su receptor están en las listas del SAT. Mande su XML, el texto de su QR, o el UUID con los dos RFC y el total. Consulta el servicio público del SAT, sin e.firma. No usa timbres. En pruebas también consulta el SAT real: los comprobantes de prueba no están ahí y responden not_found.
+
+        POST /v1/cfdi_verifications
+        https://fiscalisto.com/docs/api/referencia/verificar-comprobantes/verify-cfdi
+        """
+        result: CfdiVerification = self._client.request(
+            "POST", "/v1/cfdi_verifications", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class SatDownloadsResource:
     """Descargas del SAT: fiscalisto.sat_downloads."""
 
@@ -5772,6 +5804,28 @@ class EventsResource:
         )
         return result
 
+    def resend(
+        self,
+        id: str,
+        params: ResendEventParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EventResend:
+        """Reenviar un evento
+
+        Manda otra vez, ahora, un evento de los últimos 30 días: a un webhook (endpoint) o a todos los encendidos que escuchan ese tipo. Es un intento aparte, firmado con el mismo webhook-id: no cambia los reintentos automáticos, y si llega, ya no se reintenta. Úselo después de arreglar su servidor, con GET /v1/events?delivery_success=false.
+
+        POST /v1/events/{id}/resend
+        https://fiscalisto.com/docs/api/referencia/eventos/resend-event
+        """
+        result: EventResend = self._client.request(
+            "POST", f"/v1/events/{_path(id)}/resend", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
 
 class FiscalistoApi(Core):
     """Cada recurso de la API. Úselo por medio de Fiscalisto."""
@@ -5980,6 +6034,11 @@ class FiscalistoApi(Core):
     def sat_lists(self) -> SatListsResource:
         """Listas del SAT."""
         return SatListsResource(self)
+
+    @cached_property
+    def cfdi_verifications(self) -> CfdiVerificationsResource:
+        """Verificar comprobantes."""
+        return CfdiVerificationsResource(self)
 
     @cached_property
     def sat_downloads(self) -> SatDownloadsResource:

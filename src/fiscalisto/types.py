@@ -40,6 +40,9 @@ __all__ = [
     "CancelRetentionParams",
     "CancelSalesOrderDeliveryParams",
     "CancelSalesOrderParams",
+    "CfdiVerification",
+    "CfdiVerificationSat",
+    "CfdiVerificationXml",
     "CheckSatListsParams",
     "ClassifyBankTransactionParams",
     "CloseSalesOrderParams",
@@ -179,6 +182,7 @@ __all__ = [
     "EmployeeList",
     "Event",
     "EventList",
+    "EventResend",
     "EventType",
     "ExpenseItem",
     "ExpenseItemIssuesItem",
@@ -486,6 +490,7 @@ __all__ = [
     "RejectQuoteParams",
     "ReportImssMovementsParams",
     "RequestPurchaseReceiptInvoiceParams",
+    "ResendEventParams",
     "ResetTestDataParams",
     "Retention",
     "RetentionCanceledEvent",
@@ -670,6 +675,7 @@ __all__ = [
     "VatRefundReviewChecksItem",
     "VatRefundReviewCustomers",
     "VatRefundReviewSuppliers",
+    "VerifyCfdiParams",
     "Warehouse",
     "WarehouseList",
     "WebhookEndpoint",
@@ -5103,7 +5109,7 @@ class WebhookEndpoint(TypedDict):
     status: Literal["enabled", "failing", "disabled"]
     """enabled: entregando. failing: sus entregas fallan (se apaga tras 5 días así). disabled: apagado."""
     disabled_reason: NotRequired[str | None]
-    """Por qué se apagó (sus entregas fallaron 5 días seguidos, o usted lo apagó)."""
+    """Por qué se apagó: failing (sus entregas fallaron 5 días seguidos), gone (su servidor contestó 410 Gone) o manual (usted lo apagó)."""
     failing_since: NotRequired[str | None]
     """Desde cuándo fallan las entregas, o null."""
     previous_secret_expires_at: str | None
@@ -5138,6 +5144,83 @@ class WebhookTest(TypedDict):
     """El evento que se mandó, como lo recibió su servidor."""
     delivery: WebhookTestDelivery
     """Cómo le fue: ok si contestó 2xx, el código, el error y el inicio de su respuesta."""
+
+
+class EventResend(TypedDict):
+    """Un evento que se mandó otra vez: a cuántos webhooks salió. Cada entrega es un intento aparte, ahora; véalo en las entregas del webhook."""
+    object: Literal["event_resend"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    event: str
+    """El evento (evt_…) que se mandó otra vez."""
+    deliveries: int
+    """A cuántos webhooks salió. 0 si ninguno encendido escucha ese tipo de evento."""
+
+
+class CfdiVerificationSat(TypedDict):
+    """La respuesta del SAT tal cual (CodigoEstatus, Estado, EsCancelable, EstatusCancelacion, ValidacionEFOS), por si la necesita igual que el SAT."""
+    code: str
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones."""
+    state: str
+    """Entidad federativa donde trabaja (ClaveEntFed): JAL, CMX, NLE…"""
+    cancellable: str | None
+    """EsCancelable, tal cual lo dijo el SAT."""
+    cancellation_status: str | None
+    """EstatusCancelacion, tal cual lo dijo el SAT."""
+    efos_validation: str | None
+    """ValidacionEFOS: 200 si el emisor no es EFOS, 100 si lo es."""
+
+
+class CfdiVerificationXml(TypedDict):
+    version: str | None
+    """La versión del CFDI (4.0 o 3.3)."""
+    type: str | None
+    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    issued_at: str | None
+    """La fecha de emisión (Fecha), como viene en el XML."""
+    stamped_at: str | None
+    """La fecha de timbrado (FechaTimbrado), como viene en el XML."""
+    issuer_name: str | None
+    """El nombre del emisor en el XML."""
+    receiver_name: str | None
+    """El nombre del receptor en el XML."""
+    currency: str | None
+    """Moneda, clave ISO 4217 de c_Moneda (MXN, USD, EUR…). Por omisión MXN."""
+
+
+class CfdiVerification(TypedDict):
+    """Lo que dice el SAT de un CFDI: si existe, si está vigente o cancelado y si se puede cancelar, con su emisor y su receptor en las listas del SAT."""
+    object: Literal["cfdi_verification"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    uuid: str
+    """Folio fiscal que asigna el SAT (UUID del Timbre Fiscal Digital), en mayúsculas."""
+    issuer_tax_id: str
+    """El RFC del emisor que se consultó."""
+    receiver_tax_id: str
+    """El RFC del receptor que se consultó."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    source: Literal["xml", "qr", "fields"]
+    """De dónde se leyeron el UUID, los RFC y el total: xml, qr o fields."""
+    sat_status: Literal["active", "canceled", "not_found", "data_mismatch"]
+    """Lo que dice el SAT: active (vigente), canceled (cancelado), not_found (no lo tiene: no se timbró, se timbró hace minutos o es de pruebas) o data_mismatch (el UUID existe pero los RFC o el total no coinciden)."""
+    cancellable: Literal["without_acceptance", "with_acceptance", "not_cancellable"] | None
+    """Si está vigente, cómo se cancela: without_acceptance (sin que el receptor acepte), with_acceptance (el receptor tiene 3 días hábiles para aceptar) o not_cancellable (por ejemplo, tiene documentos relacionados vigentes). null si no está vigente o el SAT no lo dijo."""
+    cancellation_status: Literal["in_process", "rejected", "deadline_passed", "accepted", "without_acceptance"] | None
+    """Una cancelación en curso o terminada: in_process (esperando al receptor), rejected (el receptor la rechazó), deadline_passed (pasó el plazo y se canceló), accepted o without_acceptance (cancelado con o sin aceptación). null si nadie la pidió."""
+    issuer_efos: bool | None
+    """true si el SAT dice que el emisor está en la lista 69-B como definitivo (EFOS); false si no; null si no lo dijo."""
+    sat: CfdiVerificationSat
+    """La respuesta del SAT tal cual (CodigoEstatus, Estado, EsCancelable, EstatusCancelacion, ValidacionEFOS), por si la necesita igual que el SAT."""
+    xml: CfdiVerificationXml | None
+    """Lo que trae el XML además (versión, tipo, fechas, nombres, moneda), si mandó xml; null si no."""
+    issuer_sat_lists: SatListCheck | None
+    """El emisor en las listas del SAT (69-B, 69-B Bis y art. 69), como GET /v1/sat_lists/{tax_id}, sin costo. Solo cuando el SAT tiene el comprobante (active o canceled); null si no, o si las listas no se pudieron leer."""
+    receiver_sat_lists: SatListCheck | None
+    """El receptor en las listas del SAT, igual que el emisor."""
+    checked_at: str
+    """Cuándo se le preguntó al SAT."""
 
 
 EventType = Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.paid", "invoice.partially_paid", "invoice.email_bounced", "invoice.email_complained", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "payroll_batch.completed", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "quote.withdrawn", "sales_order.confirmed", "sales_order.customer_confirmed", "sales_order.delivered", "sales_order.paid", "sales_order.canceled", "supplier_invoice.received", "supplier_invoice.approved", "supplier_invoice.rejected", "supplier_invoice.scheduled", "supplier_invoice.paid", "portal_supplier.approved", "issuer.ready", "balance.low", "usage.high", "test_clock.ready"]
@@ -7400,7 +7483,7 @@ class InvoiceCreateGlobal(TypedDict):
     months: str
     """Meses (Meses), c_Meses: 01 a 12, o 13 a 18 bimestres."""
     year: int
-    """Año (Año)."""
+    """Año (Año): el de la fecha de la factura o hasta cinco años antes (CFDI40136)."""
     keep_concepts: NotRequired[bool]
     """Solo emisores con régimen 603 (donatarias y asociaciones): true conserva la descripción, claves, unidad y cantidad de cada concepto en vez de «Venta», 01010101, ACT."""
 
@@ -9806,6 +9889,21 @@ class CheckSatListsParams(TypedDict):
     """Los RFC a revisar, hasta 1000."""
 
 
+class VerifyCfdiParams(TypedDict):
+    xml: NotRequired[str]
+    """El XML del CFDI, como texto. Se leen de él el UUID, los dos RFC y el total. Hasta 4 millones de caracteres."""
+    qr: NotRequired[str]
+    """El texto del QR del PDF (https://verificacfdi.facturaelectronica.sat.gob.mx/default.aspx?id=…&re=…&rr=…&tt=…&fe=…), si no tiene el XML."""
+    uuid: NotRequired[str]
+    """El folio fiscal, sin XML ni QR. Va con issuer_tax_id, receiver_tax_id y total."""
+    issuer_tax_id: NotRequired[str]
+    """El RFC del emisor, sin XML ni QR."""
+    receiver_tax_id: NotRequired[str]
+    """El RFC del receptor, sin XML ni QR."""
+    total: NotRequired[float]
+    """El total del comprobante, sin XML ni QR. El SAT lo compara como número."""
+
+
 CreateSatDownloadParams = TypedDict(
     "CreateSatDownloadParams",
     {
@@ -11147,6 +11245,11 @@ class ListEventsParams(TypedDict):
     """Solo los de este objeto (inv_…, ret_…, bat_…)."""
     delivery_success: NotRequired[bool]
     """false: los que algún webhook no recibió (su último intento falló). true: los que recibieron todos los webhooks a los que se mandaron."""
+
+
+class ResendEventParams(TypedDict):
+    endpoint: NotRequired[str]
+    """El webhook (whe_…) al que mandarlo otra vez. Sin mandar: a todos los webhooks encendidos que escuchan ese tipo de evento."""
 
 
 class ApplyAdvanceParams(InvoiceCreate):

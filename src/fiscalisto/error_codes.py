@@ -83,6 +83,9 @@ class ErrorCode:
     EMAIL_FAILED: Final = "email_failed"
     """No se pudo mandar el correo; lo demás sí se hizo: el comprobante está timbrado o la cotización quedó enviada (su url funciona). Repita el envío con su ruta /send."""
 
+    ENDPOINT_DISABLED: Final = "endpoint_disabled"
+    """Ese webhook está apagado, así que no se le puede reenviar un evento. Enciéndalo con disabled: false y reenvíe."""
+
     ENDPOINT_EXISTS: Final = "endpoint_exists"
     """Ya hay un webhook con esa dirección en este modo; el mensaje dice cuál. Cámbielo en vez de crear otro."""
 
@@ -135,7 +138,7 @@ class ErrorCode:
     """La acción es para facturas timbradas (enviar, cancelar, sustituir)."""
 
     INVOICE_REJECTED: Final = "invoice_rejected"
-    """El PAC o el SAT no la aceptaron. sat_code trae su código (CFDI40xxx) y message qué corregir. La factura queda como rejected; no se usó ningún timbre."""
+    """El PAC o el SAT no la aceptaron. sat_code trae su código (CFDI40xxx), message qué corregir y doc_url su explicación en [Rechazos del SAT](/docs/api/rechazos-del-sat). La factura queda como rejected; no se usó ningún timbre."""
 
     ISSUER_ARCHIVED: Final = "issuer_archived"
     """El emisor está archivado: ya no timbra. Sus comprobantes se pueden consultar y cancelar."""
@@ -370,6 +373,7 @@ ErrorCodeValue = Literal[
     "efirma_invalid",
     "efirma_required",
     "email_failed",
+    "endpoint_disabled",
     "endpoint_exists",
     "endpoint_limit",
     "expand_invalid",
