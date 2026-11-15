@@ -9243,6 +9243,8 @@ class CreatePayrollReceiptParams(TypedDict):
     """El periodo de pago: primer y último día (FechaInicialPago, FechaFinalPago) y, si no es el último, el día de pago (FechaPago)."""
     days: NotRequired[float]
     """Días pagados (NumDiasPagados). Por omisión, todos los del periodo que le tocan."""
+    replaces: NotRequired[str]
+    """El recibo vigente (inv_… o UUID) que este corrige, calculado por Fiscalisto para el mismo empleado: el nuevo se calcula con los datos del empleado como están ahora, va relacionado con 04 y el anterior se cancela con motivo 01. Para un recibo que calculó su sistema use POST /v1/payroll_receipts/external con replaces."""
     send_email: NotRequired[bool]
     """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
     metadata: NotRequired[dict[str, str]]
@@ -9268,6 +9270,8 @@ class PreviewPayrollReceiptParams(TypedDict):
     """El periodo de pago: primer y último día (FechaInicialPago, FechaFinalPago) y, si no es el último, el día de pago (FechaPago)."""
     days: NotRequired[float]
     """Días pagados (NumDiasPagados). Por omisión, todos los del periodo que le tocan."""
+    replaces: NotRequired[str]
+    """El recibo vigente (inv_… o UUID) que este corrige, calculado por Fiscalisto para el mismo empleado: el nuevo se calcula con los datos del empleado como están ahora, va relacionado con 04 y el anterior se cancela con motivo 01. Para un recibo que calculó su sistema use POST /v1/payroll_receipts/external con replaces."""
     send_email: NotRequired[bool]
     """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
     metadata: NotRequired[dict[str, str]]
