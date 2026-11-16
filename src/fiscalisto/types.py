@@ -3785,6 +3785,8 @@ class ExpensePolicy(TypedDict):
     """true si avisa por correo a quien aprueba."""
     notify_people: bool
     """true si avisa a la persona cuando se aprueba, se devuelve o se le paga."""
+    receipt_formats: list[Literal["image", "pdf"]]
+    """Cómo se suben los tickets y recibos: image (foto), pdf o los dos. El XML de una factura siempre se acepta."""
 
 
 class Warehouse(TypedDict):
@@ -10725,6 +10727,8 @@ class UpdateExpensePolicyParams(TypedDict):
     """Avisar por correo a quien aprueba cuando le envían una comprobación."""
     notify_people: NotRequired[bool]
     """Avisar a la persona cuando se aprueba, se devuelve o se le paga."""
+    receipt_formats: NotRequired[list[Literal["image", "pdf"]]]
+    """Cómo se suben los tickets y recibos: image (foto), pdf o los dos. Un archivo de otro tipo se rechaza con invalid_request_error. El XML de una factura siempre se acepta."""
 
 
 class CreateCustomerParamsForeign(TypedDict):
