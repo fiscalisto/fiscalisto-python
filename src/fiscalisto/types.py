@@ -1578,6 +1578,7 @@ Invoice = TypedDict(
         "amount_due": "float | None",
         "amount_paid": "float | None",
         "paid_on": "str | None",
+        "due_date": "str | None",
         "related": "dict[str, Any] | None",
         "payment": "NotRequired[InvoicePayment | None]",
         "payroll": "NotRequired[InvoicePayroll]",
@@ -5512,6 +5513,8 @@ class Receivable(TypedDict):
     """La moneda de esas facturas."""
     amount_due: float
     """Lo que debe en total, en esa moneda."""
+    amount_overdue: float
+    """De eso, lo que ya pasó de su vencimiento (el due_date de cada factura), en esa moneda."""
     open_invoices: int
     """Cuántas facturas tiene abiertas."""
     oldest_invoice_date: str
