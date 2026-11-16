@@ -18,6 +18,8 @@ if TYPE_CHECKING:
         AdvanceTestClockParams,
         ApplyAdvanceParams,
         ApproveExpenseReportParams,
+        AttendanceMark,
+        AttendanceReport,
         Balance,
         BankImport,
         BankTransaction,
@@ -35,6 +37,7 @@ if TYPE_CHECKING:
         ComplianceOpinion,
         CostCenter,
         CreateAdvanceParams,
+        CreateAttendanceMarkParams,
         CreateBankTransactionsParams,
         CreateBranchParams,
         CreateCashForecastItemParams,
@@ -97,6 +100,7 @@ if TYPE_CHECKING:
         ExternalPayrollReceiptCreate,
         ExternalPayrollReceiptPreview,
         FinancialStatements,
+        GetAttendanceParams,
         GetCashForecastParams,
         GetCrossCheckCfdiParams,
         GetCrossChecksParams,
@@ -284,6 +288,7 @@ if TYPE_CHECKING:
         ValidateTaxIdParams,
         VatRefund,
         VerifyCfdiParams,
+        VoidAttendanceMarkParams,
         Warehouse,
         WarehouseList,
         WebhookDelivery,
@@ -3189,6 +3194,76 @@ class PricesResource:
         """
         result: PriceQuote = self._client.request(
             "POST", "/v1/prices", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class AttendanceResource:
+    """Asistencia: fiscalisto.attendance."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetAttendanceParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AttendanceReport:
+        """Ver la asistencia de un periodo
+
+        El registro de jornada del emisor (LFT art. 132) del periodo, por empleado: minutos trabajados contra su horario, faltas, retardos, días sin salida, marcas con notas y horas extra dobles y triples por semana. Con employee, también cada día y cada marca (con sus correcciones). Hasta 92 días a la vez.
+
+        GET /v1/attendance
+        https://fiscalisto.com/docs/api/referencia/asistencia/get-attendance
+        """
+        result: AttendanceReport = self._client.request(
+            "GET", "/v1/attendance", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create_mark(
+        self,
+        params: CreateAttendanceMarkParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AttendanceMark:
+        """Registrar una marca
+
+        Una entrada o salida que viene de otro reloj checador. Queda con method api y su motivo, y el empleado la ve en su enlace. Una marca igual del mismo empleado dentro de 60 segundos no se duplica.
+
+        POST /v1/attendance/marks
+        https://fiscalisto.com/docs/api/referencia/asistencia/create-attendance-mark
+        """
+        result: AttendanceMark = self._client.request(
+            "POST", "/v1/attendance/marks", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def void_mark(
+        self,
+        id: str,
+        params: VoidAttendanceMarkParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AttendanceMark:
+        """Quitar una marca
+
+        La marca deja de contar y queda tachada con su motivo, quién y cuándo (nunca se borra). En la app se puede restaurar.
+
+        POST /v1/attendance/marks/{id}/void
+        https://fiscalisto.com/docs/api/referencia/asistencia/void-attendance-mark
+        """
+        result: AttendanceMark = self._client.request(
+            "POST", f"/v1/attendance/marks/{_path(id)}/void", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -6697,6 +6772,11 @@ class FiscalistoApi(Core):
     def prices(self) -> PricesResource:
         """Listas de precios."""
         return PricesResource(self)
+
+    @cached_property
+    def attendance(self) -> AttendanceResource:
+        """Asistencia."""
+        return AttendanceResource(self)
 
     @cached_property
     def expense_people(self) -> ExpensePeopleResource:

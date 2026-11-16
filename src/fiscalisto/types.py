@@ -25,6 +25,12 @@ __all__ = [
     "ApplyAdvanceParams",
     "ApplyAdvanceParamsRemainder",
     "ApproveExpenseReportParams",
+    "AttendanceMark",
+    "AttendanceReport",
+    "AttendanceReportEmployeesItem",
+    "AttendanceReportEmployeesItemDaysItem",
+    "AttendanceReportEmployeesItemDaysItemScheduled",
+    "AttendanceReportEmployeesItemWeeksDisputedItem",
     "Balance",
     "BalanceAutoRecharge",
     "BalanceLowEvent",
@@ -66,6 +72,7 @@ __all__ = [
     "CreateAdvanceParams",
     "CreateAdvanceParamsCustomer",
     "CreateAdvanceParamsCustomerForeign",
+    "CreateAttendanceMarkParams",
     "CreateBankTransactionsParams",
     "CreateBankTransactionsParamsTransactionsItem",
     "CreateBranchParams",
@@ -261,6 +268,7 @@ __all__ = [
     "FinancialStatementsIncomeStatementYearToDateSectionsItem",
     "FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItem",
     "FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItemAccountsItem",
+    "GetAttendanceParams",
     "GetCashForecastParams",
     "GetCrossCheckCfdiParams",
     "GetCrossChecksParams",
@@ -747,6 +755,7 @@ __all__ = [
     "VatRefundReviewCustomers",
     "VatRefundReviewSuppliers",
     "VerifyCfdiParams",
+    "VoidAttendanceMarkParams",
     "Warehouse",
     "WarehouseList",
     "WebhookDelivery",
@@ -791,6 +800,140 @@ class Account(TypedDict):
     """La versión más reciente de la API."""
     key: AccountKey
     """La llave con que se hizo la solicitud: id, nombre y emisores a los que se limita."""
+
+
+class AttendanceMark(TypedDict):
+    """Una marca de entrada o salida de Asistencia (registro electrónico de jornada, LFT art. 132)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["attendance_mark"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    employee: str
+    """El empleado (emp_…)."""
+    kind: Literal["in", "out"]
+    """in: entrada; out: salida."""
+    at: str
+    """Cuándo marcó (UTC)."""
+    date: str
+    """El día al que cuenta, AAAA-MM-DD en la hora del lugar."""
+    time: str
+    """La hora en el lugar, HH:MM."""
+    method: Literal["kiosk_qr", "kiosk_pin", "printed_qr", "remote", "manual", "api"]
+    """Cómo marcó: kiosk_qr (el código del checador), kiosk_pin (número y NIP en el checador), printed_qr (el QR impreso), remote (fuera de la sucursal, con su ubicación), manual (corrección en la app), api."""
+    place: str | None
+    """El lugar donde marcó, o null."""
+    distance_m: float | None
+    """A cuántos metros del lugar estaba, si dio su ubicación; si no, null."""
+    flags: list[Literal["no_location", "far", "imprecise", "remote", "new_device"]]
+    """Notas para revisar (la marca nunca se rechaza por ellas): no_location (no dio su ubicación), far (lejos del lugar), imprecise (ubicación imprecisa), remote (fuera de la sucursal), new_device (un celular nuevo)."""
+    reason: str | None
+    """Por qué se agregó, en una corrección o desde la API (el empleado lo ve); null si la hizo él."""
+    created_by: str | None
+    """Quién la agregó, en una corrección; null si la hizo él."""
+    voided: bool
+    """true si se quitó: queda tachada, no cuenta, y se ve con su motivo."""
+    void_reason: str | None
+    """Por qué se quitó, o null."""
+    voided_by: str | None
+    """Quién la quitó, o null."""
+    voided_at: str | None
+    """Cuándo se quitó, o null."""
+
+
+class AttendanceReportEmployeesItemWeeksDisputedItem(TypedDict):
+    week: str
+    """El lunes de la semana, AAAA-MM-DD."""
+    text: str
+    """Lo que el empleado dijo que no coincide."""
+
+
+class AttendanceReportEmployeesItemDaysItemScheduled(TypedDict):
+    start: str
+    """Hora de entrada, HH:MM."""
+    end: str
+    """Hora de salida, HH:MM (antes de la entrada: al día siguiente)."""
+    break_minutes: int
+    """Minutos de comida que no se pagan."""
+
+
+class AttendanceReportEmployeesItemDaysItem(TypedDict):
+    date: str
+    """AAAA-MM-DD."""
+    status: Literal["worked", "incomplete", "absent", "rest", "holiday", "excused", "upcoming", "before"]
+    """worked (trabajó), incomplete (falta una marca), absent (falta), rest (descanso), holiday (día festivo), excused (justificado con una nota), upcoming (por venir), before (antes de empezar su registro)."""
+    scheduled: AttendanceReportEmployeesItemDaysItemScheduled | None
+    """Su horario ese día, o null si descansa."""
+    worked_minutes: int
+    """Minutos trabajados ese día."""
+    late_minutes: int
+    """Minutos de retardo, pasada la tolerancia."""
+    overtime_minutes: int
+    """Minutos de más ese día (horas extra)."""
+    note: Literal["vacaciones", "incapacidad", "permiso_con_goce", "permiso_sin_goce", "descanso", "festivo", "falta"] | None
+    """La nota del día que puso la empresa, o null."""
+    holiday: str | None
+    """El nombre del día festivo, o null."""
+
+
+class AttendanceReportEmployeesItem(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    name: str
+    """Su nombre."""
+    number: str | None
+    """Su número de empleado, o null."""
+    place: str | None
+    """Donde marca, o null (cualquier lugar)."""
+    worked_minutes: int
+    """Minutos trabajados en el periodo."""
+    scheduled_minutes: int
+    """Minutos de su horario en el periodo."""
+    absences: int
+    """Faltas: días de trabajo sin marcas ni nota."""
+    disability_days: int
+    """Días con nota de incapacidad."""
+    vacation_days: int
+    """Días con nota de vacaciones."""
+    late_count: int
+    """Cuántos días llegó tarde."""
+    late_minutes: int
+    """Minutos de retardo en total."""
+    incomplete_days: int
+    """Días con una marca sin su pareja (sin salida)."""
+    flagged_marks: int
+    """Marcas con una nota para revisar (flags)."""
+    overtime_double_minutes: int
+    """Horas extra que se pagan dobles (hasta 9 por semana en 2026, 12 desde 2027)."""
+    overtime_triple_minutes: int
+    """Horas extra que se pagan triples (las que pasan del límite de la semana)."""
+    rest_days_worked: int
+    """Días de descanso en que trabajó."""
+    holidays_worked: int
+    """Días festivos en que trabajó."""
+    weeks_confirmed: int
+    """Semanas que el empleado confirmó en su enlace."""
+    weeks_disputed: list[AttendanceReportEmployeesItemWeeksDisputedItem]
+    """Las semanas con las que el empleado no está de acuerdo."""
+    days: list[AttendanceReportEmployeesItemDaysItem] | None
+    """Cada día del periodo, solo cuando se pide un employee; si no, null."""
+    marks: list[AttendanceMark] | None
+    """Sus marcas, también las quitadas, solo cuando se pide un employee; si no, null."""
+
+
+# La asistencia de un periodo, por empleado: horas contra su horario, faltas, retardos y horas extra dobles y triples por semana, como Nómina › Asistencia › Registro.
+AttendanceReport = TypedDict(
+    "AttendanceReport",
+    {
+        "object": "Literal[\"attendance_report\"]",
+        "livemode": "bool",
+        "issuer": "str",
+        "from": "str",
+        "to": "str",
+        "employees": "list[AttendanceReportEmployeesItem]",
+    },
+)
 
 
 class BalanceAutoRecharge(TypedDict):
@@ -10290,6 +10433,34 @@ class QuotePricesParams(TypedDict):
     """El cliente (cus_…) o su RFC."""
     items: list[QuotePricesParamsItemsItem]
     """Conceptos (Conceptos), al menos uno."""
+
+
+# Los parámetros de GET /v1/attendance.
+GetAttendanceParams = TypedDict(
+    "GetAttendanceParams",
+    {
+        "issuer": "NotRequired[str]",
+        "from": "str",
+        "to": "str",
+        "employee": "NotRequired[str]",
+    },
+)
+
+
+class CreateAttendanceMarkParams(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    kind: Literal["in", "out"]
+    """in: entrada; out: salida."""
+    at: str
+    """Cuándo marcó, con su zona horaria (2027-01-04T09:02:00-06:00). No en el futuro ni de hace más de 400 días."""
+    reason: NotRequired[str]
+    """Por qué se registra (se guarda y el empleado lo ve en su enlace). Por omisión «Registrada por la API»."""
+
+
+class VoidAttendanceMarkParams(TypedDict):
+    reason: str
+    """Por qué se quita: queda tachada con este motivo y el empleado lo ve."""
 
 
 class CreateExpensePersonParams(TypedDict):
