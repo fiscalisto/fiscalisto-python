@@ -88,6 +88,7 @@ if TYPE_CHECKING:
         CustomerGroup,
         CustomerPaymentBehavior,
         DeleteCostCenterParams,
+        DeleteMemberParams,
         DeleteRoleParams,
         Deleted,
         Diot,
@@ -4480,6 +4481,7 @@ class MembersResource:
     def delete(
         self,
         id: str,
+        params: DeleteMemberParams | None = None,
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
@@ -4487,13 +4489,13 @@ class MembersResource:
     ) -> Deleted:
         """Quitar a un miembro
 
-        La persona deja de entrar a la empresa y sus invitaciones se cancelan. Siempre queda al menos un propietario; quitar a alguien con permisos delicados se hace en la app.
+        La persona deja de entrar a la empresa y sus invitaciones se cancelan; lo que hizo se queda con su nombre. Lo que le esperaba (pasos de aprobación que la nombran, aprobaciones pendientes, avisos, ausencias, viáticos que aprueba) pasa a `transfer_to` o, sin él, a cualquiera con el permiso. Siempre queda al menos un propietario; quitar a alguien con permisos delicados se hace en la app.
 
         DELETE /v1/members/{id}
         https://fiscalisto.com/docs/api/referencia/equipo/delete-member
         """
         result: Deleted = self._client.request(
-            "DELETE", f"/v1/members/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+            "DELETE", f"/v1/members/{_path(id)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 

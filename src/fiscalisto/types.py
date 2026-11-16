@@ -204,6 +204,7 @@ __all__ = [
     "CustomerPaymentBehaviorPaymentFormsItem",
     "CustomerPaymentBehaviorTrend",
     "DeleteCostCenterParams",
+    "DeleteMemberParams",
     "DeleteRoleParams",
     "Deleted",
     "Diot",
@@ -11185,6 +11186,12 @@ class UpdateMemberParams(TypedDict):
     """Solo trabaja con estos RFC de la empresa. null: con todos."""
     branches: NotRequired[list[str] | None]
     """Solo emite desde estas sucursales (brn_…, o "matriz" para el domicilio fiscal). null: desde todas."""
+
+
+class DeleteMemberParams(TypedDict):
+    """Los parámetros de DELETE /v1/members/{id}."""
+    transfer_to: NotRequired[str]
+    """El miembro (mem_…) que recibe su trabajo; sin él, cualquiera con permiso."""
 
 
 class ListInvitationsParams(TypedDict):
