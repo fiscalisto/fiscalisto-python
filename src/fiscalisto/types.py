@@ -1567,6 +1567,7 @@ Invoice = TypedDict(
         "use": "str | None",
         "payment_form": "str | None",
         "payment_method": "str | None",
+        "payment_terms": "str | None",
         "currency": "str",
         "exchange_rate": "float | None",
         "items": "list[InvoiceItem]",
@@ -5360,7 +5361,7 @@ class PortalSupplier(TypedDict):
     issuer: str
     """El emisor de su cuenta (iss_…) cuyo portal es."""
     tax_id: str
-    """El RFC del proveedor."""
+    """El RFC del proveedor; uno del extranjero, sin RFC, trae su clave `EXT-<país>-<tax ID>` (país en c_Pais del SAT, «EXT-USA-123456789»)."""
     name: str | None
     """Su nombre o razón social, o null si aún no lo da."""
     emails: list[str]
@@ -5405,9 +5406,9 @@ class SupplierInvoice(TypedDict):
     supplier: str
     """El proveedor (sup_…) que la mandó."""
     supplier_tax_id: str
-    """El RFC del proveedor."""
+    """El RFC del proveedor, o la clave `EXT-<país>-<tax ID>` de uno del extranjero."""
     uuid: str
-    """El folio fiscal (UUID del timbre)."""
+    """El folio fiscal (UUID del timbre); la factura de un proveedor del extranjero, que no lleva CFDI, trae `EXT-…` y sat_invoice null."""
     sat_invoice: str | None
     """La misma factura en sus facturas recibidas (sat_…), para su XML y su PDF, o null."""
     series: str | None
@@ -5585,7 +5586,7 @@ class CustomerPaymentBehavior(TypedDict):
     tax_id: str
     """Su RFC."""
     credit_days: int
-    """Sus días de crédito: los suyos (Clientes) o los de la empresa (Ajustes › Cobranza automática). Contra ellos se mide el atraso."""
+    """Sus días de crédito: los suyos (Clientes, o los de su grupo) o los de la empresa (Ajustes › Cobranza automática). Contra ellos se mide el atraso."""
     rating: Literal["on_time", "sometimes_late", "late", "very_late", "no_history"]
     """on_time (80 % o más llega a tiempo y atraso promedio de 5 días o menos), sometimes_late (hasta 15 días), late (hasta 45), very_late (más) o no_history (menos de 2 facturas pagadas y nada vencido)."""
     paid_invoices: int
@@ -8570,6 +8571,7 @@ InvoiceCreate = TypedDict(
         "currency": "NotRequired[str]",
         "series": "NotRequired[str]",
         "notes": "NotRequired[str]",
+        "payment_terms": "NotRequired[str]",
         "pdf_language": "NotRequired[Literal[\"es\", \"en\", \"bi\"]]",
         "addenda": "NotRequired[InvoiceCreateAddenda]",
         "related": "NotRequired[InvoiceCreateRelated]",
