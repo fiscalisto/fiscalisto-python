@@ -95,6 +95,7 @@ __all__ = [
     "CreatePriceListParams",
     "CreatePriceListParamsItemsItem",
     "CreateProductParams",
+    "CreateProductParamsHydrocarbon",
     "CreateProductParamsLocalTaxesItem",
     "CreatePurchaseReceiptParams",
     "CreatePurchaseReceiptParamsFieldsItem",
@@ -112,6 +113,7 @@ __all__ = [
     "CreateRecurringInvoiceParamsInvoice",
     "CreateRecurringInvoiceParamsSchedule",
     "CreateRetentionParams",
+    "CreateRetentionParamsDistributableRemainder",
     "CreateRetentionParamsDividends",
     "CreateRetentionParamsFinancialDerivatives",
     "CreateRetentionParamsForeignPayment",
@@ -365,6 +367,7 @@ __all__ = [
     "InvoicePayrollEmployeeSubcontractingItem",
     "InvoicePayrollEmployer",
     "InvoicePayrollEmployerSncf",
+    "InvoicePayrollImssDays",
     "InvoicePayrollOtherPaymentsItem",
     "InvoicePayrollOtherPaymentsItemBalanceCompensation",
     "InvoicePayrollPerceptionsItem",
@@ -462,6 +465,7 @@ __all__ = [
     "PayrollBatchReceiptsItemError",
     "PayrollReceiptPreview",
     "PayrollReceiptPreviewDeductionsItem",
+    "PayrollReceiptPreviewImssDays",
     "PayrollReceiptPreviewIsr",
     "PayrollReceiptPreviewIsrAdjustment",
     "PayrollReceiptPreviewOtherPaymentsItem",
@@ -490,6 +494,7 @@ __all__ = [
     "PriceQuoteItemsItem",
     "PriceQuoteItemsItemNextStep",
     "Product",
+    "ProductHydrocarbon",
     "ProductList",
     "ProductLocalTaxesItem",
     "PurchaseReceipt",
@@ -672,6 +677,7 @@ __all__ = [
     "UpdatePriceListParams",
     "UpdatePriceListParamsItemsItem",
     "UpdateProductParams",
+    "UpdateProductParamsHydrocarbon",
     "UpdateProductParamsLocalTaxesItem",
     "UpdatePurchaseReceiptParams",
     "UpdatePurchaseReceiptParamsFieldsItem",
@@ -1101,6 +1107,20 @@ class InvoicePayrollDisabilitiesItem(TypedDict):
     """Importe."""
 
 
+class InvoicePayrollImssDays(TypedDict):
+    """En un recibo que calculó Fiscalisto: los días del IMSS."""
+    calendar_days: int
+    """Días naturales del periodo que trabajó para el patrón: las cuotas del IMSS se causan por mes calendario (LSS art. 39), no por los días pagados."""
+    absences: int
+    """Faltas del recibo."""
+    disability_days: int
+    """Días de incapacidad del recibo."""
+    sickness_and_maternity: int
+    """Días que cotiza en enfermedades y maternidad (excedente, prestaciones en dinero, gastos médicos de pensionados): el periodo sin la incapacidad; las faltas cuentan (LSS art. 31 fr. I)."""
+    disability_and_old_age: int
+    """Días que cotiza en invalidez y vida y en cesantía en edad avanzada y vejez: además sin las faltas, hasta 7 por mes."""
+
+
 class InvoicePayrollTotals(TypedDict):
     """Totales: percepciones, deducciones, otros pagos y el neto a pagar."""
     salaries: float
@@ -1159,6 +1179,8 @@ class InvoicePayroll(TypedDict):
     """JubilacionPensionRetiro (percepciones 039, 044)."""
     disabilities: NotRequired[list[InvoicePayrollDisabilitiesItem]]
     """Incapacidades (percepción 014 o deducción 006)."""
+    imss_days: NotRequired[InvoicePayrollImssDays]
+    """En un recibo que calculó Fiscalisto: los días del IMSS."""
     totals: InvoicePayrollTotals
     """Totales: percepciones, deducciones, otros pagos y el neto a pagar."""
 
@@ -1467,7 +1489,7 @@ class Retention(TypedDict):
     date: str | None
     """Fecha de emisión (Fecha), hora de la Ciudad de México."""
     code: str
-    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones."""
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 06, 14 a 24 llevan su complemento, como lo pide el catálogo del SAT (share_sale con 06 y 19, dividends con 14, distributable_remainder con 15, interest, trust_lease, foreign_payment, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); 01, 02, 04 y 05 llevan foreign_payment cuando el receptor es extranjero; la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones. 27 y 28 no se pueden emitir aquí."""
     description: str | None
     """Descripción de la retención (DescRetenc)."""
     recipient: RetentionRecipient
@@ -1483,11 +1505,13 @@ class Retention(TypedDict):
     interest: NotRequired[dict[str, Any]]
     """Complemento de intereses."""
     foreign_payment: NotRequired[dict[str, Any]]
-    """Complemento de pagos a extranjeros."""
+    """Complemento de pagos a extranjeros: obligatorio con code 18, y con 01, 02, 04 y 05 cuando el receptor es extranjero."""
+    distributable_remainder: NotRequired[dict[str, Any]]
+    """Complemento de dividendos con su nodo Remanente (remanente distribuible), obligatorio con code 15. Si no lo manda, va sin proporción."""
     trust_lease: NotRequired[dict[str, Any]]
     """Complemento de arrendamiento en fideicomiso (Arrendamientoenfideicomiso 1.0), obligatorio con code 17."""
     share_sale: NotRequired[dict[str, Any]]
-    """Complemento de enajenación de acciones u operaciones de valores (EnajenaciondeAcciones 1.0), obligatorio con code 19."""
+    """Complemento de enajenación de acciones u operaciones de valores (EnajenaciondeAcciones 1.0), obligatorio con code 06 y 19."""
     prize: NotRequired[dict[str, Any]]
     """Complemento de premios (Premios 1.0), obligatorio con code 20. Sus montos son los de totals."""
     trust: NotRequired[dict[str, Any]]
@@ -1570,6 +1594,15 @@ class ProductLocalTaxesItem(TypedDict):
     """Tasa en por ciento (TasadeTraslado o TasadeRetencion)."""
 
 
+class ProductHydrocarbon(TypedDict):
+    permit_type: str
+    """Tipo de permiso de la CNE o la CRE (TipoPermiso, c_TipoPermiso): PER01 a PER11."""
+    permit_number: str
+    """Número de permiso de la CNE o la CRE (NumeroPermiso), como PL/12345/EXP/ES/2016: de 15 a 35 caracteres."""
+    subproduct: str
+    """Subproducto (SubProductoHYP, c_SubProductoHYP): SP16 gasolina regular, SP17 premium, SP18 diésel automotriz…"""
+
+
 class Product(TypedDict):
     """Un producto o servicio del catálogo de un emisor."""
     id: str
@@ -1587,7 +1620,7 @@ class Product(TypedDict):
     product_key: str
     """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
     unit_key: str
-    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
     unit_name: str | None
     """Nombre de la unidad (Unidad), hasta 20 caracteres."""
     sku: str | None
@@ -1612,6 +1645,8 @@ class Product(TypedDict):
     """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     local_taxes: list[ProductLocalTaxesItem]
     """Impuestos locales (complemento implocal): traslados y retenciones estatales."""
+    hydrocarbon: ProductHydrocarbon | None
+    """Complemento de Hidrocarburos y Petrolíferos: obligatorio en cada concepto de diésel (15101505) o gasolina (15101514, 15101515) de una factura o nota de crédito, en litros (LTR)."""
     track_stock: bool
     """true si lleva existencias (Inventario)."""
     cost: float | None
@@ -1710,7 +1745,7 @@ class Employee(TypedDict):
 
 class PayrollReceiptPreviewWarningsItem(TypedDict):
     code: str
-    """finiquito_not_included: el empleado se fue en el periodo y el recibo no trae su finiquito; payroll_rates_pending: aún no se cargan los valores (ISR, subsidio, salario mínimo, UMA) de una fecha próxima."""
+    """finiquito_not_included: el empleado se fue en el periodo y el recibo no trae su finiquito; absences_over_monthly_limit: con este recibo pasa de 7 faltas en el mes y las de más cotizan como días trabajados (para dejar de cotizar, presente su aviso de baja); payroll_rates_pending: aún no se cargan los valores (ISR, subsidio, salario mínimo, UMA) de una fecha próxima."""
     message: str
     """Qué pasó y cómo corregirlo, para una persona."""
 
@@ -1723,6 +1758,20 @@ class PayrollReceiptPreviewPeriod(TypedDict):
     """Último día del periodo (FechaFinalPago), AAAA-MM-DD."""
     payment_date: str
     """Fecha de pago (FechaPago), AAAA-MM-DD. Por omisión el último día del periodo."""
+
+
+class PayrollReceiptPreviewImssDays(TypedDict):
+    """Los días por los que se calcularon las cuotas obreras del IMSS."""
+    calendar_days: int
+    """Días naturales del periodo que trabajó para el patrón: las cuotas del IMSS se causan por mes calendario (LSS art. 39), no por los días pagados."""
+    absences: int
+    """Faltas del recibo."""
+    disability_days: int
+    """Días de incapacidad del recibo."""
+    sickness_and_maternity: int
+    """Días que cotiza en enfermedades y maternidad (excedente, prestaciones en dinero, gastos médicos de pensionados): el periodo sin la incapacidad; las faltas cuentan (LSS art. 31 fr. I)."""
+    disability_and_old_age: int
+    """Días que cotiza en invalidez y vida y en cesantía en edad avanzada y vejez: además sin las faltas, hasta 7 por mes."""
 
 
 class PayrollReceiptPreviewPerceptionsItemOvertimeItem(TypedDict):
@@ -1865,6 +1914,8 @@ class PayrollReceiptPreview(TypedDict):
     """El periodo de pago: primer y último día y el día de pago (FechaInicialPago, FechaFinalPago y FechaPago)."""
     days: float
     """Días pagados (NumDiasPagados). Por omisión, todos los del periodo que le tocan."""
+    imss_days: PayrollReceiptPreviewImssDays
+    """Los días por los que se calcularon las cuotas obreras del IMSS."""
     contribution_base_salary: float
     """Salario base de cotización (SalarioBaseCotApor)."""
     perceptions: list[PayrollReceiptPreviewPerceptionsItem]
@@ -1893,7 +1944,7 @@ class ExternalPayrollReceiptPreviewWarningsItem(TypedDict):
     param: str
     """El campo de la solicitud."""
     code: str
-    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones."""
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 06, 14 a 24 llevan su complemento, como lo pide el catálogo del SAT (share_sale con 06 y 19, dividends con 14, distributable_remainder con 15, interest, trust_lease, foreign_payment, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); 01, 02, 04 y 05 llevan foreign_payment cuando el receptor es extranjero; la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones. 27 y 28 no se pueden emitir aquí."""
     message: str
     """Qué pasó y cómo corregirlo, para una persona."""
 
@@ -1953,7 +2004,7 @@ class InvoicePreviewTaxes(TypedDict):
 
 class InvoicePreviewWarningsItem(TypedDict):
     code: str
-    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones."""
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 06, 14 a 24 llevan su complemento, como lo pide el catálogo del SAT (share_sale con 06 y 19, dividends con 14, distributable_remainder con 15, interest, trust_lease, foreign_payment, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); 01, 02, 04 y 05 llevan foreign_payment cuando el receptor es extranjero; la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones. 27 y 28 no se pueden emitir aquí."""
     message: str
     """Qué pasó y cómo corregirlo, para una persona."""
 
@@ -2180,6 +2231,8 @@ class InvoiceBatchInvoicesItem(TypedDict):
     """Total en la moneda del comprobante (Total)."""
     error: str | None
     """Por qué no se timbró."""
+    warnings: NotRequired[list[str]]
+    """Solo en la respuesta de POST /v1/invoice_batches: los avisos de esta factura antes de timbrarla, los mismos que daría POST /v1/invoices. Se timbra como se mandó."""
 
 
 class InvoiceBatch(TypedDict):
@@ -2489,7 +2542,7 @@ class CfdiSealsStamp(TypedDict):
 
 class CfdiSealsProblemsItem(TypedDict):
     code: Literal["malformed_xml", "missing_seal", "certificate_unreadable", "certificate_number_mismatch", "certificate_not_issuer", "certificate_not_csd", "certificate_not_valid_at_issue", "seal_mismatch", "stamp_not_for_this_seal", "sat_seal_mismatch"]
-    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones."""
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 06, 14 a 24 llevan su complemento, como lo pide el catálogo del SAT (share_sale con 06 y 19, dividends con 14, distributable_remainder con 15, interest, trust_lease, foreign_payment, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); 01, 02, 04 y 05 llevan foreign_payment cuando el receptor es extranjero; la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones. 27 y 28 no se pueden emitir aquí."""
     message: str
     """Qué pasó y cómo corregirlo, para una persona."""
 
@@ -3790,6 +3843,8 @@ class SatFinding(TypedDict):
     """Qué es, en palabras."""
     explanation: str | None
     """Por qué importa y qué hacer, o null."""
+    next_step: str
+    """Qué hacer con este hallazgo, en una frase o dos."""
     invoices: int
     """Cuántos CFDI lo tienen, sin revisar."""
     counterparties: int
@@ -3809,6 +3864,8 @@ class SatFindingCounterpartyFindingsItem(TypedDict):
     """Qué es, en palabras."""
     invoices: int
     """En cuántos de sus CFDI está, sin revisar."""
+    next_step: str
+    """Qué hacer con este hallazgo, en una frase o dos."""
 
 
 class SatFindingCounterparty(TypedDict):
@@ -3845,7 +3902,7 @@ class TicketLinesItem(TypedDict):
     product_key: str
     """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
     unit_key: str
-    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
     iva: str | None
     """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
     quantity: float
@@ -3946,6 +4003,10 @@ class SelfInvoicing(TypedDict):
     """El color de los botones del portal («#rrggbb»), o null para el de Fiscalisto."""
     portal_radius: int | None
     """Las esquinas del portal en píxeles (0 a 24), o null para las de Fiscalisto."""
+    retention_mode: Literal["keep_total", "subtract"]
+    """Cuando se factura una persona moral que retiene (1.25% de ISR en RESICO, o lo del producto). keep_total: la base crece y la factura suma lo que se pagó. subtract: la base es la del ticket y el total es lo pagado menos la retención."""
+    global_concepts: Literal["ticket", "summary"]
+    """ticket: la factura global lleva un concepto «Venta» por ticket, con su folio. summary: solo el monto total del periodo, uno por combinación de impuestos (NoIdentificacion «Resumen»), para una persona física en RESICO (regla 2.7.1.21 de la RMF 2026)."""
 
 
 class RecurringInvoiceSchedule(TypedDict):
@@ -3983,7 +4044,7 @@ class RecurringInvoiceItemsItem(TypedDict):
     quantity: NotRequired[float]
     """Cantidad (Cantidad). Por omisión 1."""
     unit_key: NotRequired[str]
-    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
     unit_price: float
     """Precio unitario antes de impuestos (ValorUnitario)."""
 
@@ -4746,7 +4807,7 @@ class QuoteItemsItem(TypedDict):
     quantity: NotRequired[float]
     """Cantidad (Cantidad). Por omisión 1."""
     unit_key: NotRequired[str]
-    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
     unit_price: float
     """Precio unitario antes de impuestos (ValorUnitario)."""
 
@@ -5019,7 +5080,7 @@ class PortalSupplier(TypedDict):
 
 class SupplierInvoiceWarningsItem(TypedDict):
     code: str
-    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones."""
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 06, 14 a 24 llevan su complemento, como lo pide el catálogo del SAT (share_sale con 06 y 19, dividends con 14, distributable_remainder con 15, interest, trust_lease, foreign_payment, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); 01, 02, 04 y 05 llevan foreign_payment cuando el receptor es extranjero; la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones. 27 y 28 no se pueden emitir aquí."""
     message: str
     """Qué pasó y cómo corregirlo, para una persona."""
 
@@ -5530,7 +5591,7 @@ class WebhookDelivery(TypedDict):
 class CfdiVerificationSat(TypedDict):
     """La respuesta del SAT tal cual (CodigoEstatus, Estado, EsCancelable, EstatusCancelacion, ValidacionEFOS), por si la necesita igual que el SAT."""
     code: str
-    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones."""
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 06, 14 a 24 llevan su complemento, como lo pide el catálogo del SAT (share_sale con 06 y 19, dividends con 14, distributable_remainder con 15, interest, trust_lease, foreign_payment, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); 01, 02, 04 y 05 llevan foreign_payment cuando el receptor es extranjero; la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones. 27 y 28 no se pueden emitir aquí."""
     state: str
     """Entidad federativa donde trabaja (ClaveEntFed): JAL, CMX, NLE…"""
     cancellable: str | None
@@ -7166,7 +7227,7 @@ class InvoiceCreateItemsItem(TypedDict):
     product_key: NotRequired[str]
     """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
     unit_key: NotRequired[str]
-    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
     unit_name: NotRequired[str | None]
     """Nombre de la unidad (Unidad), hasta 20 caracteres."""
     sku: NotRequired[str | None]
@@ -7786,7 +7847,7 @@ class InvoiceCreateCartaPorte(TypedDict):
 
 class InvoiceCreateIneEntitiesItem(TypedDict):
     key: str
-    """Clave de la entidad (ClaveEntidad), 3 letras."""
+    """Clave de la entidad (ClaveEntidad): la del estado (JAL, QUE…), NAC (nacional) o la circunscripción CR1 a CR5; estas seis no van con ámbito Local."""
     scope: NotRequired[Literal["Local", "Federal"]]
     """Ámbito (Ambito): Local o Federal."""
     accounting_ids: NotRequired[list[str]]
@@ -7921,8 +7982,8 @@ class InvoiceCreateComercioExteriorGoodsItem(TypedDict):
 
 class InvoiceCreateComercioExterior(TypedDict):
     """Complemento de comercio exterior 2.0."""
-    motive: NotRequired[Literal["05"]]
-    """Motivo de traslado (MotivoTraslado): 05 envío de mercancías propias."""
+    motive: NotRequired[Literal["99", "01", "02", "03", "04", "05"]]
+    """Motivo de traslado (MotivoTraslado), c_MotivoTraslado, solo en un traslado: 01 mercancías facturadas con anterioridad (relacione la factura de venta en related), 02 reubicación de mercancías propias, 03 consignación, 04 para posterior enajenación, 05 propiedad de terceros (con owners), 99 otros."""
     owners: NotRequired[list[InvoiceCreateComercioExteriorOwnersItem]]
     """Propietarios de la mercancía si no es el emisor (Propietario), con motive 05."""
     incoterm: NotRequired[str]
@@ -7984,6 +8045,7 @@ InvoiceCreate = TypedDict(
         "items": "list[InvoiceCreateItemsItem]",
         "type": "NotRequired[Literal[\"I\", \"T\"]]",
         "carta_porte": "NotRequired[InvoiceCreateCartaPorte]",
+        "carta_porte_exemption": "NotRequired[Literal[\"2.7.7.2.1\", \"2.7.7.2.2\", \"2.7.7.2.3\"]]",
         "ine": "NotRequired[InvoiceCreateIne]",
         "leyendas": "NotRequired[list[InvoiceCreateLeyendasItem]]",
         "donation": "NotRequired[InvoiceCreateDonation]",
@@ -8053,7 +8115,7 @@ class ExternalPayrollReceiptCreateEmployeeSubcontractingItem(TypedDict):
 class ExternalPayrollReceiptCreateEmployee(TypedDict):
     """El empleado (Receptor y Nomina/Receptor) con los datos de su sistema de nómina; no usa ni cambia los empleados de Fiscalisto."""
     tax_id: str
-    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    """RFC del empleado. XAXX010101000 si falleció: con su nombre y su CURP."""
     name: str
     """Nombre."""
     zip: str
@@ -8903,7 +8965,7 @@ class CreateRetentionParamsInterest(TypedDict):
 
 
 class CreateRetentionParamsForeignPayment(TypedDict):
-    """Complemento de pagos a extranjeros."""
+    """Complemento de pagos a extranjeros: obligatorio con code 18, y con 01, 02, 04 y 05 cuando el receptor es extranjero."""
     beneficiary: bool
     """true si quien recibe es el beneficiario efectivo (EsBenefEfectDelCobro)."""
     country: NotRequired[str | None]
@@ -8918,6 +8980,12 @@ class CreateRetentionParamsForeignPayment(TypedDict):
     """CURP del beneficiario (CURP)."""
     beneficiary_name: NotRequired[str | None]
     """Nombre o razón social del beneficiario (NomDenRazSocB)."""
+
+
+class CreateRetentionParamsDistributableRemainder(TypedDict):
+    """Complemento de dividendos con su nodo Remanente (remanente distribuible), obligatorio con code 15. Si no lo manda, va sin proporción."""
+    proportion: NotRequired[float | None]
+    """Porcentaje de participación del integrante o socio en el remanente (ProporcionRem), opcional."""
 
 
 class CreateRetentionParamsTrustLease(TypedDict):
@@ -8939,7 +9007,7 @@ class CreateRetentionParamsTrustLease(TypedDict):
 
 
 class CreateRetentionParamsShareSale(TypedDict):
-    """Complemento de enajenación de acciones u operaciones de valores (EnajenaciondeAcciones 1.0), obligatorio con code 19."""
+    """Complemento de enajenación de acciones u operaciones de valores (EnajenaciondeAcciones 1.0), obligatorio con code 06 y 19."""
     contract: str
     """Descripción del contrato de intermediación (ContratoIntermediacion)."""
     gain: float
@@ -9061,7 +9129,7 @@ class CreateRetentionParams(TypedDict):
     issuer: NotRequired[str]
     """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
     code: str
-    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 14, 16, 17 y 18 a 24 llevan su complemento (dividends, interest, trust_lease, foreign_payment, share_sale, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones."""
+    """Clave de la retención (CveRetenc), c_CveRetenc: 01 servicios profesionales, 05 arrendamiento, 14 dividendos, 16 intereses, 18 pagos al extranjero… Las claves 06, 14 a 24 llevan su complemento, como lo pide el catálogo del SAT (share_sale con 06 y 19, dividends con 14, distributable_remainder con 15, interest, trust_lease, foreign_payment, prize, trust, retirement_plan, mortgage_interest, financial_derivatives); 01, 02, 04 y 05 llevan foreign_payment cuando el receptor es extranjero; la 26 (plataformas tecnológicas) lleva platform, y sus totals y taxes se calculan de las operaciones. 27 y 28 no se pueden emitir aquí."""
     description: NotRequired[str | None]
     """Descripción de la retención (DescRetenc); obligatoria con la clave 25 (otro tipo)."""
     recipient: CreateRetentionParamsRecipient
@@ -9079,11 +9147,13 @@ class CreateRetentionParams(TypedDict):
     interest: NotRequired[CreateRetentionParamsInterest]
     """Complemento de intereses."""
     foreign_payment: NotRequired[CreateRetentionParamsForeignPayment]
-    """Complemento de pagos a extranjeros."""
+    """Complemento de pagos a extranjeros: obligatorio con code 18, y con 01, 02, 04 y 05 cuando el receptor es extranjero."""
+    distributable_remainder: NotRequired[CreateRetentionParamsDistributableRemainder]
+    """Complemento de dividendos con su nodo Remanente (remanente distribuible), obligatorio con code 15. Si no lo manda, va sin proporción."""
     trust_lease: NotRequired[CreateRetentionParamsTrustLease]
     """Complemento de arrendamiento en fideicomiso (Arrendamientoenfideicomiso 1.0), obligatorio con code 17."""
     share_sale: NotRequired[CreateRetentionParamsShareSale]
-    """Complemento de enajenación de acciones u operaciones de valores (EnajenaciondeAcciones 1.0), obligatorio con code 19."""
+    """Complemento de enajenación de acciones u operaciones de valores (EnajenaciondeAcciones 1.0), obligatorio con code 06 y 19."""
     prize: NotRequired[CreateRetentionParamsPrize]
     """Complemento de premios (Premios 1.0), obligatorio con code 20. Sus montos son los de totals."""
     trust: NotRequired[CreateRetentionParamsTrust]
@@ -9301,6 +9371,10 @@ class CreatePayrollReceiptParams(TypedDict):
     """El periodo de pago: primer y último día (FechaInicialPago, FechaFinalPago) y, si no es el último, el día de pago (FechaPago)."""
     days: NotRequired[float]
     """Días pagados (NumDiasPagados). Por omisión, todos los del periodo que le tocan."""
+    absences: NotRequired[int]
+    """Faltas del periodo (días sin goce de sueldo), de 0 a 31: no se pagan (salen de days) y cotizan al IMSS solo en enfermedades y maternidad, hasta 7 por mes (LSS art. 31 fr. I)."""
+    disability_days: NotRequired[int]
+    """Días de incapacidad que expidió el IMSS en el periodo, de 0 a 31: no se pagan (salen de days) y no causan cuotas obreras del IMSS (LSS art. 31 fr. IV)."""
     replaces: NotRequired[str]
     """El recibo vigente (inv_… o UUID) que este corrige, calculado por Fiscalisto para el mismo empleado: el nuevo se calcula con los datos del empleado como están ahora, va relacionado con 04 y el anterior se cancela con motivo 01. Para un recibo que calculó su sistema use POST /v1/payroll_receipts/external con replaces."""
     send_email: NotRequired[bool]
@@ -9328,6 +9402,10 @@ class PreviewPayrollReceiptParams(TypedDict):
     """El periodo de pago: primer y último día (FechaInicialPago, FechaFinalPago) y, si no es el último, el día de pago (FechaPago)."""
     days: NotRequired[float]
     """Días pagados (NumDiasPagados). Por omisión, todos los del periodo que le tocan."""
+    absences: NotRequired[int]
+    """Faltas del periodo (días sin goce de sueldo), de 0 a 31: no se pagan (salen de days) y cotizan al IMSS solo en enfermedades y maternidad, hasta 7 por mes (LSS art. 31 fr. I)."""
+    disability_days: NotRequired[int]
+    """Días de incapacidad que expidió el IMSS en el periodo, de 0 a 31: no se pagan (salen de days) y no causan cuotas obreras del IMSS (LSS art. 31 fr. IV)."""
     replaces: NotRequired[str]
     """El recibo vigente (inv_… o UUID) que este corrige, calculado por Fiscalisto para el mismo empleado: el nuevo se calcula con los datos del empleado como están ahora, va relacionado con 04 y el anterior se cancela con motivo 01. Para un recibo que calculó su sistema use POST /v1/payroll_receipts/external con replaces."""
     send_email: NotRequired[bool]
@@ -9362,7 +9440,11 @@ class CreatePayrollBatchParamsReceiptsItem(TypedDict):
     period: NotRequired[CreatePayrollBatchParamsReceiptsItemPeriod]
     """Su periodo de pago (FechaInicialPago, FechaFinalPago y FechaPago), si no es el del lote (period)."""
     days: NotRequired[float]
-    """Días pagados; sin él, todos los días que le tocan del periodo."""
+    """Días pagados; sin él, todos los días que le tocan del periodo menos absences y disability_days."""
+    absences: NotRequired[int]
+    """Faltas del periodo (días sin goce de sueldo), de 0 a 31: no se pagan (salen de days) y cotizan al IMSS solo en enfermedades y maternidad, hasta 7 por mes (LSS art. 31 fr. I)."""
+    disability_days: NotRequired[int]
+    """Días de incapacidad que expidió el IMSS en el periodo, de 0 a 31: no se pagan (salen de days) y no causan cuotas obreras del IMSS (LSS art. 31 fr. IV)."""
     send_email: NotRequired[bool]
     """Mandarle su recibo por correo; sin él, lo que diga send_email del lote. Con true el empleado debe tener correo."""
     reference: NotRequired[str]
@@ -10119,6 +10201,15 @@ class CreateProductParamsLocalTaxesItem(TypedDict):
     """Tasa en por ciento (TasadeTraslado o TasadeRetencion)."""
 
 
+class CreateProductParamsHydrocarbon(TypedDict):
+    permit_type: str
+    """Tipo de permiso de la CNE o la CRE (TipoPermiso, c_TipoPermiso): PER01 a PER11."""
+    permit_number: str
+    """Número de permiso de la CNE o la CRE (NumeroPermiso), como PL/12345/EXP/ES/2016: de 15 a 35 caracteres."""
+    subproduct: NotRequired[str]
+    """Subproducto (SubProductoHYP, c_SubProductoHYP): SP16 gasolina regular, SP17 premium, SP18 diésel automotriz…"""
+
+
 class CreateProductParams(TypedDict):
     issuer: NotRequired[str]
     """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
@@ -10129,7 +10220,7 @@ class CreateProductParams(TypedDict):
     product_key: str
     """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
     unit_key: NotRequired[str]
-    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
     unit_name: NotRequired[str | None]
     """Nombre de la unidad (Unidad), hasta 20 caracteres."""
     sku: NotRequired[str | None]
@@ -10152,6 +10243,8 @@ class CreateProductParams(TypedDict):
     """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     local_taxes: NotRequired[list[CreateProductParamsLocalTaxesItem]]
     """Impuestos locales que lleva, como el ISH 3% de hospedaje: van en cada factura con él, sobre sus conceptos."""
+    hydrocarbon: NotRequired[CreateProductParamsHydrocarbon | None]
+    """Diésel (15101505) y gasolinas (15101514, 15101515): el permiso de la CNE que lleva cada factura con él en el complemento de Hidrocarburos y Petrolíferos. Una factura cuyo concepto trae su propio hydrocarbon usa ese. null lo quita."""
     track_stock: NotRequired[bool]
     """Lleva existencias (Inventario): cada factura que lo vende las saca del almacén de su sucursal, y una cancelada las regresa. Ver GET /v1/products/{id}/stock."""
     cost: NotRequired[float | None]
@@ -10195,6 +10288,15 @@ class UpdateProductParamsLocalTaxesItem(TypedDict):
     """Tasa en por ciento (TasadeTraslado o TasadeRetencion)."""
 
 
+class UpdateProductParamsHydrocarbon(TypedDict):
+    permit_type: str
+    """Tipo de permiso de la CNE o la CRE (TipoPermiso, c_TipoPermiso): PER01 a PER11."""
+    permit_number: str
+    """Número de permiso de la CNE o la CRE (NumeroPermiso), como PL/12345/EXP/ES/2016: de 15 a 35 caracteres."""
+    subproduct: NotRequired[str]
+    """Subproducto (SubProductoHYP, c_SubProductoHYP): SP16 gasolina regular, SP17 premium, SP18 diésel automotriz…"""
+
+
 class UpdateProductParams(TypedDict):
     name: NotRequired[str | None]
     """Nombre corto para encontrarlo, solo para usted; en el CFDI va description."""
@@ -10203,7 +10305,7 @@ class UpdateProductParams(TypedDict):
     product_key: NotRequired[str]
     """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
     unit_key: NotRequired[str]
-    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
     unit_name: NotRequired[str | None]
     """Nombre de la unidad (Unidad), hasta 20 caracteres."""
     sku: NotRequired[str | None]
@@ -10226,6 +10328,8 @@ class UpdateProductParams(TypedDict):
     """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     local_taxes: NotRequired[list[UpdateProductParamsLocalTaxesItem]]
     """Impuestos locales que lleva, como el ISH 3% de hospedaje: van en cada factura con él, sobre sus conceptos."""
+    hydrocarbon: NotRequired[UpdateProductParamsHydrocarbon | None]
+    """Diésel (15101505) y gasolinas (15101514, 15101515): el permiso de la CNE que lleva cada factura con él en el complemento de Hidrocarburos y Petrolíferos. Una factura cuyo concepto trae su propio hydrocarbon usa ese. null lo quita."""
     track_stock: NotRequired[bool]
     """Lleva existencias (Inventario): cada factura que lo vende las saca del almacén de su sucursal, y una cancelada las regresa. Ver GET /v1/products/{id}/stock."""
     cost: NotRequired[float | None]
@@ -10746,6 +10850,10 @@ class UpdateSelfInvoicingParams(TypedDict):
     """El color de los botones del portal, como `#0b7c77`. `null` pone el de Fiscalisto."""
     portal_radius: NotRequired[int | None]
     """Lo redondo de las esquinas del portal, en píxeles (0 a 24). `null` pone el de Fiscalisto (10)."""
+    retention_mode: NotRequired[Literal["keep_total", "subtract"]]
+    """Cuando se factura una persona moral y retiene (1.25% de ISR a un emisor en RESICO, artículo 113-J de la LISR, o lo que diga el producto): `keep_total` (por omisión), la base crece para que la factura sume lo que se pagó; `subtract`, la base es la del ticket y la retención se resta, así que el total de la factura es menor a lo pagado."""
+    global_concepts: NotRequired[Literal["ticket", "summary"]]
+    """Los conceptos de la factura global: `ticket` (por omisión), uno «Venta» por ticket con su folio como `NoIdentificacion`; `summary`, solo el monto total del periodo, uno por combinación de impuestos con `NoIdentificacion` «Resumen» (regla 2.7.1.21 de la RMF 2026). `summary` es solo para un emisor persona física en RESICO (626); otro contesta `invalid_request`."""
 
 
 class ListJournalEntriesParams(TypedDict):
@@ -11119,7 +11227,7 @@ class CreateQuoteParamsItemsItem(TypedDict):
     product_key: NotRequired[str]
     """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
     unit_key: NotRequired[str]
-    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
     unit_name: NotRequired[str | None]
     """Nombre de la unidad (Unidad), hasta 20 caracteres."""
     sku: NotRequired[str | None]
@@ -11311,7 +11419,7 @@ class UpdateQuoteParamsItemsItem(TypedDict):
     product_key: NotRequired[str]
     """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
     unit_key: NotRequired[str]
-    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
     unit_name: NotRequired[str | None]
     """Nombre de la unidad (Unidad), hasta 20 caracteres."""
     sku: NotRequired[str | None]
@@ -11503,7 +11611,7 @@ class CreateSalesOrderParamsItemsItem(TypedDict):
     product_key: NotRequired[str]
     """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
     unit_key: NotRequired[str]
-    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
     unit_name: NotRequired[str | None]
     """Nombre de la unidad (Unidad), hasta 20 caracteres."""
     sku: NotRequired[str | None]
@@ -11704,7 +11812,7 @@ class UpdateSalesOrderParamsItemsItem(TypedDict):
     product_key: NotRequired[str]
     """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
     unit_key: NotRequired[str]
-    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio (por omisión), H87 pieza, ACT actividad…"""
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
     unit_name: NotRequired[str | None]
     """Nombre de la unidad (Unidad), hasta 20 caracteres."""
     sku: NotRequired[str | None]
