@@ -421,6 +421,8 @@ __all__ = [
     "ListIssuersParams",
     "ListJournalEntriesParams",
     "ListLedgerAccountsParams",
+    "ListMaterialityInvoicesParams",
+    "ListMaterialitySuppliersParams",
     "ListMembersParams",
     "ListPayrollBatchesParams",
     "ListPortalSuppliersParams",
@@ -453,6 +455,14 @@ __all__ = [
     "MarkPurchaseReceiptInvoicedParams",
     "MarkSupplierInvoicePaidParams",
     "MatchBankTransactionParams",
+    "MaterialityInvoice",
+    "MaterialityInvoiceEvidenceItem",
+    "MaterialityInvoiceList",
+    "MaterialitySupplier",
+    "MaterialitySupplierList",
+    "MaterialitySupplierMissing",
+    "MaterialitySupplierSatList",
+    "MaterialitySupplierStates",
     "Member",
     "MemberList",
     "PayrollBankFile",
@@ -1572,7 +1582,7 @@ class Customer(TypedDict):
     foreign: CustomerForeign | None
     """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
     ieps_taxpayer: bool
-    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
     group: str | None
     """Su grupo de clientes (cgr_…), o null si no está en ninguno."""
     price_list: str | None
@@ -3892,6 +3902,112 @@ class SatFindingCounterparty(TypedDict):
     """La fecha del más reciente de esos CFDI (AAAA-MM-DD)."""
     findings: list[SatFindingCounterpartyFindingsItem]
     """Sus tipos de hallazgo, del más grave al más leve."""
+
+
+class MaterialitySupplierStates(TypedDict):
+    """Cuántas facturas están complete (acuerdo, entrega y pago), partial (alguna) y none (ninguna)."""
+    complete: int
+    """Facturas con acuerdo, entrega y pago."""
+    partial: int
+    """Facturas con alguna de las tres pruebas, no todas."""
+    none: int
+    """Facturas sin ninguna prueba."""
+
+
+class MaterialitySupplierMissing(TypedDict):
+    """A cuántas facturas les falta el acuerdo, la entrega y el pago."""
+    agreement: int
+    """Facturas sin acuerdo (contrato u orden de compra)."""
+    delivery: int
+    """Facturas sin entrega (recepción, entregables o fotos)."""
+    payment: int
+    """Facturas sin pago (complemento, pago en el portal o en la orden, banco o comprobante)."""
+
+
+class MaterialitySupplierSatList(TypedDict):
+    status: Literal["definitive", "presumed"]
+    """definitive (69-B definitivo) o presumed (69-B presunto)."""
+    published_on: str | None
+    """El día que el SAT lo publicó como definitivo (AAAA-MM-DD), o null."""
+    deadline: str | None
+    """El último de los 30 días hábiles para acreditar las operaciones o corregir (AAAA-MM-DD), o null."""
+    business_days_left: int | None
+    """Días hábiles que quedan, sin contar hoy; negativo si ya venció. null si no es definitivo."""
+
+
+class MaterialitySupplier(TypedDict):
+    """Un proveedor del emisor en el periodo: cuánto le facturó, cuánto de eso tiene su evidencia completa (acuerdo, entrega y pago) y, si está en la lista 69-B, su plazo."""
+    id: str
+    """Su RFC (el mismo que tax_id)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["materiality_supplier"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor que recibió sus facturas."""
+    tax_id: str
+    """El RFC del proveedor."""
+    name: str | None
+    """Su nombre como viene en el CFDI, o null."""
+    invoices: int
+    """Cuántas facturas recibidas (ingresos, no canceladas) le dio en el periodo."""
+    total: float
+    """Lo que suman, en pesos (las de otra moneda, a su tipo de cambio)."""
+    unproven: float
+    """Lo que suman las que no tienen su evidencia completa, en pesos."""
+    states: MaterialitySupplierStates
+    """Cuántas facturas están complete (acuerdo, entrega y pago), partial (alguna) y none (ninguna)."""
+    missing: MaterialitySupplierMissing
+    """A cuántas facturas les falta el acuerdo, la entrega y el pago."""
+    sat_list: MaterialitySupplierSatList | None
+    """Si está en la lista 69-B: definitive (definitivo) o presumed (presunto); en definitivo, el día que se publicó, el último día de los 30 días hábiles para acreditar las operaciones o corregir y cuántos días hábiles quedan (negativo: ya venció). null: no está."""
+    in_supplier_portal: bool
+    """Si está en el Portal de proveedores del emisor (para pedirle la evidencia desde la app)."""
+    evidence_requested_at: str | None
+    """Cuándo se le pidió evidencia que todavía no manda, o null."""
+
+
+class MaterialityInvoiceEvidenceItem(TypedDict):
+    source: str
+    """De dónde salió: orden_compra, recepcion, complemento_pago, pago_banco, foto, mensaje_portal…"""
+    proves: Literal["agreement", "delivery", "payment"] | None
+    """Lo que prueba: agreement, delivery o payment; null si solo respalda."""
+    label: str
+    """De dónde salió, en palabras."""
+
+
+class MaterialityInvoice(TypedDict):
+    """Una factura recibida (ingreso) con lo que prueba que la operación existió: qué tiene, qué le falta y de dónde salió cada evidencia."""
+    id: str
+    """El UUID de la factura (el mismo que uuid)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["materiality_invoice"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor que la recibió."""
+    uuid: str
+    """El folio fiscal (UUID)."""
+    series: str | None
+    """Su serie, o null."""
+    folio: str | None
+    """Su folio, o null."""
+    date: str
+    """Su fecha (AAAA-MM-DD)."""
+    supplier_tax_id: str
+    """El RFC del proveedor que la emitió."""
+    supplier_name: str | None
+    """Su nombre como viene en el CFDI, o null."""
+    total: float
+    """Su total en pesos (de otra moneda, a su tipo de cambio)."""
+    state: Literal["complete", "partial", "none"]
+    """complete (tiene acuerdo, entrega y pago), partial (alguno) o none (ninguno)."""
+    has: list[Literal["agreement", "delivery", "payment"]]
+    """Lo que ya tiene: agreement (contrato u orden de compra), delivery (recepción, entregables o fotos), payment (complemento, pago en el portal o en la orden, banco o comprobante)."""
+    missing: list[Literal["agreement", "delivery", "payment"]]
+    """Lo que le falta, de lo mismo."""
+    evidence: list[MaterialityInvoiceEvidenceItem]
+    """De dónde salió cada evidencia: source es un código estable (orden_compra, recepcion, complemento_pago, pago_banco, foto, mensaje_portal…), proves lo que prueba (null: respaldo que no prueba nada solo) y label lo dice en palabras."""
 
 
 class TicketLinesItem(TypedDict):
@@ -6825,6 +6941,28 @@ class SatFindingCounterpartyList(TypedDict):
     """La ruta de esta lista."""
 
 
+class MaterialitySupplierList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[MaterialitySupplier]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class MaterialityInvoiceList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[MaterialityInvoice]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class WarehouseList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -7144,7 +7282,7 @@ class InvoiceCreateCustomer(TypedDict):
     foreign: NotRequired[InvoiceCreateCustomerForeign]
     """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
     ieps_taxpayer: NotRequired[bool]
-    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
 
 
 class InvoiceCreateItemsItemThirdParty(TypedDict):
@@ -8786,7 +8924,7 @@ class CreateAdvanceParamsCustomer(TypedDict):
     foreign: NotRequired[CreateAdvanceParamsCustomerForeign]
     """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
     ieps_taxpayer: NotRequired[bool]
-    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
 
 
 class CreateAdvanceParams(TypedDict):
@@ -10124,7 +10262,7 @@ class CreateCustomerParams(TypedDict):
     discount_percent: NotRequired[float | None]
     """Su propio descuento en cada concepto, en %; null: el de su grupo."""
     ieps_taxpayer: NotRequired[bool]
-    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
 
 
 class ListCustomersParams(TypedDict):
@@ -10168,7 +10306,7 @@ class UpdateCustomerParams(TypedDict):
     discount_percent: NotRequired[float | None]
     """Su propio descuento en cada concepto, en %; null: el de su grupo."""
     ieps_taxpayer: NotRequired[bool]
-    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
 
 
 class CreateCustomerDataRequestParams(TypedDict):
@@ -10394,6 +10532,32 @@ class ListSatFindingCounterpartiesParams(TypedDict):
     """Solo los de esta gravedad: critical, warning o info."""
     code: NotRequired[str]
     """Solo quienes tienen este hallazgo (efos_definitivo, cancelado, regla_12…; el code de GET /v1/sat_findings)."""
+
+
+class ListMaterialitySuppliersParams(TypedDict):
+    """Los parámetros de GET /v1/materiality_suppliers."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    date_gte: NotRequired[str]
+    """Facturas desde este día (AAAA-MM-DD)."""
+    date_lte: NotRequired[str]
+    """Facturas hasta este día (AAAA-MM-DD, completo)."""
+    supplier_tax_id: NotRequired[str]
+    """Solo este proveedor (su RFC)."""
+
+
+class ListMaterialityInvoicesParams(TypedDict):
+    """Los parámetros de GET /v1/materiality_invoices."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    date_gte: NotRequired[str]
+    """Facturas desde este día (AAAA-MM-DD)."""
+    date_lte: NotRequired[str]
+    """Facturas hasta este día (AAAA-MM-DD, completo)."""
+    supplier_tax_id: NotRequired[str]
+    """Solo las de este proveedor (su RFC)."""
+    state: NotRequired[Literal["complete", "partial", "none"]]
+    """Solo las de este estado: complete, partial o none. Sin él, las que no están completas."""
 
 
 class ListWarehousesParams(TypedDict):
@@ -10919,7 +11083,9 @@ class ListLedgerAccountsParams(TypedDict):
 class GetElectronicAccountingParams(TypedDict):
     """Los parámetros de GET /v1/accounting/electronic_accounting."""
     month: str
-    """El mes (AAAA-MM)."""
+    """El mes (AAAA-MM), o AAAA-13 para la balanza de cierre de un ejercicio ya terminado."""
+    closing_entry: NotRequired[Literal["true", "false"]]
+    """Solo con AAAA-13: true (por omisión) incluye la póliza de cierre, que cancela ingresos, costos y gastos contra el resultado del ejercicio (305.01 utilidad o 305.02 pérdida); false manda los saldos de diciembre sin movimientos."""
     type: NotRequired[Literal["normal", "complementary"]]
     """normal (BN, por omisión) o complementary (BC, con modified_on)."""
     modified_on: NotRequired[str]
@@ -11137,7 +11303,7 @@ class CreateQuoteParamsCustomer1(TypedDict):
     foreign: NotRequired[CreateQuoteParamsCustomer1Foreign]
     """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
     ieps_taxpayer: NotRequired[bool]
-    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
 
 
 class CreateQuoteParamsCustomer2(TypedDict):
@@ -11329,7 +11495,7 @@ class UpdateQuoteParamsCustomer1(TypedDict):
     foreign: NotRequired[UpdateQuoteParamsCustomer1Foreign]
     """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
     ieps_taxpayer: NotRequired[bool]
-    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
 
 
 class UpdateQuoteParamsCustomer2(TypedDict):
@@ -11528,7 +11694,7 @@ class CreateSalesOrderParamsCustomer(TypedDict):
     foreign: NotRequired[CreateSalesOrderParamsCustomerForeign]
     """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
     ieps_taxpayer: NotRequired[bool]
-    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
 
 
 class CreateSalesOrderParamsItemsItemThirdParty(TypedDict):
@@ -11729,7 +11895,7 @@ class UpdateSalesOrderParamsCustomer(TypedDict):
     foreign: NotRequired[UpdateSalesOrderParamsCustomerForeign]
     """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
     ieps_taxpayer: NotRequired[bool]
-    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio."""
+    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
 
 
 class UpdateSalesOrderParamsItemsItemThirdParty(TypedDict):

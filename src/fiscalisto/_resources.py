@@ -146,6 +146,8 @@ if TYPE_CHECKING:
         ListIssuersParams,
         ListJournalEntriesParams,
         ListLedgerAccountsParams,
+        ListMaterialityInvoicesParams,
+        ListMaterialitySuppliersParams,
         ListMembersParams,
         ListPayrollBatchesParams,
         ListPortalSuppliersParams,
@@ -178,6 +180,8 @@ if TYPE_CHECKING:
         MarkPurchaseReceiptInvoicedParams,
         MarkSupplierInvoicePaidParams,
         MatchBankTransactionParams,
+        MaterialityInvoiceList,
+        MaterialitySupplierList,
         Member,
         MemberList,
         PayrollBankFile,
@@ -3836,6 +3840,60 @@ class SatFindingCounterpartiesResource:
         return self._client.list("/v1/sat_finding_counterparties", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
 
+class MaterialitySuppliersResource:
+    """Cumplimiento SAT: fiscalisto.materiality_suppliers."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListMaterialitySuppliersParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> MaterialitySupplierList:
+        """Listar la materialidad por proveedor
+
+        Como Materialidad en la app: los proveedores de las facturas recibidas (ingresos) del emisor en un periodo, con cuánto de lo que facturaron tiene evidencia completa de que la operación existió (acuerdo, entrega y pago). Primero los que están en 69-B definitivo (corre su plazo de 30 días hábiles), después los de más importe sin probar. Una página, hasta 500. Sin fechas, este año hasta hoy. No usa timbres.
+
+        GET /v1/materiality_suppliers
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/list-materiality-suppliers
+        """
+        result: MaterialitySupplierList = self._client.request(
+            "GET", "/v1/materiality_suppliers", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class MaterialityInvoicesResource:
+    """Cumplimiento SAT: fiscalisto.materiality_invoices."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListMaterialityInvoicesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> MaterialityInvoiceList:
+        """Listar facturas recibidas por probar
+
+        Las facturas recibidas (ingresos) del emisor en un periodo que no tienen su evidencia completa, de mayor a menor importe, cada una con lo que tiene, lo que le falta y de dónde salió cada evidencia (orden de compra, recepción, complemento de pago, banco, archivos). Con state, solo las de ese estado. Una página, hasta 300; has_more dice que hay más (acorte el periodo o filtre por proveedor). No usa timbres.
+
+        GET /v1/materiality_invoices
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/list-materiality-invoices
+        """
+        result: MaterialityInvoiceList = self._client.request(
+            "GET", "/v1/materiality_invoices", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class WarehousesResource:
     """Inventario: fiscalisto.warehouses."""
 
@@ -5234,7 +5292,7 @@ class AccountingResource:
     ) -> str:
         """Descargar la contabilidad electrónica
 
-        El ZIP del mes para el Buzón Tributario: el catálogo (CT) y la balanza (BN, o BC si es complementaria), cada uno en su ZIP con el nombre que espera el SAT, en el formato 1.3 del Anexo 24. Con journal_request, también las pólizas (PL), que se entregan cuando el SAT las pide.
+        El ZIP del mes para el Buzón Tributario: el catálogo (CT) y la balanza (BN, o BC si es complementaria), cada uno en su ZIP con el nombre que espera el SAT, en el formato 1.3 del Anexo 24. Con journal_request, también las pólizas (PL), que se entregan cuando el SAT las pide. Con month AAAA-13, la balanza de comprobación ajustada al cierre del ejercicio (regla 2.8.1.6 RMF): solo la balanza, con los saldos finales de diciembre como saldos iniciales y, con closing_entry, la póliza de cierre.
 
         GET /v1/accounting/electronic_accounting
         https://fiscalisto.com/docs/api/referencia/contabilidad/get-electronic-accounting
@@ -6535,6 +6593,16 @@ class FiscalistoApi(Core):
     def sat_finding_counterparties(self) -> SatFindingCounterpartiesResource:
         """Cumplimiento SAT."""
         return SatFindingCounterpartiesResource(self)
+
+    @cached_property
+    def materiality_suppliers(self) -> MaterialitySuppliersResource:
+        """Cumplimiento SAT."""
+        return MaterialitySuppliersResource(self)
+
+    @cached_property
+    def materiality_invoices(self) -> MaterialityInvoicesResource:
+        """Cumplimiento SAT."""
+        return MaterialityInvoicesResource(self)
 
     @cached_property
     def warehouses(self) -> WarehousesResource:
