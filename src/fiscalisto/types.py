@@ -15,6 +15,7 @@ elif TYPE_CHECKING:  # pragma: no cover
 __all__ = [
     "Account",
     "AccountKey",
+    "AdjustCashForecastParams",
     "Advance",
     "AdvanceCustomer",
     "AdvanceList",
@@ -40,6 +41,15 @@ __all__ = [
     "CancelRetentionParams",
     "CancelSalesOrderDeliveryParams",
     "CancelSalesOrderParams",
+    "CashForecast",
+    "CashForecastItem",
+    "CashForecastLinesItem",
+    "CashForecastScenario",
+    "CashForecastStartingBalance",
+    "CashForecastSuggestedStartingBalance",
+    "CashForecastTotals",
+    "CashForecastWarningsItem",
+    "CashForecastWeeksItem",
     "CfdiSeals",
     "CfdiSealsCertificate",
     "CfdiSealsProblemsItem",
@@ -61,6 +71,7 @@ __all__ = [
     "CreateBranchParams",
     "CreateBranchParamsAddress",
     "CreateBranchParamsSeries",
+    "CreateCashForecastItemParams",
     "CreateCostCenterParams",
     "CreateCreditNoteParams",
     "CreateCustomerDataRequestParams",
@@ -250,6 +261,7 @@ __all__ = [
     "FinancialStatementsIncomeStatementYearToDateSectionsItem",
     "FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItem",
     "FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItemAccountsItem",
+    "GetCashForecastParams",
     "GetCrossCheckCfdiParams",
     "GetCrossChecksParams",
     "GetDiotFileParams",
@@ -668,6 +680,9 @@ __all__ = [
     "UpdateBranchParams",
     "UpdateBranchParamsAddress",
     "UpdateBranchParamsSeries",
+    "UpdateCashForecastItemParams",
+    "UpdateCashForecastParams",
+    "UpdateCashForecastParamsStartingBalance",
     "UpdateCostCenterParams",
     "UpdateCustomerGroupParams",
     "UpdateCustomerParams",
@@ -5425,6 +5440,185 @@ class CustomerPaymentBehavior(TypedDict):
     """Lo que debe ahora, la factura más antigua primero."""
 
 
+class CashForecastStartingBalance(TypedDict):
+    amount: float
+    """Lo que tenía en el banco, en pesos."""
+    date: str
+    """El día de ese saldo."""
+
+
+class CashForecastSuggestedStartingBalance(TypedDict):
+    amount: float
+    """La suma de los saldos, en pesos."""
+    date: str
+    """El día del estado de cuenta más reciente."""
+
+
+class CashForecastScenario(TypedDict):
+    """El escenario con que se calculó: el de los parámetros de la consulta."""
+    customers_pay_days_later: int
+    """Días que se movieron los cobros (0 como siempre)."""
+    pay_suppliers_days_later: int
+    """Días que se movieron los pagos a proveedores."""
+    include_doubtful: bool
+    """Si cuenta lo que lleva más de 90 días de atraso."""
+    include_recurring: bool
+    """Si cuenta las facturas recurrentes que aún no se emiten."""
+    recurring_sales_change: int
+    """Por ciento que cambiaron las recurrentes (−20 a +10…)."""
+
+
+class CashForecastTotals(TypedDict):
+    """Las 13 semanas juntas."""
+    inflows: float
+    """Lo que entra en las 13 semanas."""
+    outflows: float
+    """Lo que sale en las 13 semanas."""
+    ending_balance: float
+    """El saldo al final de la semana 13."""
+    lowest_balance: float
+    """El saldo más bajo al cierre de una semana."""
+    lowest_week: int
+    """La semana de ese saldo (1 a 13)."""
+    weeks_below_minimum: int
+    """Cuántas semanas cierran debajo de minimum_balance (o de 0)."""
+    doubtful_left_out: float
+    """Lo que se dejó fuera por llevar más de 90 días de atraso."""
+
+
+class CashForecastWeeksItem(TypedDict):
+    week: int
+    """1 a 13; la 1 va de hoy al domingo."""
+    start: str
+    """El primer día (AAAA-MM-DD)."""
+    end: str
+    """El último día, un domingo."""
+    starting_balance: float
+    """El saldo al empezar la semana."""
+    inflows: float
+    """Lo que entra."""
+    outflows: float
+    """Lo que sale."""
+    ending_balance: float
+    """El saldo al cerrar la semana."""
+    by_type: dict[str, float]
+    """Lo de cada tipo de renglón (lines[].type) esa semana, en pesos."""
+
+
+class CashForecastLinesItem(TypedDict):
+    line: str
+    """El renglón, para cambiarlo con POST /v1/cash_forecast/adjustments."""
+    type: Literal["receivable", "recurring_invoice", "planned_inflow", "payable", "payroll", "taxes", "planned_outflow"]
+    """receivable: lo que le deben sus clientes; recurring_invoice: lo que facturarán sus recurrentes; planned_inflow / planned_outflow: un movimiento previsto que usted agregó; payable: lo que debe a proveedores; payroll: la nómina; taxes: las declaraciones mensuales."""
+    direction: Literal["inflow", "outflow"]
+    """inflow entra; outflow sale."""
+    date: str
+    """El día en que se cuenta, con cambios y escenario."""
+    estimated_date: str
+    """El día que se estimó."""
+    week: int | None
+    """La semana en que cae; null si se dejó fuera (left_out)."""
+    amount: float
+    """Lo que se cuenta, en pesos."""
+    estimated_amount: float
+    """Lo que se estimó, en pesos."""
+    description: str
+    """Qué es, como en la app."""
+    tax_id: str | None
+    """El RFC del cliente o proveedor, o null."""
+    invoices: int | None
+    """Cuántas facturas suma, o null."""
+    due_date: str | None
+    """Cuándo vencía, o null."""
+    days_overdue: int | None
+    """Días de atraso si ya pasó el día esperado, o null."""
+    basis: str
+    """Cómo se estimó, en palabras."""
+    confidence: Literal["high", "medium", "low"]
+    """high: un monto y día conocidos; medium: un promedio; low: atrasado o sin historial."""
+    left_out: Literal["excluded", "doubtful", "scenario", "after_horizon"] | None
+    """Por qué no cuenta: excluded usted lo quitó; doubtful más de 90 días de atraso; scenario el escenario lo quitó; after_horizon cae después de la semana 13. null si cuenta."""
+    adjusted: bool
+    """true si usted le cambió el día, monto o lo quitó."""
+    planned_item: str | None
+    """El movimiento previsto (cfi_…) del que viene, o null."""
+
+
+class CashForecastWarningsItem(TypedDict):
+    type: Literal["no_starting_balance", "stale_starting_balance", "shortfall", "overdue_receivables", "customer_concentration", "doubtful_left_out"]
+    """no_starting_balance: falta el saldo de hoy; stale_starting_balance: tiene más de 7 días; shortfall: una semana cierra debajo del mínimo; overdue_receivables: mucho por cobrar está atrasado; customer_concentration: un cliente es 40 % o más de lo que entra; doubtful_left_out: se dejó fuera lo de más de 90 días."""
+    severity: Literal["critical", "warning", "info"]
+    """Qué tan urgente es."""
+    title: str
+    """El aviso, en palabras."""
+    detail: str
+    """Qué puede hacer; nada cambia solo."""
+    week: int | None
+    """La semana, o null."""
+    shortfall: float | None
+    """Lo que faltaría, en pesos, o null."""
+
+
+class CashForecast(TypedDict):
+    """El flujo de efectivo de las próximas 13 semanas: lo que le deben (con lo que cada cliente suele tardar), lo que debe a proveedores, la nómina, las declaraciones, las facturas recurrentes y sus movimientos previstos, desde el saldo que usted dio. Una estimación: no cambia nada."""
+    object: Literal["cash_forecast"]
+    """Siempre cash_forecast."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    today: str
+    """Hoy en la Ciudad de México (AAAA-MM-DD): el inicio."""
+    end: str
+    """El último día de la semana 13."""
+    currency: Literal["MXN"]
+    """Todo en pesos: lo de otra moneda, a su tipo de cambio."""
+    starting_balance: CashForecastStartingBalance | None
+    """El saldo de hoy que usted dio; null si no lo ha dado (el flujo parte de 0)."""
+    minimum_balance: float
+    """Lo menos que quiere tener; cada semana debajo trae un aviso. 0 si no lo dio."""
+    suggested_starting_balance: CashForecastSuggestedStartingBalance | None
+    """El saldo de sus últimos estados de cuenta en Conciliación (60 días), solo como sugerencia; null sin ellos."""
+    scenario: CashForecastScenario
+    """El escenario con que se calculó: el de los parámetros de la consulta."""
+    totals: CashForecastTotals
+    """Las 13 semanas juntas."""
+    weeks: list[CashForecastWeeksItem]
+    """Las 13 semanas, en orden."""
+    lines: list[CashForecastLinesItem]
+    """Cada cosa que entra o sale, de la que se suman las semanas."""
+    warnings: list[CashForecastWarningsItem]
+    """Avisos con lo que puede hacer; usted decide."""
+    planned_items: list[CashForecastItem]
+    """Sus movimientos previstos."""
+    notes: list[str]
+    """Lo que no se pudo estimar y por qué."""
+
+
+class CashForecastItem(TypedDict):
+    """Algo que espera pagar o cobrar y que ninguna factura dice (una renta, un crédito, una venta de contado), que cuenta en el flujo de efectivo."""
+    id: str
+    """El movimiento previsto (cfi_…)."""
+    object: Literal["cash_forecast_item"]
+    """Siempre cash_forecast_item."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    description: str
+    """Qué es: «Renta», «Crédito del banco»."""
+    direction: Literal["inflow", "outflow"]
+    """inflow entra dinero; outflow sale."""
+    amount: float
+    """Cuánto, en pesos."""
+    date: str
+    """El día (AAAA-MM-DD), o la primera vez si se repite."""
+    frequency: Literal["once", "weekly", "biweekly", "monthly"]
+    """once una vez; weekly cada semana; biweekly cada dos; monthly cada mes."""
+    until: str | None
+    """El último día en que se repite; null sin fin."""
+
+
 class BankTransactionSuggestedMatch(TypedDict):
     invoices: list[str]
     """Las facturas, como el cuerpo de POST /v1/invoices, con reference opcional."""
@@ -8693,6 +8887,87 @@ class ListReceivablesParams(TypedDict):
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
     customer: NotRequired[str]
     """Solo este cliente: su RFC o su id (cus_…)."""
+
+
+class GetCashForecastParams(TypedDict):
+    """Los parámetros de GET /v1/cash_forecast."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    customers_pay_days_later: NotRequired[int]
+    """Escenario: sus clientes le pagan estos días después (0 a 120)."""
+    pay_suppliers_days_later: NotRequired[int]
+    """Escenario: usted paga a sus proveedores estos días después (0 a 120)."""
+    include_doubtful: NotRequired[bool]
+    """true cuenta lo que lleva más de 90 días de atraso (por omisión no)."""
+    include_recurring: NotRequired[bool]
+    """false deja fuera las facturas recurrentes que aún no se emiten."""
+    recurring_sales_change: NotRequired[int]
+    """Escenario: por ciento que cambian sus recurrentes (−100 a 100)."""
+
+
+class UpdateCashForecastParamsStartingBalance(TypedDict):
+    amount: float
+    """Lo que tiene en el banco, en pesos."""
+    date: NotRequired[str]
+    """El día de ese saldo (AAAA-MM-DD); hoy si no se indica."""
+
+
+class UpdateCashForecastParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    starting_balance: NotRequired[UpdateCashForecastParamsStartingBalance | None]
+    """El saldo de hoy en sus cuentas de banco; null lo quita."""
+    minimum_balance: NotRequired[float]
+    """Lo menos que quiere tener: cada semana debajo trae un aviso. 0 para ninguno."""
+
+
+class CreateCashForecastItemParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    description: str
+    """Qué es: «Renta», «Crédito del banco»."""
+    direction: Literal["inflow", "outflow"]
+    """inflow si es dinero que entra; outflow si sale."""
+    amount: float
+    """Cuánto, en pesos."""
+    date: str
+    """El día (o la primera vez, si se repite)."""
+    frequency: NotRequired[Literal["once", "weekly", "biweekly", "monthly"]]
+    """once (por omisión), weekly, biweekly (cada dos semanas) o monthly."""
+    until: NotRequired[str | None]
+    """El último día en que se repite; null sin fin."""
+
+
+class UpdateCashForecastItemParams(TypedDict):
+    description: NotRequired[str]
+    """Qué es: «Renta», «Crédito del banco»."""
+    direction: NotRequired[Literal["inflow", "outflow"]]
+    """inflow si es dinero que entra; outflow si sale."""
+    amount: NotRequired[float]
+    """Cuánto, en pesos."""
+    date: NotRequired[str]
+    """El día (o la primera vez, si se repite)."""
+    frequency: NotRequired[Literal["once", "weekly", "biweekly", "monthly"]]
+    """once (por omisión), weekly, biweekly (cada dos semanas) o monthly."""
+    until: NotRequired[str | None]
+    """El último día en que se repite; null sin fin."""
+
+
+class AdjustCashForecastParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    line: str
+    """El renglón (lines[].line de GET /v1/cash_forecast)."""
+    date: NotRequired[str | None]
+    """Otro día para ese renglón; null el estimado."""
+    amount: NotRequired[float | None]
+    """Otro monto, en pesos; null el estimado."""
+    excluded: NotRequired[bool]
+    """true para no contarlo."""
+    note: NotRequired[str | None]
+    """Por qué (lo ve quien abra la semana en la app)."""
+    reset: NotRequired[bool]
+    """true lo regresa a lo estimado; lo demás se ignora."""
 
 
 class CreateBankTransactionsParamsTransactionsItem(TypedDict):

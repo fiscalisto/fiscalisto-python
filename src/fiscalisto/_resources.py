@@ -13,6 +13,7 @@ from ._core import Core, ListObject
 if TYPE_CHECKING:
     from .types import (
         Account,
+        AdjustCashForecastParams,
         AdvanceList,
         AdvanceTestClockParams,
         ApplyAdvanceParams,
@@ -25,6 +26,8 @@ if TYPE_CHECKING:
         CancelRetentionParams,
         CancelSalesOrderDeliveryParams,
         CancelSalesOrderParams,
+        CashForecast,
+        CashForecastItem,
         CfdiVerification,
         CheckSatListsParams,
         ClassifyBankTransactionParams,
@@ -34,6 +37,7 @@ if TYPE_CHECKING:
         CreateAdvanceParams,
         CreateBankTransactionsParams,
         CreateBranchParams,
+        CreateCashForecastItemParams,
         CreateCostCenterParams,
         CreateCreditNoteParams,
         CreateCustomerDataRequestParams,
@@ -93,6 +97,7 @@ if TYPE_CHECKING:
         ExternalPayrollReceiptCreate,
         ExternalPayrollReceiptPreview,
         FinancialStatements,
+        GetCashForecastParams,
         GetCrossCheckCfdiParams,
         GetCrossChecksParams,
         GetDiotFileParams,
@@ -248,6 +253,8 @@ if TYPE_CHECKING:
         TrialBalance,
         UpdateAccountParams,
         UpdateBranchParams,
+        UpdateCashForecastItemParams,
+        UpdateCashForecastParams,
         UpdateCostCenterParams,
         UpdateCustomerGroupParams,
         UpdateCustomerParams,
@@ -1454,6 +1461,138 @@ class CustomersResource:
         """
         result: Deleted = self._client.request(
             "DELETE", f"/v1/customers/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class CashForecastResource:
+    """Flujo de efectivo: fiscalisto.cash_forecast."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetCashForecastParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CashForecast:
+        """Ver el flujo de efectivo
+
+        Las próximas 13 semanas del emisor, como «Flujo de efectivo» en la app: lo que le deben, con lo que cada cliente suele tardar en pagar; lo que debe a proveedores; la nómina; las declaraciones mensuales; las facturas recurrentes y sus movimientos previstos, desde el saldo que dio. Trae avisos con lo que puede hacer, y con los parámetros, un escenario (no se guarda). Una estimación: nada cambia solo.
+
+        GET /v1/cash_forecast
+        https://fiscalisto.com/docs/api/referencia/flujo-de-efectivo/get-cash-forecast
+        """
+        result: CashForecast = self._client.request(
+            "GET", "/v1/cash_forecast", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        params: UpdateCashForecastParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CashForecast:
+        """Dar el saldo de hoy
+
+        El saldo de hoy en sus cuentas de banco (de donde parte el flujo) y lo menos que quiere tener. Solo lo que mande cambia. Responde el flujo con el saldo nuevo.
+
+        POST /v1/cash_forecast
+        https://fiscalisto.com/docs/api/referencia/flujo-de-efectivo/update-cash-forecast
+        """
+        result: CashForecast = self._client.request(
+            "POST", "/v1/cash_forecast", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create_item(
+        self,
+        params: CreateCashForecastItemParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CashForecastItem:
+        """Agregar un movimiento previsto
+
+        Algo que espera pagar o cobrar y que ninguna factura dice: una renta, un crédito, una venta de contado. Una vez o cada semana, dos semanas o mes. Hasta 200.
+
+        POST /v1/cash_forecast/planned_items
+        https://fiscalisto.com/docs/api/referencia/flujo-de-efectivo/create-cash-forecast-item
+        """
+        result: CashForecastItem = self._client.request(
+            "POST", "/v1/cash_forecast/planned_items", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_item(
+        self,
+        id: str,
+        params: UpdateCashForecastItemParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CashForecastItem:
+        """Cambiar un movimiento previsto
+
+        Solo lo que mande cambia.
+
+        POST /v1/cash_forecast/planned_items/{id}
+        https://fiscalisto.com/docs/api/referencia/flujo-de-efectivo/update-cash-forecast-item
+        """
+        result: CashForecastItem = self._client.request(
+            "POST", f"/v1/cash_forecast/planned_items/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete_item(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar un movimiento previsto
+
+        Ya no cuenta en el flujo.
+
+        DELETE /v1/cash_forecast/planned_items/{id}
+        https://fiscalisto.com/docs/api/referencia/flujo-de-efectivo/delete-cash-forecast-item
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/cash_forecast/planned_items/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def adjust(
+        self,
+        params: AdjustCashForecastParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CashForecast:
+        """Cambiar un renglón del flujo
+
+        Otro día o monto para un renglón (lines[].line), o no contarlo: un cliente le avisó que paga después, o una factura ya se pagó por fuera. Solo cambia el pronóstico, nunca la factura. reset: true lo regresa a lo estimado. Responde el flujo con el cambio.
+
+        POST /v1/cash_forecast/adjustments
+        https://fiscalisto.com/docs/api/referencia/flujo-de-efectivo/adjust-cash-forecast
+        """
+        result: CashForecast = self._client.request(
+            "POST", "/v1/cash_forecast/adjustments", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -6458,6 +6597,11 @@ class FiscalistoApi(Core):
     def customers(self) -> CustomersResource:
         """Cuentas por cobrar."""
         return CustomersResource(self)
+
+    @cached_property
+    def cash_forecast(self) -> CashForecastResource:
+        """Flujo de efectivo."""
+        return CashForecastResource(self)
 
     @cached_property
     def bank_transactions(self) -> BankTransactionsResource:
