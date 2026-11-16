@@ -1776,6 +1776,10 @@ class Customer(TypedDict):
     """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
     ieps_taxpayer: bool
     """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
+    credit_days: int | None
+    """Días de crédito que se le dan, de 0 a 365, o null para no cambiar los del cliente."""
+    payment_terms: str | None
+    """Condiciones de pago (CondicionesDePago), hasta 1,000 caracteres sin «|»: «Crédito a 30 días», «50 % anticipo». Van en el XML y en el PDF; solo en ingresos y egresos. No cambian cuándo vence (due_date usa los días de crédito del cliente)."""
     group: str | None
     """Su grupo de clientes (cgr_…), o null si no está en ninguno."""
     price_list: str | None
@@ -10764,6 +10768,10 @@ class CreateCustomerParams(TypedDict):
     """Su propio descuento en cada concepto, en %; null: el de su grupo."""
     ieps_taxpayer: NotRequired[bool]
     """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
+    credit_days: NotRequired[int | None]
+    """Sus días de crédito: sus facturas vencen estos días después de su fecha (due_date, cobranza); null: los de su grupo o los de la empresa."""
+    payment_terms: NotRequired[str | None]
+    """Sus condiciones de pago («Crédito a 30 días»): las facturas nuevas en la app empiezan con ellas; null: las de la empresa. POST /v1/invoices no las pone solas: mándelas en payment_terms."""
 
 
 class ListCustomersParams(TypedDict):
@@ -10808,6 +10816,10 @@ class UpdateCustomerParams(TypedDict):
     """Su propio descuento en cada concepto, en %; null: el de su grupo."""
     ieps_taxpayer: NotRequired[bool]
     """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
+    credit_days: NotRequired[int | None]
+    """Sus días de crédito: sus facturas vencen estos días después de su fecha (due_date, cobranza); null: los de su grupo o los de la empresa."""
+    payment_terms: NotRequired[str | None]
+    """Sus condiciones de pago («Crédito a 30 días»): las facturas nuevas en la app empiezan con ellas; null: las de la empresa. POST /v1/invoices no las pone solas: mándelas en payment_terms."""
 
 
 class CreateCustomerDataRequestParams(TypedDict):
