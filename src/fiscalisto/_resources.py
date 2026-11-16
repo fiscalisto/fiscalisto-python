@@ -17,8 +17,10 @@ if TYPE_CHECKING:
         AdvanceList,
         AdvanceTestClockParams,
         ApplyAdvanceParams,
+        ApproveAttendanceOvertimeParams,
         ApproveExpenseReportParams,
         AttendanceMark,
+        AttendanceOvertime,
         AttendanceReport,
         Balance,
         BankImport,
@@ -3264,6 +3266,27 @@ class AttendanceResource:
         """
         result: AttendanceMark = self._client.request(
             "POST", f"/v1/attendance/marks/{_path(id)}/void", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def approve_overtime(
+        self,
+        params: ApproveAttendanceOvertimeParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AttendanceOvertime:
+        """Autorizar horas extra
+
+        Hasta cuántos minutos de horas extra de un día de un empleado cuentan para la nómina, antes o después de ese día (minutes null quita la autorización). Con la regla «Las horas extra necesitan autorización» encendida, lo demás queda en el registro como sin autorizar.
+
+        POST /v1/attendance/overtime
+        https://fiscalisto.com/docs/api/referencia/asistencia/approve-attendance-overtime
+        """
+        result: AttendanceOvertime = self._client.request(
+            "POST", "/v1/attendance/overtime", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 

@@ -24,8 +24,10 @@ __all__ = [
     "ApiErrorError",
     "ApplyAdvanceParams",
     "ApplyAdvanceParamsRemainder",
+    "ApproveAttendanceOvertimeParams",
     "ApproveExpenseReportParams",
     "AttendanceMark",
+    "AttendanceOvertime",
     "AttendanceReport",
     "AttendanceReportEmployeesItem",
     "AttendanceReportEmployeesItemDaysItem",
@@ -871,6 +873,8 @@ class AttendanceReportEmployeesItemDaysItem(TypedDict):
     """Minutos de retardo, pasada la tolerancia."""
     overtime_minutes: int
     """Minutos de más ese día (horas extra)."""
+    approved_overtime_minutes: int
+    """De esos, los que cuentan para la nómina: hasta lo autorizado ese día cuando las horas extra necesitan autorización; si no, todos."""
     note: Literal["vacaciones", "incapacidad", "permiso_con_goce", "permiso_sin_goce", "descanso", "festivo", "falta"] | None
     """La nota del día que puso la empresa, o null."""
     holiday: str | None
@@ -908,6 +912,10 @@ class AttendanceReportEmployeesItem(TypedDict):
     """Horas extra que se pagan dobles (hasta 9 por semana en 2026, 12 desde 2027)."""
     overtime_triple_minutes: int
     """Horas extra que se pagan triples (las que pasan del límite de la semana)."""
+    overtime_minutes: int
+    """Todos los minutos de más en el registro, autorizados o no."""
+    unapproved_overtime_minutes: int
+    """Minutos de más que nadie autorizó: quedan en el registro y no cuentan para la nómina."""
     rest_days_worked: int
     """Días de descanso en que trabajó."""
     holidays_worked: int
@@ -931,9 +939,26 @@ AttendanceReport = TypedDict(
         "issuer": "str",
         "from": "str",
         "to": "str",
+        "overtime_approval": "bool",
         "employees": "list[AttendanceReportEmployeesItem]",
     },
 )
+
+
+class AttendanceOvertime(TypedDict):
+    """Las horas extra que la empresa autorizó para un día de un empleado, antes o después de ese día."""
+    object: Literal["attendance_overtime"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    employee: str
+    """El empleado (emp_…)."""
+    date: str
+    """El día, AAAA-MM-DD."""
+    minutes: int | None
+    """Hasta cuántos minutos de horas extra de ese día cuentan para la nómina; null: sin autorización."""
+    comment: str | None
+    """Por qué, o null."""
 
 
 class BalanceAutoRecharge(TypedDict):
@@ -10461,6 +10486,17 @@ class CreateAttendanceMarkParams(TypedDict):
 class VoidAttendanceMarkParams(TypedDict):
     reason: str
     """Por qué se quita: queda tachada con este motivo y el empleado lo ve."""
+
+
+class ApproveAttendanceOvertimeParams(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    date: str
+    """AAAA-MM-DD."""
+    minutes: int | None
+    """Hasta cuántos minutos de horas extra de ese día cuentan para la nómina (0 a 960); null quita la autorización."""
+    comment: NotRequired[str]
+    """Por qué (opcional)."""
 
 
 class CreateExpensePersonParams(TypedDict):
