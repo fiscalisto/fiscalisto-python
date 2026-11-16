@@ -874,7 +874,9 @@ class AttendanceReportEmployeesItemDaysItem(TypedDict):
     overtime_minutes: int
     """Minutos de más ese día (horas extra)."""
     approved_overtime_minutes: int
-    """De esos, los que cuentan para la nómina: hasta lo autorizado ese día cuando las horas extra necesitan autorización; si no, todos."""
+    """De esos, los que cuentan para la nómina: con overtime_policy approval, hasta lo autorizado ese día; con all, todos; con none, ninguno."""
+    rejected_overtime_minutes: int
+    """De esos, los que la empresa rechazó ese día: no cuentan para la nómina."""
     note: Literal["vacaciones", "incapacidad", "permiso_con_goce", "permiso_sin_goce", "descanso", "festivo", "falta"] | None
     """La nota del día que puso la empresa, o null."""
     holiday: str | None
@@ -916,6 +918,8 @@ class AttendanceReportEmployeesItem(TypedDict):
     """Todos los minutos de más en el registro, autorizados o no."""
     unapproved_overtime_minutes: int
     """Minutos de más que nadie autorizó: quedan en el registro y no cuentan para la nómina."""
+    rejected_overtime_minutes: int
+    """Minutos de más que la empresa rechazó: quedan en el registro, no cuentan para la nómina y ya no están por autorizar."""
     rest_days_worked: int
     """Días de descanso en que trabajó."""
     holidays_worked: int
@@ -940,13 +944,14 @@ AttendanceReport = TypedDict(
         "from": "str",
         "to": "str",
         "overtime_approval": "bool",
+        "overtime_policy": "Literal[\"approval\", \"all\", \"none\"]",
         "employees": "list[AttendanceReportEmployeesItem]",
     },
 )
 
 
 class AttendanceOvertime(TypedDict):
-    """Las horas extra que la empresa autorizó para un día de un empleado, antes o después de ese día."""
+    """Las horas extra que la empresa autorizó o rechazó para un día de un empleado, antes o después de ese día."""
     object: Literal["attendance_overtime"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     livemode: bool
@@ -956,7 +961,9 @@ class AttendanceOvertime(TypedDict):
     date: str
     """El día, AAAA-MM-DD."""
     minutes: int | None
-    """Hasta cuántos minutos de horas extra de ese día cuentan para la nómina; null: sin autorización."""
+    """Hasta cuántos minutos de horas extra de ese día cuentan para la nómina (0 si se rechazaron); null: sin decisión."""
+    rejected: bool
+    """true: la empresa rechazó las horas extra de ese día."""
     comment: str | None
     """Por qué, o null."""
 
@@ -10494,9 +10501,11 @@ class ApproveAttendanceOvertimeParams(TypedDict):
     date: str
     """AAAA-MM-DD."""
     minutes: int | None
-    """Hasta cuántos minutos de horas extra de ese día cuentan para la nómina (0 a 960); null quita la autorización."""
+    """Hasta cuántos minutos de horas extra de ese día cuentan para la nómina (0 a 960); null quita la decisión. Con rejected: true se ignora."""
+    rejected: NotRequired[bool]
+    """true rechaza todas las horas extra de ese día: quedan en el registro, no cuentan para la nómina y dejan de estar por autorizar. Pide comment."""
     comment: NotRequired[str]
-    """Por qué (opcional)."""
+    """Por qué (obligatorio al rechazar; el empleado lo ve)."""
 
 
 class CreateExpensePersonParams(TypedDict):
