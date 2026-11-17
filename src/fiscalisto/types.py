@@ -303,6 +303,7 @@ __all__ = [
     "GetRetentionParams",
     "GetRetentionPdfParams",
     "GetRetentionXmlParams",
+    "GetSatAnnualPreloadParams",
     "GetSatCatalogParams",
     "GetSatDeclarationCalendarParams",
     "GetTrialBalanceParams",
@@ -609,6 +610,15 @@ __all__ = [
     "Sandbox",
     "SandboxKey",
     "SandboxList",
+    "SatAnnualPreload",
+    "SatAnnualPreloadPayroll",
+    "SatAnnualPreloadPayrollConceptsItem",
+    "SatAnnualPreloadPayrollEmployersItem",
+    "SatAnnualPreloadPayrollEmployersItemConceptsItem",
+    "SatAnnualPreloadPersonalDeductions",
+    "SatAnnualPreloadPersonalDeductionsInvoicesItem",
+    "SatAnnualPreloadPersonalDeductionsPossibleItem",
+    "SatAnnualPreloadPersonalDeductionsTakenItem",
     "SatCatalogEntry",
     "SatCatalogEntryList",
     "SatDeclaration",
@@ -3403,6 +3413,132 @@ class SatDeclarationCalendar(TypedDict):
     """Cuántas obligaciones ya vencidas no encontramos presentadas en el SAT."""
     months: list[SatDeclarationCalendarMonthsItem]
     """Los 12 meses y, en persona moral, la anual (month null). Las obligaciones se deducen de lo que el emisor presenta: ISR e IVA cada mes desde el primero que presentó; una retención si la presentó en 2 de los 3 meses anteriores o antes y después. La opinión de cumplimiento del SAT es la que manda."""
+
+
+class SatAnnualPreloadPayrollConceptsItem(TypedDict):
+    code: str
+    """La clave del SAT: PIRA1 ingresos por asimilados, PISR1 ISR retenido, y las de sueldos y salarios."""
+    group: str
+    """El grupo en que el SAT la muestra."""
+    title: str
+    """Su nombre en el SAT."""
+    amount: float
+    """El monto del ejercicio, en pesos."""
+
+
+class SatAnnualPreloadPayrollEmployersItemConceptsItem(TypedDict):
+    code: str
+    """La clave del SAT, como en concepts."""
+    title: str
+    """Su nombre en el SAT."""
+    amount: float
+    """El monto del ejercicio de ese patrón, en pesos."""
+
+
+class SatAnnualPreloadPayrollEmployersItem(TypedDict):
+    tax_id: str
+    """El RFC del patrón."""
+    name: str
+    """Su nombre o razón social."""
+    concepts: list[SatAnnualPreloadPayrollEmployersItemConceptsItem]
+    """Sus totales del ejercicio por clave."""
+
+
+class SatAnnualPreloadPayroll(TypedDict):
+    updated_on: str | None
+    """Hasta qué día tiene procesados el SAT los recibos (AAAA-MM-DD)."""
+    read_at: str
+    """Cuándo se leyó del SAT."""
+    concepts: list[SatAnnualPreloadPayrollConceptsItem]
+    """Los totales del ejercicio de todos sus patrones."""
+    employers: list[SatAnnualPreloadPayrollEmployersItem]
+    """Cada patrón (retenedor) con sus totales."""
+
+
+class SatAnnualPreloadPersonalDeductionsTakenItem(TypedDict):
+    code: str
+    """La clave del tipo de deducción del SAT (A a J)."""
+    description: str
+    """Su nombre en el SAT."""
+    invoices: int
+    """Cuántos CFDI."""
+    total: float
+    """La suma, en pesos."""
+
+
+class SatAnnualPreloadPersonalDeductionsPossibleItem(TypedDict):
+    code: str
+    """La clave del tipo de deducción del SAT (A a J)."""
+    description: str
+    """Su nombre en el SAT."""
+    invoices: int
+    """Cuántos CFDI."""
+    total: float
+    """La suma, en pesos."""
+
+
+class SatAnnualPreloadPersonalDeductionsInvoicesItem(TypedDict):
+    uuid: str
+    """El folio fiscal."""
+    issuer_tax_id: str
+    """El RFC de quien lo emitió."""
+    issuer_name: str
+    """Su nombre."""
+    date: str | None
+    """Su fecha de emisión (AAAA-MM-DD)."""
+    total: float
+    """Su total, en pesos."""
+    payment_form: str | None
+    """La forma de pago, como la da el SAT."""
+    payment_method: str | None
+    """El método de pago, como lo da el SAT."""
+    product_code: str | None
+    """La clave de producto o servicio."""
+    description: str | None
+    """Sus conceptos."""
+    deduction_code: str | None
+    """El tipo de deducción en que lo puso el SAT (A a J), o L si no lo clasificó y podría deducirse."""
+    deduction_type: str | None
+    """Ese tipo, como lo nombra el SAT."""
+    possible_code: str | None
+    """Si no lo tomó (L), el tipo que parece; null si lo tomó."""
+    reasons: list[str]
+    """Por qué no lo toma, o lo que el SAT observa al tomarlo, en sus palabras."""
+    retirement_deposit: str | None
+    """Si es una aportación o depósito para el retiro que reportó su banco (sin CFDI), cuál; null si es un CFDI."""
+
+
+class SatAnnualPreloadPersonalDeductions(TypedDict):
+    updated_at: str | None
+    """Cuándo actualizó el SAT el visor."""
+    read_at: str
+    """Cuándo se leyó del SAT."""
+    total_taken: float
+    """Las deducciones personales que el SAT precarga."""
+    total_possible: float
+    """Lo que podría deducirse y el SAT no toma (gastos factibles de ser deducción personal)."""
+    taken: list[SatAnnualPreloadPersonalDeductionsTakenItem]
+    """Lo que toma, por tipo de deducción."""
+    possible: list[SatAnnualPreloadPersonalDeductionsPossibleItem]
+    """Lo que no toma, por el tipo de deducción que parece."""
+    invoices: list[SatAnnualPreloadPersonalDeductionsInvoicesItem]
+    """Cada CFDI que el visor considera."""
+
+
+class SatAnnualPreload(TypedDict):
+    """Lo que el SAT precargará en la declaración anual de una persona física: sus sueldos y retenciones, y sus deducciones personales."""
+    object: Literal["sat_annual_preload"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    year: int
+    """El ejercicio de la anual."""
+    payroll: SatAnnualPreloadPayroll | None
+    """Lo que dice el visor de nómina del SAT: lo que le pagaron sus patrones y el ISR que le retuvieron, según sus recibos de nómina. null si aún no se lee."""
+    personal_deductions: SatAnnualPreloadPersonalDeductions | None
+    """Lo que dice el visor de deducciones personales del SAT. null si aún no se lee."""
 
 
 class BranchAddress(TypedDict):
@@ -11758,6 +11894,14 @@ class GetSatDeclarationCalendarParams(TypedDict):
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
     year: NotRequired[int]
     """El ejercicio, como 2026. Por omisión, el actual."""
+
+
+class GetSatAnnualPreloadParams(TypedDict):
+    """Los parámetros de GET /v1/sat_declarations/annual_preload."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    year: NotRequired[int]
+    """El ejercicio, como 2025. Por omisión, el anterior (el que se declara)."""
 
 
 class CreateTicketParamsBuyer(TypedDict):

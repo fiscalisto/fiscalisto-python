@@ -121,6 +121,7 @@ if TYPE_CHECKING:
         GetRetentionParams,
         GetRetentionPdfParams,
         GetRetentionXmlParams,
+        GetSatAnnualPreloadParams,
         GetSatCatalogParams,
         GetSatDeclarationCalendarParams,
         GetTrialBalanceParams,
@@ -226,6 +227,7 @@ if TYPE_CHECKING:
         SalesOrder,
         Sandbox,
         SandboxList,
+        SatAnnualPreload,
         SatCatalogEntryList,
         SatDeclaration,
         SatDeclarationCalendar,
@@ -5242,6 +5244,26 @@ class SatDeclarationsResource:
         """
         result: SatDeclarationCalendar = self._client.request(
             "GET", "/v1/sat_declarations/calendar", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def annual_preload(
+        self,
+        params: GetSatAnnualPreloadParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatAnnualPreload:
+        """Ver la precarga de la anual de una persona física
+
+        Lo que el SAT precargará en la declaración anual de un emisor persona física, de sus visores: los sueldos o asimilados y el ISR que le retuvieron, por patrón, y las deducciones personales que toma de sus facturas, con las que podrían deducirse y no toma, y por qué. Se lee con la e.firma en cada consulta (POST /v1/sat_declarations/refresh), del ejercicio anterior y del actual; no usa timbres. Un emisor persona moral recibe parameter_invalid.
+
+        GET /v1/sat_declarations/annual_preload
+        https://fiscalisto.com/docs/api/referencia/declaraciones-del-sat/get-sat-annual-preload
+        """
+        result: SatAnnualPreload = self._client.request(
+            "GET", "/v1/sat_declarations/annual_preload", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
