@@ -69,6 +69,20 @@ __all__ = [
     "CheckSatListsParams",
     "ClassifyBankTransactionParams",
     "CloseSalesOrderParams",
+    "CompanyReport",
+    "CompanyReportCounterpartyNoticesItem",
+    "CompanyReportCustomers",
+    "CompanyReportCustomersPartiesItem",
+    "CompanyReportFiscalHealth",
+    "CompanyReportFiscalHealthFactorsItem",
+    "CompanyReportIndicatorsItem",
+    "CompanyReportShareholders",
+    "CompanyReportShareholdersPaidToItem",
+    "CompanyReportShareholdersReceivedFromItem",
+    "CompanyReportSuppliers",
+    "CompanyReportSuppliersPartiesItem",
+    "CompanyReportTotals",
+    "CompanyReportYearsItem",
     "ComplianceOpinion",
     "CostCenter",
     "CostCenterList",
@@ -274,6 +288,7 @@ __all__ = [
     "FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItemAccountsItem",
     "GetAttendanceParams",
     "GetCashForecastParams",
+    "GetCompanyReportParams",
     "GetCrossCheckCfdiParams",
     "GetCrossChecksParams",
     "GetDiotFileParams",
@@ -4115,6 +4130,239 @@ class SatFindingCounterparty(TypedDict):
     """La fecha del más reciente de esos CFDI (AAAA-MM-DD)."""
     findings: list[SatFindingCounterpartyFindingsItem]
     """Sus tipos de hallazgo, del más grave al más leve."""
+
+
+class CompanyReportFiscalHealthFactorsItem(TypedDict):
+    key: str
+    """cumplimiento, listas, declaraciones, contrapartes, cancelaciones, concentracion, cobranza, buzon o crecimiento."""
+    label: str
+    """Su nombre, como en la app."""
+    max_points: int
+    """Los puntos que puede dar."""
+    points: float | None
+    """Los que dio; null sin datos (no cuenta en la calificación)."""
+    reason: str
+    """Por qué dio esos puntos."""
+    to_improve: str | None
+    """Qué daría los que faltan, o null si dio todos."""
+
+
+class CompanyReportFiscalHealth(TypedDict):
+    """La salud fiscal: una calificación de 0 a 1,000 que explica cada punto."""
+    score: int | None
+    """De 0 a 1,000; null si ningún factor tuvo datos."""
+    band: Literal["attention", "fair", "good", "excellent"] | None
+    """attention (menos de 250), fair (250 a 499), good (500 a 749) o excellent (750 o más)."""
+    factors_used: int
+    """Factores con datos."""
+    factors_total: int
+    """Todos los factores."""
+    factors: list[CompanyReportFiscalHealthFactorsItem]
+    """Cada factor, con su razón."""
+
+
+class CompanyReportIndicatorsItem(TypedDict):
+    key: str
+    """El indicador (el de PATCH del umbral en la app)."""
+    label: str
+    """Su nombre, como en la app."""
+    state: Literal["ok", "risk", "no_data"]
+    """ok, risk (pasa el umbral) o no_data."""
+    value: float | None
+    """La cifra: por ciento 0 a 100, HHI, cuántos, pesos o días; null sin datos."""
+    display: str
+    """La cifra en palabras («HHI 1,954», «3 %»)."""
+    threshold: float | None
+    """Desde dónde se marca en riesgo."""
+    custom_threshold: bool
+    """El umbral es el que puso la empresa, no el de Fiscalisto."""
+
+
+class CompanyReportYearsItem(TypedDict):
+    year: int
+    """Año (Ejercicio)."""
+    partial: bool
+    """El año en curso, hasta hoy."""
+    income: float
+    """Ingresos facturados sin impuestos, no cancelados."""
+    income_cancelled: float
+    """Ingresos facturados y cancelados."""
+    cash_share: float | None
+    """Por ciento de ingresos en PUE."""
+    credit_share: float | None
+    """Por ciento de ingresos en PPD."""
+    collected_share: float | None
+    """Por ciento de lo PPD ya cobrado (con complemento)."""
+    days_to_collect: float | None
+    """Días promedio (ponderados) de la factura al cobro."""
+    expenses: float
+    """Gastos recibidos sin impuestos, no cancelados."""
+    expenses_cancelled: float
+    """Gastos recibidos y cancelados."""
+    paid_share: float | None
+    """Por ciento de lo PPD ya pagado."""
+    days_to_pay: float | None
+    """Días promedio de la factura al pago."""
+    payroll_paid: float
+    """Nómina que timbró."""
+    profit: float
+    """Ingresos menos gastos y nómina."""
+    margin: float | None
+    """Lo que queda, por ciento de ingresos."""
+
+
+class CompanyReportTotals(TypedDict):
+    """Totales del periodo, en pesos."""
+    income: float
+    """Ingresos del periodo, netos de notas de crédito."""
+    expenses: float
+    """Gastos del periodo, netos de notas de crédito."""
+    receivable: float
+    """Lo que le deben sus clientes del periodo."""
+    payable: float
+    """Lo que debe a sus proveedores del periodo."""
+
+
+class CompanyReportCustomersPartiesItem(TypedDict):
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    name: str | None
+    """Nombre."""
+    total: float
+    """Lo facturado en el periodo, sin impuestos."""
+    share: float
+    """Por ciento del total."""
+    invoices: int
+    """Cuántas facturas del periodo."""
+    balance: float
+    """Lo pendiente de cobrar o pagar."""
+
+
+class CompanyReportCustomers(TypedDict):
+    """Sus clientes del periodo."""
+    count: int
+    """Cuántos hay en el periodo."""
+    hhi: float | None
+    """Su concentración (índice Herfindahl-Hirschman, 0 a 10,000; más de 1,500 es concentrado)."""
+    top10_share: float | None
+    """Por ciento del total que suman los 10 principales."""
+    parties: list[CompanyReportCustomersPartiesItem]
+    """Los principales, de mayor a menor: 15, o 5 en executive."""
+
+
+class CompanyReportSuppliersPartiesItem(TypedDict):
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    name: str | None
+    """Nombre."""
+    total: float
+    """Lo facturado en el periodo, sin impuestos."""
+    share: float
+    """Por ciento del total."""
+    invoices: int
+    """Cuántas facturas del periodo."""
+    balance: float
+    """Lo pendiente de cobrar o pagar."""
+
+
+class CompanyReportSuppliers(TypedDict):
+    """Sus proveedores del periodo."""
+    count: int
+    """Cuántos hay en el periodo."""
+    hhi: float | None
+    """Su concentración (índice Herfindahl-Hirschman, 0 a 10,000; más de 1,500 es concentrado)."""
+    top10_share: float | None
+    """Por ciento del total que suman los 10 principales."""
+    parties: list[CompanyReportSuppliersPartiesItem]
+    """Los principales, de mayor a menor: 15, o 5 en executive."""
+
+
+class CompanyReportShareholdersPaidToItem(TypedDict):
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    name: str | None
+    """Nombre."""
+    total: float
+    """Los dividendos de sus CFDI de retenciones, en pesos."""
+    last_date: str
+    """El día del más reciente."""
+    retentions: int
+    """Cuántos CFDI de retenciones."""
+
+
+class CompanyReportShareholdersReceivedFromItem(TypedDict):
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    name: str | None
+    """Nombre."""
+    total: float
+    """Los dividendos de sus CFDI de retenciones, en pesos."""
+    last_date: str
+    """El día del más reciente."""
+    retentions: int
+    """Cuántos CFDI de retenciones."""
+
+
+class CompanyReportShareholders(TypedDict):
+    paid_to: list[CompanyReportShareholdersPaidToItem]
+    """A quién pagó dividendos: sus socios."""
+    received_from: list[CompanyReportShareholdersReceivedFromItem]
+    """Quién le pagó dividendos: dónde tiene acciones."""
+
+
+class CompanyReportCounterpartyNoticesItem(TypedDict):
+    tax_id: str
+    """El RFC del cliente o proveedor."""
+    name: str | None
+    """Su nombre en sus facturas."""
+    side: Literal["customer", "supplier"]
+    """customer (cliente) o supplier (proveedor)."""
+    type: str
+    """Qué publicó («Aviso de liquidación», «Fusión»…)."""
+    group: str | None
+    """Su grupo de publicaciones."""
+    date: str
+    """El día que se publicó (AAAA-MM-DD)."""
+    number: str
+    """Su número de publicación."""
+    pdf_url: str | None
+    """Su PDF, cuando ya se conoce."""
+
+
+class CompanyReport(TypedDict):
+    """El Reporte de la empresa de un emisor en un periodo: su salud fiscal, sus indicadores de riesgo, sus años, sus clientes y proveedores, sus socios y los avisos de sus contrapartes."""
+    object: Literal["company_report"]
+    """Siempre company_report."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    tax_id: str
+    """Su RFC."""
+    name: str | None
+    """Su razón social, o null si Fiscalisto no la conoce."""
+    date_gte: str
+    """El primer día del periodo (AAAA-MM-DD)."""
+    date_lte: str
+    """El último día del periodo (AAAA-MM-DD), hoy a lo más."""
+    version: Literal["full", "executive"]
+    """full: todo; executive: los indicadores principales y 5 clientes y proveedores."""
+    fiscal_health: CompanyReportFiscalHealth
+    """La salud fiscal: una calificación de 0 a 1,000 que explica cada punto."""
+    indicators: list[CompanyReportIndicatorsItem]
+    """Los indicadores de riesgo, cada uno contra su umbral."""
+    years: list[CompanyReportYearsItem]
+    """Los años lado a lado: este y al menos los dos anteriores."""
+    totals: CompanyReportTotals
+    """Totales del periodo, en pesos."""
+    customers: CompanyReportCustomers
+    """Sus clientes del periodo."""
+    suppliers: CompanyReportSuppliers
+    """Sus proveedores del periodo."""
+    shareholders: CompanyReportShareholders | None
+    """De los CFDI de retenciones por dividendos (clave 14), hasta 20 de cada lado; null en executive."""
+    counterparty_notices: list[CompanyReportCounterpartyNoticesItem] | None
+    """Clientes y proveedores que publicaron en los últimos 13 meses su liquidación, fusión, escisión, transformación o reducción de capital en las Publicaciones de Sociedades Mercantiles de la Secretaría de Economía; null en executive."""
 
 
 class MaterialitySupplierStates(TypedDict):
@@ -11059,6 +11307,18 @@ class ListSatFindingCounterpartiesParams(TypedDict):
     """Solo los de esta gravedad: critical, warning o info."""
     code: NotRequired[str]
     """Solo quienes tienen este hallazgo (efos_definitivo, cancelado, regla_12…; el code de GET /v1/sat_findings)."""
+
+
+class GetCompanyReportParams(TypedDict):
+    """Los parámetros de GET /v1/company_report."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    date_gte: NotRequired[str]
+    """Desde este día (AAAA-MM-DD)."""
+    date_lte: NotRequired[str]
+    """Hasta este día (AAAA-MM-DD, completo; hoy a lo más)."""
+    version: NotRequired[Literal["full", "executive"]]
+    """full (por omisión) o executive: solo la calificación, los indicadores principales, los años y 5 clientes y proveedores."""
 
 
 class ListMaterialitySuppliersParams(TypedDict):

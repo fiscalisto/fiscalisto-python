@@ -36,6 +36,7 @@ if TYPE_CHECKING:
         CheckSatListsParams,
         ClassifyBankTransactionParams,
         CloseSalesOrderParams,
+        CompanyReport,
         ComplianceOpinion,
         CostCenter,
         CreateAdvanceParams,
@@ -105,6 +106,7 @@ if TYPE_CHECKING:
         FinancialStatements,
         GetAttendanceParams,
         GetCashForecastParams,
+        GetCompanyReportParams,
         GetCrossCheckCfdiParams,
         GetCrossChecksParams,
         GetDiotFileParams,
@@ -4078,6 +4080,33 @@ class SatFindingCounterpartiesResource:
         return self._client.list("/v1/sat_finding_counterparties", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
 
+class CompanyReportResource:
+    """Cumplimiento SAT: fiscalisto.company_report."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetCompanyReportParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CompanyReport:
+        """Ver el reporte de la empresa
+
+        Como Impuestos y SAT › Reporte de la empresa en la app: la salud fiscal del emisor en una calificación de 0 a 1,000 con la razón de cada factor, los indicadores de riesgo contra su umbral, los años lado a lado (ingresos, gastos, PUE y PPD, días de cobro y pago, margen), sus principales clientes y proveedores con su concentración (HHI), sus socios por los CFDI de retenciones por dividendos y los clientes y proveedores que publicaron su liquidación o fusión. Sale de lo que Fiscalisto ya tiene: no consulta al SAT y no usa timbres. Sin fechas, los últimos 12 meses.
+
+        GET /v1/company_report
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/get-company-report
+        """
+        result: CompanyReport = self._client.request(
+            "GET", "/v1/company_report", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class MaterialitySuppliersResource:
     """Cumplimiento SAT: fiscalisto.materiality_suppliers."""
 
@@ -6842,6 +6871,11 @@ class FiscalistoApi(Core):
     def sat_finding_counterparties(self) -> SatFindingCounterpartiesResource:
         """Cumplimiento SAT."""
         return SatFindingCounterpartiesResource(self)
+
+    @cached_property
+    def company_report(self) -> CompanyReportResource:
+        """Cumplimiento SAT."""
+        return CompanyReportResource(self)
 
     @cached_property
     def materiality_suppliers(self) -> MaterialitySuppliersResource:
