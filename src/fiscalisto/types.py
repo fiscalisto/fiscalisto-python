@@ -3209,6 +3209,8 @@ class SatDeclarationReceiptConceptsItem(TypedDict):
     """La cantidad a cargo."""
     amount_to_pay: float | None
     """La cantidad a pagar."""
+    in_favor: float | None
+    """El saldo a favor que dice el acuse (la anual de personas físicas); null si no lo trae."""
 
 
 class SatDeclarationReceipt(TypedDict):
@@ -3233,6 +3235,8 @@ class SatDeclarationSummaryObligationsItem(TypedDict):
     """La cantidad a cargo."""
     amount_to_pay: float | None
     """La cantidad a pagar."""
+    in_favor: float | None
+    """El saldo a favor, de la declaración o del acuse; null si no hay o no se pudo leer."""
     figures: dict[str, float | None]
     """Sus cifras con nombres fijos. ISR: income, invoiced_income, income_ytd, deductions, profit_coefficient, taxable_profit, losses_applied, tax_base, tax_caused, prior_payments, withheld. IVA: taxable_16, taxable_0, exempt, charged, paid_16, creditable, withheld, balance_applied. Salarios: workers, payments, exempt, withheld. Todas: surcharges, inflation, paid_before, due, in_favor, to_pay. null si no viene o no se pudo leer."""
 
