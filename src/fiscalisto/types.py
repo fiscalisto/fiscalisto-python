@@ -37,6 +37,7 @@ __all__ = [
     "BalanceAutoRecharge",
     "BalanceLowEvent",
     "BalancePacksItem",
+    "BalancePlanTimbres",
     "BankImport",
     "BankTransaction",
     "BankTransactionList",
@@ -978,6 +979,17 @@ class BalanceAutoRecharge(TypedDict):
     """Como máximo tantas compras al mes."""
 
 
+class BalancePlanTimbres(TypedDict):
+    plan: str
+    """El plan de la empresa (despacho, negocio…)."""
+    remaining: int
+    """Los que le quedan este mes."""
+    included: int
+    """Los que trae el plan cada mes."""
+    resets_on: str
+    """El día en que vuelven a estar completos (AAAA-MM-DD)."""
+
+
 class BalancePacksItem(TypedDict):
     type: Literal["welcome", "purchase", "referral"]
     """welcome: los timbres de bienvenida (no vencen); purchase: un paquete comprado o una recarga automática; referral: los de una recomendación."""
@@ -1007,6 +1019,8 @@ class Balance(TypedDict):
     """La recarga automática con la tarjeta guardada, o null si está apagada."""
     use_plan_timbres: bool
     """Los RFC de la empresa (type own) timbran primero con los timbres del mes de su plan y después con `available`. true si, al acabarse `available`, la API sigue timbrando esos RFC con los paquetes de la app de la empresa; los emisores conectados no (Desarrolladores › Timbres y pagos › Si se acaban, usar los timbres de la empresa). false: responde 402 insufficient_balance."""
+    plan_timbres: BalancePlanTimbres | None
+    """Los timbres del mes del plan de su empresa, que los RFC de la empresa (type own) usan antes que `available`; no se suman a `available`. null si la empresa no tiene un plan de paga con timbres al mes (Gratis o una prueba sin pagar) o en modo de prueba."""
     packs: list[BalancePacksItem]
     """Los paquetes con timbres, el que vence antes primero (en ese orden se usan)."""
 
