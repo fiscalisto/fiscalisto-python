@@ -4249,6 +4249,8 @@ class CompanyReportYearsItem(TypedDict):
     """Nómina que timbró: lo que percibieron sus trabajadores, antes de deducciones."""
     payroll_received: float
     """Sueldos que recibió de sus patrones (recibos de nómina a su RFC), antes de deducciones: lo que gana una persona física asalariada."""
+    payroll_received_net: float
+    """Lo que de verdad recibió de esos sueldos: el total de los recibos, después del ISR retenido y las deducciones."""
     profit: float
     """Ingresos menos gastos y nómina."""
     margin: float | None
