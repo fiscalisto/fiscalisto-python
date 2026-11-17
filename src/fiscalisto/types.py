@@ -4242,7 +4242,9 @@ class CompanyReportYearsItem(TypedDict):
     days_to_pay: float | None
     """Días promedio de la factura al pago."""
     payroll_paid: float
-    """Nómina que timbró."""
+    """Nómina que timbró: lo que percibieron sus trabajadores, antes de deducciones."""
+    payroll_received: float
+    """Sueldos que recibió de sus patrones (recibos de nómina a su RFC), antes de deducciones: lo que gana una persona física asalariada."""
     profit: float
     """Ingresos menos gastos y nómina."""
     margin: float | None
