@@ -618,6 +618,8 @@ __all__ = [
     "SatDeclarationCreatedEvent",
     "SatDeclarationFiles",
     "SatDeclarationList",
+    "SatDeclarationPayment",
+    "SatDeclarationPaymentPaymentsItem",
     "SatDeclarationReceipt",
     "SatDeclarationReceiptConceptsItem",
     "SatDeclarationSectionsItem",
@@ -3243,12 +3245,46 @@ class SatDeclarationSummary(TypedDict):
     """El total a pagar del acuse; si no hay acuse, la suma de las obligaciones cuando todas se conocen."""
 
 
+class SatDeclarationPaymentPaymentsItem(TypedDict):
+    bank: str | None
+    """La institución de crédito."""
+    date: str | None
+    """El día del pago (AAAA-MM-DD)."""
+    payment_line: str | None
+    """La línea de captura pagada."""
+    channel: str | None
+    """Cómo se pagó, como lo dice el SAT («Ventanilla», «Internet»)."""
+    amount: float | None
+    """El importe pagado."""
+    bank_operation_number: str | None
+    """El número de operación del banco."""
+    payment_key: str | None
+    """La llave de pago."""
+
+
+class SatDeclarationPayment(TypedDict):
+    status: Literal["paid", "unpaid", "overdue", "nothing_to_pay", "unchecked"]
+    """paid, unpaid (algo a pagar que el SAT no tenía pagado), overdue (igual, línea de captura vencida), nothing_to_pay o unchecked."""
+    paid_on: str | None
+    """El día del pago más reciente (AAAA-MM-DD)."""
+    amount_paid: float | None
+    """Lo pagado, en pesos (la suma de los pagos)."""
+    bank: str | None
+    """El banco del pago más reciente."""
+    checked_at: str | None
+    """Cuándo se buscó por última vez en «Declaraciones pagadas»."""
+    payments: list[SatDeclarationPaymentPaymentsItem]
+    """Cada pago como el SAT lo registró del banco."""
+
+
 class SatDeclarationFiles(TypedDict):
-    """Qué archivos ya tiene: pdf (GET …/pdf), receipt (GET …/receipt) y financial_statements (GET …/financial_statements, solo en la anual de persona moral)."""
+    """Qué archivos ya tiene: pdf (GET …/pdf), receipt (GET …/receipt), payment_record (GET …/payment_record, cuando el SAT la tiene como pagada) y financial_statements (GET …/financial_statements, solo en la anual de persona moral)."""
     pdf: bool
     """Si ya tiene la declaración en PDF (GET …/pdf)."""
     receipt: bool
     """Si ya tiene el acuse (GET …/receipt)."""
+    payment_record: bool
+    """Si ya tiene el registro del pago (GET …/payment_record)."""
     financial_statements: bool
     """Si ya tiene el Excel de estados financieros (GET …/financial_statements), solo en la anual de persona moral."""
 
@@ -3295,8 +3331,10 @@ class SatDeclaration(TypedDict):
     """Lo que dice el acuse: cada concepto con su cantidad a cargo y a pagar, el total, la línea de captura y su vigencia. null si el acuse aún no llega."""
     summary: SatDeclarationSummary
     """Las mismas cifras con nombres fijos, por obligación (ISR, IVA, cada retención), para leerlas igual cada mes sin conocer el formato del SAT. Una cifra que no viene en la declaración o no se pudo leer es null, nunca 0. En Declaraciones y pagos solo trae lo del acuse."""
+    payment: SatDeclarationPayment | None
+    """Su pago en el banco, de «Declaraciones pagadas» del SAT (solo las mensuales; null en las demás). status: paid (el SAT tiene el pago), unpaid (tiene algo a pagar y el SAT no lo tenía pagado en checked_at), overdue (igual, con la línea de captura vencida), nothing_to_pay o unchecked (aún no se revisa). paid_on, amount_paid y bank del pago más reciente, y cada pago en payments con su banco, día, línea de captura, medio (channel), importe, número de operación del banco y llave de pago."""
     files: SatDeclarationFiles
-    """Qué archivos ya tiene: pdf (GET …/pdf), receipt (GET …/receipt) y financial_statements (GET …/financial_statements, solo en la anual de persona moral)."""
+    """Qué archivos ya tiene: pdf (GET …/pdf), receipt (GET …/receipt), payment_record (GET …/payment_record, cuando el SAT la tiene como pagada) y financial_statements (GET …/financial_statements, solo en la anual de persona moral)."""
     files_error: str | None
     """Por qué falta un archivo, como lo dijo el SAT (por ejemplo «No se puede generar el archivo»). Se vuelve a pedir en la siguiente consulta."""
     created_at: str | None
@@ -4225,7 +4263,7 @@ class CompanyReportTotals(TypedDict):
 
 class CompanyReportCustomersPartiesItem(TypedDict):
     tax_id: str
-    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    """Su RFC. XAXX010101000 y XEXX010101000 son una sola fila cada uno («Público en general», «Residentes en el extranjero») con todas las personas que facturaron con ese RFC."""
     name: str | None
     """Nombre."""
     total: float
@@ -4243,16 +4281,16 @@ class CompanyReportCustomers(TypedDict):
     count: int
     """Cuántos hay en el periodo."""
     hhi: float | None
-    """Su concentración (índice Herfindahl-Hirschman, 0 a 10,000; más de 1,500 es concentrado)."""
+    """Su concentración (índice Herfindahl-Hirschman, 0 a 10,000; más de 1,500 es concentrado), sin el público en general."""
     top10_share: float | None
-    """Por ciento del total que suman los 10 principales."""
+    """Por ciento del total que suman los 10 principales, sin el público en general."""
     parties: list[CompanyReportCustomersPartiesItem]
     """Los principales, de mayor a menor: 15, o 5 en executive."""
 
 
 class CompanyReportSuppliersPartiesItem(TypedDict):
     tax_id: str
-    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    """Su RFC. XAXX010101000 y XEXX010101000 son una sola fila cada uno («Público en general», «Residentes en el extranjero») con todas las personas que facturaron con ese RFC."""
     name: str | None
     """Nombre."""
     total: float
@@ -4270,9 +4308,9 @@ class CompanyReportSuppliers(TypedDict):
     count: int
     """Cuántos hay en el periodo."""
     hhi: float | None
-    """Su concentración (índice Herfindahl-Hirschman, 0 a 10,000; más de 1,500 es concentrado)."""
+    """Su concentración (índice Herfindahl-Hirschman, 0 a 10,000; más de 1,500 es concentrado), sin el público en general."""
     top10_share: float | None
-    """Por ciento del total que suman los 10 principales."""
+    """Por ciento del total que suman los 10 principales, sin el público en general."""
     parties: list[CompanyReportSuppliersPartiesItem]
     """Los principales, de mayor a menor: 15, o 5 en executive."""
 

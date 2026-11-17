@@ -5303,6 +5303,25 @@ class SatDeclarationsResource:
         )
         return result
 
+    def payment_record(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> bytes:
+        """Descargar el registro del pago de una declaración
+
+        La «Información registrada de pagos de contribuciones federales» de una declaración mensual pagada, como la da el SAT: el banco, el día, el importe, el número de operación del banco y la llave de pago. Existe cuando payment.status es paid. No usa timbres.
+
+        GET /v1/sat_declarations/{id}/payment_record
+        https://fiscalisto.com/docs/api/referencia/declaraciones-del-sat/get-sat-declaration-payment-record
+        """
+        result: bytes = self._client.request(
+            "GET", f"/v1/sat_declarations/{_path(id)}/payment_record", result="bytes", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
     def financial_statements(
         self,
         id: str,
