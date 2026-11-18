@@ -193,6 +193,8 @@ __all__ = [
     "CreateTicketParams",
     "CreateTicketParamsBuyer",
     "CreateTicketParamsLinesItem",
+    "CreateTicketParamsLinesItemLocalTaxesItem",
+    "CreateTicketParamsLocalTaxesItem",
     "CreateWebhookEndpointParams",
     "CrossCheckCfdi",
     "CrossCheckCfdiCfdiItem",
@@ -711,6 +713,7 @@ __all__ = [
     "TicketIncludedInGlobalEvent",
     "TicketInvoicedEvent",
     "TicketLinesItem",
+    "TicketLinesItemLocalTaxesItem",
     "TicketList",
     "TrialBalance",
     "TrialBalanceAccountsItem",
@@ -1037,7 +1040,7 @@ class Balance(TypedDict):
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     available: int
-    """Timbres disponibles en total."""
+    """Timbres de sus paquetes, en total: un solo saldo para la API y la app, comprados en Desarrolladores o en Plan y pagos."""
     unlimited: bool
     """true si la cuenta timbra sin usar timbres."""
     low_balance_at: int
@@ -1045,7 +1048,7 @@ class Balance(TypedDict):
     auto_recharge: BalanceAutoRecharge | None
     """La recarga automática con la tarjeta guardada, o null si está apagada."""
     use_plan_timbres: bool
-    """Los RFC de la empresa (type own) timbran primero con los timbres del mes de su plan y después con `available`. true si, al acabarse `available`, la API sigue timbrando esos RFC con los paquetes de la app de la empresa; los emisores conectados no (Desarrolladores › Timbres y pagos › Si se acaban, usar los timbres de la empresa). false: responde 402 insufficient_balance."""
+    """Siempre true: los RFC de la empresa (type own) timbran primero con los timbres del mes de su plan y después con `available`, los paquetes de su único saldo (comprados en Desarrolladores o en Plan y pagos). Los emisores conectados usan solo `available`. Se conserva por compatibilidad."""
     plan_timbres: BalancePlanTimbres | None
     """Los timbres del mes del plan de su empresa, que los RFC de la empresa (type own) usan antes que `available`; no se suman a `available`. null si la empresa no tiene un plan de paga con timbres al mes (Gratis o una prueba sin pagar) o en modo de prueba."""
     packs: list[BalancePacksItem]
@@ -4653,6 +4656,15 @@ class MaterialityInvoice(TypedDict):
     """De dónde salió cada evidencia: source es un código estable (orden_compra, recepcion, complemento_pago, pago_banco, foto, mensaje_portal…), proves lo que prueba (null: respaldo que no prueba nada solo) y label lo dice en palabras."""
 
 
+class TicketLinesItemLocalTaxesItem(TypedDict):
+    retention: bool
+    """true si es una retención local; false si es un traslado."""
+    name: str
+    """Nombre del impuesto local (ImpLocTrasladado o ImpLocRetenido), como ISH."""
+    rate: float
+    """Tasa en por ciento (TasadeTraslado o TasadeRetencion)."""
+
+
 class TicketLinesItem(TypedDict):
     product: str | None
     """Un producto de su catálogo (prd_…): toma su clave, unidad, precio e impuestos."""
@@ -4664,6 +4676,8 @@ class TicketLinesItem(TypedDict):
     """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
     iva: str | None
     """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    local_taxes: list[TicketLinesItemLocalTaxesItem]
+    """Sus impuestos locales (los de su producto o los que mandó), incluidos en su total."""
     quantity: float
     """Cantidad (Cantidad). Por omisión 1."""
     total: float
@@ -11904,12 +11918,30 @@ class GetSatAnnualPreloadParams(TypedDict):
     """El ejercicio, como 2025. Por omisión, el anterior (el que se declara)."""
 
 
+class CreateTicketParamsLocalTaxesItem(TypedDict):
+    retention: bool
+    """`false`: un traslado local que se suma (el ISH). `true`: una retención local que el cliente resta (el cedular); la factura global, a público en general, no la lleva."""
+    name: str
+    """Su nombre en el CFDI (ImpLocTrasladado o ImpLocRetenido), como «ISH»."""
+    rate: float
+    """La tasa en porcentaje: 3.5 es 3.5%."""
+
+
 class CreateTicketParamsBuyer(TypedDict):
     """Quién pagó, para reconocer la venta en Tickets. No es el receptor de la factura (eso lo escribe el comprador en el portal) y no se le manda nada."""
     name: NotRequired[str]
     """Su nombre o el de su empresa, como lo conoce su sistema."""
     email: NotRequired[str]
     """Su correo."""
+
+
+class CreateTicketParamsLinesItemLocalTaxesItem(TypedDict):
+    retention: bool
+    """`false`: un traslado local que se suma (el ISH). `true`: una retención local que el cliente resta (el cedular); la factura global, a público en general, no la lleva."""
+    name: str
+    """Su nombre en el CFDI (ImpLocTrasladado o ImpLocRetenido), como «ISH»."""
+    rate: float
+    """La tasa en porcentaje: 3.5 es 3.5%."""
 
 
 class CreateTicketParamsLinesItem(TypedDict):
@@ -11923,6 +11955,8 @@ class CreateTicketParamsLinesItem(TypedDict):
     """c_ClaveUnidad. Por omisión, la de la clave del producto."""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
     """Tasa de IVA incluida en su total. Por omisión 0.16."""
+    local_taxes: NotRequired[list[CreateTicketParamsLinesItemLocalTaxesItem]]
+    """Impuestos locales incluidos en su total, como el ISH 3.5% de hospedaje, con `product_key` (un producto lleva los suyos). Cada uno se calcula sobre la base de este concepto y la factura los suma por nombre y tasa en el complemento de impuestos locales."""
     quantity: NotRequired[float]
     """Unidades (noches, piezas). Por omisión 1."""
     total: float
@@ -11952,6 +11986,8 @@ class CreateTicketParams(TypedDict):
     """c_ClaveUnidad. Por omisión, la de la clave del producto."""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
     """Tasa de IVA incluida en el total. Por omisión 0.16."""
+    local_taxes: NotRequired[list[CreateTicketParamsLocalTaxesItem]]
+    """Impuestos locales incluidos en su total, como el ISH 3.5% de hospedaje, con `product_key` (un producto lleva los suyos). Cada uno se calcula sobre la base de este concepto y la factura los suma por nombre y tasa en el complemento de impuestos locales."""
     buyer: NotRequired[CreateTicketParamsBuyer]
     """Quién pagó, para reconocer la venta en Tickets. No es el receptor de la factura (eso lo escribe el comprador en el portal) y no se le manda nada."""
     lines: NotRequired[list[CreateTicketParamsLinesItem]]
