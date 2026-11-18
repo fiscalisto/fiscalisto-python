@@ -601,6 +601,7 @@ __all__ = [
     "RetentionList",
     "RetentionPeriod",
     "RetentionRecipient",
+    "RetentionReplaced",
     "RetentionStampedEvent",
     "RetentionTaxesItem",
     "RetentionTotals",
@@ -1742,6 +1743,16 @@ class RetentionError(TypedDict):
     """El texto original del PAC."""
 
 
+class RetentionReplaced(TypedDict):
+    """Solo al timbrar con `replaces`: la constancia que corrige y si se canceló (motivo 01). Si no, `error` dice por qué y se cancela con POST /v1/sat_retentions/{id}/cancel."""
+    uuid: str
+    """Folio fiscal que asigna el SAT (UUID del Timbre Fiscal Digital), en mayúsculas."""
+    canceled: bool
+    """true si la sustituida ya quedó cancelada. false no es definitivo: vea substitutes.cancellation."""
+    error: str | None
+    """Por qué no se pudo cancelar la anterior; `null` si se canceló."""
+
+
 class Retention(TypedDict):
     """Una constancia de retenciones e información de pagos (CFDI de retenciones 2.0)."""
     id: str
@@ -1812,6 +1823,8 @@ class Retention(TypedDict):
     """Avisos que no impidieron timbrar (por ejemplo, el XML se guardará después)."""
     email_error: NotRequired[str]
     """Por qué no se pudo mandar el correo; el comprobante sí se timbró."""
+    replaced: NotRequired[RetentionReplaced]
+    """Solo al timbrar con `replaces`: la constancia que corrige y si se canceló (motivo 01). Si no, `error` dice por qué y se cancela con POST /v1/sat_retentions/{id}/cancel."""
 
 
 class CustomerForeign(TypedDict):
@@ -10396,6 +10409,8 @@ class CreateRetentionParams(TypedDict):
     """Complemento de intereses reales deducibles por créditos hipotecarios (Intereseshipotecarios 1.0), obligatorio con code 23."""
     financial_derivatives: NotRequired[CreateRetentionParamsFinancialDerivatives]
     """Complemento de operaciones financieras derivadas de capital (Operacionesconderivados 1.0), obligatorio con code 24."""
+    replaces: NotRequired[str]
+    """Folio fiscal (UUID) de la constancia que esta corrige: vigente, del mismo emisor y al mismo receptor (emitida aquí o en otro sistema). Va en CfdiRetenRelacionados (04) y, timbrada esta, la anterior se cancela con el motivo 01; `replaced` dice si se canceló."""
     send_email: NotRequired[bool]
     """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
     email: NotRequired[str]
