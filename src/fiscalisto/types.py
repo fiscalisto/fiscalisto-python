@@ -4778,6 +4778,8 @@ class SelfInvoicing(TypedDict):
     """Las esquinas del portal en píxeles (0 a 24), o null para las de Fiscalisto."""
     retention_mode: Literal["keep_total", "subtract"]
     """Cuando se factura una persona moral que retiene (1.25% de ISR en RESICO, o lo del producto). keep_total: la base crece y la factura suma lo que se pagó. subtract: la base es la del ticket y el total es lo pagado menos la retención."""
+    invoice_series: str | None
+    """La serie de las facturas que se emiten desde el portal y desde un ticket, como AF, o null para la serie de facturas del emisor. La factura global no la usa."""
     global_concepts: Literal["ticket", "summary"]
     """ticket: la factura global lleva un concepto «Venta» por ticket, con su folio. summary: solo el monto total del periodo, uno por combinación de impuestos (NoIdentificacion «Resumen»), para una persona física en RESICO (regla 2.7.1.21 de la RMF 2026)."""
 
@@ -12035,6 +12037,8 @@ class UpdateSelfInvoicingParams(TypedDict):
     """Lo redondo de las esquinas del portal, en píxeles (0 a 24). `null` pone el de Fiscalisto (10)."""
     retention_mode: NotRequired[Literal["keep_total", "subtract"]]
     """Cuando se factura una persona moral y retiene (1.25% de ISR a un emisor en RESICO, artículo 113-J de la LISR, o lo que diga el producto): `keep_total` (por omisión), la base crece para que la factura sume lo que se pagó; `subtract`, la base es la del ticket y la retención se resta, así que el total de la factura es menor a lo pagado."""
+    invoice_series: NotRequired[str | None]
+    """La serie de las facturas que los compradores se hacen en el portal (y las que se emiten desde un ticket), como `AF`: hasta 25 caracteres, sin `|`. `null` o una vacía usa la serie de facturas del emisor. La factura global sigue con la serie de siempre."""
     global_concepts: NotRequired[Literal["ticket", "summary"]]
     """Los conceptos de la factura global: `ticket` (por omisión), uno «Venta» por ticket con su folio como `NoIdentificacion`; `summary`, solo el monto total del periodo, uno por combinación de impuestos con `NoIdentificacion` «Resumen» (regla 2.7.1.21 de la RMF 2026). `summary` es solo para un emisor persona física en RESICO (626); otro contesta `invalid_request`."""
 
