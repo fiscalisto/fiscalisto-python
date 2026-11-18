@@ -5515,10 +5515,10 @@ class StoreConnection(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     issuer: str
     """El emisor dueño de la tienda."""
-    platform: Literal["shopify", "mercadolibre", "amazon", "tiendanube", "woocommerce"]
-    """shopify, woocommerce, tiendanube, mercadolibre o amazon."""
+    platform: Literal["shopify", "mercadolibre", "amazon", "tiendanube", "woocommerce", "mercadopago", "conekta", "openpay"]
+    """shopify, woocommerce, tiendanube, mercadolibre, amazon, mercadopago, conekta u openpay."""
     shop: str | None
-    """El dominio de la tienda (Shopify, WooCommerce), o el id de la tienda en Tiendanube o del vendedor en Mercado Libre y Amazon (al autorizar)."""
+    """El dominio de la tienda (Shopify, WooCommerce), el id de la tienda en Tiendanube o del vendedor en Mercado Libre y Amazon (al autorizar), el id de la cuenta de Mercado Pago, el ID de comercio de Openpay, o una referencia de la cuenta de Conekta."""
     name: str | None
     """El nombre de la tienda según su plataforma, o null."""
     status: Literal["pending", "active", "disconnected"]
@@ -12156,18 +12156,18 @@ class CreateStoreConnectionParamsSettings(TypedDict):
     payment_form: NotRequired[str]
     """c_FormaPago cuando la forma de pago del pedido no está en payment_forms. Por omisión 04 (Shopify) o 31 (Mercado Libre)."""
     payment_forms: NotRequired[dict[str, str]]
-    """c_FormaPago por pasarela de Shopify (shopify_payments, paypal, manual…) o tipo de pago de Mercado Libre (credit_card, debit_card, account_money, ticket, bank_transfer)."""
+    """c_FormaPago por pasarela de Shopify (shopify_payments, paypal, manual…) o tipo de pago de Mercado Libre y Mercado Pago (credit_card, debit_card, account_money, ticket, bank_transfer), o de Conekta y Openpay (credit_card, debit_card, cash, spei)."""
     auto_invoice: NotRequired[bool]
     """Mercado Libre: timbrar en cuanto se paga si el comprador dejó sus datos fiscales completos. Por omisión true."""
     notify_buyer: NotRequired[bool]
-    """WooCommerce y Tiendanube: mandar al comprador el enlace para facturar (WooCommerce, como nota al cliente del pedido; Tiendanube, por correo). Por omisión true."""
+    """WooCommerce, Tiendanube, Mercado Pago, Conekta y Openpay: mandar al comprador el enlace para facturar (WooCommerce, como nota al cliente del pedido; los demás, por correo, cuando la plataforma da su correo). Por omisión true."""
 
 
 class CreateStoreConnectionParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…) dueño de la tienda. Por omisión, su único emisor."""
-    platform: Literal["shopify", "mercadolibre", "amazon", "tiendanube", "woocommerce"]
-    """shopify, woocommerce, mercadolibre, tiendanube o amazon."""
+    platform: Literal["shopify", "mercadolibre", "amazon", "tiendanube", "woocommerce", "mercadopago", "conekta", "openpay"]
+    """shopify, woocommerce, mercadolibre, tiendanube, amazon, mercadopago, conekta u openpay."""
     shop: NotRequired[str]
     """Shopify: el dominio de la tienda (mi-tienda.myshopify.com)."""
     client_id: NotRequired[str]
@@ -12175,7 +12175,13 @@ class CreateStoreConnectionParams(TypedDict):
     client_secret: NotRequired[str]
     """Shopify: el Client secret de esa app; con él se firman los webhooks. Se guarda cifrado y nunca se muestra."""
     access_token: NotRequired[str]
-    """Shopify, solo apps personalizadas antiguas: su token de la Admin API (shpat_…); client_secret es entonces su API secret key."""
+    """Mercado Pago: el Access Token de producción (APP_USR-…), en Tus integraciones › su aplicación › Credenciales de producción. Shopify, solo apps personalizadas antiguas: su token de la Admin API (shpat_…); client_secret es entonces su API secret key. Se guarda cifrado y nunca se muestra."""
+    private_key: NotRequired[str]
+    """Conekta: la llave privada (key_…). Openpay: la llave privada (sk_…). Se guarda cifrada y nunca se muestra."""
+    merchant_id: NotRequired[str]
+    """Openpay: el ID de comercio (m…)."""
+    sandbox: NotRequired[bool]
+    """Openpay: true para conectar su comercio de pruebas (sandbox)."""
     site: NotRequired[str]
     """WooCommerce: la dirección de la tienda (https://mitienda.com)."""
     consumer_key: NotRequired[str]
@@ -12213,11 +12219,11 @@ class UpdateStoreConnectionParamsSettings(TypedDict):
     payment_form: NotRequired[str]
     """c_FormaPago cuando la forma de pago del pedido no está en payment_forms. Por omisión 04 (Shopify) o 31 (Mercado Libre)."""
     payment_forms: NotRequired[dict[str, str]]
-    """c_FormaPago por pasarela de Shopify (shopify_payments, paypal, manual…) o tipo de pago de Mercado Libre (credit_card, debit_card, account_money, ticket, bank_transfer)."""
+    """c_FormaPago por pasarela de Shopify (shopify_payments, paypal, manual…) o tipo de pago de Mercado Libre y Mercado Pago (credit_card, debit_card, account_money, ticket, bank_transfer), o de Conekta y Openpay (credit_card, debit_card, cash, spei)."""
     auto_invoice: NotRequired[bool]
     """Mercado Libre: timbrar en cuanto se paga si el comprador dejó sus datos fiscales completos. Por omisión true."""
     notify_buyer: NotRequired[bool]
-    """WooCommerce y Tiendanube: mandar al comprador el enlace para facturar (WooCommerce, como nota al cliente del pedido; Tiendanube, por correo). Por omisión true."""
+    """WooCommerce, Tiendanube, Mercado Pago, Conekta y Openpay: mandar al comprador el enlace para facturar (WooCommerce, como nota al cliente del pedido; los demás, por correo, cuando la plataforma da su correo). Por omisión true."""
 
 
 class UpdateStoreConnectionParams(TypedDict):
