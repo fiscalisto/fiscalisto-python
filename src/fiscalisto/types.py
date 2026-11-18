@@ -536,6 +536,11 @@ __all__ = [
     "PayrollReceiptPreviewWarningsItem",
     "Permission",
     "PermissionList",
+    "PortalStyle",
+    "PortalStyleBack",
+    "PortalStyleColors",
+    "PortalStyleTextsValue",
+    "PortalStyleWays",
     "PortalSupplier",
     "PortalSupplierApprovedEvent",
     "PortalSupplierBankAccount",
@@ -779,6 +784,22 @@ __all__ = [
     "UpdateSalesOrderParamsItemsItemUsedVehicleCustomsItem",
     "UpdateSatInvoiceParams",
     "UpdateSelfInvoicingParams",
+    "UpdateSelfInvoicingParamsPortalStyle",
+    "UpdateSelfInvoicingParamsPortalStyleBack",
+    "UpdateSelfInvoicingParamsPortalStyleColors",
+    "UpdateSelfInvoicingParamsPortalStyleTexts",
+    "UpdateSelfInvoicingParamsPortalStyleTextsCodeHint",
+    "UpdateSelfInvoicingParamsPortalStyleTextsFindButton",
+    "UpdateSelfInvoicingParamsPortalStyleTextsHowQuestion",
+    "UpdateSelfInvoicingParamsPortalStyleTextsMessage",
+    "UpdateSelfInvoicingParamsPortalStyleTextsStepData",
+    "UpdateSelfInvoicingParamsPortalStyleTextsStepInvoice",
+    "UpdateSelfInvoicingParamsPortalStyleTextsStepTicket",
+    "UpdateSelfInvoicingParamsPortalStyleTextsSubmit",
+    "UpdateSelfInvoicingParamsPortalStyleTextsSuccessMessage",
+    "UpdateSelfInvoicingParamsPortalStyleTextsSuccessTitle",
+    "UpdateSelfInvoicingParamsPortalStyleTextsTitle",
+    "UpdateSelfInvoicingParamsPortalStyleWays",
     "UpdateStoreConnectionParams",
     "UpdateStoreConnectionParamsSettings",
     "UpdateWebhookEndpointParams",
@@ -4750,6 +4771,82 @@ class Ticket(TypedDict):
     """Cuándo se registró."""
 
 
+class PortalStyleWays(TypedDict):
+    """Las formas de dar sus datos además de escribirlos."""
+    constancia: bool
+    """Subir la constancia (PDF)."""
+    qr: bool
+    """Escanear el QR de la constancia."""
+    cif: bool
+    """Buscar los datos con RFC e idCIF."""
+    recall: bool
+    """«Ya le hemos facturado antes»: RFC y correo."""
+    abroad: bool
+    """Facturar a clientes en el extranjero."""
+
+
+class PortalStyleBack(TypedDict):
+    label: str
+    """El texto del botón."""
+    url: str
+    """A dónde lleva (https)."""
+
+
+class PortalStyleColors(TypedDict):
+    """Los colores de la página; null usa el del tema."""
+    background: str | None
+    """El fondo de la página, o null."""
+    card: str | None
+    """El fondo de los campos y tarjetas, o null."""
+    text: str | None
+    """El texto, o null."""
+    button_text: str | None
+    """El texto de los botones, o null."""
+
+
+class PortalStyleTextsValue(TypedDict):
+    es: NotRequired[str]
+    en: NotRequired[str]
+
+
+class PortalStyle(TypedDict):
+    """Cómo se ve el portal además de su tema, color y esquinas (Autofactura › Cómo se ve el portal)."""
+    layout: Literal["checkout", "compact", "card"]
+    """checkout: la factura se llena junto al formulario. compact: solo el formulario, la factura plegada. card: el formulario en una tarjeta al centro."""
+    density: Literal["comfortable", "compact"]
+    """comfortable o compact."""
+    header: Literal["logo", "name", "name_rfc", "logo_name"]
+    """Qué dice arriba: name_rfc, name, logo_name o logo."""
+    logo_size: Literal["s", "m", "l"]
+    """El tamaño del logo: s, m o l."""
+    logo_shape: Literal["square", "rounded", "circle"]
+    """La forma del logo: square, rounded o circle."""
+    font: str
+    """La letra: system o una de Google Fonts."""
+    heading_font: str | None
+    """La letra de los títulos, o null para la misma del texto."""
+    heading_size: Literal["s", "m", "l"]
+    """El tamaño del título: s, m o l."""
+    borders: Literal["none", "subtle", "strong"]
+    """Los bordes: none, subtle o strong."""
+    shadow: Literal["none", "soft", "strong"]
+    """La sombra: none, soft o strong."""
+    ways: PortalStyleWays
+    """Las formas de dar sus datos además de escribirlos."""
+    email_required: bool
+    """Si no se factura sin correo."""
+    show_deadline: bool
+    """Si dice hasta cuándo se puede facturar."""
+    back: PortalStyleBack | None
+    """El botón al terminar para volver a su sitio, o null."""
+    css: str
+    """CSS propio, ya limpio."""
+    colors: PortalStyleColors
+    """Los colores de la página; null usa el del tema."""
+    texts: dict[str, PortalStyleTextsValue]
+    """Los textos propios por llave (step_ticket, submit, success_title…), cada uno con es y en. Uno que falta lleva el de Fiscalisto."""
+
+
 class SelfInvoicing(TypedDict):
     """El portal de autofactura de un emisor y sus reglas."""
     object: Literal["self_invoicing"]
@@ -4782,6 +4879,8 @@ class SelfInvoicing(TypedDict):
     """El color de los botones del portal («#rrggbb»), o null para el de Fiscalisto."""
     portal_radius: int | None
     """Las esquinas del portal en píxeles (0 a 24), o null para las de Fiscalisto."""
+    portal_style: PortalStyle
+    """Cómo se ve el portal además de su tema, color y esquinas: acomodo, encabezado, colores, letra, textos, formas de dar los datos, botón para volver y CSS."""
     retention_mode: Literal["keep_total", "subtract"]
     """Cuando se factura una persona moral que retiene (1.25% de ISR en RESICO, o lo del producto). keep_total: la base crece y la factura suma lo que se pagó. subtract: la base es la del ticket y el total es lo pagado menos la retención."""
     invoice_series: str | None
@@ -12092,6 +12191,173 @@ class ListTicketsParams(TypedDict):
     """Vendidos hasta (ISO 8601 o AAAA-MM-DD, el día completo)."""
 
 
+class UpdateSelfInvoicingParamsPortalStyleColors(TypedDict):
+    """Los colores de la página; cada uno se combina con lo guardado."""
+    background: NotRequired[str | None]
+    """El fondo de la página, como `#f5f1e8`; `null` usa el del tema."""
+    card: NotRequired[str | None]
+    """El fondo de los campos y tarjetas, como `#f5f1e8`; `null` usa el del tema."""
+    text: NotRequired[str | None]
+    """El texto, como `#f5f1e8`; `null` usa el del tema."""
+    button_text: NotRequired[str | None]
+    """El texto de los botones, como `#f5f1e8`; `null` usa el del tema."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsTitle(TypedDict):
+    en: NotRequired[str]
+    """El título (en español es `portal_title`) en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsMessage(TypedDict):
+    en: NotRequired[str]
+    """El mensaje bajo el título (en español es `portal_message`) en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsCodeHint(TypedDict):
+    en: NotRequired[str]
+    """Dónde viene el código (en español es `code_hint`) en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsStepTicket(TypedDict):
+    es: NotRequired[str]
+    """El nombre del paso 1 en español."""
+    en: NotRequired[str]
+    """El nombre del paso 1 en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsStepData(TypedDict):
+    es: NotRequired[str]
+    """El nombre del paso 2 en español."""
+    en: NotRequired[str]
+    """El nombre del paso 2 en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsStepInvoice(TypedDict):
+    es: NotRequired[str]
+    """El nombre del paso 3 en español."""
+    en: NotRequired[str]
+    """El nombre del paso 3 en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsFindButton(TypedDict):
+    es: NotRequired[str]
+    """El botón para buscar el ticket en español."""
+    en: NotRequired[str]
+    """El botón para buscar el ticket en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsHowQuestion(TypedDict):
+    es: NotRequired[str]
+    """La pregunta de cómo dar los datos en español."""
+    en: NotRequired[str]
+    """La pregunta de cómo dar los datos en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsSubmit(TypedDict):
+    es: NotRequired[str]
+    """El botón para facturar en español."""
+    en: NotRequired[str]
+    """El botón para facturar en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsSuccessTitle(TypedDict):
+    es: NotRequired[str]
+    """El título al terminar en español."""
+    en: NotRequired[str]
+    """El título al terminar en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsSuccessMessage(TypedDict):
+    es: NotRequired[str]
+    """El mensaje al terminar en español."""
+    en: NotRequired[str]
+    """El mensaje al terminar en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTexts(TypedDict):
+    """Los textos, cada uno con `es` y `en`, combinados por llave con lo guardado. El título, el mensaje y dónde viene el código en español son `portal_title`, `portal_message` y `code_hint`; aquí van en inglés."""
+    title: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsTitle | None]
+    """El título (en español es `portal_title`); `null` vuelve al de Fiscalisto."""
+    message: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsMessage | None]
+    """El mensaje bajo el título (en español es `portal_message`); `null` vuelve al de Fiscalisto."""
+    code_hint: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsCodeHint | None]
+    """Dónde viene el código (en español es `code_hint`); `null` vuelve al de Fiscalisto."""
+    step_ticket: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsStepTicket | None]
+    """El nombre del paso 1; `null` vuelve al de Fiscalisto."""
+    step_data: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsStepData | None]
+    """El nombre del paso 2; `null` vuelve al de Fiscalisto."""
+    step_invoice: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsStepInvoice | None]
+    """El nombre del paso 3; `null` vuelve al de Fiscalisto."""
+    find_button: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsFindButton | None]
+    """El botón para buscar el ticket; `null` vuelve al de Fiscalisto."""
+    how_question: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsHowQuestion | None]
+    """La pregunta de cómo dar los datos; `null` vuelve al de Fiscalisto."""
+    submit: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsSubmit | None]
+    """El botón para facturar; `null` vuelve al de Fiscalisto."""
+    success_title: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsSuccessTitle | None]
+    """El título al terminar; `null` vuelve al de Fiscalisto."""
+    success_message: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsSuccessMessage | None]
+    """El mensaje al terminar; `null` vuelve al de Fiscalisto."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleWays(TypedDict):
+    """Las formas de dar sus datos además de escribirlos. Todas `true` por omisión."""
+    constancia: NotRequired[bool]
+    """Ofrecer subir la constancia (PDF)."""
+    qr: NotRequired[bool]
+    """Ofrecer escanear el QR de la constancia."""
+    cif: NotRequired[bool]
+    """Ofrecer buscar los datos con RFC e idCIF."""
+    recall: NotRequired[bool]
+    """Ofrecer «Ya le hemos facturado antes» (RFC y correo)."""
+    abroad: NotRequired[bool]
+    """Ofrecer facturar a clientes en el extranjero."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleBack(TypedDict):
+    label: str
+    """El texto del botón."""
+    url: str
+    """A dónde lleva (https)."""
+
+
+class UpdateSelfInvoicingParamsPortalStyle(TypedDict):
+    layout: NotRequired[Literal["checkout", "compact", "card"]]
+    """`checkout` (por omisión): la factura se llena junto al formulario. `compact`: solo el formulario, la factura plegada. `card`: el formulario en una tarjeta al centro."""
+    density: NotRequired[Literal["comfortable", "compact"]]
+    """`comfortable` o `compact`."""
+    header: NotRequired[Literal["logo", "name", "name_rfc", "logo_name"]]
+    """Qué dice arriba: `name_rfc` (por omisión), `name`, `logo_name` o `logo`. El logo y el nombre salen de Marca y documentos."""
+    logo_size: NotRequired[Literal["s", "m", "l"]]
+    """El tamaño del logo: `s`, `m` o `l`."""
+    logo_shape: NotRequired[Literal["square", "rounded", "circle"]]
+    """La forma del logo: `square`, `rounded` o `circle`."""
+    colors: NotRequired[UpdateSelfInvoicingParamsPortalStyleColors]
+    """Los colores de la página; cada uno se combina con lo guardado."""
+    font: NotRequired[Literal["system", "inter", "manrope", "dm-sans", "work-sans", "nunito", "space-grotesk", "montserrat", "lora", "merriweather", "playfair-display", "cormorant-garamond"]]
+    """La letra: `system` (por omisión) o una de Google Fonts."""
+    heading_font: NotRequired[Literal["system", "inter", "manrope", "dm-sans", "work-sans", "nunito", "space-grotesk", "montserrat", "lora", "merriweather", "playfair-display", "cormorant-garamond"] | None]
+    """La letra de los títulos; `null`, la misma del texto."""
+    heading_size: NotRequired[Literal["s", "m", "l"]]
+    """El tamaño del título: `s`, `m` o `l`."""
+    borders: NotRequired[Literal["none", "subtle", "strong"]]
+    """Los bordes: `none`, `subtle` (por omisión) o `strong`."""
+    shadow: NotRequired[Literal["none", "soft", "strong"]]
+    """La sombra: `none`, `soft` (por omisión) o `strong`."""
+    texts: NotRequired[UpdateSelfInvoicingParamsPortalStyleTexts]
+    """Los textos, cada uno con `es` y `en`, combinados por llave con lo guardado. El título, el mensaje y dónde viene el código en español son `portal_title`, `portal_message` y `code_hint`; aquí van en inglés."""
+    ways: NotRequired[UpdateSelfInvoicingParamsPortalStyleWays]
+    """Las formas de dar sus datos además de escribirlos. Todas `true` por omisión."""
+    email_required: NotRequired[bool]
+    """`true`: no se factura sin correo. Por omisión `false`."""
+    show_deadline: NotRequired[bool]
+    """Decir hasta cuándo se puede facturar. Por omisión `true`."""
+    back: NotRequired[UpdateSelfInvoicingParamsPortalStyleBack | None]
+    """Un botón al terminar para volver a su sitio; `null` lo quita."""
+    css: NotRequired[str]
+    """CSS propio, dentro del portal y sin llegar a su pie. Se quitan @import, url() y lo que cargue o ejecute algo; la leyenda «Facturado con Fiscalisto» se queda."""
+
+
 class UpdateSelfInvoicingParams(TypedDict):
     window: NotRequired[Literal["month", "days"]]
     """Hasta cuándo se puede facturar un ticket: `month`, hasta el fin del mes de la venta (lo usual ante el SAT); `days`, `window_days` días después."""
@@ -12115,6 +12381,8 @@ class UpdateSelfInvoicingParams(TypedDict):
     """El color de los botones del portal, como `#0b7c77`. `null` pone el de Fiscalisto."""
     portal_radius: NotRequired[int | None]
     """Lo redondo de las esquinas del portal, en píxeles (0 a 24). `null` pone el de Fiscalisto (10)."""
+    portal_style: NotRequired[UpdateSelfInvoicingParamsPortalStyle | None]
+    """Todo lo demás de cómo se ve el portal (Autofactura › Cómo se ve el portal): acomodo, encabezado, colores, letra, bordes, textos en español e inglés, las formas de dar los datos, el botón para volver a su sitio y CSS propio. Mande solo lo que cambia: `colors`, `ways` y `texts` se combinan por llave (un texto en `null` lo quita); lo demás se reemplaza. `null` regresa todo al diseño de Fiscalisto. La leyenda «Facturado con Fiscalisto» no se puede ocultar."""
     retention_mode: NotRequired[Literal["keep_total", "subtract"]]
     """Cuando se factura una persona moral y retiene (1.25% de ISR a un emisor en RESICO, artículo 113-J de la LISR, o lo que diga el producto): `keep_total` (por omisión), la base crece para que la factura sume lo que se pagó; `subtract`, la base es la del ticket y la retención se resta, así que el total de la factura es menor a lo pagado."""
     invoice_series: NotRequired[str | None]
