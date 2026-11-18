@@ -3291,7 +3291,7 @@ class SatDeclarationSummaryObligationsItem(TypedDict):
     in_favor: float | None
     """El saldo a favor, de la declaración o del acuse; null si no hay o no se pudo leer."""
     figures: dict[str, float | None]
-    """Sus cifras con nombres fijos. ISR: income, invoiced_income, income_ytd, deductions, profit_coefficient, taxable_profit, losses_applied, tax_base, tax_caused, prior_payments, withheld. IVA: taxable_16, taxable_0, exempt, charged, paid_16, creditable, withheld, balance_applied. Salarios: workers, payments, exempt, withheld. Todas: surcharges, inflation, paid_before, due, in_favor, to_pay. null si no viene o no se pudo leer."""
+    """Las cifras de la obligación con nombres fijos (en IVA: taxable_16, taxable_0, exempt, charged, charged_16, charged_16_invoiced, paid_16, creditable, withheld, balance_applied; en todas: surcharges, inflation, paid_before, due, in_favor, to_pay). null si la declaración no la trae o no se pudo leer, nunca 0."""
 
 
 class SatDeclarationSummary(TypedDict):
@@ -3367,7 +3367,7 @@ class SatDeclaration(TypedDict):
     type: Literal["normal", "complementary"]
     """normal o complementary (complementaria)."""
     complementary_type: str | None
-    """El tipo de complementaria como lo dice el SAT («Modificación de obligaciones»…), o null."""
+    """En una complementaria, su tipo como lo dice el SAT («Modificación de Obligaciones», «Obligación no presentada», «Dejar sin efecto obligación»). Se liga con la que corrige por source, year, month y period."""
     operation_number: str
     """El número de operación que le dio el SAT."""
     payment_line: str | None
