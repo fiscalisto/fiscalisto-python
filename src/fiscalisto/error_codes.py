@@ -281,6 +281,9 @@ class ErrorCode:
     RETENTION_INVALID: Final = "retention_invalid"
     """La constancia de retenciones no cumple una regla del SAT. No se usó ningún timbre."""
 
+    RETENTION_NOT_ISSUED: Final = "retention_not_issued"
+    """Solo quien emitió la constancia puede cancelarla; esta la recibió el emisor."""
+
     RETENTION_NOT_STAMPED: Final = "retention_not_stamped"
     """La acción es para constancias timbradas."""
 
@@ -472,6 +475,7 @@ ErrorCodeValue = Literal[
     "request_in_progress",
     "resource_missing",
     "retention_invalid",
+    "retention_not_issued",
     "retention_not_stamped",
     "retention_rejected",
     "route_not_found",

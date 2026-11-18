@@ -50,6 +50,7 @@ __all__ = [
     "CancelRetentionParams",
     "CancelSalesOrderDeliveryParams",
     "CancelSalesOrderParams",
+    "CancelSatRetentionParams",
     "CashForecast",
     "CashForecastItem",
     "CashForecastLinesItem",
@@ -198,6 +199,11 @@ __all__ = [
     "CreateWebhookEndpointParams",
     "CrossCheckCfdi",
     "CrossCheckCfdiCfdiItem",
+    "CrossCheckCfdiExplanation",
+    "CrossCheckCfdiExplanationCausesItem",
+    "CrossCheckCfdiExplanationCausesItemCfdiItem",
+    "CrossCheckCfdiExplanationExact",
+    "CrossCheckCfdiExplanationExactCfdiItem",
     "CrossChecks",
     "CrossChecksMonthsItem",
     "CrossChecksMonthsItemChecksItem",
@@ -5279,6 +5285,71 @@ class CrossCheckCfdiCfdiItem(TypedDict):
     """Lo que aporta a la cifra, en pesos; negativo en una nota de crédito."""
 
 
+class CrossCheckCfdiExplanationExactCfdiItem(TypedDict):
+    uuid: str | None
+    """El folio fiscal (UUID) del CFDI; el de la factura PPD en un pago."""
+    date: str | None
+    """La fecha del CFDI, o la del pago (AAAA-MM-DD)."""
+    tax_id: str | None
+    """El RFC de la contraparte: el cliente en lo emitido, el proveedor en lo recibido."""
+    name: str | None
+    """El nombre de la contraparte, como viene en el CFDI."""
+    amount: float
+    """Lo que aporta a la cifra, en pesos; negativo en una nota de crédito."""
+    effect: float
+    """Cuánto cambiaría invoiced."""
+    reason: Literal["cancelled", "ppd_not_collected", "other_month", "month_edge", "credit_note", "ppd_payment", "duplicate", "left_out", "withholding_certificate"]
+    """Por qué lo explicaría."""
+    in_invoiced: bool
+    """true si está en cfdi."""
+
+
+class CrossCheckCfdiExplanationExact(TypedDict):
+    cfdi: list[CrossCheckCfdiExplanationExactCfdiItem]
+    """Los CFDI de la combinación."""
+    remainder: float
+    """Lo que queda (redondeo)."""
+
+
+class CrossCheckCfdiExplanationCausesItemCfdiItem(TypedDict):
+    uuid: str | None
+    """El folio fiscal (UUID) del CFDI; el de la factura PPD en un pago."""
+    date: str | None
+    """La fecha del CFDI, o la del pago (AAAA-MM-DD)."""
+    tax_id: str | None
+    """El RFC de la contraparte: el cliente en lo emitido, el proveedor en lo recibido."""
+    name: str | None
+    """El nombre de la contraparte, como viene en el CFDI."""
+    amount: float
+    """Lo que aporta a la cifra, en pesos; negativo en una nota de crédito."""
+    effect: float
+    """Cuánto cambiaría invoiced."""
+    reason: Literal["cancelled", "ppd_not_collected", "other_month", "month_edge", "credit_note", "ppd_payment", "duplicate", "left_out", "withholding_certificate"]
+    """Por qué lo explicaría."""
+    in_invoiced: bool
+    """true si está en cfdi."""
+
+
+class CrossCheckCfdiExplanationCausesItem(TypedDict):
+    reason: Literal["cancelled", "ppd_not_collected", "other_month", "month_edge", "credit_note", "ppd_payment", "duplicate", "left_out", "withholding_certificate"]
+    """El motivo que comparten."""
+    total: float
+    """La suma de su effect."""
+    cfdi: list[CrossCheckCfdiExplanationCausesItemCfdiItem]
+    """Sus CFDI."""
+
+
+class CrossCheckCfdiExplanation(TypedDict):
+    difference: float
+    """La diferencia."""
+    exact: CrossCheckCfdiExplanationExact | None
+    """Los CFDI cuyo effect suma la diferencia; null si ninguno."""
+    ambiguous: bool
+    """true si varias combinaciones la suman."""
+    causes: list[CrossCheckCfdiExplanationCausesItem]
+    """Las posibles causas, por motivo."""
+
+
 class CrossCheckCfdi(TypedDict):
     """Los CFDI que forman una cifra del cruce de un mes (invoiced): cada uno con lo que aporta, y el ajuste que Impuestos agrega encima."""
     object: Literal["cross_check_cfdi"]
@@ -5307,6 +5378,8 @@ class CrossCheckCfdi(TypedDict):
     """Cada CFDI que suma en el mes, de mayor a menor: los PUE y las notas de crédito en su mes, las facturas PPD por lo que se pagó en el mes."""
     adjustment: float
     """Lo que Impuestos agrega sobre los CFDI: en vat_creditable, la proporción de gastos comunes, el IVA retenido enterado del mes anterior y las importaciones; 0 en las demás."""
+    explanation: CrossCheckCfdiExplanation | None
+    """Qué CFDI explicarían la diferencia; null si coincide."""
 
 
 class DiotLinesItemPaid(TypedDict):
@@ -11837,6 +11910,13 @@ class ListSatRetentionsParams(TypedDict):
     """Solo las de un ejercicio, como 2025."""
     month: NotRequired[int]
     """Solo las que cubren este mes (1 a 12): una anual de enero a diciembre cubre todos."""
+
+
+class CancelSatRetentionParams(TypedDict):
+    motive: NotRequired[Literal["01", "02", "03", "04"]]
+    """Motivo de cancelación (c_MotivoCancelacion): 01 con errores con relación (lleva substitution), 02 con errores sin relación (por omisión), 03 no se llevó a cabo, 04 solo en una factura global, cuando una venta incluida se facturó a nombre del cliente."""
+    substitution: NotRequired[str]
+    """El comprobante que sustituye a este (su id o su UUID), con el motivo 01."""
 
 
 class ListPortalSuppliersParams(TypedDict):

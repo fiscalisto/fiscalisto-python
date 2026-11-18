@@ -30,6 +30,7 @@ if TYPE_CHECKING:
         CancelRetentionParams,
         CancelSalesOrderDeliveryParams,
         CancelSalesOrderParams,
+        CancelSatRetentionParams,
         CashForecast,
         CashForecastItem,
         CfdiVerification,
@@ -5050,6 +5051,28 @@ class SatRetentionsResource:
         )
         return result
 
+    def cancel(
+        self,
+        id: str,
+        params: CancelSatRetentionParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatRetention:
+        """Cancelar una constancia de retenciones emitida
+
+        Una que el emisor emitió (direction issued), también si la timbró desde otro sistema con el mismo PAC y solo llegó del SAT. Se cancela en el momento (no espera aceptación) y no usa timbres. Una que timbró otro PAC se cancela en el portal del SAT: contesta cancellation_failed y lo explica. Con motive 01, substitution es la constancia que la sustituye (su srt_… o su UUID).
+
+        POST /v1/sat_retentions/{id}/cancel
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/cancel-sat-retention
+        """
+        result: SatRetention = self._client.request(
+            "POST", f"/v1/sat_retentions/{_path(id)}/cancel", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
 
 class PortalSuppliersResource:
     """Portal de proveedores: fiscalisto.portal_suppliers."""
@@ -5562,7 +5585,7 @@ class AccountingResource:
     ) -> CrossCheckCfdi:
         """Ver los CFDI de una cifra del cruce
 
-        Los CFDI que forman lo facturado (invoiced) de una cifra del cruce de un mes, con los mismos cálculos de Impuestos: cada factura PUE o nota de crédito en su mes y cada factura PPD por lo que se pagó en el mes, con lo que aporta. La suma de cfdi más adjustment es invoiced. Sirve para ver por qué una cifra differs. Gratis: no consulta al SAT.
+        Los CFDI que forman lo facturado (invoiced) de una cifra del cruce de un mes, con los mismos cálculos de Impuestos: cada factura PUE o nota de crédito en su mes y cada factura PPD por lo que se pagó en el mes, con lo que aporta. La suma de cfdi más adjustment es invoiced. Sirve para ver por qué una cifra differs: con una diferencia, explanation trae los CFDI cuya combinación la suma (cancelados después, PPD sin cobro en el mes, de los días vecinos de otro mes, notas de crédito, cobros de PPD, repetidos o no declarados) y las posibles causas. Gratis: no consulta al SAT.
 
         GET /v1/accounting/cross_checks/cfdi
         https://fiscalisto.com/docs/api/referencia/contabilidad/get-cross-check-cfdi
