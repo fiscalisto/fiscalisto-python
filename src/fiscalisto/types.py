@@ -1649,6 +1649,7 @@ Invoice = TypedDict(
         "payment_form": "str | None",
         "payment_method": "str | None",
         "payment_terms": "str | None",
+        "notes": "str | None",
         "currency": "str",
         "exchange_rate": "float | None",
         "items": "list[InvoiceItem]",
@@ -4804,6 +4805,8 @@ class PortalStyleWays(TypedDict):
     """«Ya le hemos facturado antes»: RFC y correo."""
     abroad: bool
     """Facturar a clientes en el extranjero."""
+    norfc: bool
+    """«No tengo RFC»: a nombre de la persona, con XAXX010101000."""
 
 
 class PortalStyleBack(TypedDict):
@@ -4864,6 +4867,8 @@ class PortalStyle(TypedDict):
     """CSS propio, ya limpio."""
     colors: PortalStyleColors
     """Los colores de la página; null usa el del tema."""
+    noun: Literal["ticket", "nota", "cuenta", "compra", "pedido", "orden", "reservacion", "estancia", "boleto"]
+    """Cómo llama el portal a lo que se factura («reservacion» en un hotel)."""
     texts: dict[str, PortalStyleTextsValue]
     """Los textos propios por llave (step_ticket, submit, success_title, concepts_title…), cada uno con es y en. Uno que falta lleva el de Fiscalisto."""
 
@@ -4943,6 +4948,8 @@ class SelfInvoicing(TypedDict):
     """Cuando se factura una persona moral que retiene (1.25% de ISR en RESICO, o lo del producto). keep_total: la base crece y la factura suma lo que se pagó. subtract: la base es la del ticket y el total es lo pagado menos la retención."""
     invoice_series: str | None
     """La serie de las facturas que se emiten desde el portal y desde un ticket, como AF, o null para la serie de facturas del emisor. La factura global no la usa."""
+    customer_notes: bool
+    """true: el portal le pide al comprador una nota para el PDF de su factura (hasta 500 caracteres). Solo sale en el PDF, nunca en el XML."""
     global_concepts: Literal["ticket", "summary"]
     """ticket: la factura global lleva un concepto «Venta» por ticket, con su folio. summary: solo el monto total del periodo, uno por combinación de impuestos (NoIdentificacion «Resumen»), para una persona física en RESICO (regla 2.7.1.21 de la RMF 2026)."""
 
@@ -9715,6 +9722,8 @@ class GetInvoiceParams(TypedDict):
 class UpdateInvoiceParams(TypedDict):
     cost_center: NotRequired[str | None]
     """Su centro de costo (ccn_…), o null para quitárselo. Solo facturas, notas de crédito y recibos de nómina timbrados."""
+    notes: NotRequired[str | None]
+    """Nota para el cliente en el PDF (hasta 1,000 caracteres), o null para quitarla. No va en el XML: la factura timbrada no cambia y el siguiente PDF (GET /v1/invoices/{id}/pdf, el correo) ya la lleva. Cada cambio queda en el historial de la factura en Fiscalisto."""
 
 
 class GetInvoicePdfParams(TypedDict):
@@ -12397,7 +12406,7 @@ class UpdateSelfInvoicingParamsPortalStyleTexts(TypedDict):
 
 
 class UpdateSelfInvoicingParamsPortalStyleWays(TypedDict):
-    """Las formas de dar sus datos además de escribirlos. Todas `true` por omisión."""
+    """Las formas de dar sus datos además de escribirlos. Todas `true` por omisión menos `norfc`."""
     constancia: NotRequired[bool]
     """Ofrecer subir la constancia (PDF)."""
     qr: NotRequired[bool]
@@ -12407,7 +12416,9 @@ class UpdateSelfInvoicingParamsPortalStyleWays(TypedDict):
     recall: NotRequired[bool]
     """Ofrecer «Ya le hemos facturado antes» (RFC y correo)."""
     abroad: NotRequired[bool]
-    """Ofrecer facturar a clientes en el extranjero."""
+    """Ofrecer facturar a clientes en el extranjero (el tax ID es opcional)."""
+    norfc: NotRequired[bool]
+    """Ofrecer «No tengo RFC»: facturar a nombre de la persona con XAXX010101000, régimen 616, uso S01 y el CP del emisor. `false` por omisión."""
 
 
 class UpdateSelfInvoicingParamsPortalStyleBack(TypedDict):
@@ -12440,10 +12451,12 @@ class UpdateSelfInvoicingParamsPortalStyle(TypedDict):
     """Los bordes: `none`, `subtle` (por omisión) o `strong`."""
     shadow: NotRequired[Literal["none", "soft", "strong"]]
     """La sombra: `none`, `soft` (por omisión) o `strong`."""
+    noun: NotRequired[Literal["ticket", "nota", "cuenta", "compra", "pedido", "orden", "reservacion", "estancia", "boleto"]]
+    """Cómo llama el portal a lo que se factura, en todos sus textos: `ticket` (por omisión), `nota`, `cuenta`, `compra`, `pedido`, `orden`, `reservacion`, `estancia` o `boleto`. Un hotel usa `reservacion`: «Esta reservación ya se facturó»."""
     texts: NotRequired[UpdateSelfInvoicingParamsPortalStyleTexts]
     """Los textos, cada uno con `es` y `en`, combinados por llave con lo guardado. El título, el mensaje y dónde viene el código en español son `portal_title`, `portal_message` y `code_hint`; aquí van en inglés."""
     ways: NotRequired[UpdateSelfInvoicingParamsPortalStyleWays]
-    """Las formas de dar sus datos además de escribirlos. Todas `true` por omisión."""
+    """Las formas de dar sus datos además de escribirlos. Todas `true` por omisión menos `norfc`."""
     email_required: NotRequired[bool]
     """`true`: no se factura sin correo. Por omisión `false`."""
     show_deadline: NotRequired[bool]
@@ -12517,6 +12530,8 @@ class UpdateSelfInvoicingParams(TypedDict):
     """Cuando se factura una persona moral y retiene (1.25% de ISR a un emisor en RESICO, artículo 113-J de la LISR, o lo que diga el producto): `keep_total` (por omisión), la base crece para que la factura sume lo que se pagó; `subtract`, la base es la del ticket y la retención se resta, así que el total de la factura es menor a lo pagado."""
     invoice_series: NotRequired[str | None]
     """La serie de las facturas que los compradores se hacen en el portal (y las que se emiten desde un ticket), como `AF`: hasta 25 caracteres, sin `|`. `null` o una vacía usa la serie de facturas del emisor. La factura global sigue con la serie de siempre."""
+    customer_notes: NotRequired[bool]
+    """`true`: el portal le pide al comprador una nota para el PDF de su factura (hasta 500 caracteres; Autofactura › Nota del cliente). Solo sale en el PDF, nunca en el XML. Por omisión `false`."""
     invoice_concepts: NotRequired[UpdateSelfInvoicingParamsInvoiceConcepts | None]
     """Los conceptos de la factura que se hace el comprador (Autofactura › Conceptos de la factura): desglosados o en uno solo, y si el comprador puede elegir. Mande solo lo que cambia; `null` regresa a desglosados sin elección."""
     global_concepts: NotRequired[Literal["ticket", "summary"]]
