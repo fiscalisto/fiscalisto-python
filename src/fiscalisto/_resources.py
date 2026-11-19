@@ -203,6 +203,7 @@ if TYPE_CHECKING:
         ListSatFindingsParams,
         ListSatInvoicesParams,
         ListSatMailboxMessagesParams,
+        ListSatRefreshesParams,
         ListSatRetentionsParams,
         ListStockAdjustmentsParams,
         ListStockMovementsParams,
@@ -258,7 +259,6 @@ if TYPE_CHECKING:
         SatCatalogEntryList,
         SatDeclaration,
         SatDeclarationCalendar,
-        SatDeclarationsRefresh,
         SatDownload,
         SatFindingCounterparty,
         SatFindingList,
@@ -925,7 +925,7 @@ class IssuersResource:
     ) -> SatRefresh:
         """Pedir la opinión de cumplimiento al SAT
 
-        La pide al SAT ahora con la e.firma guardada del emisor (POST /v1/issuers/{id}/efirma con keep_for_downloads: true). 1 timbre en producción, una vez cada 10 minutos; regresa si el SAT no contesta. Si el SAT tarda, contesta status processing y el resultado llega a GET /v1/issuers/{id}/compliance_opinion. En pruebas da una positiva de ejemplo.
+        La pide al SAT con la e.firma guardada del emisor (POST /v1/issuers/{id}/efirma con keep_for_downloads: true); llega a GET /v1/issuers/{id}/compliance_opinion. 1 timbre en producción, una vez cada 10 minutos. Contesta 202 en cuanto la acepta (status processing) y consulta al SAT en segundo plano: sat_refresh.completed o sat_refresh.failed dicen cómo terminó, y GET /v1/sat_refreshes/{id} también. Su timbre se aparta al aceptarla (sin timbres contesta 402 de inmediato), se usa cuando el SAT contesta y regresa si no contesta. En pruebas da una positiva de ejemplo al instante (la consulta ya viene completed y también llega sat_refresh.completed).
 
         POST /v1/issuers/{id}/compliance_opinion/refresh
         https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/refresh-compliance-opinion
@@ -985,7 +985,7 @@ class IssuersResource:
     ) -> SatRefresh:
         """Generar la constancia de situación fiscal en el SAT
 
-        Genera una constancia nueva con la e.firma guardada del emisor. 1 timbre en producción, una vez cada 10 minutos; regresa si el SAT no contesta. En pruebas hace una con los datos del emisor.
+        Genera una constancia nueva con la e.firma guardada del emisor; llega a GET /v1/issuers/{id}/tax_status_certificate. 1 timbre en producción, una vez cada 10 minutos. Contesta 202 en cuanto la acepta (status processing) y consulta al SAT en segundo plano: sat_refresh.completed o sat_refresh.failed dicen cómo terminó, y GET /v1/sat_refreshes/{id} también. Su timbre se aparta al aceptarla (sin timbres contesta 402 de inmediato), se usa cuando el SAT contesta y regresa si no contesta. En pruebas hace una con los datos del emisor al instante.
 
         POST /v1/issuers/{id}/tax_status_certificate/refresh
         https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/refresh-tax-status-certificate
@@ -1025,7 +1025,7 @@ class IssuersResource:
     ) -> SatRefresh:
         """Revisar el buzón tributario en el SAT
 
-        Lee los avisos del buzón tributario del emisor ahora, con su e.firma guardada; nunca abre notificaciones (abrirlas firma el acuse y corren los plazos). 1 timbre en producción, una vez cada 10 minutos. En pruebas deja dos avisos de ejemplo.
+        Lee los avisos del buzón tributario del emisor con su e.firma guardada; nunca abre notificaciones (abrirlas firma el acuse y corren los plazos). Llegan a GET /v1/sat_mailbox_messages. 1 timbre en producción, una vez cada 10 minutos. Contesta 202 en cuanto la acepta (status processing) y consulta al SAT en segundo plano: sat_refresh.completed o sat_refresh.failed dicen cómo terminó, y GET /v1/sat_refreshes/{id} también. Su timbre se aparta al aceptarla (sin timbres contesta 402 de inmediato), se usa cuando el SAT contesta y regresa si no contesta. En pruebas deja dos avisos de ejemplo al instante.
 
         POST /v1/issuers/{id}/sat_mailbox/refresh
         https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/refresh-sat-mailbox
@@ -5421,15 +5421,15 @@ class SatDeclarationsResource:
         timeout: float | None = None,
         max_retries: int | None = None,
         expand: Sequence[str] | None = None,
-    ) -> SatDeclarationsRefresh:
+    ) -> SatRefresh:
         """Consultar las declaraciones de un emisor en el SAT
 
-        Entra al SAT con la e.firma guardada del emisor y trae las declaraciones que presentó: provisionales o definitivas (desde 2022), la anual de persona moral (desde 2019) y las del servicio anterior Declaraciones y pagos, con su PDF, su acuse y sus cifras. La primera consulta trae todos los años que el SAT conserva; las siguientes, este año y el anterior. Solo consulta: nunca presenta ni firma nada. En producción usa 1 timbre por consulta (regresa si el SAT no contesta) y se puede hacer una vez cada 10 minutos por emisor. Contesta en menos de un minuto; si queda algo por bajar (status processing), sigue solo en la siguiente hora sin otro timbre. En pruebas no se le pregunta al SAT: trae declaraciones de ejemplo al instante.
+        Entra al SAT con la e.firma guardada del emisor y trae las declaraciones que presentó: provisionales o definitivas (desde 2022), la anual de persona moral (desde 2019) y las del servicio anterior Declaraciones y pagos, con su PDF, su acuse y sus cifras. La primera consulta trae todos los años que el SAT conserva; las siguientes, este año y el anterior. Solo consulta: nunca presenta ni firma nada. En producción usa 1 timbre por consulta y se puede hacer una vez cada 10 minutos por emisor. Contesta 202 en cuanto la acepta (status processing) y consulta al SAT en segundo plano: sat_refresh.completed o sat_refresh.failed dicen cómo terminó, y GET /v1/sat_refreshes/{id} también. Su timbre se aparta al aceptarla (sin timbres contesta 402 de inmediato), se usa cuando el SAT contesta y regresa si no contesta. Si al terminar queda algo por bajar (result.pending), sigue solo en la siguiente hora sin otro timbre. En pruebas no se le pregunta al SAT: trae declaraciones de ejemplo al instante (la consulta ya viene completed y también llega sat_refresh.completed).
 
         POST /v1/sat_declarations/refresh
         https://fiscalisto.com/docs/api/referencia/declaraciones-del-sat/refresh-sat-declarations
         """
-        result: SatDeclarationsRefresh = self._client.request(
+        result: SatRefresh = self._client.request(
             "POST", "/v1/sat_declarations/refresh", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
@@ -5584,6 +5584,50 @@ class SatDeclarationsResource:
         """
         result: str = self._client.request(
             "GET", f"/v1/sat_declarations/{_path(id)}/financial_statements", result="text", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
+class SatRefreshesResource:
+    """Declaraciones del SAT: fiscalisto.sat_refreshes."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListSatRefreshesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[SatRefresh]:
+        """Listar consultas al SAT
+
+        Las consultas al SAT que pidió (declaraciones, opinión de cumplimiento, constancia y buzón), de la más reciente a la más antigua, con cómo van. No usa timbres.
+
+        GET /v1/sat_refreshes
+        https://fiscalisto.com/docs/api/referencia/declaraciones-del-sat/list-sat-refreshes
+        """
+        return self._client.list("/v1/sat_refreshes", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatRefresh:
+        """Ver una consulta al SAT
+
+        Cómo va una consulta al SAT (srf_…): processing mientras se consulta, completed con lo que trajo en result o failed con el motivo en error (su timbre regresó). No usa timbres.
+
+        GET /v1/sat_refreshes/{id}
+        https://fiscalisto.com/docs/api/referencia/declaraciones-del-sat/get-sat-refresh
+        """
+        result: SatRefresh = self._client.request(
+            "GET", f"/v1/sat_refreshes/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -7658,6 +7702,11 @@ class FiscalistoApi(Core):
     def sat_declarations(self) -> SatDeclarationsResource:
         """Declaraciones del SAT."""
         return SatDeclarationsResource(self)
+
+    @cached_property
+    def sat_refreshes(self) -> SatRefreshesResource:
+        """Declaraciones del SAT."""
+        return SatRefreshesResource(self)
 
     @cached_property
     def tickets(self) -> TicketsResource:
