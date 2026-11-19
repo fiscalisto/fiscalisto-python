@@ -44,12 +44,14 @@ if TYPE_CHECKING:
         CompleteProductionOrderParams,
         ComplianceOpinion,
         CostCenter,
+        CostOfSales,
         CreateAdvanceParams,
         CreateAttendanceMarkParams,
         CreateBankTransactionsParams,
         CreateBranchParams,
         CreateCashForecastItemParams,
         CreateCostCenterParams,
+        CreateCostOfSalesParams,
         CreateCreditNoteParams,
         CreateCustomerDataRequestParams,
         CreateCustomerGroupParams,
@@ -90,6 +92,7 @@ if TYPE_CHECKING:
         CreateSatDownloadParams,
         CreateStockAdjustmentParams,
         CreateStoreConnectionParams,
+        CreateTaxDeterminationParams,
         CreateTestClockParams,
         CreateTicketParams,
         CreateWebhookEndpointParams,
@@ -100,9 +103,11 @@ if TYPE_CHECKING:
         CustomerGroup,
         CustomerPaymentBehavior,
         DeleteCostCenterParams,
+        DeleteCostOfSalesParams,
         DeleteFxRevaluationParams,
         DeleteMemberParams,
         DeleteRoleParams,
+        DeleteTaxDeterminationParams,
         Deleted,
         Diot,
         DisposeFixedAssetParams,
@@ -126,6 +131,7 @@ if TYPE_CHECKING:
         GetCashForecastParams,
         GetClosedPeriodParams,
         GetCompanyReportParams,
+        GetCostOfSalesParams,
         GetCrossCheckCfdiParams,
         GetCrossChecksParams,
         GetDiotFileParams,
@@ -146,6 +152,7 @@ if TYPE_CHECKING:
         GetSatAnnualPreloadParams,
         GetSatCatalogParams,
         GetSatDeclarationCalendarParams,
+        GetTaxDeterminationParams,
         GetTrialBalanceParams,
         GetVatRefundParams,
         ImportManualEntriesParams,
@@ -293,6 +300,7 @@ if TYPE_CHECKING:
         StoreConnection,
         StoreImport,
         SupplierInvoice,
+        TaxDetermination,
         TaxIdValidation,
         TaxStatusCertificate,
         TestClock,
@@ -6414,6 +6422,148 @@ class FxRevaluationsResource:
         return result
 
 
+class CostOfSalesResource:
+    """Contabilidad: fiscalisto.cost_of_sales."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        month: str,
+        params: GetCostOfSalesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CostOfSales:
+        """Ver el costo de ventas de un mes
+
+        Las compras netas del mes según sus pólizas, el inventario en libros, lo que vale el inventario según Inventario y la póliza de costo de ventas, si ya se registró. Como Cierre del mes › Inventario y costo de ventas en la app.
+
+        GET /v1/accounting/cost_of_sales/{month}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-cost-of-sales
+        """
+        result: CostOfSales = self._client.request(
+            "GET", f"/v1/accounting/cost_of_sales/{_path(month)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create(
+        self,
+        month: str,
+        params: CreateCostOfSalesParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CostOfSales:
+        """Registrar el costo de ventas de un mes
+
+        Registra (o reemplaza) la póliza del último día del mes en el sistema de inventarios periódico: Inventario queda en ending_inventory, las compras (502) y sus devoluciones (503) se cancelan y la diferencia va a Costo de ventas (501.01): inventario inicial + compras netas − inventario final, el costo de lo vendido que se deduce (LISR arts. 25-II y 39). Sin compras ni cambio de inventario contesta parameter_invalid en month; en un mes cerrado, period_closed.
+
+        POST /v1/accounting/cost_of_sales/{month}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/create-cost-of-sales
+        """
+        result: CostOfSales = self._client.request(
+            "POST", f"/v1/accounting/cost_of_sales/{_path(month)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        month: str,
+        params: DeleteCostOfSalesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CostOfSales:
+        """Quitar el costo de ventas de un mes
+
+        Quita la póliza de costo de ventas del mes. En un mes cerrado contesta period_closed.
+
+        DELETE /v1/accounting/cost_of_sales/{month}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/delete-cost-of-sales
+        """
+        result: CostOfSales = self._client.request(
+            "DELETE", f"/v1/accounting/cost_of_sales/{_path(month)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class TaxDeterminationsResource:
+    """Contabilidad: fiscalisto.tax_determinations."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        month: str,
+        params: GetTaxDeterminationParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TaxDetermination:
+        """Ver la determinación de impuestos de un mes
+
+        El IVA cobrado y pagado del mes según sus pólizas (y el que le retuvieron sus clientes), el IVA por pagar o a favor que resulta, el pago provisional de ISR que sugiere Impuestos y la póliza de determinación, si ya se registró. Como Cierre del mes › Impuestos del mes en la app.
+
+        GET /v1/accounting/tax_determinations/{month}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-tax-determination
+        """
+        result: TaxDetermination = self._client.request(
+            "GET", f"/v1/accounting/tax_determinations/{_path(month)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create(
+        self,
+        month: str,
+        params: CreateTaxDeterminationParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TaxDetermination:
+        """Registrar la determinación de impuestos de un mes
+
+        Registra (o reemplaza) la póliza del último día del mes: IVA trasladado cobrado contra IVA acreditable pagado y el IVA retenido por clientes, la diferencia a IVA por pagar o IVA a favor, e isr a Pagos provisionales de ISR contra ISR por pagar. Al pagarlos, registre el retiro del banco contra esas cuentas (POST /v1/accounting/bank_movements/{id}/post). Sin IVA ni ISR contesta parameter_invalid en month; en un mes cerrado, period_closed.
+
+        POST /v1/accounting/tax_determinations/{month}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/create-tax-determination
+        """
+        result: TaxDetermination = self._client.request(
+            "POST", f"/v1/accounting/tax_determinations/{_path(month)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        month: str,
+        params: DeleteTaxDeterminationParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TaxDetermination:
+        """Quitar la determinación de impuestos de un mes
+
+        Quita la póliza de determinación del mes. En un mes cerrado contesta period_closed.
+
+        DELETE /v1/accounting/tax_determinations/{month}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/delete-tax-determination
+        """
+        result: TaxDetermination = self._client.request(
+            "DELETE", f"/v1/accounting/tax_determinations/{_path(month)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class BankMovementsResource:
     """Contabilidad: fiscalisto.bank_movements."""
 
@@ -7911,6 +8061,16 @@ class FiscalistoApi(Core):
     def fx_revaluations(self) -> FxRevaluationsResource:
         """Contabilidad."""
         return FxRevaluationsResource(self)
+
+    @cached_property
+    def cost_of_sales(self) -> CostOfSalesResource:
+        """Contabilidad."""
+        return CostOfSalesResource(self)
+
+    @cached_property
+    def tax_determinations(self) -> TaxDeterminationsResource:
+        """Contabilidad."""
+        return TaxDeterminationsResource(self)
 
     @cached_property
     def bank_movements(self) -> BankMovementsResource:

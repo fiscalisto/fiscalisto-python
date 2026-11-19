@@ -92,6 +92,9 @@ __all__ = [
     "ComplianceOpinion",
     "CostCenter",
     "CostCenterList",
+    "CostOfSales",
+    "CostOfSalesPurchaseReturnsItem",
+    "CostOfSalesPurchasesItem",
     "CreateAdvanceParams",
     "CreateAdvanceParamsCustomer",
     "CreateAdvanceParamsCustomerForeign",
@@ -103,6 +106,7 @@ __all__ = [
     "CreateBranchParamsSeries",
     "CreateCashForecastItemParams",
     "CreateCostCenterParams",
+    "CreateCostOfSalesParams",
     "CreateCreditNoteParams",
     "CreateCustomerDataRequestParams",
     "CreateCustomerGroupParams",
@@ -204,6 +208,7 @@ __all__ = [
     "CreateStockAdjustmentParamsLinesItem",
     "CreateStoreConnectionParams",
     "CreateStoreConnectionParamsSettings",
+    "CreateTaxDeterminationParams",
     "CreateTestClockParams",
     "CreateTicketParams",
     "CreateTicketParamsBuyer",
@@ -241,9 +246,11 @@ __all__ = [
     "CustomerPaymentBehaviorPaymentFormsItem",
     "CustomerPaymentBehaviorTrend",
     "DeleteCostCenterParams",
+    "DeleteCostOfSalesParams",
     "DeleteFxRevaluationParams",
     "DeleteMemberParams",
     "DeleteRoleParams",
+    "DeleteTaxDeterminationParams",
     "Deleted",
     "Diot",
     "DiotLinesItem",
@@ -335,6 +342,7 @@ __all__ = [
     "GetCashForecastParams",
     "GetClosedPeriodParams",
     "GetCompanyReportParams",
+    "GetCostOfSalesParams",
     "GetCrossCheckCfdiParams",
     "GetCrossChecksParams",
     "GetDiotFileParams",
@@ -355,6 +363,7 @@ __all__ = [
     "GetSatAnnualPreloadParams",
     "GetSatCatalogParams",
     "GetSatDeclarationCalendarParams",
+    "GetTaxDeterminationParams",
     "GetTrialBalanceParams",
     "GetVatRefundParams",
     "ImportManualEntriesParams",
@@ -783,6 +792,7 @@ __all__ = [
     "SupplierInvoiceRejectedEvent",
     "SupplierInvoiceScheduledEvent",
     "SupplierInvoiceWarningsItem",
+    "TaxDetermination",
     "TaxIdValidation",
     "TaxIdValidationErrorsItem",
     "TaxIdValidationSatRecord",
@@ -5626,6 +5636,72 @@ class FxRevaluation(TypedDict):
     """Las facturas PPD en otra moneda aún pendientes al cierre: direction issued (de un cliente) o received (de un proveedor), balance (lo que faltaba pagar, en su moneda) y booked_rate (su TipoCambio, al que se registró)."""
     manual_entry: str | None
     """La póliza de revaluación (mje_…) si ya se registró, o null. Es una póliza a mano de tipo adjustment con reverse_next_month."""
+
+
+class TaxDetermination(TypedDict):
+    """La determinación de impuestos de un mes en la contabilidad: el IVA cobrado y pagado del mes (de sus pólizas) que pasa a IVA por pagar o a favor, el pago provisional de ISR sugerido y la póliza que los registra, si ya se registró."""
+    object: Literal["tax_determination"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM)."""
+    date: str
+    """El último día del mes: la fecha de la póliza."""
+    vat_collected: float
+    """El IVA trasladado cobrado en el mes, según sus pólizas."""
+    vat_creditable: float
+    """El IVA acreditable pagado en el mes, según sus pólizas."""
+    vat_withheld_by_customers: float
+    """El IVA que le retuvieron sus clientes en el mes."""
+    vat: float
+    """vat_collected − vat_creditable − vat_withheld_by_customers: positivo, IVA por pagar; negativo, IVA a favor."""
+    suggested_isr: float | None
+    """El pago provisional de ISR que calcula Impuestos con su configuración, o null si no está configurado."""
+    manual_entry: str | None
+    """La póliza de determinación (mje_…) si ya se registró, o null. Es una póliza a mano de tipo adjustment."""
+
+
+class CostOfSalesPurchasesItem(TypedDict):
+    account: str
+    """La cuenta: su número y nombre en el catálogo."""
+    amount: float
+    """Importe."""
+
+
+class CostOfSalesPurchaseReturnsItem(TypedDict):
+    account: str
+    """La cuenta: su número y nombre en el catálogo."""
+    amount: float
+    """Importe."""
+
+
+class CostOfSales(TypedDict):
+    """El costo de ventas de un mes en la contabilidad (sistema de inventarios periódico): las compras del mes, el inventario en libros y al cierre, y la póliza que lleva la diferencia a Costo de ventas, si ya se registró."""
+    object: Literal["cost_of_sales"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM)."""
+    date: str
+    """El último día del mes: la fecha de la póliza."""
+    purchases: list[CostOfSalesPurchasesItem]
+    """Las compras del mes por cuenta (código agrupador 502: cargos menos abonos), sin la póliza del mes."""
+    purchase_returns: list[CostOfSalesPurchaseReturnsItem]
+    """Las devoluciones y descuentos sobre compras del mes por cuenta (503: abonos menos cargos)."""
+    net_purchases: float
+    """purchases − purchase_returns."""
+    book_inventory: float
+    """El saldo de las cuentas de inventario (115) al cierre del mes en sus libros, sin la póliza del mes."""
+    suggested_ending_inventory: float | None
+    """Lo que valen sus existencias al cierre del mes según Inventario (con su método de valuación), o null si no lleva existencias en Fiscalisto: entonces use su conteo físico."""
+    manual_entry: str | None
+    """La póliza de costo de ventas (mje_…) si ya se registró, o null. Es una póliza a mano de tipo adjustment."""
 
 
 # Las pólizas que entraron de otro sistema (CONTPAQi, COI, una hoja de cálculo) en una importación.
@@ -13749,6 +13825,44 @@ class CreateFxRevaluationParams(TypedDict):
 
 class DeleteFxRevaluationParams(TypedDict):
     """Los parámetros de DELETE /v1/accounting/fx_revaluations/{month}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetCostOfSalesParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/cost_of_sales/{month}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateCostOfSalesParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    ending_inventory: float
+    """Lo que vale el inventario al cierre del mes en pesos (0 si no hay). Por lo general, suggested_ending_inventory o el de su conteo físico."""
+
+
+class DeleteCostOfSalesParams(TypedDict):
+    """Los parámetros de DELETE /v1/accounting/cost_of_sales/{month}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetTaxDeterminationParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/tax_determinations/{month}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateTaxDeterminationParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    isr: float
+    """El pago provisional de ISR del mes en pesos (0 si no hay). Por lo general, suggested_isr."""
+
+
+class DeleteTaxDeterminationParams(TypedDict):
+    """Los parámetros de DELETE /v1/accounting/tax_determinations/{month}."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 
