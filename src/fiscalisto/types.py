@@ -336,6 +336,7 @@ __all__ = [
     "InvoiceCancellationPendingEvent",
     "InvoiceCancellationRejectedEvent",
     "InvoiceConcepts",
+    "InvoiceConceptsGroupsItem",
     "InvoiceCreate",
     "InvoiceCreateAddenda",
     "InvoiceCreateCartaPorte",
@@ -787,11 +788,16 @@ __all__ = [
     "UpdateSatInvoiceParams",
     "UpdateSelfInvoicingParams",
     "UpdateSelfInvoicingParamsInvoiceConcepts",
+    "UpdateSelfInvoicingParamsInvoiceConceptsGroupsItem",
     "UpdateSelfInvoicingParamsPortalStyle",
     "UpdateSelfInvoicingParamsPortalStyleBack",
     "UpdateSelfInvoicingParamsPortalStyleColors",
     "UpdateSelfInvoicingParamsPortalStyleTexts",
     "UpdateSelfInvoicingParamsPortalStyleTextsCodeHint",
+    "UpdateSelfInvoicingParamsPortalStyleTextsConceptsGrouped",
+    "UpdateSelfInvoicingParamsPortalStyleTextsConceptsItemized",
+    "UpdateSelfInvoicingParamsPortalStyleTextsConceptsSingle",
+    "UpdateSelfInvoicingParamsPortalStyleTextsConceptsTitle",
     "UpdateSelfInvoicingParamsPortalStyleTextsFindButton",
     "UpdateSelfInvoicingParamsPortalStyleTextsHowQuestion",
     "UpdateSelfInvoicingParamsPortalStyleTextsMessage",
@@ -4859,21 +4865,42 @@ class PortalStyle(TypedDict):
     colors: PortalStyleColors
     """Los colores de la página; null usa el del tema."""
     texts: dict[str, PortalStyleTextsValue]
-    """Los textos propios por llave (step_ticket, submit, success_title…), cada uno con es y en. Uno que falta lleva el de Fiscalisto."""
+    """Los textos propios por llave (step_ticket, submit, success_title, concepts_title…), cada uno con es y en. Uno que falta lleva el de Fiscalisto."""
+
+
+class InvoiceConceptsGroupsItem(TypedDict):
+    name: str
+    """El nombre del concepto, como «Alimentos y bebidas»."""
+    product_key: str | None
+    """Su ClaveProdServ, o null para la del renglón más grande del grupo."""
+    unit_key: str | None
+    """Su ClaveUnidad, o null para la del renglón más grande."""
+    sat_keys: list[str]
+    """Las claves del SAT que toma, completas o su inicio (de 2 a 8 dígitos, como 9010)."""
+    categories: list[str]
+    """Las categorías de producto que toma, por su ruta («Hotel › Habitaciones»); una categoría toma también las de adentro."""
 
 
 class InvoiceConcepts(TypedDict):
     """Los conceptos de la factura que se hace el comprador en el portal."""
-    mode: Literal["itemized", "single"]
-    """itemized: un concepto por renglón del ticket; single: uno solo (más uno por cada otro juego de impuestos, como una noche con ISH)."""
+    mode: Literal["itemized", "single", "grouped"]
+    """itemized: un concepto por renglón del ticket; single: uno solo; grouped: uno por cada grupo de groups. Lo que lleva otro juego de impuestos (como una noche con ISH) va siempre en su propio concepto."""
     customer_choice: bool
-    """Si el comprador puede elegir en el portal entre desglosados y un solo concepto."""
+    """Si el comprador puede elegir en el portal entre las opciones de customer_options."""
+    customer_options: list[Literal["itemized", "single", "grouped"]]
+    """Las opciones que ve el comprador cuando puede elegir (incluye siempre mode, que llega elegida)."""
     description: str
     """La descripción del concepto único, como «Consumo»."""
     product_key: str | None
     """La ClaveProdServ del concepto único, o null para la del renglón más grande."""
     unit_key: str | None
     """Su ClaveUnidad, o null para la del renglón más grande."""
+    groups: list[InvoiceConceptsGroupsItem]
+    """Los grupos de «Por categoría», en orden: cada renglón va en el primero que lo tome."""
+    ungrouped: Literal["itemized", "group"]
+    """Lo que ningún grupo toma: itemized, desglosado; group, en un concepto más llamado ungrouped_name."""
+    ungrouped_name: str
+    """El nombre del concepto para lo que ningún grupo toma."""
 
 
 class SelfInvoicing(TypedDict):
@@ -4911,7 +4938,7 @@ class SelfInvoicing(TypedDict):
     portal_style: PortalStyle
     """Cómo se ve el portal además de su tema, color y esquinas: acomodo, encabezado, colores, letra, textos, formas de dar los datos, botón para volver y CSS."""
     invoice_concepts: InvoiceConcepts
-    """Desglosados o en un solo concepto, y si el comprador puede elegir (Autofactura › Conceptos de la factura)."""
+    """Desglosados, en un solo concepto o por los grupos de la empresa, y qué puede elegir el comprador (Autofactura › Conceptos de la factura)."""
     retention_mode: Literal["keep_total", "subtract"]
     """Cuando se factura una persona moral que retiene (1.25% de ISR en RESICO, o lo del producto). keep_total: la base crece y la factura suma lo que se pagó. subtract: la base es la del ticket y el total es lo pagado menos la retención."""
     invoice_series: str | None
@@ -12307,6 +12334,34 @@ class UpdateSelfInvoicingParamsPortalStyleTextsSuccessMessage(TypedDict):
     """El mensaje al terminar en inglés."""
 
 
+class UpdateSelfInvoicingParamsPortalStyleTextsConceptsTitle(TypedDict):
+    es: NotRequired[str]
+    """El título de la elección de conceptos («Conceptos en su factura»; ver `invoice_concepts`) en español."""
+    en: NotRequired[str]
+    """El título de la elección de conceptos («Conceptos en su factura»; ver `invoice_concepts`) en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsConceptsItemized(TypedDict):
+    es: NotRequired[str]
+    """La opción de conceptos desglosados («Desglosados») en español."""
+    en: NotRequired[str]
+    """La opción de conceptos desglosados («Desglosados») en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsConceptsSingle(TypedDict):
+    es: NotRequired[str]
+    """La opción de un solo concepto («Un solo concepto») en español."""
+    en: NotRequired[str]
+    """La opción de un solo concepto («Un solo concepto») en inglés."""
+
+
+class UpdateSelfInvoicingParamsPortalStyleTextsConceptsGrouped(TypedDict):
+    es: NotRequired[str]
+    """La opción de conceptos por categoría («Por categoría») en español."""
+    en: NotRequired[str]
+    """La opción de conceptos por categoría («Por categoría») en inglés."""
+
+
 class UpdateSelfInvoicingParamsPortalStyleTexts(TypedDict):
     """Los textos, cada uno con `es` y `en`, combinados por llave con lo guardado. El título, el mensaje y dónde viene el código en español son `portal_title`, `portal_message` y `code_hint`; aquí van en inglés."""
     title: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsTitle | None]
@@ -12331,6 +12386,14 @@ class UpdateSelfInvoicingParamsPortalStyleTexts(TypedDict):
     """El título al terminar; `null` vuelve al de Fiscalisto."""
     success_message: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsSuccessMessage | None]
     """El mensaje al terminar; `null` vuelve al de Fiscalisto."""
+    concepts_title: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsConceptsTitle | None]
+    """El título de la elección de conceptos («Conceptos en su factura»; ver `invoice_concepts`); `null` vuelve al de Fiscalisto."""
+    concepts_itemized: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsConceptsItemized | None]
+    """La opción de conceptos desglosados («Desglosados»); `null` vuelve al de Fiscalisto."""
+    concepts_single: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsConceptsSingle | None]
+    """La opción de un solo concepto («Un solo concepto»); `null` vuelve al de Fiscalisto."""
+    concepts_grouped: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsConceptsGrouped | None]
+    """La opción de conceptos por categoría («Por categoría»); `null` vuelve al de Fiscalisto."""
 
 
 class UpdateSelfInvoicingParamsPortalStyleWays(TypedDict):
@@ -12391,17 +12454,38 @@ class UpdateSelfInvoicingParamsPortalStyle(TypedDict):
     """CSS propio, dentro del portal y sin llegar a su pie. Se quitan @import, url() y lo que cargue o ejecute algo; la leyenda «Facturado con Fiscalisto» se queda."""
 
 
+class UpdateSelfInvoicingParamsInvoiceConceptsGroupsItem(TypedDict):
+    name: str
+    """La descripción del concepto, como «Alimentos y bebidas»."""
+    product_key: NotRequired[str | None]
+    """Su ClaveProdServ. `null` (por omisión): la de su renglón más grande."""
+    unit_key: NotRequired[str | None]
+    """Su ClaveUnidad, con `product_key`, como `E48`."""
+    sat_keys: NotRequired[list[str]]
+    """Los renglones cuya clave del SAT empieza así: `9010` toma 90101501 (restaurante) y 90101503 (bar); `90111800`, solo hospedaje."""
+    categories: NotRequired[list[str]]
+    """Los renglones de los productos de estas categorías y sus subcategorías, por su ruta como la da `category` del producto («Alimentos › Bebidas»)."""
+
+
 class UpdateSelfInvoicingParamsInvoiceConcepts(TypedDict):
-    mode: NotRequired[Literal["itemized", "single"]]
-    """`itemized` (por omisión): un concepto por renglón del ticket (Hospedaje, Restaurante, Bar…). `single`: uno solo, con `description`; los renglones con otros impuestos (una noche con ISH, IVA 0 %, retenciones) van en su propio concepto, porque un concepto lleva un solo juego de impuestos. El total y los impuestos no cambian."""
+    mode: NotRequired[Literal["itemized", "single", "grouped"]]
+    """`itemized` (por omisión): un concepto por renglón del ticket (Hospedaje, Restaurante, Bar…). `single`: uno solo, con `description`. `grouped`: los conceptos de `groups`. Un concepto lleva un solo juego de impuestos, así que los renglones con otros (una noche con ISH, IVA 0 %, retenciones) van aparte. El total y los impuestos no cambian."""
     customer_choice: NotRequired[bool]
-    """`true`: el comprador elige en el portal entre desglosados y un solo concepto (empieza en `mode`), también en el portal dentro de su sitio."""
+    """`true`: el comprador elige en el portal (también dentro de su sitio) entre `customer_options`, empezando en `mode`."""
+    customer_options: NotRequired[list[Literal["itemized", "single", "grouped"]]]
+    """Entre qué puede elegir el comprador, por omisión `itemized` y `single`. `mode` va siempre; `grouped` necesita `groups`."""
     description: NotRequired[str]
     """La descripción del concepto único, como «Consumo» (por omisión) o «Servicios de hospedaje y alimentos»."""
     product_key: NotRequired[str | None]
-    """Su ClaveProdServ. `null` (por omisión): la del renglón más grande del ticket."""
+    """La ClaveProdServ del concepto único. `null` (por omisión): la del renglón más grande del ticket."""
     unit_key: NotRequired[str | None]
     """Su ClaveUnidad, con `product_key`, como `E48`. `null`: la del renglón más grande."""
+    groups: NotRequired[list[UpdateSelfInvoicingParamsInvoiceConceptsGroupsItem]]
+    """Los conceptos de `grouped`, hasta 12: cada renglón va al primero que lo toma, por su clave del SAT (`sat_keys`) o la categoría de su producto (`categories`). Reemplaza la lista guardada."""
+    ungrouped: NotRequired[Literal["itemized", "group"]]
+    """Con `grouped`, los renglones que ningún grupo toma: `itemized` (por omisión) como vienen, o `group` en un concepto más llamado `ungrouped_name`."""
+    ungrouped_name: NotRequired[str]
+    """El nombre de ese concepto, por omisión «Otros»."""
 
 
 class UpdateSelfInvoicingParams(TypedDict):
