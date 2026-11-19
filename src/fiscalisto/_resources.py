@@ -57,12 +57,15 @@ if TYPE_CHECKING:
         CreateExpensePersonParams,
         CreateExpenseReportParams,
         CreateExportParams,
+        CreateFixedAssetParams,
         CreateImssFilesParams,
         CreateImssMovementParams,
         CreateInvitationParams,
         CreateInvoiceBatchParams,
         CreateIssuerOnboardingLinkParams,
         CreateIssuerParams,
+        CreateLedgerAccountParams,
+        CreateManualEntryParams,
         CreatePaymentParams,
         CreatePayrollBankFileParams,
         CreatePayrollBatchParams,
@@ -94,6 +97,7 @@ if TYPE_CHECKING:
         DeleteRoleParams,
         Deleted,
         Diot,
+        DisposeFixedAssetParams,
         Employee,
         Event,
         EventResend,
@@ -105,6 +109,8 @@ if TYPE_CHECKING:
         ExternalPayrollReceiptCreate,
         ExternalPayrollReceiptPreview,
         FinancialStatements,
+        FixedAsset,
+        FixedAssetList,
         GetAttendanceParams,
         GetCashForecastParams,
         GetCompanyReportParams,
@@ -142,6 +148,7 @@ if TYPE_CHECKING:
         IssuerBranding,
         IssuerOnboardingLink,
         JournalEntry,
+        LedgerAccount,
         LedgerAccountList,
         ListAdvancesParams,
         ListBankTransactionsParams,
@@ -155,6 +162,7 @@ if TYPE_CHECKING:
         ListExpensePeopleParams,
         ListExpenseReportsParams,
         ListExportsParams,
+        ListFixedAssetsParams,
         ListImssMovementsParams,
         ListInvitationsParams,
         ListInvoiceBatchesParams,
@@ -162,6 +170,7 @@ if TYPE_CHECKING:
         ListIssuersParams,
         ListJournalEntriesParams,
         ListLedgerAccountsParams,
+        ListManualEntriesParams,
         ListMaterialityInvoicesParams,
         ListMaterialitySuppliersParams,
         ListMembersParams,
@@ -192,6 +201,7 @@ if TYPE_CHECKING:
         ListWarehousesParams,
         ListWebhookDeliveriesParams,
         ListWebhookEndpointsParams,
+        ManualJournalEntry,
         MarkInvoicePaidParams,
         MarkPurchaseReceiptInvoicedParams,
         MarkSupplierInvoicePaidParams,
@@ -279,6 +289,7 @@ if TYPE_CHECKING:
         UpdateInvoiceParams,
         UpdateIssuerBrandingParams,
         UpdateIssuerParams,
+        UpdateManualEntryParams,
         UpdateMemberParams,
         UpdatePriceListParams,
         UpdateProductParams,
@@ -5488,7 +5499,7 @@ class AccountingResource:
     ) -> ListObject[JournalEntry]:
         """Listar las pólizas de un mes
 
-        Las pólizas de diario del mes, con sus cuentas y código agrupador del SAT: una por cada CFDI de ingreso o egreso vigente, emitido o recibido (los recibidos con la categoría de su gasto); una por cada pago de un complemento; una por cada recibo de nómina, y una con la depreciación de los activos fijos. Un PUE se registra cobrado o pagado según su forma de pago. En pesos; un CFDI en otra moneda sin tipo de cambio no se registra. No incluye movimientos de banco sin CFDI ni provisiones.
+        Las pólizas de diario del mes, con sus cuentas y código agrupador del SAT: una por cada CFDI de ingreso o egreso vigente, emitido o recibido (los recibidos con la categoría de su gasto); una por cada pago de un complemento; una por cada recibo de nómina; una con la depreciación de los activos fijos; una por cada venta o baja de un activo, y las capturadas a mano (POST /v1/accounting/manual_entries) con las reversiones de sus provisiones. Un PUE se registra cobrado o pagado según su forma de pago. En pesos; un CFDI en otra moneda sin tipo de cambio no se registra. No incluye movimientos de banco sin CFDI.
 
         GET /v1/accounting/journal_entries
         https://fiscalisto.com/docs/api/referencia/contabilidad/list-journal-entries
@@ -5615,6 +5626,27 @@ class AccountingResource:
         )
         return result
 
+    def create_account(
+        self,
+        params: CreateLedgerAccountParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> LedgerAccount:
+        """Agregar una cuenta al catálogo
+
+        Una cuenta propia del emisor, para sus pólizas a mano: su número (que no se repite), su nombre y una subcuenta del código agrupador del SAT. Entra al catálogo de la contabilidad electrónica.
+
+        POST /v1/accounting/accounts
+        https://fiscalisto.com/docs/api/referencia/contabilidad/create-ledger-account
+        """
+        result: LedgerAccount = self._client.request(
+            "POST", "/v1/accounting/accounts", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
     def electronic_accounting(
         self,
         params: GetElectronicAccountingParams,
@@ -5670,6 +5702,243 @@ class AccountingResource:
         """
         result: str = self._client.request(
             "GET", "/v1/accounting/diot/file", query=params, result="text", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
+class ManualEntriesResource:
+    """Contabilidad: fiscalisto.manual_entries."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateManualEntryParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ManualJournalEntry:
+        """Capturar una póliza
+
+        Una póliza a mano: un ajuste, una provisión (reverse_next_month la revierte el día 1 del mes siguiente), una reclasificación. Cada renglón lleva una cuenta del catálogo por su número y un cargo o un abono; si no cuadran contesta entry_unbalanced, y una cuenta que no existe, account_missing. Entra a journal_entries, trial_balance, financial_statements y electronic_accounting de su mes. No puede ser antes de los saldos iniciales.
+
+        POST /v1/accounting/manual_entries
+        https://fiscalisto.com/docs/api/referencia/contabilidad/create-manual-entry
+        """
+        result: ManualJournalEntry = self._client.request(
+            "POST", "/v1/accounting/manual_entries", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListManualEntriesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[ManualJournalEntry]:
+        """Listar las pólizas capturadas
+
+        Las pólizas capturadas a mano del emisor, las más recientes primero.
+
+        GET /v1/accounting/manual_entries
+        https://fiscalisto.com/docs/api/referencia/contabilidad/list-manual-entries
+        """
+        return self._client.list("/v1/accounting/manual_entries", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ManualJournalEntry:
+        """Ver una póliza capturada
+
+        Una póliza capturada a mano.
+
+        GET /v1/accounting/manual_entries/{id}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-manual-entry
+        """
+        result: ManualJournalEntry = self._client.request(
+            "GET", f"/v1/accounting/manual_entries/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateManualEntryParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ManualJournalEntry:
+        """Corregir una póliza capturada
+
+        La reemplaza con lo que manda, con las mismas reglas que al capturarla.
+
+        POST /v1/accounting/manual_entries/{id}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/update-manual-entry
+        """
+        result: ManualJournalEntry = self._client.request(
+            "POST", f"/v1/accounting/manual_entries/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar una póliza capturada
+
+        Sale de la contabilidad con su reversión, si tenía.
+
+        DELETE /v1/accounting/manual_entries/{id}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/delete-manual-entry
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/accounting/manual_entries/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class FixedAssetsResource:
+    """Contabilidad: fiscalisto.fixed_assets."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListFixedAssetsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> FixedAssetList:
+        """Listar los activos fijos
+
+        Los activos fijos del emisor al cierre de un mes: los que llegaron con una factura recibida de uso I01 a I08 (fxc_…) y los capturados sin ella (fxa_…), con su depreciación mensual y acumulada y su valor en libros.
+
+        GET /v1/accounting/fixed_assets
+        https://fiscalisto.com/docs/api/referencia/contabilidad/list-fixed-assets
+        """
+        result: FixedAssetList = self._client.request(
+            "GET", "/v1/accounting/fixed_assets", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create(
+        self,
+        params: CreateFixedAssetParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> FixedAsset:
+        """Agregar un activo fijo sin factura
+
+        Uno que compró antes de usar Fiscalisto o cuya factura no está aquí. Se deprecia cada mes desde el siguiente a in_use_since, en la contabilidad y en el cálculo del ISR. Su costo no entra solo a los libros: va en los saldos iniciales o en una póliza (POST /v1/accounting/manual_entries).
+
+        POST /v1/accounting/fixed_assets
+        https://fiscalisto.com/docs/api/referencia/contabilidad/create-fixed-asset
+        """
+        result: FixedAsset = self._client.request(
+            "POST", "/v1/accounting/fixed_assets", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> FixedAsset:
+        """Ver un activo fijo
+
+        Un activo fijo, con sus cifras al cierre del mes actual.
+
+        GET /v1/accounting/fixed_assets/{id}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-fixed-asset
+        """
+        result: FixedAsset = self._client.request(
+            "GET", f"/v1/accounting/fixed_assets/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar un activo fijo capturado
+
+        Solo uno capturado sin factura (fxa_…); uno con CFDI contesta asset_from_cfdi: véndalo o dele de baja.
+
+        DELETE /v1/accounting/fixed_assets/{id}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/delete-fixed-asset
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/accounting/fixed_assets/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def dispose(
+        self,
+        id: str,
+        params: DisposeFixedAssetParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> FixedAsset:
+        """Vender o dar de baja un activo fijo
+
+        Deja de depreciarse el mes de date, y ese día una póliza (asset_disposal) cancela el activo y su depreciación acumulada; su valor en libros va a pérdida en venta o baja (703). El ingreso de una venta entra con la factura que emita. Uno ya dado de baja contesta asset_already_disposed.
+
+        POST /v1/accounting/fixed_assets/{id}/dispose
+        https://fiscalisto.com/docs/api/referencia/contabilidad/dispose-fixed-asset
+        """
+        result: FixedAsset = self._client.request(
+            "POST", f"/v1/accounting/fixed_assets/{_path(id)}/dispose", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def undispose(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> FixedAsset:
+        """Deshacer la baja de un activo fijo
+
+        El activo vuelve a depreciarse como si nunca se hubiera dado de baja.
+
+        DELETE /v1/accounting/fixed_assets/{id}/disposal
+        https://fiscalisto.com/docs/api/referencia/contabilidad/undispose-fixed-asset
+        """
+        result: FixedAsset = self._client.request(
+            "DELETE", f"/v1/accounting/fixed_assets/{_path(id)}/disposal", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -7045,6 +7314,16 @@ class FiscalistoApi(Core):
     def accounting(self) -> AccountingResource:
         """Contabilidad."""
         return AccountingResource(self)
+
+    @cached_property
+    def manual_entries(self) -> ManualEntriesResource:
+        """Contabilidad."""
+        return ManualEntriesResource(self)
+
+    @cached_property
+    def fixed_assets(self) -> FixedAssetsResource:
+        """Contabilidad."""
+        return FixedAssetsResource(self)
 
     @cached_property
     def store_connections(self) -> StoreConnectionsResource:

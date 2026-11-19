@@ -110,6 +110,7 @@ __all__ = [
     "CreateExpensePersonParams",
     "CreateExpenseReportParams",
     "CreateExportParams",
+    "CreateFixedAssetParams",
     "CreateImssFilesParams",
     "CreateImssMovementParams",
     "CreateInvitationParams",
@@ -118,6 +119,9 @@ __all__ = [
     "CreateIssuerOnboardingLinkParams",
     "CreateIssuerParams",
     "CreateIssuerParamsDonationAuthorization",
+    "CreateLedgerAccountParams",
+    "CreateManualEntryParams",
+    "CreateManualEntryParamsLinesItem",
     "CreatePaymentParams",
     "CreatePaymentParamsDocumentsItem",
     "CreatePayrollBankFileParams",
@@ -234,6 +238,7 @@ __all__ = [
     "DiotLinesItem",
     "DiotLinesItemPaid",
     "DiotLinesItemReturns",
+    "DisposeFixedAssetParams",
     "Employee",
     "EmployeeList",
     "Event",
@@ -294,6 +299,9 @@ __all__ = [
     "FinancialStatementsIncomeStatementYearToDateSectionsItem",
     "FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItem",
     "FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItemAccountsItem",
+    "FixedAsset",
+    "FixedAssetDisposal",
+    "FixedAssetList",
     "GetAttendanceParams",
     "GetCashForecastParams",
     "GetCompanyReportParams",
@@ -464,6 +472,7 @@ __all__ = [
     "ListExpensePeopleParams",
     "ListExpenseReportsParams",
     "ListExportsParams",
+    "ListFixedAssetsParams",
     "ListImssMovementsParams",
     "ListInvitationsParams",
     "ListInvoiceBatchesParams",
@@ -471,6 +480,7 @@ __all__ = [
     "ListIssuersParams",
     "ListJournalEntriesParams",
     "ListLedgerAccountsParams",
+    "ListManualEntriesParams",
     "ListMaterialityInvoicesParams",
     "ListMaterialitySuppliersParams",
     "ListMembersParams",
@@ -501,6 +511,9 @@ __all__ = [
     "ListWarehousesParams",
     "ListWebhookDeliveriesParams",
     "ListWebhookEndpointsParams",
+    "ManualJournalEntry",
+    "ManualJournalEntryLinesItem",
+    "ManualJournalEntryList",
     "MarkInvoicePaidParams",
     "MarkPurchaseReceiptInvoicedParams",
     "MarkSupplierInvoicePaidParams",
@@ -754,6 +767,8 @@ __all__ = [
     "UpdateIssuerBrandingParams",
     "UpdateIssuerParams",
     "UpdateIssuerParamsDonationAuthorization",
+    "UpdateManualEntryParams",
+    "UpdateManualEntryParamsLinesItem",
     "UpdateMemberParams",
     "UpdatePriceListParams",
     "UpdatePriceListParamsItemsItem",
@@ -5057,8 +5072,10 @@ class JournalEntry(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     issuer: str
     """El emisor."""
-    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation"]
-    """De qué es: invoice (un CFDI de ingreso o egreso), payment_received o payment_made (un pago de un complemento), payroll (un recibo de nómina), employee_expenses (un anticipo, reembolso, devolución o comprobación de viáticos, contra 107.01 «Funcionarios y empleados») o depreciation (la depreciación del mes de los activos fijos)."""
+    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal"]
+    """De qué es: invoice (un CFDI de ingreso o egreso), payment_received o payment_made (un pago de un complemento), payroll (un recibo de nómina), employee_expenses (un anticipo, reembolso, devolución o comprobación de viáticos, contra 107.01 «Funcionarios y empleados»), depreciation (la depreciación del mes de los activos fijos), manual (una póliza capturada a mano, o la reversión de una provisión) o asset_disposal (la venta o baja de un activo fijo)."""
+    manual_entry: str | None
+    """Con type manual: la póliza capturada (mje_…), también en su reversión; null en las demás."""
     date: str
     """La fecha del CFDI o del pago; en la depreciación, el último día del mes."""
     description: str
@@ -5091,6 +5108,90 @@ class LedgerAccount(TypedDict):
     """El código agrupador del SAT (Anexo 24)."""
     nature: Literal["debit", "credit"]
     """debit (deudora) o credit (acreedora)."""
+
+
+class ManualJournalEntryLinesItem(TypedDict):
+    account: str
+    """El número de cuenta."""
+    account_name: str
+    """El nombre de la cuenta."""
+    grouping_code: str
+    """Su código agrupador del SAT."""
+    debit: float
+    """El cargo, en pesos."""
+    credit: float
+    """El abono, en pesos."""
+
+
+class ManualJournalEntry(TypedDict):
+    """Una póliza capturada a mano (ajuste, provisión, reclasificación): entra a las pólizas, la balanza, los estados financieros y la contabilidad electrónica de su mes."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["manual_journal_entry"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    date: str
+    """La fecha de la póliza."""
+    description: str
+    """Su concepto."""
+    kind: Literal["adjustment", "accrual", "reclassification", "other"]
+    """adjustment (ajuste), accrual (provisión), reclassification (reclasificación) u other."""
+    journal_type: Literal["journal", "income", "expense"]
+    """El tipo de póliza: journal (diario), income (ingresos) o expense (egresos)."""
+    reverse_next_month: bool
+    """true: una provisión que se revierte sola el día 1 del mes siguiente."""
+    reverses_on: str | None
+    """El día de su reversión, o null si no se revierte."""
+    uuid: str | None
+    """El UUID del CFDI con el que se relaciona, o null."""
+    uuid_tax_id: str | None
+    """El RFC de la otra parte de ese CFDI, o null."""
+    total: float
+    """La suma de sus cargos (igual a la de sus abonos)."""
+    lines: list[ManualJournalEntryLinesItem]
+    """Sus renglones: la cuenta y su cargo (debit) o abono (credit)."""
+    created_at: str | None
+    """Cuándo se capturó."""
+    updated_at: str | None
+    """Cuándo cambió por última vez."""
+
+
+class FixedAssetDisposal(TypedDict):
+    date: str
+    """El día de la venta o la baja."""
+    reason: Literal["sale", "write_off"]
+    """sale (venta) o write_off (robo, pérdida, desecho)."""
+    note: str | None
+    """La nota que se dejó, o null."""
+
+
+# Un activo fijo del emisor en su contabilidad al cierre de un mes: su monto original, su depreciación en línea recta (tasas del artículo 34 de la LISR) y su valor en libros.
+FixedAsset = TypedDict(
+    "FixedAsset",
+    {
+        "id": "str",
+        "livemode": "bool",
+        "object": "Literal[\"fixed_asset\"]",
+        "issuer": "str",
+        "description": "str",
+        "source": "Literal[\"cfdi\", \"manual\"]",
+        "cfdi_use": "str",
+        "class": "str",
+        "uuid": "str | None",
+        "in_use_since": "str",
+        "cost": "float",
+        "annual_rate": "float",
+        "monthly_depreciation": "float",
+        "month": "str",
+        "month_depreciation": "float",
+        "accumulated_depreciation": "float",
+        "book_value": "float",
+        "disposal": "FixedAssetDisposal | None",
+    },
+)
 
 
 class TrialBalanceAccountsItem(TypedDict):
@@ -8253,6 +8354,28 @@ class LedgerAccountList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[LedgerAccount]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class ManualJournalEntryList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[ManualJournalEntry]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class FixedAssetList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[FixedAsset]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -12596,6 +12719,120 @@ class ListLedgerAccountsParams(TypedDict):
     """Los parámetros de GET /v1/accounting/accounts."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateLedgerAccountParams(TypedDict):
+    number: str
+    """Su número en el catálogo, por ejemplo 210-01-01. No se repite."""
+    name: str
+    """Su nombre."""
+    grouping_code: str
+    """Una subcuenta del código agrupador del SAT (Anexo 24), por ejemplo 210.01."""
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+
+
+class CreateManualEntryParamsLinesItem(TypedDict):
+    account: str
+    """El número de la cuenta en su catálogo (GET /v1/accounting/accounts), por ejemplo 205-06."""
+    debit: NotRequired[float]
+    """El cargo."""
+    credit: NotRequired[float]
+    """El abono."""
+
+
+class CreateManualEntryParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    date: str
+    """La fecha de la póliza (AAAA-MM-DD)."""
+    description: str
+    """Su concepto."""
+    kind: NotRequired[Literal["adjustment", "accrual", "reclassification", "other"]]
+    """adjustment (ajuste), accrual (provisión), reclassification (reclasificación) u other."""
+    journal_type: NotRequired[Literal["journal", "income", "expense"]]
+    """El tipo de póliza: journal (diario), income (ingresos) o expense (egresos)."""
+    reverse_next_month: NotRequired[bool]
+    """Solo con kind accrual: la póliza se revierte sola el día 1 del mes siguiente (para cuando llegue la factura)."""
+    uuid: NotRequired[str | None]
+    """El UUID del CFDI con el que se relaciona, si hay uno."""
+    uuid_tax_id: NotRequired[str | None]
+    """Con uuid: el RFC de la otra parte de ese CFDI."""
+    lines: list[CreateManualEntryParamsLinesItem]
+    """Sus cargos y abonos: cada renglón uno u otro; los cargos suman lo mismo que los abonos."""
+
+
+# Los parámetros de GET /v1/accounting/manual_entries.
+ListManualEntriesParams = TypedDict(
+    "ListManualEntriesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "from": "NotRequired[str]",
+        "to": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+    },
+)
+
+
+class UpdateManualEntryParamsLinesItem(TypedDict):
+    account: str
+    """El número de la cuenta en su catálogo (GET /v1/accounting/accounts), por ejemplo 205-06."""
+    debit: NotRequired[float]
+    """El cargo."""
+    credit: NotRequired[float]
+    """El abono."""
+
+
+class UpdateManualEntryParams(TypedDict):
+    date: str
+    """La fecha de la póliza (AAAA-MM-DD)."""
+    description: str
+    """Su concepto."""
+    kind: NotRequired[Literal["adjustment", "accrual", "reclassification", "other"]]
+    """adjustment (ajuste), accrual (provisión), reclassification (reclasificación) u other."""
+    journal_type: NotRequired[Literal["journal", "income", "expense"]]
+    """El tipo de póliza: journal (diario), income (ingresos) o expense (egresos)."""
+    reverse_next_month: NotRequired[bool]
+    """Solo con kind accrual: la póliza se revierte sola el día 1 del mes siguiente (para cuando llegue la factura)."""
+    uuid: NotRequired[str | None]
+    """El UUID del CFDI con el que se relaciona, si hay uno."""
+    uuid_tax_id: NotRequired[str | None]
+    """Con uuid: el RFC de la otra parte de ese CFDI."""
+    lines: list[UpdateManualEntryParamsLinesItem]
+    """Sus cargos y abonos: cada renglón uno u otro; los cargos suman lo mismo que los abonos."""
+
+
+class ListFixedAssetsParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/fixed_assets."""
+    month: NotRequired[str]
+    """El mes (AAAA-MM) a cuyo cierre van las cifras. Por omisión, el actual."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateFixedAssetParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    description: str
+    """Qué es."""
+    cfdi_use: Literal["I01", "I02", "I03", "I04", "I05", "I06", "I07", "I08"]
+    """El tipo de activo por su uso CFDI: I01 construcciones, I02 mobiliario, I03 transporte, I04 cómputo, I05 dados y troqueles, I06 telefonía, I07 satelital, I08 otra maquinaria. Da su tasa de depreciación."""
+    cost: float
+    """El monto original sin IVA."""
+    acquired_on: str
+    """La fecha de compra."""
+    in_use_since: NotRequired[str | None]
+    """Desde cuándo se usa (se deprecia desde el mes siguiente); por omisión, la de compra."""
+
+
+class DisposeFixedAssetParams(TypedDict):
+    date: str
+    """El día de la venta o la baja."""
+    reason: NotRequired[Literal["sale", "write_off"]]
+    """sale (venta) o write_off (robo, pérdida, desecho)."""
+    note: NotRequired[str | None]
+    """Una nota."""
 
 
 class GetElectronicAccountingParams(TypedDict):

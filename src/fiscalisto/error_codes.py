@@ -11,11 +11,23 @@ __all__ = ["ErrorCode", "ErrorCodeValue"]
 class ErrorCode:
     """``if e.code == ErrorCode.INVOICE_REJECTED: …`` Vea https://fiscalisto.com/docs/api/errores."""
 
+    ACCOUNT_MISSING: Final = "account_missing"
+    """Esa cuenta no está en el catálogo del emisor: véalo con GET /v1/accounting/accounts o agréguela con POST /v1/accounting/accounts."""
+
     ACCOUNT_SUSPENDED: Final = "account_suspended"
     """Suspendimos la API de la empresa (todas sus llaves, o solo las de producción) por un uso que rompe los términos del servicio. El mensaje dice por qué; escríbanos a soporte@fiscalisto.com para reactivarla."""
 
     API_VERSION_INVALID: Final = "api_version_invalid"
     """No existe esa versión de la API (en Fiscalisto-Version o api_version). El mensaje dice cuáles hay; vea Versiones."""
+
+    ASSET_ALREADY_DISPOSED: Final = "asset_already_disposed"
+    """El activo fijo ya se vendió o se dio de baja: deshaga esa baja con DELETE /v1/accounting/fixed_assets/{id}/disposal si fue un error."""
+
+    ASSET_FROM_CFDI: Final = "asset_from_cfdi"
+    """El activo llegó con su CFDI y no se borra: véndalo o dele de baja con POST /v1/accounting/fixed_assets/{id}/dispose."""
+
+    ASSET_NOT_DISPOSED: Final = "asset_not_disposed"
+    """El activo fijo no está dado de baja: no hay baja que deshacer."""
 
     ATTENDANCE_INVALID: Final = "attendance_invalid"
     """Asistencia no lo permite: el mensaje dice por qué (una hora en el futuro o de hace más de 400 días, un empleado con fecha de baja, un periodo de más de 92 días, una marca ya quitada)."""
@@ -94,6 +106,9 @@ class ErrorCode:
 
     ENDPOINT_LIMIT: Final = "endpoint_limit"
     """La cuenta llegó al máximo de webhooks en este modo."""
+
+    ENTRY_UNBALANCED: Final = "entry_unbalanced"
+    """La póliza no cuadra o un renglón está mal: los cargos tienen que sumar lo mismo que los abonos, y cada renglón lleva un cargo o un abono, no los dos. El mensaje dice las sumas."""
 
     EXPAND_INVALID: Final = "expand_invalid"
     """Un campo de expand[] no existe en la respuesta, no es el id de otro objeto, o se pidieron demasiados (hasta 10 campos, 4 niveles). Vea Expandir objetos."""
@@ -385,8 +400,12 @@ class ErrorCode:
 
 
 ErrorCodeValue = Literal[
+    "account_missing",
     "account_suspended",
     "api_version_invalid",
+    "asset_already_disposed",
+    "asset_from_cfdi",
+    "asset_not_disposed",
     "attendance_invalid",
     "bank_transaction_invalid",
     "batch_invalid",
@@ -413,6 +432,7 @@ ErrorCodeValue = Literal[
     "endpoint_disabled",
     "endpoint_exists",
     "endpoint_limit",
+    "entry_unbalanced",
     "expand_invalid",
     "expense_report_invalid",
     "export_empty",
