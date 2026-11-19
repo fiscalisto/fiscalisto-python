@@ -3985,6 +3985,14 @@ class CustomerGroup(TypedDict):
     """Pedido mínimo, sin IVA, para pedir desde el Portal del cliente, o null sin mínimo."""
     portal_ordering: bool
     """true si sus clientes pueden hacer pedidos desde su Portal del cliente."""
+    portal_changes: Literal["none", "until_confirmed", "until_delivered"]
+    """Hasta cuándo sus clientes cambian o cancelan desde su portal un pedido que mandaron ahí: none, until_confirmed (hasta que usted lo confirme) o until_delivered (hasta que se entregue o facture algo)."""
+    delivery_days: list[int] | None
+    """Días de la semana en que les entrega (0 domingo a 6 sábado), o null si cualquier día. El Portal del cliente solo ofrece esos días."""
+    cutoff_hour: int | None
+    """Hora de corte (0 a 23, Ciudad de México): un pedido del portal después de ella cuenta desde el día siguiente; null sin hora de corte."""
+    prep_days: int
+    """Días para preparar un pedido antes de poder entregarlo."""
     customers: int
     """Cuántos clientes hay en el grupo."""
     created_at: str | None
@@ -11856,6 +11864,14 @@ class CreateCustomerGroupParams(TypedDict):
     """El pedido mínimo antes de IVA desde el Portal del cliente."""
     portal_ordering: NotRequired[bool]
     """Sus clientes pueden hacer pedidos desde su Portal del cliente (true por omisión)."""
+    portal_changes: NotRequired[Literal["none", "until_confirmed", "until_delivered"]]
+    """Hasta cuándo sus clientes cambian o cancelan desde su portal un pedido que mandaron ahí: none, until_confirmed (hasta que usted lo confirme; por omisión) o until_delivered (hasta que se entregue o facture algo)."""
+    delivery_days: NotRequired[list[int] | None]
+    """Días de la semana en que les entrega (0 domingo a 6 sábado); null: cualquier día. El portal solo ofrece esos días."""
+    cutoff_hour: NotRequired[int | None]
+    """Hora de corte (0 a 23, Ciudad de México): un pedido del portal después de ella cuenta desde el día siguiente; null: sin hora de corte."""
+    prep_days: NotRequired[int]
+    """Días para preparar un pedido antes de poder entregarlo (0 por omisión)."""
 
 
 class ListCustomerGroupsParams(TypedDict):
@@ -11883,6 +11899,14 @@ class UpdateCustomerGroupParams(TypedDict):
     """El pedido mínimo antes de IVA desde el Portal del cliente."""
     portal_ordering: NotRequired[bool]
     """Sus clientes pueden hacer pedidos desde su Portal del cliente (true por omisión)."""
+    portal_changes: NotRequired[Literal["none", "until_confirmed", "until_delivered"]]
+    """Hasta cuándo sus clientes cambian o cancelan desde su portal un pedido que mandaron ahí: none, until_confirmed (hasta que usted lo confirme; por omisión) o until_delivered (hasta que se entregue o facture algo)."""
+    delivery_days: NotRequired[list[int] | None]
+    """Días de la semana en que les entrega (0 domingo a 6 sábado); null: cualquier día. El portal solo ofrece esos días."""
+    cutoff_hour: NotRequired[int | None]
+    """Hora de corte (0 a 23, Ciudad de México): un pedido del portal después de ella cuenta desde el día siguiente; null: sin hora de corte."""
+    prep_days: NotRequired[int]
+    """Días para preparar un pedido antes de poder entregarlo (0 por omisión)."""
 
 
 class QuotePricesParamsItemsItem(TypedDict):
