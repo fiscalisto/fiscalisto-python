@@ -263,6 +263,9 @@ class ErrorCode:
     PDF_UNAVAILABLE: Final = "pdf_unavailable"
     """No se pudo dibujar el PDF de ese CFDI (su XML trae algo que el generador no lee). Descargue el XML: es el documento válido ante el SAT."""
 
+    PERIOD_CLOSED: Final = "period_closed"
+    """Ese mes de la contabilidad está cerrado: no se registra, corrige ni borra nada con fecha en él. Reábralo con POST /v1/accounting/closed_period si hay que corregirlo."""
+
     PURCHASE_RECEIPT_INVALID: Final = "purchase_receipt_invalid"
     """El ticket de compra no se puede guardar, corregir o pedir así (un archivo que no es foto ni PDF, un RFC o uso que no corresponde, una tienda que no factura con Fiscalisto, faltan datos fiscales del emisor…). El mensaje dice por qué."""
 
@@ -493,6 +496,7 @@ ErrorCodeValue = Literal[
     "payroll_receipt_exists",
     "payroll_replacement_invalid",
     "pdf_unavailable",
+    "period_closed",
     "purchase_receipt_invalid",
     "quote_customer_missing",
     "quote_invalid",

@@ -72,6 +72,7 @@ __all__ = [
     "CheckSatListsParams",
     "ClassifyBankTransactionParams",
     "CloseSalesOrderParams",
+    "ClosedPeriod",
     "CompanyReport",
     "CompanyReportCounterpartyNoticesItem",
     "CompanyReportCustomers",
@@ -325,6 +326,7 @@ __all__ = [
     "GeneralLedgerAccountsItemMovementsItem",
     "GetAttendanceParams",
     "GetCashForecastParams",
+    "GetClosedPeriodParams",
     "GetCompanyReportParams",
     "GetCrossCheckCfdiParams",
     "GetCrossChecksParams",
@@ -731,6 +733,7 @@ __all__ = [
     "SendQuoteParams",
     "SendRetentionParams",
     "SendSalesOrderParams",
+    "SetClosedPeriodParams",
     "SignEfirmaParams",
     "StartProductionOrderParams",
     "StartProductionOrderParamsComponentsItem",
@@ -5509,6 +5512,20 @@ class AccountingBankMovement(TypedDict):
     """El número de la cuenta que va contra Bancos en su póliza, o null."""
     suggested_account: str | None
     """La cuenta que sugiere un movimiento anterior con el mismo texto registrado con remember, o null."""
+
+
+class ClosedPeriod(TypedDict):
+    """Hasta qué mes está cerrada la contabilidad del emisor: lo capturado (pólizas a mano y de banco, bajas de activos, saldos iniciales) con fecha en un mes cerrado no se registra, corrige ni borra."""
+    object: Literal["closed_period"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    closed_through: str | None
+    """El último mes cerrado (AAAA-MM), con todos los anteriores; null si ninguno está cerrado."""
+    closed_at: str | None
+    """Cuándo se cerró, o null."""
 
 
 class TrialBalanceAccountsItem(TypedDict):
@@ -13369,6 +13386,19 @@ class DisposeFixedAssetParams(TypedDict):
     """sale (venta) o write_off (robo, pérdida, desecho)."""
     note: NotRequired[str | None]
     """Una nota."""
+
+
+class GetClosedPeriodParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/closed_period."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class SetClosedPeriodParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    closed_through: str | None
+    """El último mes cerrado (AAAA-MM); los anteriores quedan cerrados también. null reabre todos."""
 
 
 class ListBankMovementsParams(TypedDict):

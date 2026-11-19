@@ -39,6 +39,7 @@ if TYPE_CHECKING:
         CheckSatListsParams,
         ClassifyBankTransactionParams,
         CloseSalesOrderParams,
+        ClosedPeriod,
         CompanyReport,
         CompleteProductionOrderParams,
         ComplianceOpinion,
@@ -120,6 +121,7 @@ if TYPE_CHECKING:
         GeneralLedger,
         GetAttendanceParams,
         GetCashForecastParams,
+        GetClosedPeriodParams,
         GetCompanyReportParams,
         GetCrossCheckCfdiParams,
         GetCrossChecksParams,
@@ -272,6 +274,7 @@ if TYPE_CHECKING:
         SendQuoteParams,
         SendRetentionParams,
         SendSalesOrderParams,
+        SetClosedPeriodParams,
         SignEfirmaParams,
         StartProductionOrderParams,
         StockAdjustment,
@@ -6150,6 +6153,54 @@ class FixedAssetsResource:
         return result
 
 
+class ClosedPeriodResource:
+    """Contabilidad: fiscalisto.closed_period."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetClosedPeriodParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClosedPeriod:
+        """Ver hasta qué mes está cerrada la contabilidad
+
+        El último mes cerrado del emisor (closed_through), como Cierre del mes › Cerrar la contabilidad en la app.
+
+        GET /v1/accounting/closed_period
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-closed-period
+        """
+        result: ClosedPeriod = self._client.request(
+            "GET", "/v1/accounting/closed_period", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def set(
+        self,
+        params: SetClosedPeriodParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClosedPeriod:
+        """Cerrar o reabrir meses de la contabilidad
+
+        Cierra la contabilidad hasta closed_through (y los meses anteriores), o la reabre con un mes anterior o null. En un mes cerrado, crear, corregir o borrar una póliza a mano, registrar o quitar la póliza de un movimiento de banco y dar de baja un activo contestan period_closed. Las facturas siguen llegando del SAT.
+
+        POST /v1/accounting/closed_period
+        https://fiscalisto.com/docs/api/referencia/contabilidad/set-closed-period
+        """
+        result: ClosedPeriod = self._client.request(
+            "POST", "/v1/accounting/closed_period", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class BankMovementsResource:
     """Contabilidad: fiscalisto.bank_movements."""
 
@@ -7627,6 +7678,11 @@ class FiscalistoApi(Core):
     def fixed_assets(self) -> FixedAssetsResource:
         """Contabilidad."""
         return FixedAssetsResource(self)
+
+    @cached_property
+    def closed_period(self) -> ClosedPeriodResource:
+        """Contabilidad."""
+        return ClosedPeriodResource(self)
 
     @cached_property
     def bank_movements(self) -> BankMovementsResource:
