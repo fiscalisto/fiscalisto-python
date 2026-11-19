@@ -7085,7 +7085,7 @@ class PurchaseReceipt(TypedDict):
 
 
 class IssuerOnboardingLink(TypedDict):
-    """Una liga para que el dueño de un emisor suba su CSD y firme con su e.firma."""
+    """Una liga para que el dueño de un emisor suba su CSD y firme con su e.firma (y, con keep_efirma, la guarde para consultar el SAT)."""
     object: Literal["issuer_onboarding_link"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     livemode: bool
@@ -7096,6 +7096,8 @@ class IssuerOnboardingLink(TypedDict):
     """La página para el dueño del emisor, en fiscalisto.com. Ábrala en el navegador de su cliente; no la incruste en un iframe."""
     return_url: str | None
     """A dónde regresa al terminar."""
+    keep_efirma: bool
+    """La página también guarda la e.firma (cifrada) para las consultas al SAT del emisor."""
     expires_at: str | None
     """Cuándo deja de servir la liga. Pida otra cuando quiera."""
     created_at: str | None
@@ -10155,6 +10157,8 @@ class CreateIssuerOnboardingLinkParams(TypedDict):
     """A dónde regresa el botón al terminar, por ejemplo la página de su plataforma donde su cliente sigue. Sin ella, la página solo dice que ya terminó."""
     expires_in_hours: NotRequired[int]
     """Horas que la liga sirve, de 1 a 168 (7 días). Por omisión 24."""
+    keep_efirma: NotRequired[bool]
+    """true para que la página también guarde (cifrada) la e.firma de su cliente, con su autorización, y pueda pedir al SAT sus facturas (POST /v1/sat_downloads), sus declaraciones (/v1/sat_declarations), su opinión de cumplimiento, constancia y buzón tributario. Sin esto la e.firma solo firma el contrato con el PAC y no se guarda."""
 
 
 class ListInvoicesParams(TypedDict):
