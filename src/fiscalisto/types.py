@@ -84,6 +84,8 @@ __all__ = [
     "CompanyReportSuppliersPartiesItem",
     "CompanyReportTotals",
     "CompanyReportYearsItem",
+    "CompleteProductionOrderParams",
+    "CompleteProductionOrderParamsOtherCostsItem",
     "ComplianceOpinion",
     "CostCenter",
     "CostCenterList",
@@ -110,6 +112,7 @@ __all__ = [
     "CreateExpensePersonParams",
     "CreateExpenseReportParams",
     "CreateExportParams",
+    "CreateExtraordinaryPayrollReceiptParams",
     "CreateFixedAssetParams",
     "CreateImssFilesParams",
     "CreateImssMovementParams",
@@ -137,6 +140,7 @@ __all__ = [
     "CreateProductParams",
     "CreateProductParamsHydrocarbon",
     "CreateProductParamsLocalTaxesItem",
+    "CreateProductionOrderParams",
     "CreatePurchaseReceiptParams",
     "CreatePurchaseReceiptParamsFieldsItem",
     "CreateQuoteParams",
@@ -279,6 +283,18 @@ __all__ = [
     "ExternalPayrollReceiptPreview",
     "ExternalPayrollReceiptPreviewCustomer",
     "ExternalPayrollReceiptPreviewWarningsItem",
+    "ExtraordinaryPayrollReceiptPreview",
+    "ExtraordinaryPayrollReceiptPreviewDeductionsItem",
+    "ExtraordinaryPayrollReceiptPreviewIsr",
+    "ExtraordinaryPayrollReceiptPreviewLinesItem",
+    "ExtraordinaryPayrollReceiptPreviewOtherPaymentsItem",
+    "ExtraordinaryPayrollReceiptPreviewOtherPaymentsItemBalanceCompensation",
+    "ExtraordinaryPayrollReceiptPreviewPerceptionsItem",
+    "ExtraordinaryPayrollReceiptPreviewPerceptionsItemOvertimeItem",
+    "ExtraordinaryPayrollReceiptPreviewPerceptionsItemStockOptions",
+    "ExtraordinaryPayrollReceiptPreviewPeriod",
+    "ExtraordinaryPayrollReceiptPreviewSeparation",
+    "ExtraordinaryPayrollReceiptPreviewTotals",
     "FinancialStatements",
     "FinancialStatementsBalanceSheet",
     "FinancialStatementsBalanceSheetAssets",
@@ -487,6 +503,7 @@ __all__ = [
     "ListPayrollBatchesParams",
     "ListPortalSuppliersParams",
     "ListPriceListsParams",
+    "ListProductionOrdersParams",
     "ListProductsParams",
     "ListPurchaseReceiptsParams",
     "ListQuotesParams",
@@ -563,6 +580,7 @@ __all__ = [
     "PortalSupplierList",
     "PortalSupplierScore",
     "PortalSupplierScorePartsItem",
+    "PreviewExtraordinaryPayrollReceiptParams",
     "PreviewPayrollReceiptParams",
     "PreviewPayrollReceiptParamsPeriod",
     "PriceList",
@@ -575,6 +593,10 @@ __all__ = [
     "ProductHydrocarbon",
     "ProductList",
     "ProductLocalTaxesItem",
+    "ProductionOrder",
+    "ProductionOrderComponentsItem",
+    "ProductionOrderList",
+    "ProductionOrderOtherCostsItem",
     "PurchaseReceipt",
     "PurchaseReceiptFieldsItem",
     "PurchaseReceiptList",
@@ -701,6 +723,8 @@ __all__ = [
     "SendRetentionParams",
     "SendSalesOrderParams",
     "SignEfirmaParams",
+    "StartProductionOrderParams",
+    "StartProductionOrderParamsComponentsItem",
     "StockAdjustment",
     "StockAdjustmentLinesItem",
     "StockAdjustmentList",
@@ -2242,6 +2266,186 @@ class PayrollReceiptPreview(TypedDict):
     isr: PayrollReceiptPreviewIsr
     """El cálculo del ISR del periodo: base, tarifa, subsidio y resultado."""
     totals: PayrollReceiptPreviewTotals
+    """Totales: percepciones, deducciones, otros pagos y el neto a pagar."""
+
+
+class ExtraordinaryPayrollReceiptPreviewPeriod(TypedDict):
+    """El periodo (FechaInicialPago, FechaFinalPago) de un recibo extraordinario es un solo día: payment_date (aguinaldo, PTU) o el último día trabajado (finiquito); payment_date es FechaPago."""
+    start: str
+    """Primer día del periodo (FechaInicialPago), AAAA-MM-DD."""
+    end: str
+    """Último día del periodo (FechaFinalPago), AAAA-MM-DD."""
+    payment_date: str
+    """Fecha de pago (FechaPago), AAAA-MM-DD. Por omisión el último día del periodo."""
+
+
+class ExtraordinaryPayrollReceiptPreviewLinesItem(TypedDict):
+    concept: str
+    """Concepto del pago (ConceptoPago), c_TipoContribuyenteSujetoRetencion."""
+    detail: str
+    """Cómo se calculó (días, años, salario)."""
+    gross: float
+    """Importe."""
+    exempt: float
+    """De él, la parte exenta del ISR."""
+
+
+class ExtraordinaryPayrollReceiptPreviewPerceptionsItemOvertimeItem(TypedDict):
+    days: int
+    """Días con horas extra (Dias)."""
+    hours_type: str
+    """c_TipoHoras: 01 dobles, 02 triples, 03 simples."""
+    hours: int
+    """Horas extra (HorasExtra)."""
+    amount_paid: float
+    """Importe pagado (ImportePagado)."""
+
+
+class ExtraordinaryPayrollReceiptPreviewPerceptionsItemStockOptions(TypedDict):
+    """Acciones o títulos (AccionesOTitulos), con la percepción 045."""
+    market_value: float
+    """Valor de mercado (ValorMercado)."""
+    grant_price: float
+    """Precio al otorgarse (PrecioAlOtorgarse)."""
+
+
+class ExtraordinaryPayrollReceiptPreviewPerceptionsItem(TypedDict):
+    type: str
+    """Tipo de percepción (TipoPercepcion), c_TipoPercepcion: 001 sueldos…"""
+    key: str
+    """Clave del patrón (Clave)."""
+    concept: str
+    """Concepto (Concepto)."""
+    taxed: float
+    """Importe gravado (ImporteGravado)."""
+    exempt: float
+    """Importe exento (ImporteExento)."""
+    overtime: NotRequired[list[ExtraordinaryPayrollReceiptPreviewPerceptionsItemOvertimeItem]]
+    """Horas extra (HorasExtra), con la percepción 019."""
+    stock_options: NotRequired[ExtraordinaryPayrollReceiptPreviewPerceptionsItemStockOptions]
+    """Acciones o títulos (AccionesOTitulos), con la percepción 045."""
+
+
+class ExtraordinaryPayrollReceiptPreviewDeductionsItem(TypedDict):
+    type: str
+    """Tipo de deducción (TipoDeduccion), c_TipoDeduccion: 001 IMSS, 002 ISR…"""
+    key: str
+    """Clave del patrón (Clave)."""
+    concept: str
+    """Concepto (Concepto)."""
+    amount: float
+    """Importe (Importe)."""
+
+
+class ExtraordinaryPayrollReceiptPreviewOtherPaymentsItemBalanceCompensation(TypedDict):
+    """Compensación del saldo a favor (CompensacionSaldosAFavor), con el 004."""
+    balance: float
+    """Saldo a favor (SaldoAFavor)."""
+    year: int
+    """Año del saldo a favor (Año)."""
+    remaining: float
+    """Remanente del saldo a favor (RemanenteSalFav)."""
+
+
+class ExtraordinaryPayrollReceiptPreviewOtherPaymentsItem(TypedDict):
+    type: str
+    """Tipo de otro pago (TipoOtroPago), c_TipoOtroPago: 002 subsidio para el empleo."""
+    key: str
+    """Clave del patrón (Clave)."""
+    concept: str
+    """Concepto (Concepto)."""
+    amount: float
+    """Importe pagado (Importe)."""
+    subsidy_caused: NotRequired[float]
+    """Subsidio causado (SubsidioCausado)."""
+    subsidy_applied: NotRequired[float]
+    """Del subsidio causado, el ISR que evitó (no va en el XML)."""
+    balance_compensation: NotRequired[ExtraordinaryPayrollReceiptPreviewOtherPaymentsItemBalanceCompensation]
+    """Compensación del saldo a favor (CompensacionSaldosAFavor), con el 004."""
+
+
+class ExtraordinaryPayrollReceiptPreviewSeparation(TypedDict):
+    total_paid: float
+    """Total pagado (TotalPagado)."""
+    years_of_service: int
+    """Años de servicio (NumAñosServicio)."""
+    last_monthly_salary: float
+    """Último sueldo mensual ordinario (UltimoSueldoMensOrd)."""
+    accumulable_income: float
+    """Ingreso acumulable (IngresoAcumulable)."""
+    non_accumulable_income: float
+    """Ingreso no acumulable (IngresoNoAcumulable)."""
+
+
+class ExtraordinaryPayrollReceiptPreviewIsr(TypedDict):
+    """El cálculo del ISR del periodo: base, tarifa, subsidio y resultado."""
+    amount: float
+    """ISR retenido."""
+    art96: NotRequired[float]
+    """aguinaldo y ptu: ISR con la parte gravada sumada al sueldo del mes."""
+    art174: NotRequired[float]
+    """aguinaldo y ptu: ISR con el procedimiento del art. 174 del Reglamento."""
+    method: NotRequired[Literal["art96", "art174"]]
+    """aguinaldo y ptu: el cálculo que se aplicó."""
+
+
+class ExtraordinaryPayrollReceiptPreviewTotals(TypedDict):
+    """Totales: percepciones, deducciones, otros pagos y el neto a pagar."""
+    salaries: float
+    """Total de sueldos, salarios y asimilados (TotalSueldos)."""
+    taxed: float
+    """Total gravado (TotalGravado)."""
+    exempt: float
+    """Total exento (TotalExento)."""
+    separation: float
+    """Total de separación e indemnización (TotalSeparacionIndemnizacion)."""
+    retirement: float
+    """Total de jubilación, pensión o retiro (TotalJubilacionPensionRetiro)."""
+    perceptions: float
+    """Total de percepciones (TotalPercepciones)."""
+    other_deductions: float
+    """Otras deducciones (TotalOtrasDeducciones)."""
+    taxes_withheld: float
+    """Impuestos retenidos (TotalImpuestosRetenidos)."""
+    deductions: float
+    """Total de deducciones (TotalDeducciones)."""
+    other_payments: float
+    """Total de otros pagos (TotalOtrosPagos)."""
+    subtotal: float
+    """Subtotal del comprobante: percepciones más otros pagos."""
+    net: float
+    """Neto a pagar al empleado."""
+
+
+class ExtraordinaryPayrollReceiptPreview(TypedDict):
+    """Un aguinaldo, PTU o finiquito como se timbraría (nómina extraordinaria): lo que paga, su parte exenta, el ISR y el neto."""
+    object: Literal["payroll_receipt_preview"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    calculation: Literal["extraordinary"]
+    """Lo calculó Fiscalisto, como nómina extraordinaria."""
+    confirmation_token: str
+    """Mándelo en POST /v1/payroll_receipts/extraordinary para timbrar exactamente este recibo: si al timbrar se calcula otro, contesta 409 payroll_calculation_changed sin timbrar."""
+    employee: str
+    """El empleado (emp_…)."""
+    kind: Literal["aguinaldo", "ptu", "finiquito"]
+    """Qué paga: aguinaldo, ptu o finiquito."""
+    period: ExtraordinaryPayrollReceiptPreviewPeriod
+    """El periodo (FechaInicialPago, FechaFinalPago) de un recibo extraordinario es un solo día: payment_date (aguinaldo, PTU) o el último día trabajado (finiquito); payment_date es FechaPago."""
+    contribution_base_salary: float
+    """Salario base de cotización (SalarioBaseCotApor)."""
+    lines: list[ExtraordinaryPayrollReceiptPreviewLinesItem]
+    """Lo que paga, como lo muestra la app."""
+    perceptions: list[ExtraordinaryPayrollReceiptPreviewPerceptionsItem]
+    """Percepciones (Percepcion): sueldo y demás, gravado y exento."""
+    deductions: list[ExtraordinaryPayrollReceiptPreviewDeductionsItem]
+    """Deducciones (Deduccion): ISR, cuotas IMSS y demás."""
+    other_payments: list[ExtraordinaryPayrollReceiptPreviewOtherPaymentsItem]
+    """Otros pagos (OtroPago): subsidio para el empleo."""
+    separation: ExtraordinaryPayrollReceiptPreviewSeparation | None
+    """SeparacionIndemnizacion: solo en una liquidación (indemnización y prima de antigüedad)."""
+    isr: ExtraordinaryPayrollReceiptPreviewIsr
+    """El cálculo del ISR del periodo: base, tarifa, subsidio y resultado."""
+    totals: ExtraordinaryPayrollReceiptPreviewTotals
     """Totales: percepciones, deducciones, otros pagos y el neto a pagar."""
 
 
@@ -4119,9 +4323,9 @@ class StockLevel(TypedDict):
 
 
 class StockMovementSource(TypedDict):
-    """Lo que lo causó: type invoice (id es el UUID del CFDI), adjustment (adj_…), receipt, transfer, count o ticket."""
+    """Lo que lo causó: type invoice (id es el UUID del CFDI), adjustment (adj_…), production (mfo_…), receipt, transfer, count o ticket."""
     type: str
-    """Qué lo movió: invoice (una factura; id es su UUID), adjustment (un ajuste, adj_…), count (un conteo) u otro origen."""
+    """Qué lo movió: invoice (una factura; id es su UUID), adjustment (un ajuste, adj_…), production (una orden de producción, mfo_…), count (un conteo) u otro origen."""
     id: str
     """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
 
@@ -4140,8 +4344,8 @@ class StockMovement(TypedDict):
     """El producto (prd_…)."""
     warehouse: str
     """El almacén (whs_…)."""
-    type: Literal["sale", "purchase", "customer_return", "supplier_return", "adjustment", "count", "transfer_out", "transfer_in", "initial", "cost", "reversal"]
-    """sale (una factura), purchase (una compra), customer_return, supplier_return, adjustment, count (conteo físico), transfer_out, transfer_in, initial, cost (un ajuste de costo) o reversal (deshace otro, como una factura cancelada)."""
+    type: Literal["sale", "purchase", "customer_return", "supplier_return", "adjustment", "count", "transfer_out", "transfer_in", "production_consumption", "production_output", "initial", "cost", "reversal"]
+    """sale (una factura), purchase (una compra), customer_return, supplier_return, adjustment, count (conteo físico), transfer_out, transfer_in, production_consumption (un componente que salió a producción), production_output (lo producido), initial, cost (un ajuste de costo) o reversal (deshace otro, como una factura cancelada)."""
     quantity: float
     """Cuánto entró (positivo) o salió (negativo)."""
     unit_cost: float
@@ -4151,7 +4355,7 @@ class StockMovement(TypedDict):
     lot: str | None
     """El lote o número de serie, o null."""
     source: StockMovementSource
-    """Lo que lo causó: type invoice (id es el UUID del CFDI), adjustment (adj_…), receipt, transfer, count o ticket."""
+    """Lo que lo causó: type invoice (id es el UUID del CFDI), adjustment (adj_…), production (mfo_…), receipt, transfer, count o ticket."""
     reason: str | None
     """El motivo de un ajuste, o null."""
     date: str | None
@@ -4197,6 +4401,74 @@ class StockAdjustment(TypedDict):
     """Lo que entró o salió de cada producto."""
     created_at: str | None
     """Cuándo se hizo."""
+
+
+class ProductionOrderComponentsItem(TypedDict):
+    product: str
+    """Un producto de su catálogo (prd_…): toma su clave, unidad, precio e impuestos."""
+    quantity: float
+    """Cantidad (Cantidad). Por omisión 1."""
+    quantity_used: float | None
+    """Lo que de verdad salió de ese componente, o null antes de iniciar la orden."""
+    tracks_stock: bool
+    """true si lleva existencias; false es un servicio, que solo suma su costo."""
+    value: float | None
+    """Valor de la mercancía (ValorMercancia); obligatorio en transporte aéreo."""
+
+
+class ProductionOrderOtherCostsItem(TypedDict):
+    description: str
+    """Descripción."""
+    amount: float
+    """Importe."""
+
+
+class ProductionOrder(TypedDict):
+    """Una orden de producción: los componentes de la receta salen de un almacén y lo producido entra a otro a su costo real."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["production_order"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    number: str
+    """Su folio, como OP-12."""
+    status: Literal["draft", "in_process", "completed", "cancelled"]
+    """draft (borrador, nada se ha movido), in_process (los componentes ya salieron), completed (lo producido ya entró) o cancelled (todo regresó)."""
+    product: str
+    """Lo que se produce (prd_…)."""
+    quantity: float
+    """Cuántas unidades se planearon."""
+    quantity_made: float | None
+    """Cuántas salieron de verdad, o null si no ha terminado."""
+    warehouse: str
+    """El almacén de donde salen los componentes (whs_…)."""
+    destination_warehouse: str
+    """El almacén al que entra lo producido (whs_…)."""
+    lot: str | None
+    """El lote de lo producido, o null."""
+    due_date: str | None
+    """Para cuándo (AAAA-MM-DD), o null."""
+    note: str | None
+    """Su nota, o null."""
+    components: list[ProductionOrderComponentsItem]
+    """Lo que lleva, de la receta para quantity con su merma: quantity lo planeado, quantity_used lo que salió y value lo que costó (pesos sin IVA). tracks_stock false es un servicio: solo suma su costo."""
+    other_costs: list[ProductionOrderOtherCostsItem]
+    """Mano de obra, gas, empaque…: se suman al costo de lo producido."""
+    materials_cost: float | None
+    """Lo que costaron los componentes que salieron, o null antes de iniciar."""
+    unit_cost: float | None
+    """(materials_cost + other_costs) ÷ quantity_made: el costo con que entró cada unidad, o null si no ha terminado."""
+    created_at: str | None
+    """Cuándo se hizo."""
+    started_at: str | None
+    """Cuándo salieron los componentes, o null."""
+    completed_at: str | None
+    """Cuándo entró lo producido, o null."""
+    cancelled_at: str | None
+    """Cuándo se canceló, o null."""
 
 
 class ComplianceOpinion(TypedDict):
@@ -8185,6 +8457,17 @@ class StockAdjustmentList(TypedDict):
     """La ruta de esta lista."""
 
 
+class ProductionOrderList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[ProductionOrder]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class SatCatalogEntryList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -10838,6 +11121,62 @@ class PreviewPayrollReceiptParams(TypedDict):
     """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
+class CreateExtraordinaryPayrollReceiptParams(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    kind: Literal["aguinaldo", "ptu", "finiquito"]
+    """aguinaldo (sus días al año, al menos 15, en proporción a los trabajados), ptu (la parte que le toca de las utilidades) o finiquito (al último día trabajado, end_date del empleado: aguinaldo, vacaciones y prima vacacional proporcionales y, con exit_reason dismissal, la indemnización y la prima de antigüedad)."""
+    payment_date: str
+    """FechaPago del recibo."""
+    year: NotRequired[int]
+    """aguinaldo: el año que paga (por omisión, el de payment_date). ptu: el año de la utilidad (por omisión, el anterior a payment_date)."""
+    days_worked: NotRequired[float]
+    """aguinaldo: los días trabajados en el año, si no son todos los que estuvo contratado (faltas o incapacidades que no cuentan)."""
+    ptu_amount: NotRequired[float]
+    """ptu: lo que le toca a este empleado (la mitad de la PTU por días trabajados y la mitad por salario, con el tope de tres meses de salario). Fiscalisto calcula su parte exenta (15 UMA) y su ISR."""
+    isr_method: NotRequired[Literal["lower", "art96", "art174"]]
+    """aguinaldo y ptu: cómo retener el ISR de la parte gravada. lower (por omisión) el que retenga menos; art96 sumada al sueldo del mes; art174 el procedimiento opcional del Reglamento de la LISR."""
+    exit_reason: NotRequired[Literal["resignation", "dismissal"]]
+    """finiquito: resignation (renuncia o común acuerdo, por omisión) o dismissal (despido sin causa: suma 3 meses de salario integrado y la prima de antigüedad)."""
+    twenty_days_per_year: NotRequired[bool]
+    """finiquito con dismissal: incluye 20 días por año de servicio (LFT art. 50), cuando el patrón no lo reinstala."""
+    vacation_days_taken: NotRequired[float]
+    """finiquito: los días de vacaciones del año de servicio en curso que ya tomó."""
+    send_email: NotRequired[bool]
+    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
+    confirmation_token: NotRequired[str]
+    """El confirmation_token de POST /v1/payroll_receipts/extraordinary/preview: timbra solo si el recibo calculado ahora es el que revisó (si no, 409 payroll_calculation_changed)."""
+
+
+class PreviewExtraordinaryPayrollReceiptParams(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    kind: Literal["aguinaldo", "ptu", "finiquito"]
+    """aguinaldo (sus días al año, al menos 15, en proporción a los trabajados), ptu (la parte que le toca de las utilidades) o finiquito (al último día trabajado, end_date del empleado: aguinaldo, vacaciones y prima vacacional proporcionales y, con exit_reason dismissal, la indemnización y la prima de antigüedad)."""
+    payment_date: str
+    """FechaPago del recibo."""
+    year: NotRequired[int]
+    """aguinaldo: el año que paga (por omisión, el de payment_date). ptu: el año de la utilidad (por omisión, el anterior a payment_date)."""
+    days_worked: NotRequired[float]
+    """aguinaldo: los días trabajados en el año, si no son todos los que estuvo contratado (faltas o incapacidades que no cuentan)."""
+    ptu_amount: NotRequired[float]
+    """ptu: lo que le toca a este empleado (la mitad de la PTU por días trabajados y la mitad por salario, con el tope de tres meses de salario). Fiscalisto calcula su parte exenta (15 UMA) y su ISR."""
+    isr_method: NotRequired[Literal["lower", "art96", "art174"]]
+    """aguinaldo y ptu: cómo retener el ISR de la parte gravada. lower (por omisión) el que retenga menos; art96 sumada al sueldo del mes; art174 el procedimiento opcional del Reglamento de la LISR."""
+    exit_reason: NotRequired[Literal["resignation", "dismissal"]]
+    """finiquito: resignation (renuncia o común acuerdo, por omisión) o dismissal (despido sin causa: suma 3 meses de salario integrado y la prima de antigüedad)."""
+    twenty_days_per_year: NotRequired[bool]
+    """finiquito con dismissal: incluye 20 días por año de servicio (LFT art. 50), cuando el patrón no lo reinstala."""
+    vacation_days_taken: NotRequired[float]
+    """finiquito: los días de vacaciones del año de servicio en curso que ya tomó."""
+    send_email: NotRequired[bool]
+    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
+
+
 class CreatePayrollBatchParamsPeriod(TypedDict):
     """El periodo de pago: primer y último día (FechaInicialPago, FechaFinalPago) y, si no es el último, el día de pago (FechaPago). Va para todos los recibos de receipts que no traen el suyo."""
     start: str
@@ -11939,7 +12278,7 @@ class ListStockMovementsParams(TypedDict):
     """Solo los de este producto (prd_…)."""
     warehouse: NotRequired[str]
     """Solo los de este almacén (whs_…)."""
-    type: NotRequired[Literal["sale", "purchase", "customer_return", "supplier_return", "adjustment", "count", "transfer_out", "transfer_in", "initial", "cost", "reversal"]]
+    type: NotRequired[Literal["sale", "purchase", "customer_return", "supplier_return", "adjustment", "count", "transfer_out", "transfer_in", "production_consumption", "production_output", "initial", "cost", "reversal"]]
     """Solo los de este tipo."""
     date_gte: NotRequired[str]
     """Desde este día (AAAA-MM-DD) u hora (AAAA-MM-DDTHH:MM:SS) de la Ciudad de México."""
@@ -11985,6 +12324,67 @@ class ListStockAdjustmentsParams(TypedDict):
     """Solo los de este almacén (whs_…)."""
     status: NotRequired[Literal["applied", "pending", "rejected", "reversed"]]
     """applied, pending, rejected o reversed."""
+
+
+class CreateProductionOrderParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    product: str
+    """Lo que va a producir (prd_…): un producto con receta (su hoja de costo en Compras › Costos y márgenes)."""
+    quantity: float
+    """Cuántas unidades, en la unidad del producto."""
+    warehouse: NotRequired[str]
+    """El almacén de donde salen los componentes (whs_…). Por omisión, el de la Matriz."""
+    destination_warehouse: NotRequired[str]
+    """El almacén al que entra lo producido (whs_…). Por omisión, warehouse."""
+    due_date: NotRequired[str | None]
+    """Para cuándo (AAAA-MM-DD)."""
+    note: NotRequired[str | None]
+    """Una nota."""
+
+
+class ListProductionOrdersParams(TypedDict):
+    """Los parámetros de GET /v1/production_orders."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    product: NotRequired[str]
+    """Solo las de este producto (prd_…)."""
+    status: NotRequired[Literal["draft", "in_process", "completed", "cancelled"]]
+    """draft, in_process, completed o cancelled."""
+
+
+class StartProductionOrderParamsComponentsItem(TypedDict):
+    product: str
+    """El componente (prd_…) de la orden."""
+    quantity_used: float
+    """Lo que de verdad se usó, en la unidad del componente."""
+
+
+class StartProductionOrderParams(TypedDict):
+    components: NotRequired[list[StartProductionOrderParamsComponentsItem]]
+    """Lo que de verdad se usó de algún componente; los que no mande salen como dice la orden."""
+
+
+class CompleteProductionOrderParamsOtherCostsItem(TypedDict):
+    description: str
+    """Qué fue: gas, mano de obra…"""
+    amount: float
+    """Cuánto, en pesos sin IVA."""
+
+
+class CompleteProductionOrderParams(TypedDict):
+    quantity_made: NotRequired[float]
+    """Cuántas unidades salieron. Por omisión, quantity."""
+    lot: NotRequired[str]
+    """El lote de lo producido, si el producto lleva lotes. Por omisión, OP-<folio>."""
+    expires_on: NotRequired[str]
+    """La caducidad de ese lote (AAAA-MM-DD)."""
+    other_costs: NotRequired[list[CompleteProductionOrderParamsOtherCostsItem]]
+    """Los otros costos como de verdad fueron; por omisión, los de la receta."""
 
 
 class GetSatCatalogParams(TypedDict):

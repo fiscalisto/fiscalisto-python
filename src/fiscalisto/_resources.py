@@ -38,6 +38,7 @@ if TYPE_CHECKING:
         ClassifyBankTransactionParams,
         CloseSalesOrderParams,
         CompanyReport,
+        CompleteProductionOrderParams,
         ComplianceOpinion,
         CostCenter,
         CreateAdvanceParams,
@@ -57,6 +58,7 @@ if TYPE_CHECKING:
         CreateExpensePersonParams,
         CreateExpenseReportParams,
         CreateExportParams,
+        CreateExtraordinaryPayrollReceiptParams,
         CreateFixedAssetParams,
         CreateImssFilesParams,
         CreateImssMovementParams,
@@ -72,6 +74,7 @@ if TYPE_CHECKING:
         CreatePayrollReceiptParams,
         CreatePriceListParams,
         CreateProductParams,
+        CreateProductionOrderParams,
         CreatePurchaseReceiptParams,
         CreateQuoteParams,
         CreateRecurringInvoiceParams,
@@ -108,6 +111,7 @@ if TYPE_CHECKING:
         Export,
         ExternalPayrollReceiptCreate,
         ExternalPayrollReceiptPreview,
+        ExtraordinaryPayrollReceiptPreview,
         FinancialStatements,
         FixedAsset,
         FixedAssetList,
@@ -177,6 +181,7 @@ if TYPE_CHECKING:
         ListPayrollBatchesParams,
         ListPortalSuppliersParams,
         ListPriceListsParams,
+        ListProductionOrdersParams,
         ListProductsParams,
         ListPurchaseReceiptsParams,
         ListQuotesParams,
@@ -215,10 +220,12 @@ if TYPE_CHECKING:
         PayrollReceiptPreview,
         PermissionList,
         PortalSupplier,
+        PreviewExtraordinaryPayrollReceiptParams,
         PreviewPayrollReceiptParams,
         PriceList,
         PriceQuote,
         Product,
+        ProductionOrder,
         PurchaseReceipt,
         Quote,
         QuotePricesParams,
@@ -259,6 +266,7 @@ if TYPE_CHECKING:
         SendRetentionParams,
         SendSalesOrderParams,
         SignEfirmaParams,
+        StartProductionOrderParams,
         StockAdjustment,
         StockLevel,
         StockLevelList,
@@ -2344,7 +2352,7 @@ class PayrollReceiptsResource:
     ) -> Invoice:
         """Timbrar un recibo de nómina
 
-        Nómina ordinaria (Nómina 1.2): Fiscalisto calcula sueldo, ISR con subsidio al empleo e IMSS del empleado y el periodo, como la app, y nada más: aguinaldo, PTU, finiquitos, bonos, horas extra, Infonavit o préstamos los calcula su sistema y se timbran con POST /v1/payroll_receipts/external (pedirlos aquí contesta payroll_calculation_unsupported). Revise antes el recibo con POST /v1/payroll_receipts/preview y mande su confirmation_token: así solo se timbra el recibo que revisó (si cambió, 409 payroll_calculation_changed). Queda como factura tipo N (GET /v1/invoices/{id}). El emisor necesita employer_registration.
+        Nómina ordinaria (Nómina 1.2): Fiscalisto calcula sueldo, ISR con subsidio al empleo e IMSS del empleado y el periodo, como la app, y nada más: el aguinaldo, la PTU y los finiquitos los calcula POST /v1/payroll_receipts/extraordinary; bonos, horas extra, Infonavit o préstamos los calcula su sistema y se timbran con POST /v1/payroll_receipts/external (pedirlos aquí contesta payroll_calculation_unsupported). Revise antes el recibo con POST /v1/payroll_receipts/preview y mande su confirmation_token: así solo se timbra el recibo que revisó (si cambió, 409 payroll_calculation_changed). Queda como factura tipo N (GET /v1/invoices/{id}). El emisor necesita employer_registration.
 
         POST /v1/payroll_receipts
         https://fiscalisto.com/docs/api/referencia/nomina/create-payroll-receipt
@@ -2372,6 +2380,48 @@ class PayrollReceiptsResource:
         """
         result: PayrollReceiptPreview = self._client.request(
             "POST", "/v1/payroll_receipts/preview", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create_extraordinary(
+        self,
+        params: CreateExtraordinaryPayrollReceiptParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Invoice:
+        """Timbrar un aguinaldo, PTU o finiquito
+
+        Nómina extraordinaria (TipoNomina E) que calcula Fiscalisto, como la app en Nómina › Aguinaldo, PTU y finiquitos: el aguinaldo (los días al año del empleado, al menos 15, en proporción a los trabajados, 30 UMA exentas), la PTU (la parte que le toca, 15 UMA exentas) o el finiquito al último día trabajado (end_date): aguinaldo, vacaciones y prima vacacional proporcionales, menos lo que ya se le pagó en el año, y con exit_reason dismissal la indemnización de 3 meses, opcionalmente 20 días por año, y la prima de antigüedad (90 UMA exentas por año de servicio). El ISR de un aguinaldo o PTU, con el cálculo que retenga menos (art. 96 LISR o 174 del Reglamento) salvo que pida uno. Uno por empleado, tipo y año (el finiquito, por fecha de baja): pedirlo otra vez devuelve el mismo; cancelado, se emite de nuevo. Revíselo antes con POST /v1/payroll_receipts/extraordinary/preview y mande su confirmation_token. Queda como factura tipo N.
+
+        POST /v1/payroll_receipts/extraordinary
+        https://fiscalisto.com/docs/api/referencia/nomina/create-extraordinary-payroll-receipt
+        """
+        result: Invoice = self._client.request(
+            "POST", "/v1/payroll_receipts/extraordinary", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def preview_extraordinary(
+        self,
+        params: PreviewExtraordinaryPayrollReceiptParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ExtraordinaryPayrollReceiptPreview:
+        """Calcular un aguinaldo, PTU o finiquito sin timbrar
+
+        El recibo extraordinario como se timbraría (lo que paga, su parte exenta, el ISR con los dos cálculos y el neto), sin timbrar ni usar timbres, con el confirmation_token que lo timbra tal cual.
+
+        POST /v1/payroll_receipts/extraordinary/preview
+        https://fiscalisto.com/docs/api/referencia/nomina/preview-extraordinary-payroll-receipt
+        """
+        result: ExtraordinaryPayrollReceiptPreview = self._client.request(
+            "POST", "/v1/payroll_receipts/extraordinary/preview", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -4345,6 +4395,136 @@ class StockAdjustmentsResource:
         """
         result: StockAdjustment = self._client.request(
             "GET", f"/v1/stock_adjustments/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class ProductionOrdersResource:
+    """Inventario: fiscalisto.production_orders."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateProductionOrderParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ProductionOrder:
+        """Crear una orden de producción
+
+        Una orden en borrador (status draft) para producir quantity de un producto con receta: sus components salen de la receta (la hoja de costo de Compras › Costos y márgenes) con su merma y rendimiento, y sus other_costs se escalan a la cantidad. Nada se mueve hasta iniciarla. Enciende Producción en el inventario si estaba apagada. Un producto sin receta: 400 inventory_refused.
+
+        POST /v1/production_orders
+        https://fiscalisto.com/docs/api/referencia/inventario/create-production-order
+        """
+        result: ProductionOrder = self._client.request(
+            "POST", "/v1/production_orders", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListProductionOrdersParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[ProductionOrder]:
+        """Listar órdenes de producción
+
+        Las órdenes del emisor, las más recientes primero.
+
+        GET /v1/production_orders
+        https://fiscalisto.com/docs/api/referencia/inventario/list-production-orders
+        """
+        return self._client.list("/v1/production_orders", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ProductionOrder:
+        """Ver una orden de producción
+
+        Una orden con sus componentes, sus otros costos y, al terminar, su costo por unidad.
+
+        GET /v1/production_orders/{id}
+        https://fiscalisto.com/docs/api/referencia/inventario/get-production-order
+        """
+        result: ProductionOrder = self._client.request(
+            "GET", f"/v1/production_orders/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def start(
+        self,
+        id: str,
+        params: StartProductionOrderParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ProductionOrder:
+        """Iniciar una orden de producción
+
+        Los componentes salen del almacén (status in_process), cada lote el que caduca primero, al costo del emisor (promedio o PEPS). Mande components para lo que de verdad se usó de alguno. Con existencias negativas en «No permitir», uno que no alcanza: 400 inventory_refused.
+
+        POST /v1/production_orders/{id}/start
+        https://fiscalisto.com/docs/api/referencia/inventario/start-production-order
+        """
+        result: ProductionOrder = self._client.request(
+            "POST", f"/v1/production_orders/{_path(id)}/start", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def complete(
+        self,
+        id: str,
+        params: CompleteProductionOrderParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ProductionOrder:
+        """Terminar una orden de producción
+
+        Lo producido entra al almacén destino a su costo real: (materials_cost + other_costs) ÷ quantity_made (status completed). Una en borrador se inicia antes con lo planeado.
+
+        POST /v1/production_orders/{id}/complete
+        https://fiscalisto.com/docs/api/referencia/inventario/complete-production-order
+        """
+        result: ProductionOrder = self._client.request(
+            "POST", f"/v1/production_orders/{_path(id)}/complete", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def cancel(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ProductionOrder:
+        """Cancelar una orden de producción
+
+        Los componentes regresan a su almacén y lo producido sale (status cancelled). Una ya cancelada: 400 inventory_refused.
+
+        POST /v1/production_orders/{id}/cancel
+        https://fiscalisto.com/docs/api/referencia/inventario/cancel-production-order
+        """
+        result: ProductionOrder = self._client.request(
+            "POST", f"/v1/production_orders/{_path(id)}/cancel", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -7234,6 +7414,11 @@ class FiscalistoApi(Core):
     def stock_adjustments(self) -> StockAdjustmentsResource:
         """Inventario."""
         return StockAdjustmentsResource(self)
+
+    @cached_property
+    def production_orders(self) -> ProductionOrdersResource:
+        """Inventario."""
+        return ProductionOrdersResource(self)
 
     @cached_property
     def sat_catalogs(self) -> SatCatalogsResource:
