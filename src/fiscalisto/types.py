@@ -335,6 +335,7 @@ __all__ = [
     "InvoiceCancellationFailedEvent",
     "InvoiceCancellationPendingEvent",
     "InvoiceCancellationRejectedEvent",
+    "InvoiceConcepts",
     "InvoiceCreate",
     "InvoiceCreateAddenda",
     "InvoiceCreateCartaPorte",
@@ -785,6 +786,7 @@ __all__ = [
     "UpdateSalesOrderParamsItemsItemUsedVehicleCustomsItem",
     "UpdateSatInvoiceParams",
     "UpdateSelfInvoicingParams",
+    "UpdateSelfInvoicingParamsInvoiceConcepts",
     "UpdateSelfInvoicingParamsPortalStyle",
     "UpdateSelfInvoicingParamsPortalStyleBack",
     "UpdateSelfInvoicingParamsPortalStyleColors",
@@ -4860,6 +4862,20 @@ class PortalStyle(TypedDict):
     """Los textos propios por llave (step_ticket, submit, success_title…), cada uno con es y en. Uno que falta lleva el de Fiscalisto."""
 
 
+class InvoiceConcepts(TypedDict):
+    """Los conceptos de la factura que se hace el comprador en el portal."""
+    mode: Literal["itemized", "single"]
+    """itemized: un concepto por renglón del ticket; single: uno solo (más uno por cada otro juego de impuestos, como una noche con ISH)."""
+    customer_choice: bool
+    """Si el comprador puede elegir en el portal entre desglosados y un solo concepto."""
+    description: str
+    """La descripción del concepto único, como «Consumo»."""
+    product_key: str | None
+    """La ClaveProdServ del concepto único, o null para la del renglón más grande."""
+    unit_key: str | None
+    """Su ClaveUnidad, o null para la del renglón más grande."""
+
+
 class SelfInvoicing(TypedDict):
     """El portal de autofactura de un emisor y sus reglas."""
     object: Literal["self_invoicing"]
@@ -4894,6 +4910,8 @@ class SelfInvoicing(TypedDict):
     """Las esquinas del portal en píxeles (0 a 24), o null para las de Fiscalisto."""
     portal_style: PortalStyle
     """Cómo se ve el portal además de su tema, color y esquinas: acomodo, encabezado, colores, letra, textos, formas de dar los datos, botón para volver y CSS."""
+    invoice_concepts: InvoiceConcepts
+    """Desglosados o en un solo concepto, y si el comprador puede elegir (Autofactura › Conceptos de la factura)."""
     retention_mode: Literal["keep_total", "subtract"]
     """Cuando se factura una persona moral que retiene (1.25% de ISR en RESICO, o lo del producto). keep_total: la base crece y la factura suma lo que se pagó. subtract: la base es la del ticket y el total es lo pagado menos la retención."""
     invoice_series: str | None
@@ -12373,6 +12391,19 @@ class UpdateSelfInvoicingParamsPortalStyle(TypedDict):
     """CSS propio, dentro del portal y sin llegar a su pie. Se quitan @import, url() y lo que cargue o ejecute algo; la leyenda «Facturado con Fiscalisto» se queda."""
 
 
+class UpdateSelfInvoicingParamsInvoiceConcepts(TypedDict):
+    mode: NotRequired[Literal["itemized", "single"]]
+    """`itemized` (por omisión): un concepto por renglón del ticket (Hospedaje, Restaurante, Bar…). `single`: uno solo, con `description`; los renglones con otros impuestos (una noche con ISH, IVA 0 %, retenciones) van en su propio concepto, porque un concepto lleva un solo juego de impuestos. El total y los impuestos no cambian."""
+    customer_choice: NotRequired[bool]
+    """`true`: el comprador elige en el portal entre desglosados y un solo concepto (empieza en `mode`), también en el portal dentro de su sitio."""
+    description: NotRequired[str]
+    """La descripción del concepto único, como «Consumo» (por omisión) o «Servicios de hospedaje y alimentos»."""
+    product_key: NotRequired[str | None]
+    """Su ClaveProdServ. `null` (por omisión): la del renglón más grande del ticket."""
+    unit_key: NotRequired[str | None]
+    """Su ClaveUnidad, con `product_key`, como `E48`. `null`: la del renglón más grande."""
+
+
 class UpdateSelfInvoicingParams(TypedDict):
     window: NotRequired[Literal["month", "days"]]
     """Hasta cuándo se puede facturar un ticket: `month`, hasta el fin del mes de la venta (lo usual ante el SAT); `days`, `window_days` días después."""
@@ -12402,6 +12433,8 @@ class UpdateSelfInvoicingParams(TypedDict):
     """Cuando se factura una persona moral y retiene (1.25% de ISR a un emisor en RESICO, artículo 113-J de la LISR, o lo que diga el producto): `keep_total` (por omisión), la base crece para que la factura sume lo que se pagó; `subtract`, la base es la del ticket y la retención se resta, así que el total de la factura es menor a lo pagado."""
     invoice_series: NotRequired[str | None]
     """La serie de las facturas que los compradores se hacen en el portal (y las que se emiten desde un ticket), como `AF`: hasta 25 caracteres, sin `|`. `null` o una vacía usa la serie de facturas del emisor. La factura global sigue con la serie de siempre."""
+    invoice_concepts: NotRequired[UpdateSelfInvoicingParamsInvoiceConcepts | None]
+    """Los conceptos de la factura que se hace el comprador (Autofactura › Conceptos de la factura): desglosados o en uno solo, y si el comprador puede elegir. Mande solo lo que cambia; `null` regresa a desglosados sin elección."""
     global_concepts: NotRequired[Literal["ticket", "summary"]]
     """Los conceptos de la factura global: `ticket` (por omisión), uno «Venta» por ticket con su folio como `NoIdentificacion`; `summary`, solo el monto total del periodo, uno por combinación de impuestos con `NoIdentificacion` «Resumen» (regla 2.7.1.21 de la RMF 2026). `summary` es solo para un emisor persona física en RESICO (626); otro contesta `invalid_request`."""
 
