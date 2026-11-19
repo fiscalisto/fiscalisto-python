@@ -3561,7 +3561,7 @@ class SatDeclarationPaymentPaymentsItem(TypedDict):
 
 class SatDeclarationPayment(TypedDict):
     status: Literal["paid", "unpaid", "overdue", "nothing_to_pay", "unchecked"]
-    """paid, unpaid (algo a pagar que el SAT no tenía pagado), overdue (igual, línea de captura vencida), nothing_to_pay o unchecked."""
+    """paid, unpaid (algo a pagar que el SAT no tenía pagado), overdue (igual, línea de captura vencida), nothing_to_pay o unchecked (aún no se sabe: sus cifras no se han leído, ver figures_status, o su pago no se ha buscado; checked_at viene en null)."""
     paid_on: str | None
     """El día del pago más reciente (AAAA-MM-DD)."""
     amount_paid: float | None
@@ -3628,6 +3628,10 @@ class SatDeclaration(TypedDict):
     """Lo que dice el acuse: cada concepto con su cantidad a cargo y a pagar, el total, la línea de captura y su vigencia. null si el acuse aún no llega."""
     summary: SatDeclarationSummary
     """Las mismas cifras con nombres fijos, por obligación (ISR, IVA, cada retención), para leerlas igual cada mes sin conocer el formato del SAT. Una cifra que no viene en la declaración o no se pudo leer es null, nunca 0. En Declaraciones y pagos solo trae lo del acuse."""
+    figures_status: Literal["read", "pending", "unavailable"]
+    """read: ya se leyó su PDF (sections, summary, receipt y los *_due vienen de él; una cifra en null es que la declaración no la trae). pending: está listada pero su PDF aún no se descarga, así que sus cifras vienen vacías o en null; se descarga sola, sin otro timbre, para figures_expected_at. unavailable: el SAT no ha dado el PDF (files_error dice por qué); se vuelve a pedir en la siguiente lectura."""
+    figures_expected_at: str | None
+    """Cuándo deberían estar sus cifras, si no están (la lectura en segundo plano que termina una consulta cortada por tiempo). null cuando ya están o cuando no hay una lectura programada: entonces llegan con el siguiente POST /v1/sat_declarations/refresh."""
     payment: SatDeclarationPayment | None
     """Su pago en el banco, de «Declaraciones pagadas» del SAT (solo las mensuales; null en las demás). status: paid (el SAT tiene el pago), unpaid (tiene algo a pagar y el SAT no lo tenía pagado en checked_at), overdue (igual, con la línea de captura vencida), nothing_to_pay o unchecked (aún no se revisa). paid_on, amount_paid y bank del pago más reciente, y cada pago en payments con su banco, día, línea de captura, medio (channel), importe, número de operación del banco y llave de pago."""
     files: SatDeclarationFiles
@@ -3656,6 +3660,8 @@ class SatDeclarationsRefresh(TypedDict):
     """Cuántos archivos bajó en esta consulta."""
     pending: int
     """Cuántas declaraciones quedan con archivos por bajar."""
+    completes_at: str | None
+    """Con status processing: cuándo deberían estar los archivos y las cifras que faltan (pending), que se descargan solos sin otro timbre. Mientras, GET /v1/sat_declarations ya las lista, con figures_status pending. null con status completed."""
     warning: str | None
     """Si una parte del SAT falló (por ejemplo, la anual), lo que dijo; lo demás sí se trajo. null si todo salió."""
     refreshed_at: str
