@@ -115,6 +115,7 @@ if TYPE_CHECKING:
         FinancialStatements,
         FixedAsset,
         FixedAssetList,
+        GeneralLedger,
         GetAttendanceParams,
         GetCashForecastParams,
         GetCompanyReportParams,
@@ -125,6 +126,7 @@ if TYPE_CHECKING:
         GetElectronicAccountingParams,
         GetExpensePolicyParams,
         GetFinancialStatementsParams,
+        GetGeneralLedgerParams,
         GetInvoiceCancellationReceiptParams,
         GetInvoiceParams,
         GetInvoicePdfParams,
@@ -5703,6 +5705,26 @@ class AccountingResource:
         """
         result: TrialBalance = self._client.request(
             "GET", "/v1/accounting/trial_balance", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def general_ledger(
+        self,
+        params: GetGeneralLedgerParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> GeneralLedger:
+        """Ver el auxiliar de cuentas
+
+        El libro mayor de un periodo de hasta 12 meses: el saldo inicial de cada cuenta, cada cargo y abono con su póliza (journal_entry, el mismo id de journal_entries), su CFDI y el saldo que deja, y el saldo final. Solo las cuentas que se movieron, o la que pida con account aunque no tenga movimientos. Una cuenta que no está en el catálogo contesta account_missing.
+
+        GET /v1/accounting/general_ledger
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-general-ledger
+        """
+        result: GeneralLedger = self._client.request(
+            "GET", "/v1/accounting/general_ledger", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 

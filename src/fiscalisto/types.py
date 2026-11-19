@@ -318,6 +318,9 @@ __all__ = [
     "FixedAsset",
     "FixedAssetDisposal",
     "FixedAssetList",
+    "GeneralLedger",
+    "GeneralLedgerAccountsItem",
+    "GeneralLedgerAccountsItemMovementsItem",
     "GetAttendanceParams",
     "GetCashForecastParams",
     "GetCompanyReportParams",
@@ -328,6 +331,7 @@ __all__ = [
     "GetElectronicAccountingParams",
     "GetExpensePolicyParams",
     "GetFinancialStatementsParams",
+    "GetGeneralLedgerParams",
     "GetInvoiceCancellationReceiptParams",
     "GetInvoiceParams",
     "GetInvoicePdfParams",
@@ -5511,6 +5515,66 @@ class TrialBalance(TypedDict):
     """Cada cuenta con movimiento o saldo: saldo inicial, cargos, abonos y saldo final."""
     totals: TrialBalanceTotals
     """Cargos y abonos del mes: siempre iguales."""
+
+
+class GeneralLedgerAccountsItemMovementsItem(TypedDict):
+    date: str
+    """Fecha de emisión (Fecha), hora de la Ciudad de México."""
+    journal_entry: str
+    """La póliza (el mismo id de GET /v1/accounting/journal_entries)."""
+    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal"]
+    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    description: str
+    """Descripción."""
+    tax_id: str | None
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    uuid: str | None
+    """Folio fiscal que asigna el SAT (UUID del Timbre Fiscal Digital), en mayúsculas."""
+    debit: float
+    """El cargo."""
+    credit: float
+    """El abono."""
+    balance: float
+    """El saldo de la cuenta después de este movimiento, en su naturaleza."""
+
+
+class GeneralLedgerAccountsItem(TypedDict):
+    object: Literal["ledger_account"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    number: str
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    grouping_code: str
+    """El código agrupador del SAT."""
+    nature: Literal["debit", "credit"]
+    """debit (deudora) o credit (acreedora)."""
+    opening_balance: float
+    """El saldo al empezar el mes."""
+    debit: float
+    """Los cargos del mes."""
+    credit: float
+    """Los abonos del mes."""
+    closing_balance: float
+    """El saldo al terminar el mes."""
+    movements: list[GeneralLedgerAccountsItemMovementsItem]
+    """Cada cargo y abono de la cuenta en el periodo, en el orden de sus pólizas, con el saldo que deja."""
+
+
+class GeneralLedger(TypedDict):
+    """El auxiliar de cuentas (libro mayor) de un periodo de hasta 12 meses: cada cuenta con su saldo inicial, cada cargo y abono con su póliza y el saldo que deja, y su saldo final."""
+    object: Literal["general_ledger"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    from_month: str
+    """El primer mes (AAAA-MM)."""
+    to_month: str
+    """El último mes (AAAA-MM)."""
+    accounts: list[GeneralLedgerAccountsItem]
+    """Cada cuenta que se movió en el periodo (o la que pidió con account): sus saldos, sus sumas y sus movimientos."""
 
 
 class FinancialStatementsIncomeStatementMonthSectionsItemGroupsItemAccountsItem(TypedDict):
@@ -13077,6 +13141,18 @@ class GetTrialBalanceParams(TypedDict):
     """Los parámetros de GET /v1/accounting/trial_balance."""
     month: str
     """El mes (AAAA-MM)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetGeneralLedgerParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/general_ledger."""
+    from_month: str
+    """El primer mes (AAAA-MM)."""
+    to_month: NotRequired[str]
+    """El último mes (AAAA-MM), hasta 12 meses después; por omisión, from_month."""
+    account: NotRequired[str]
+    """Solo esta cuenta, por su número en el catálogo."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 
