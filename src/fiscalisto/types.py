@@ -117,6 +117,7 @@ __all__ = [
     "CreateExportParams",
     "CreateExtraordinaryPayrollReceiptParams",
     "CreateFixedAssetParams",
+    "CreateFxRevaluationParams",
     "CreateImssFilesParams",
     "CreateImssMovementParams",
     "CreateInvitationParams",
@@ -240,6 +241,7 @@ __all__ = [
     "CustomerPaymentBehaviorPaymentFormsItem",
     "CustomerPaymentBehaviorTrend",
     "DeleteCostCenterParams",
+    "DeleteFxRevaluationParams",
     "DeleteMemberParams",
     "DeleteRoleParams",
     "Deleted",
@@ -323,6 +325,9 @@ __all__ = [
     "FixedAsset",
     "FixedAssetDisposal",
     "FixedAssetList",
+    "FxRevaluation",
+    "FxRevaluationCurrenciesItem",
+    "FxRevaluationDocumentsItem",
     "GeneralLedger",
     "GeneralLedgerAccountsItem",
     "GeneralLedgerAccountsItemMovementsItem",
@@ -337,6 +342,7 @@ __all__ = [
     "GetElectronicAccountingParams",
     "GetExpensePolicyParams",
     "GetFinancialStatementsParams",
+    "GetFxRevaluationParams",
     "GetGeneralLedgerParams",
     "GetInvoiceCancellationReceiptParams",
     "GetInvoiceParams",
@@ -5464,7 +5470,7 @@ class ManualJournalEntry(TypedDict):
     journal_type: Literal["journal", "income", "expense"]
     """El tipo de póliza: journal (diario), income (ingresos) o expense (egresos)."""
     reverse_next_month: bool
-    """true: una provisión que se revierte sola el día 1 del mes siguiente."""
+    """true: una provisión o un ajuste de cierre (como la revaluación cambiaria) que se revierte solo el día 1 del mes siguiente."""
     reverses_on: str | None
     """El día de su reversión, o null si no se revierte."""
     repeat_until: str | None
@@ -5566,6 +5572,60 @@ class ClosedPeriod(TypedDict):
     """El último mes cerrado (AAAA-MM), con todos los anteriores; null si ninguno está cerrado."""
     closed_at: str | None
     """Cuándo se cerró, o null."""
+
+
+class FxRevaluationCurrenciesItem(TypedDict):
+    currency: str
+    """Moneda, clave ISO 4217 de c_Moneda (MXN, USD, EUR…). Por omisión MXN."""
+    receivable: float
+    """Lo que le deben sus clientes al cierre, en esa moneda."""
+    payable: float
+    """Lo que usted debe a sus proveedores al cierre, en esa moneda."""
+    closing_rate: float | None
+    """El tipo de cambio de cierre que sugerimos (pesos por unidad): el FIX publicado en el DOF el día hábil siguiente al cierre, o null si no se pudo leer."""
+    closing_rate_date: str | None
+    """El día en que se publicó ese FIX, o null."""
+
+
+class FxRevaluationDocumentsItem(TypedDict):
+    uuid: str
+    """Folio fiscal que asigna el SAT (UUID del Timbre Fiscal Digital), en mayúsculas."""
+    direction: Literal["issued", "received"]
+    """EntradaSalidaMerc: Entrada o Salida."""
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    name: str
+    """Nombre."""
+    series_folio: str | None
+    """Su serie y folio, o null si no tiene."""
+    date: str
+    """Fecha de emisión (Fecha), hora de la Ciudad de México."""
+    currency: str
+    """Moneda de la factura pagada (MonedaDR)."""
+    balance: float
+    """Lo que faltaba pagar al cierre del mes, en su moneda."""
+    booked_rate: float
+    """Su TipoCambio: los pesos por unidad a los que se registró."""
+
+
+class FxRevaluation(TypedDict):
+    """La revaluación cambiaria de un mes (NIF B-15): las facturas PPD en otra moneda que seguían pendientes al cierre, lo que se debe por moneda con el tipo de cambio de cierre que sugerimos (el FIX del DOF) y la póliza de ajuste que registra la diferencia, si ya se registró."""
+    object: Literal["fx_revaluation"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM)."""
+    date: str
+    """El último día del mes: la fecha de la póliza. Su reversión es del día 1 del mes siguiente."""
+    currencies: list[FxRevaluationCurrenciesItem]
+    """Cada moneda con saldos pendientes: receivable (lo que le deben sus clientes, en esa moneda), payable (lo que usted debe a sus proveedores), closing_rate (el FIX publicado en el DOF el día hábil siguiente al cierre, o null si no se pudo leer) y closing_rate_date (el día de esa publicación)."""
+    documents: list[FxRevaluationDocumentsItem]
+    """Las facturas PPD en otra moneda aún pendientes al cierre: direction issued (de un cliente) o received (de un proveedor), balance (lo que faltaba pagar, en su moneda) y booked_rate (su TipoCambio, al que se registró)."""
+    manual_entry: str | None
+    """La póliza de revaluación (mje_…) si ya se registró, o null. Es una póliza a mano de tipo adjustment con reverse_next_month."""
 
 
 # Las pólizas que entraron de otro sistema (CONTPAQi, COI, una hoja de cálculo) en una importación.
@@ -13522,7 +13582,7 @@ class CreateManualEntryParams(TypedDict):
     journal_type: NotRequired[Literal["journal", "income", "expense"]]
     """El tipo de póliza: journal (diario), income (ingresos) o expense (egresos)."""
     reverse_next_month: NotRequired[bool]
-    """Solo con kind accrual: la póliza se revierte sola el día 1 del mes siguiente (para cuando llegue la factura)."""
+    """Solo con kind accrual o adjustment: la póliza se revierte sola el día 1 del mes siguiente (una provisión, para cuando llegue la factura; un ajuste de cierre como la revaluación cambiaria)."""
     uuid: NotRequired[str | None]
     """El UUID del CFDI con el que se relaciona, si hay uno."""
     uuid_tax_id: NotRequired[str | None]
@@ -13565,7 +13625,7 @@ class UpdateManualEntryParams(TypedDict):
     journal_type: NotRequired[Literal["journal", "income", "expense"]]
     """El tipo de póliza: journal (diario), income (ingresos) o expense (egresos)."""
     reverse_next_month: NotRequired[bool]
-    """Solo con kind accrual: la póliza se revierte sola el día 1 del mes siguiente (para cuando llegue la factura)."""
+    """Solo con kind accrual o adjustment: la póliza se revierte sola el día 1 del mes siguiente (una provisión, para cuando llegue la factura; un ajuste de cierre como la revaluación cambiaria)."""
     uuid: NotRequired[str | None]
     """El UUID del CFDI con el que se relaciona, si hay uno."""
     uuid_tax_id: NotRequired[str | None]
@@ -13672,6 +13732,25 @@ class SetClosedPeriodParams(TypedDict):
     """El emisor (iss_…). Por omisión, su único emisor."""
     closed_through: str | None
     """El último mes cerrado (AAAA-MM); los anteriores quedan cerrados también. null reabre todos."""
+
+
+class GetFxRevaluationParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/fx_revaluations/{month}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateFxRevaluationParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    rates: dict[str, float]
+    """El tipo de cambio de cierre (pesos por unidad) de cada moneda que aparece en currencies, por ejemplo {"USD": 18.2915}. Por lo general, el FIX que trae closing_rate."""
+
+
+class DeleteFxRevaluationParams(TypedDict):
+    """Los parámetros de DELETE /v1/accounting/fx_revaluations/{month}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 
 
 class ListBankMovementsParams(TypedDict):

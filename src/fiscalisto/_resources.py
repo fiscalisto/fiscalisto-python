@@ -63,6 +63,7 @@ if TYPE_CHECKING:
         CreateExportParams,
         CreateExtraordinaryPayrollReceiptParams,
         CreateFixedAssetParams,
+        CreateFxRevaluationParams,
         CreateImssFilesParams,
         CreateImssMovementParams,
         CreateInvitationParams,
@@ -99,6 +100,7 @@ if TYPE_CHECKING:
         CustomerGroup,
         CustomerPaymentBehavior,
         DeleteCostCenterParams,
+        DeleteFxRevaluationParams,
         DeleteMemberParams,
         DeleteRoleParams,
         Deleted,
@@ -118,6 +120,7 @@ if TYPE_CHECKING:
         FinancialStatements,
         FixedAsset,
         FixedAssetList,
+        FxRevaluation,
         GeneralLedger,
         GetAttendanceParams,
         GetCashForecastParams,
@@ -130,6 +133,7 @@ if TYPE_CHECKING:
         GetElectronicAccountingParams,
         GetExpensePolicyParams,
         GetFinancialStatementsParams,
+        GetFxRevaluationParams,
         GetGeneralLedgerParams,
         GetInvoiceCancellationReceiptParams,
         GetInvoiceParams,
@@ -6339,6 +6343,77 @@ class ClosedPeriodResource:
         return result
 
 
+class FxRevaluationsResource:
+    """Contabilidad: fiscalisto.fx_revaluations."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        month: str,
+        params: GetFxRevaluationParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> FxRevaluation:
+        """Ver la revaluación cambiaria de un mes
+
+        Las facturas PPD en otra moneda que seguían pendientes al cierre del mes, lo pendiente por moneda con el tipo de cambio de cierre que sugerimos (el FIX del DOF) y la póliza de revaluación, si ya se registró. Como Cierre del mes › Revaluación cambiaria en la app.
+
+        GET /v1/accounting/fx_revaluations/{month}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-fx-revaluation
+        """
+        result: FxRevaluation = self._client.request(
+            "GET", f"/v1/accounting/fx_revaluations/{_path(month)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create(
+        self,
+        month: str,
+        params: CreateFxRevaluationParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> FxRevaluation:
+        """Registrar la revaluación cambiaria de un mes
+
+        Registra (o reemplaza) la póliza de ajuste del último día del mes que lleva lo pendiente en otra moneda al tipo de cambio de cierre (rates): Clientes contra Utilidad o Pérdida cambiaria, y Proveedores contra Pérdida o Utilidad cambiaria. Se revierte sola el día 1 del mes siguiente, para que cada pago siga calculando su diferencia cambiaria desde el tipo de cambio de la factura. Sin facturas pendientes, o sin diferencia a esos tipos de cambio, contesta parameter_invalid en month; en un mes cerrado, period_closed.
+
+        POST /v1/accounting/fx_revaluations/{month}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/create-fx-revaluation
+        """
+        result: FxRevaluation = self._client.request(
+            "POST", f"/v1/accounting/fx_revaluations/{_path(month)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        month: str,
+        params: DeleteFxRevaluationParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> FxRevaluation:
+        """Quitar la revaluación cambiaria de un mes
+
+        Quita la póliza de revaluación del mes y su reversión. En un mes cerrado contesta period_closed.
+
+        DELETE /v1/accounting/fx_revaluations/{month}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/delete-fx-revaluation
+        """
+        result: FxRevaluation = self._client.request(
+            "DELETE", f"/v1/accounting/fx_revaluations/{_path(month)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class BankMovementsResource:
     """Contabilidad: fiscalisto.bank_movements."""
 
@@ -7831,6 +7906,11 @@ class FiscalistoApi(Core):
     def closed_period(self) -> ClosedPeriodResource:
         """Contabilidad."""
         return ClosedPeriodResource(self)
+
+    @cached_property
+    def fx_revaluations(self) -> FxRevaluationsResource:
+        """Contabilidad."""
+        return FxRevaluationsResource(self)
 
     @cached_property
     def bank_movements(self) -> BankMovementsResource:
