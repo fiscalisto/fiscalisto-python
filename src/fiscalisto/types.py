@@ -340,6 +340,7 @@ __all__ = [
     "GetInvoiceParams",
     "GetInvoicePdfParams",
     "GetInvoiceXmlParams",
+    "GetOpeningBalancesParams",
     "GetRetentionParams",
     "GetRetentionPdfParams",
     "GetRetentionXmlParams",
@@ -348,6 +349,9 @@ __all__ = [
     "GetSatDeclarationCalendarParams",
     "GetTrialBalanceParams",
     "GetVatRefundParams",
+    "ImportManualEntriesParams",
+    "ImportManualEntriesParamsEntriesItem",
+    "ImportManualEntriesParamsEntriesItemLinesItem",
     "ImportStoreOrdersParams",
     "ImssFiles",
     "ImssFilesFilesItem",
@@ -538,6 +542,7 @@ __all__ = [
     "ListWarehousesParams",
     "ListWebhookDeliveriesParams",
     "ListWebhookEndpointsParams",
+    "ManualEntryImport",
     "ManualJournalEntry",
     "ManualJournalEntryLinesItem",
     "ManualJournalEntryList",
@@ -556,6 +561,8 @@ __all__ = [
     "MaterialitySupplierStates",
     "Member",
     "MemberList",
+    "OpeningBalances",
+    "OpeningBalancesLinesItem",
     "PayrollBankFile",
     "PayrollBankFileExcludedItem",
     "PayrollBankFilePaymentsItem",
@@ -739,6 +746,8 @@ __all__ = [
     "SendRetentionParams",
     "SendSalesOrderParams",
     "SetClosedPeriodParams",
+    "SetOpeningBalancesParams",
+    "SetOpeningBalancesParamsLinesItem",
     "SignEfirmaParams",
     "StartProductionOrderParams",
     "StartProductionOrderParamsComponentsItem",
@@ -5543,6 +5552,48 @@ class ClosedPeriod(TypedDict):
     """El último mes cerrado (AAAA-MM), con todos los anteriores; null si ninguno está cerrado."""
     closed_at: str | None
     """Cuándo se cerró, o null."""
+
+
+# Las pólizas que entraron de otro sistema (CONTPAQi, COI, una hoja de cálculo) en una importación.
+ManualEntryImport = TypedDict(
+    "ManualEntryImport",
+    {
+        "id": "str | None",
+        "object": "Literal[\"manual_entry_import\"]",
+        "livemode": "bool",
+        "issuer": "str",
+        "imported": "int",
+        "duplicates": "int",
+        "from": "str",
+        "to": "str",
+        "manual_entries": "list[str]",
+    },
+)
+
+
+class OpeningBalancesLinesItem(TypedDict):
+    account: str
+    """El número de cuenta."""
+    account_name: str
+    """El nombre de la cuenta."""
+    debit: float
+    """El cargo, en pesos."""
+    credit: float
+    """El abono, en pesos."""
+
+
+class OpeningBalances(TypedDict):
+    """Los saldos iniciales del emisor: con qué saldo empieza cada cuenta el día en que empiezan sus libros."""
+    object: Literal["opening_balances"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    date: str | None
+    """El día en que empiezan sus libros, o null si no tiene saldos iniciales."""
+    lines: list[OpeningBalancesLinesItem]
+    """El saldo de cada cuenta: deudor (debit) o acreedor (credit)."""
 
 
 class TrialBalanceAccountsItem(TypedDict):
@@ -13435,6 +13486,59 @@ class UpdateManualEntryParams(TypedDict):
     """Con uuid: el RFC de la otra parte de ese CFDI."""
     lines: list[UpdateManualEntryParamsLinesItem]
     """Sus cargos y abonos: cada renglón uno u otro; los cargos suman lo mismo que los abonos."""
+
+
+class ImportManualEntriesParamsEntriesItemLinesItem(TypedDict):
+    account: str
+    """El número de la cuenta en su catálogo (GET /v1/accounting/accounts), por ejemplo 205-06."""
+    debit: NotRequired[float]
+    """El cargo."""
+    credit: NotRequired[float]
+    """El abono."""
+
+
+class ImportManualEntriesParamsEntriesItem(TypedDict):
+    date: str
+    """La fecha de la póliza (AAAA-MM-DD)."""
+    journal_type: NotRequired[Literal["journal", "income", "expense"]]
+    """El tipo de póliza: journal (diario), income (ingresos) o expense (egresos)."""
+    number: NotRequired[str | None]
+    """Su número en el otro sistema (por ejemplo Dr 15). Con la fecha, el tipo y el total, reconoce una póliza ya importada y la salta."""
+    description: str
+    """Su concepto."""
+    lines: list[ImportManualEntriesParamsEntriesItemLinesItem]
+    """Sus cargos y abonos: cada renglón uno u otro; los cargos suman lo mismo que los abonos."""
+
+
+class ImportManualEntriesParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    entries: list[ImportManualEntriesParamsEntriesItem]
+    """Las pólizas, hasta 3,000."""
+
+
+class GetOpeningBalancesParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/opening_balances."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class SetOpeningBalancesParamsLinesItem(TypedDict):
+    account: str
+    """El número de la cuenta en su catálogo (GET /v1/accounting/accounts), por ejemplo 205-06."""
+    debit: NotRequired[float]
+    """Su saldo deudor."""
+    credit: NotRequired[float]
+    """Su saldo acreedor."""
+
+
+class SetOpeningBalancesParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    date: str
+    """Cuándo empiezan sus libros (el día 1 de un mes): lo anterior no se cuenta."""
+    lines: list[SetOpeningBalancesParamsLinesItem]
+    """El saldo de cada cuenta, deudor o acreedor; las dos columnas suman lo mismo. Sin renglones, borra los saldos iniciales."""
 
 
 class ListFixedAssetsParams(TypedDict):

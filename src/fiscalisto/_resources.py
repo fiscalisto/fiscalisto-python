@@ -135,6 +135,7 @@ if TYPE_CHECKING:
         GetInvoiceParams,
         GetInvoicePdfParams,
         GetInvoiceXmlParams,
+        GetOpeningBalancesParams,
         GetRetentionParams,
         GetRetentionPdfParams,
         GetRetentionXmlParams,
@@ -143,6 +144,7 @@ if TYPE_CHECKING:
         GetSatDeclarationCalendarParams,
         GetTrialBalanceParams,
         GetVatRefundParams,
+        ImportManualEntriesParams,
         ImportStoreOrdersParams,
         ImssFiles,
         ImssMovement,
@@ -214,6 +216,7 @@ if TYPE_CHECKING:
         ListWarehousesParams,
         ListWebhookDeliveriesParams,
         ListWebhookEndpointsParams,
+        ManualEntryImport,
         ManualJournalEntry,
         MarkBankMovementParams,
         MarkInvoicePaidParams,
@@ -224,6 +227,7 @@ if TYPE_CHECKING:
         MaterialitySupplierList,
         Member,
         MemberList,
+        OpeningBalances,
         PayrollBankFile,
         PayrollBatch,
         PayrollReceiptPreview,
@@ -275,6 +279,7 @@ if TYPE_CHECKING:
         SendRetentionParams,
         SendSalesOrderParams,
         SetClosedPeriodParams,
+        SetOpeningBalancesParams,
         SignEfirmaParams,
         StartProductionOrderParams,
         StockAdjustment,
@@ -6066,6 +6071,95 @@ class ManualEntriesResource:
         )
         return result
 
+    def import_entries(
+        self,
+        params: ImportManualEntriesParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ManualEntryImport:
+        """Importar pólizas de otro sistema
+
+        Hasta 3,000 pólizas de una vez (las de CONTPAQi, COI o una hoja de cálculo), todas o ninguna: cada una con las reglas de POST /v1/accounting/manual_entries, y el error dice cuál (param entries[i].…). Entran como kind other. Una con el mismo number, fecha, tipo y total que una ya importada se salta (duplicates). DELETE /v1/accounting/manual_entry_imports/{id} quita las de una importación.
+
+        POST /v1/accounting/manual_entry_imports
+        https://fiscalisto.com/docs/api/referencia/contabilidad/import-manual-entries
+        """
+        result: ManualEntryImport = self._client.request(
+            "POST", "/v1/accounting/manual_entry_imports", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def undo_import(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Deshacer una importación de pólizas
+
+        Borra todas las pólizas que trajo esa importación (mji_…). No se puede si alguna es de un mes cerrado (period_closed).
+
+        DELETE /v1/accounting/manual_entry_imports/{id}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/undo-manual-entries-import
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/accounting/manual_entry_imports/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class OpeningBalancesResource:
+    """Contabilidad: fiscalisto.opening_balances."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetOpeningBalancesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> OpeningBalances:
+        """Ver los saldos iniciales
+
+        Los saldos de cada cuenta con los que empiezan los libros del emisor (date), como Estados financieros › Saldos iniciales en la app. Sin saldos iniciales, date es null.
+
+        GET /v1/accounting/opening_balances
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-opening-balances
+        """
+        result: OpeningBalances = self._client.request(
+            "GET", "/v1/accounting/opening_balances", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def set(
+        self,
+        params: SetOpeningBalancesParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> OpeningBalances:
+        """Guardar los saldos iniciales
+
+        Reemplaza los saldos iniciales: el día 1 del mes en que empiezan sus libros y el saldo deudor o acreedor de cada cuenta (por su número); las dos columnas suman lo mismo o contesta entry_unbalanced. Son los saldos finales de la balanza de su sistema anterior. Sin renglones, los borra. Nada antes de esa fecha cuenta.
+
+        POST /v1/accounting/opening_balances
+        https://fiscalisto.com/docs/api/referencia/contabilidad/set-opening-balances
+        """
+        result: OpeningBalances = self._client.request(
+            "POST", "/v1/accounting/opening_balances", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
 
 class FixedAssetsResource:
     """Contabilidad: fiscalisto.fixed_assets."""
@@ -7722,6 +7816,11 @@ class FiscalistoApi(Core):
     def manual_entries(self) -> ManualEntriesResource:
         """Contabilidad."""
         return ManualEntriesResource(self)
+
+    @cached_property
+    def opening_balances(self) -> OpeningBalancesResource:
+        """Contabilidad."""
+        return OpeningBalancesResource(self)
 
     @cached_property
     def fixed_assets(self) -> FixedAssetsResource:
