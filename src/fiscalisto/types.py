@@ -15,6 +15,8 @@ elif TYPE_CHECKING:  # pragma: no cover
 __all__ = [
     "Account",
     "AccountKey",
+    "AccountingBankMovement",
+    "AccountingBankMovementList",
     "AdjustCashForecastParams",
     "Advance",
     "AdvanceCustomer",
@@ -481,6 +483,7 @@ __all__ = [
     "LedgerAccount",
     "LedgerAccountList",
     "ListAdvancesParams",
+    "ListBankMovementsParams",
     "ListBankTransactionsParams",
     "ListBranchesParams",
     "ListCostCentersParams",
@@ -535,6 +538,7 @@ __all__ = [
     "ManualJournalEntry",
     "ManualJournalEntryLinesItem",
     "ManualJournalEntryList",
+    "MarkBankMovementParams",
     "MarkInvoicePaidParams",
     "MarkPurchaseReceiptInvoicedParams",
     "MarkSupplierInvoicePaidParams",
@@ -584,6 +588,7 @@ __all__ = [
     "PortalSupplierList",
     "PortalSupplierScore",
     "PortalSupplierScorePartsItem",
+    "PostBankMovementParams",
     "PreviewExtraordinaryPayrollReceiptParams",
     "PreviewPayrollReceiptParams",
     "PreviewPayrollReceiptParamsPeriod",
@@ -5470,6 +5475,42 @@ FixedAsset = TypedDict(
 )
 
 
+class AccountingBankMovement(TypedDict):
+    """Un movimiento de banco que ninguna factura explica (un retiro, o un depósito clasificado como préstamo, traspaso o devolución) y su póliza de ingresos o egresos contra Bancos, cuando ya se registró."""
+    id: str
+    """btx_… para un depósito (el mismo de la conciliación) o bwd_… para un retiro."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["accounting_bank_movement"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    direction: Literal["deposit", "withdrawal"]
+    """deposit (depósito) o withdrawal (retiro)."""
+    date: str
+    """El día del movimiento (AAAA-MM-DD), que es el de su póliza."""
+    description: str
+    """El texto del banco, como vino en el estado de cuenta."""
+    reference: str | None
+    """La referencia o clave de rastreo, si la trae."""
+    amount: float
+    """El importe, en positivo."""
+    bank: str
+    """El banco del estado de cuenta."""
+    bank_account: str | None
+    """Los últimos 4 dígitos de la cuenta, si se sabe."""
+    classification: Literal["loan", "transfer", "refund"] | None
+    """Un depósito: lo que dijo la conciliación (loan, transfer o refund). null en un retiro."""
+    status: Literal["pending", "posted", "paid_invoices", "ignored"]
+    """pending (por registrar), posted (con póliza), paid_invoices (pagó facturas que ya están en la contabilidad) o ignored (no se registra)."""
+    manual_entry: str | None
+    """Su póliza (mje_…), que se ve y se corrige como cualquier póliza capturada, o null."""
+    account: str | None
+    """El número de la cuenta que va contra Bancos en su póliza, o null."""
+    suggested_account: str | None
+    """La cuenta que sugiere un movimiento anterior con el mismo texto registrado con remember, o null."""
+
+
 class TrialBalanceAccountsItem(TypedDict):
     object: Literal["ledger_account"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -8725,6 +8766,17 @@ class FixedAssetList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[FixedAsset]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class AccountingBankMovementList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[AccountingBankMovement]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -13313,6 +13365,28 @@ class DisposeFixedAssetParams(TypedDict):
     """sale (venta) o write_off (robo, pérdida, desecho)."""
     note: NotRequired[str | None]
     """Una nota."""
+
+
+class ListBankMovementsParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/bank_movements."""
+    month: NotRequired[str]
+    """El mes (AAAA-MM). Por omisión, el actual."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class PostBankMovementParams(TypedDict):
+    account: str
+    """El número de la cuenta del catálogo que va contra Bancos (GET /v1/accounting/accounts)."""
+    description: NotRequired[str]
+    """El concepto de la póliza. Sin él, el texto del banco."""
+    remember: NotRequired[bool]
+    """Sugerir esta cuenta para los movimientos con el mismo texto del banco (suggested_account)."""
+
+
+class MarkBankMovementParams(TypedDict):
+    status: Literal["pending", "paid_invoices", "ignored"]
+    """paid_invoices: pagó facturas que ya están en la contabilidad; ignored: no se registra; pending: vuelve a por registrar. Solo retiros."""
 
 
 class GetElectronicAccountingParams(TypedDict):

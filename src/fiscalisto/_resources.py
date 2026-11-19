@@ -13,6 +13,8 @@ from ._core import Core, ListObject
 if TYPE_CHECKING:
     from .types import (
         Account,
+        AccountingBankMovement,
+        AccountingBankMovementList,
         AdjustCashForecastParams,
         AdvanceList,
         AdvanceTestClockParams,
@@ -157,6 +159,7 @@ if TYPE_CHECKING:
         LedgerAccount,
         LedgerAccountList,
         ListAdvancesParams,
+        ListBankMovementsParams,
         ListBankTransactionsParams,
         ListBranchesParams,
         ListCostCentersParams,
@@ -209,6 +212,7 @@ if TYPE_CHECKING:
         ListWebhookDeliveriesParams,
         ListWebhookEndpointsParams,
         ManualJournalEntry,
+        MarkBankMovementParams,
         MarkInvoicePaidParams,
         MarkPurchaseReceiptInvoicedParams,
         MarkSupplierInvoicePaidParams,
@@ -222,6 +226,7 @@ if TYPE_CHECKING:
         PayrollReceiptPreview,
         PermissionList,
         PortalSupplier,
+        PostBankMovementParams,
         PreviewExtraordinaryPayrollReceiptParams,
         PreviewPayrollReceiptParams,
         PriceList,
@@ -6145,6 +6150,97 @@ class FixedAssetsResource:
         return result
 
 
+class BankMovementsResource:
+    """Contabilidad: fiscalisto.bank_movements."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListBankMovementsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AccountingBankMovementList:
+        """Listar los movimientos de banco sin factura
+
+        Los movimientos de banco de un mes que ninguna factura explica: los retiros de los estados de cuenta importados en la conciliación (comisiones, impuestos, pagos de préstamos, traspasos) y los depósitos que ahí se clasificaron como préstamo, traspaso o devolución. Cada uno con su póliza, si ya se registró, y la cuenta sugerida. Lo que pagó o cobró una factura ya está en la contabilidad por su CFDI.
+
+        GET /v1/accounting/bank_movements
+        https://fiscalisto.com/docs/api/referencia/contabilidad/list-bank-movements
+        """
+        result: AccountingBankMovementList = self._client.request(
+            "GET", "/v1/accounting/bank_movements", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def post(
+        self,
+        id: str,
+        params: PostBankMovementParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AccountingBankMovement:
+        """Registrar un movimiento de banco
+
+        Le hace su póliza con fecha del movimiento: de ingresos (Bancos contra account) a un depósito, de egresos (account contra Bancos) a un retiro. Entra a la balanza, el auxiliar y la contabilidad electrónica como cualquier póliza capturada (manual_entry). Uno ya registrado contesta bank_movement_posted; un depósito sin clasificar o un retiro marcado, bank_movement_not_bookable.
+
+        POST /v1/accounting/bank_movements/{id}/post
+        https://fiscalisto.com/docs/api/referencia/contabilidad/post-bank-movement
+        """
+        result: AccountingBankMovement = self._client.request(
+            "POST", f"/v1/accounting/bank_movements/{_path(id)}/post", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def unpost(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AccountingBankMovement:
+        """Quitar la póliza de un movimiento de banco
+
+        Su póliza sale de la contabilidad y el movimiento vuelve a pending. Sin póliza contesta bank_movement_not_posted.
+
+        DELETE /v1/accounting/bank_movements/{id}/post
+        https://fiscalisto.com/docs/api/referencia/contabilidad/unpost-bank-movement
+        """
+        result: AccountingBankMovement = self._client.request(
+            "DELETE", f"/v1/accounting/bank_movements/{_path(id)}/post", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def mark(
+        self,
+        id: str,
+        params: MarkBankMovementParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AccountingBankMovement:
+        """Marcar un retiro
+
+        paid_invoices: pagó facturas que ya están en la contabilidad por su CFDI; ignored: no se registra; pending: vuelve a por registrar. Solo retiros sin póliza.
+
+        POST /v1/accounting/bank_movements/{id}/mark
+        https://fiscalisto.com/docs/api/referencia/contabilidad/mark-bank-movement
+        """
+        result: AccountingBankMovement = self._client.request(
+            "POST", f"/v1/accounting/bank_movements/{_path(id)}/mark", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class StoreConnectionsResource:
     """Tiendas en línea: fiscalisto.store_connections."""
 
@@ -7531,6 +7627,11 @@ class FiscalistoApi(Core):
     def fixed_assets(self) -> FixedAssetsResource:
         """Contabilidad."""
         return FixedAssetsResource(self)
+
+    @cached_property
+    def bank_movements(self) -> BankMovementsResource:
+        """Contabilidad."""
+        return BankMovementsResource(self)
 
     @cached_property
     def store_connections(self) -> StoreConnectionsResource:
