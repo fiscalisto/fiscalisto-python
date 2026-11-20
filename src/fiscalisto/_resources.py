@@ -96,6 +96,7 @@ if TYPE_CHECKING:
         CreateLedgerAccountParams,
         CreateManualEntryParams,
         CreatePaymentParams,
+        CreatePayrollApprovalParams,
         CreatePayrollBankFileParams,
         CreatePayrollBatchParams,
         CreatePayrollProvisionParams,
@@ -262,6 +263,7 @@ if TYPE_CHECKING:
         ListMaterialityInvoicesParams,
         ListMaterialitySuppliersParams,
         ListMembersParams,
+        ListPayrollApprovalsParams,
         ListPayrollBatchesParams,
         ListPortalSuppliersParams,
         ListPriceListsParams,
@@ -308,6 +310,7 @@ if TYPE_CHECKING:
         NetToGrossParams,
         OpeningBalances,
         PayrollAccumulated,
+        PayrollApproval,
         PayrollBankFile,
         PayrollBatch,
         PayrollCost,
@@ -2394,7 +2397,7 @@ class EmployeesResource:
         """
         return self._client.list("/v1/employees", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
-    def raise(
+    def give_raise(
         self,
         params: CreateEmployeeRaiseParams | None = None,
         *,
@@ -2889,6 +2892,92 @@ class PayrollBatchesResource:
         """
         result: PayrollBatch = self._client.request(
             "GET", f"/v1/payroll_batches/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PayrollApprovalsResource:
+    """Nómina: fiscalisto.payroll_approvals."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreatePayrollApprovalParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollApproval:
+        """Pedir aprobación de la prenómina
+
+        Para un emisor que pide aprobar la prenómina antes de timbrar (Ajustes › Aprobaciones › Prenómina en la app): manda la nómina del periodo a aprobación. Calcula cada recibo como lo timbraría POST /v1/payroll_receipts y guarda sus importes; reemplaza la que se haya pedido antes para el mismo periodo, y avisa a quienes pueden aprobarla. La aprueba o rechaza una persona en Nómina › Emitir recibos (no una llave). Mientras no esté aprobada, POST /v1/payroll_receipts y POST /v1/payroll_batches de ese periodo contestan payroll_approval_required; aprobada, timbran solo los recibos de ella con los mismos importes y fecha de pago.
+
+        POST /v1/payroll_approvals
+        https://fiscalisto.com/docs/api/referencia/nomina/create-payroll-approval
+        """
+        result: PayrollApproval = self._client.request(
+            "POST", "/v1/payroll_approvals", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListPayrollApprovalsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[PayrollApproval]:
+        """Listar prenóminas por aprobar
+
+        Las prenóminas pedidas para aprobación, las más recientes primero.
+
+        GET /v1/payroll_approvals
+        https://fiscalisto.com/docs/api/referencia/nomina/list-payroll-approvals
+        """
+        return self._client.list("/v1/payroll_approvals", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollApproval:
+        """Ver una prenómina por aprobar
+
+        Con su estado y los importes de cada recibo.
+
+        GET /v1/payroll_approvals/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/get-payroll-approval
+        """
+        result: PayrollApproval = self._client.request(
+            "GET", f"/v1/payroll_approvals/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def cancel(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollApproval:
+        """Retirar una prenómina por aprobar
+
+        Retira una que espera aprobación (status withdrawn), para corregirla y pedirla de nuevo, o porque no se pagará.
+
+        POST /v1/payroll_approvals/{id}/cancel
+        https://fiscalisto.com/docs/api/referencia/nomina/cancel-payroll-approval
+        """
+        result: PayrollApproval = self._client.request(
+            "POST", f"/v1/payroll_approvals/{_path(id)}/cancel", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -9419,6 +9508,11 @@ class FiscalistoApi(Core):
     def payroll_batches(self) -> PayrollBatchesResource:
         """Nómina."""
         return PayrollBatchesResource(self)
+
+    @cached_property
+    def payroll_approvals(self) -> PayrollApprovalsResource:
+        """Nómina."""
+        return PayrollApprovalsResource(self)
 
     @cached_property
     def payroll_bank_files(self) -> PayrollBankFilesResource:

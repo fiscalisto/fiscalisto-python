@@ -254,6 +254,9 @@ class ErrorCode:
     PARAMETER_UNKNOWN: Final = "parameter_unknown"
     """Mandó un campo o un parámetro de la URL que no existe (casi siempre un nombre mal escrito, como legalName en vez de legal_name, o ?statuss= en vez de ?status=). Nunca se ignora en silencio."""
 
+    PAYROLL_APPROVAL_REQUIRED: Final = "payroll_approval_required"
+    """El emisor pide aprobar la prenómina antes de timbrar, y este recibo no está en la prenómina aprobada del periodo con estos importes y fecha de pago (no se ha pedido, espera aprobación, se rechazó o el recibo cambió). No se timbró: pídala con POST /v1/payroll_approvals y espere a que una persona la apruebe en la app."""
+
     PAYROLL_CALCULATION_CHANGED: Final = "payroll_calculation_changed"
     """Mandó el confirmation_token de una vista previa, pero el recibo que se calcularía ahora es otro (se timbró otro recibo del empleado ese mes, cambió su salario o se actualizaron las tablas). No se timbró: pida la vista previa otra vez y mande su token nuevo."""
 
@@ -505,6 +508,7 @@ ErrorCodeValue = Literal[
     "parameter_invalid",
     "parameter_missing",
     "parameter_unknown",
+    "payroll_approval_required",
     "payroll_calculation_changed",
     "payroll_calculation_unsupported",
     "payroll_invalid",

@@ -218,6 +218,13 @@ __all__ = [
     "CreateManualEntryParamsLinesItem",
     "CreatePaymentParams",
     "CreatePaymentParamsDocumentsItem",
+    "CreatePayrollApprovalParams",
+    "CreatePayrollApprovalParamsPeriod",
+    "CreatePayrollApprovalParamsReceiptsItem",
+    "CreatePayrollApprovalParamsReceiptsItemIncidents",
+    "CreatePayrollApprovalParamsReceiptsItemIncidentsBonusesItem",
+    "CreatePayrollApprovalParamsReceiptsItemIncidentsDisabilityPay",
+    "CreatePayrollApprovalParamsReceiptsItemIncidentsRetroactive",
     "CreatePayrollBankFileParams",
     "CreatePayrollBatchParams",
     "CreatePayrollBatchParamsExternalReceiptsItem",
@@ -675,6 +682,7 @@ __all__ = [
     "ListMaterialityInvoicesParams",
     "ListMaterialitySuppliersParams",
     "ListMembersParams",
+    "ListPayrollApprovalsParams",
     "ListPayrollBatchesParams",
     "ListPortalSuppliersParams",
     "ListPriceListsParams",
@@ -733,6 +741,11 @@ __all__ = [
     "PayrollAccumulated",
     "PayrollAccumulatedConceptsItem",
     "PayrollAccumulatedEmployeesItem",
+    "PayrollApproval",
+    "PayrollApprovalList",
+    "PayrollApprovalPeriod",
+    "PayrollApprovalReceiptsItem",
+    "PayrollApprovalReceiptsItemTotals",
     "PayrollBankFile",
     "PayrollBankFileExcludedItem",
     "PayrollBankFilePaymentsItem",
@@ -3049,7 +3062,7 @@ class InvoiceBatch(TypedDict):
 
 class PayrollBatchReceiptsItemError(TypedDict):
     code: str
-    """payroll_invalid, payroll_period_overlap, payroll_receipt_exists, invoice_rejected, invoice_invalid, insufficient_balance…"""
+    """payroll_invalid, payroll_approval_required, payroll_period_overlap, payroll_receipt_exists, invoice_rejected, invoice_invalid, insufficient_balance…"""
     message: str
     """Qué pasó y cómo corregirlo, para una persona."""
 
@@ -3700,6 +3713,73 @@ class EmployeeRaise(TypedDict):
     """El último día para presentar las modificaciones al IMSS (5 días hábiles)."""
     employees: list[EmployeeRaiseEmployeesItem]
     """Cada empleado del aumento."""
+
+
+class PayrollApprovalPeriod(TypedDict):
+    """El periodo de pago de la nómina: FechaInicialPago, FechaFinalPago y FechaPago de sus recibos."""
+    start: str
+    """Primer día pagado."""
+    end: str
+    """Último día pagado."""
+    payment_date: str
+    """Día de pago."""
+
+
+class PayrollApprovalReceiptsItemTotals(TypedDict):
+    """Los importes aprobados: se timbra solo un recibo que los tenga."""
+    perceptions: float
+    """Percepciones."""
+    deductions: float
+    """Deducciones."""
+    other_payments: float
+    """Otros pagos."""
+    taxes_withheld: float
+    """ISR retenido."""
+    net: float
+    """Neto a pagar."""
+
+
+class PayrollApprovalReceiptsItem(TypedDict):
+    employee: str
+    """emp_…"""
+    name: str
+    """Su nombre."""
+    days: float
+    """Días pagados."""
+    absences: float
+    """Faltas."""
+    disability_days: float
+    """Días de incapacidad."""
+    totals: PayrollApprovalReceiptsItemTotals
+    """Los importes aprobados: se timbra solo un recibo que los tenga."""
+
+
+class PayrollApproval(TypedDict):
+    """Una prenómina pedida para aprobación: con ella aprobada se timbran sus recibos, con esos importes."""
+    id: str
+    """pap_…"""
+    object: Literal["payroll_approval"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """iss_…"""
+    periodicity: str
+    """Periodicidad de la nómina (c_PeriodicidadPago): 02, 03, 04 o 05."""
+    period: PayrollApprovalPeriod
+    """El periodo de pago de la nómina: FechaInicialPago, FechaFinalPago y FechaPago de sus recibos."""
+    status: Literal["pending", "approved", "rejected", "withdrawn", "replaced"]
+    """pending (por aprobar), approved, rejected (note dice por qué), withdrawn (retirada) o replaced (se pidió otra del mismo periodo)."""
+    net: float
+    """El neto de todos sus recibos."""
+    receipts: list[PayrollApprovalReceiptsItem]
+    """El recibo de cada empleado, como se calculó al pedirla."""
+    requested_at: str
+    """Cuándo se pidió (ISO 8601)."""
+    decided_at: str | None
+    """Cuándo se aprobó, rechazó o retiró, o null."""
+    note: str | None
+    """Por qué se rechazó (o el comentario de quien la aprobó), o null."""
 
 
 class PayrollCostMonthsItem(TypedDict):
@@ -6386,7 +6466,7 @@ class JournalEntry(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     issuer: str
     """El emisor."""
-    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal", "bank_identification"]
+    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal", "bank_identification", "foreign_supplier_operations"]
     """De qué es: invoice (un CFDI de ingreso o egreso), payment_received o payment_made (un pago de un complemento), payroll (un recibo de nómina), employee_expenses (un anticipo, reembolso, devolución o comprobación de viáticos, contra 107.01 «Funcionarios y empleados»), depreciation (la depreciación del mes de los activos fijos), manual (una póliza capturada a mano, o la reversión de una provisión) o asset_disposal (la venta o baja de un activo fijo)."""
     manual_entry: str | None
     """Con type manual: la póliza capturada (mje_…), también en su reversión; null en las demás."""
@@ -8042,7 +8122,7 @@ class GeneralLedgerAccountsItemMovementsItem(TypedDict):
     """Fecha de emisión (Fecha), hora de la Ciudad de México."""
     journal_entry: str
     """La póliza (el mismo id de GET /v1/accounting/journal_entries)."""
-    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal", "bank_identification"]
+    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal", "bank_identification", "foreign_supplier_operations"]
     """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
     description: str
     """Descripción."""
@@ -10859,6 +10939,17 @@ class VacationRequestList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[VacationRequest]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class PayrollApprovalList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[PayrollApproval]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -14200,6 +14291,102 @@ class ListPayrollBatchesParams(TypedDict):
     """Cuántos por página, de 1 a 100. Por omisión 10."""
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreatePayrollApprovalParamsPeriod(TypedDict):
+    """El periodo de pago de la nómina: FechaInicialPago, FechaFinalPago y FechaPago de sus recibos."""
+    start: str
+    """Primer día pagado (FechaInicialPago)."""
+    end: str
+    """Último día pagado (FechaFinalPago)."""
+    payment_date: NotRequired[str]
+    """Día de pago (FechaPago); sin él, el último día del periodo."""
+
+
+class CreatePayrollApprovalParamsReceiptsItemIncidentsDisabilityPay(TypedDict):
+    """Si la empresa paga los disability_days del recibo: percepción 014 con su nodo Incapacidad. Exenta como previsión social con el límite de 7 UMA al año (art. 93 de la LISR); la de un riesgo de trabajo, toda."""
+    type: Literal["01", "02", "03", "04"]
+    """Tipo de incapacidad (c_TipoIncapacidad): 01 riesgo de trabajo, 02 enfermedad general, 03 maternidad, 04 licencia por cuidados médicos de hijos con cáncer."""
+    rate: float
+    """Lo que paga la empresa de cada día de incapacidad, como fracción del salario diario: 1 todo; 0.4 lo que completa el 60% que paga el IMSS."""
+
+
+# Retroactivo de un aumento: la diferencia de salario de los días ya pagados con el anterior, como percepción 001 (clave RET) gravada, que paga ISR con el sueldo del periodo (art. 96 de la LISR). Las cuotas IMSS de la diferencia las cubre la modificación de salario con su fecha en el SUA; el recibo no retiene la parte del trabajador (art. 38 de la LSS).
+CreatePayrollApprovalParamsReceiptsItemIncidentsRetroactive = TypedDict(
+    "CreatePayrollApprovalParamsReceiptsItemIncidentsRetroactive",
+    {
+        "from": "str",
+        "previous_salary": "float",
+        "days": "NotRequired[float]",
+    },
+)
+
+
+class CreatePayrollApprovalParamsReceiptsItemIncidentsBonusesItem(TypedDict):
+    type: Literal["010", "049", "028", "038"]
+    """010 premio de puntualidad, 049 premio de asistencia, 028 comisiones, 038 otro bono (c_TipoPercepcion)."""
+    amount: float
+    """Importe."""
+    concept: NotRequired[str]
+    """Concepto del pago (ConceptoPago), c_TipoContribuyenteSujetoRetencion."""
+
+
+class CreatePayrollApprovalParamsReceiptsItemIncidents(TypedDict):
+    """Incidencias del periodo, como en Nómina › Emitir recibos: horas extra, domingos, descansos y festivos trabajados, vacaciones, premios y comisiones. Fiscalisto calcula sus importes, su parte exenta y el ISR con el sueldo."""
+    double_hours: NotRequired[int]
+    """Horas extra dobles (pagadas al doble), horas completas: hasta 9 por semana en 2026 y 2027, 10 en 2028, 11 en 2029 y 12 desde 2030 (LFT arts. 66 y transitorio cuarto del decreto DOF 01-05-2026). Exentas la mitad, hasta 5 UMA por semana; todas si gana el salario mínimo (LISR art. 93 fr. I)."""
+    triple_hours: NotRequired[int]
+    """Horas extra triples, las que pasan de las dobles de la semana (LFT art. 68). Gravadas."""
+    overtime_days: NotRequired[int]
+    """Días en que se trabajaron las horas extra (nodo HorasExtra); uno por cada 3 horas si no lo manda."""
+    sundays: NotRequired[int]
+    """Domingos trabajados: prima dominical del 25% del salario diario por cada uno (LFT art. 71), exenta hasta 1 UMA por domingo."""
+    rest_days_worked: NotRequired[int]
+    """Días de descanso semanal que trabajó sin descansar otro en su lugar: salario doble por cada uno además del día (LFT art. 73). Exentos con las horas extra: la mitad, hasta 5 UMA por semana entre ambos; todo si gana el salario mínimo (LISR art. 93 fr. I)."""
+    holidays_worked: NotRequired[int]
+    """Días de descanso obligatorio que trabajó (1 de enero, 1 de mayo, 16 de septiembre, 25 de diciembre, los lunes del art. 74 y la jornada electoral): salario doble por cada uno además del día (LFT art. 75), exento como rest_days_worked."""
+    vacation_days: NotRequired[float]
+    """Días de vacaciones que disfrutó en el periodo (se pagan como sueldo dentro de days): su prima vacacional con el porcentaje del empleado, exenta hasta 15 UMA en el año."""
+    disability_pay: NotRequired[CreatePayrollApprovalParamsReceiptsItemIncidentsDisabilityPay]
+    """Si la empresa paga los disability_days del recibo: percepción 014 con su nodo Incapacidad. Exenta como previsión social con el límite de 7 UMA al año (art. 93 de la LISR); la de un riesgo de trabajo, toda."""
+    retroactive: NotRequired[CreatePayrollApprovalParamsReceiptsItemIncidentsRetroactive]
+    """Retroactivo de un aumento: la diferencia de salario de los días ya pagados con el anterior, como percepción 001 (clave RET) gravada, que paga ISR con el sueldo del periodo (art. 96 de la LISR). Las cuotas IMSS de la diferencia las cubre la modificación de salario con su fecha en el SUA; el recibo no retiene la parte del trabajador (art. 38 de la LSS)."""
+    bonuses: NotRequired[list[CreatePayrollApprovalParamsReceiptsItemIncidentsBonusesItem]]
+    """Premios, comisiones y bonos del periodo, gravados."""
+
+
+class CreatePayrollApprovalParamsReceiptsItem(TypedDict):
+    employee: str
+    """El empleado (emp_…) del emisor."""
+    days: NotRequired[float]
+    """Días pagados; sin él, todos los días que le tocan del periodo menos absences y disability_days."""
+    absences: NotRequired[int]
+    """Faltas del periodo (días sin goce de sueldo), de 0 a 31."""
+    disability_days: NotRequired[int]
+    """Días de incapacidad que expidió el IMSS en el periodo, de 0 a 31."""
+    incidents: NotRequired[CreatePayrollApprovalParamsReceiptsItemIncidents]
+    """Incidencias del periodo, como en Nómina › Emitir recibos: horas extra, domingos, descansos y festivos trabajados, vacaciones, premios y comisiones. Fiscalisto calcula sus importes, su parte exenta y el ISR con el sueldo."""
+
+
+class CreatePayrollApprovalParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    period: CreatePayrollApprovalParamsPeriod
+    """El periodo de pago de la nómina: FechaInicialPago, FechaFinalPago y FechaPago de sus recibos."""
+    receipts: list[CreatePayrollApprovalParamsReceiptsItem]
+    """El recibo de cada empleado de la nómina, como se timbraría con POST /v1/payroll_receipts. Todos de la misma periodicidad."""
+
+
+class ListPayrollApprovalsParams(TypedDict):
+    """Los parámetros de GET /v1/payroll_approvals."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    status: NotRequired[Literal["pending", "approved", "rejected", "withdrawn", "replaced"]]
+    """pending, approved, rejected, withdrawn o replaced."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 
