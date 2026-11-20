@@ -347,6 +347,9 @@ class ErrorCode:
     SANDBOX_INVALID: Final = "sandbox_invalid"
     """No se pudo crear el entorno de prueba: falta su nombre o la cuenta ya tiene 25 (borre uno que ya no use)."""
 
+    SAT_INVOICE_NOT_MARKABLE: Final = "sat_invoice_not_markable"
+    """Solo se marca como pagada una factura de ingreso recibida y vigente: una PPD que siga por pagar, o una PUE para anotar de dónde salió el dinero. El mensaje dice por qué esta no."""
+
     SAT_REFRESH_TOO_SOON: Final = "sat_refresh_too_soon"
     """Las declaraciones de ese emisor se consultaron en el SAT hace menos de 10 minutos (cada consulta entra al SAT con su e.firma). Retry-After dice cuántos segundos faltan; lo que ya trajo está en GET /v1/sat_declarations."""
 
@@ -539,6 +542,7 @@ ErrorCodeValue = Literal[
     "sales_order_invalid",
     "sales_order_not_deletable",
     "sandbox_invalid",
+    "sat_invoice_not_markable",
     "sat_refresh_too_soon",
     "sat_request_rejected",
     "sat_unavailable",

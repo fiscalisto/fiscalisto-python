@@ -300,6 +300,7 @@ if TYPE_CHECKING:
         MarkBankMovementParams,
         MarkInvoicePaidParams,
         MarkPurchaseReceiptInvoicedParams,
+        MarkSatInvoicePaidParams,
         MarkSupplierInvoicePaidParams,
         MatchBankTransactionParams,
         MaterialityInvoiceList,
@@ -6115,6 +6116,49 @@ class SatInvoicesResource:
         """
         result: SatInvoice = self._client.request(
             "POST", f"/v1/sat_invoices/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def mark_paid(
+        self,
+        id: str,
+        params: MarkSatInvoicePaidParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatInvoice:
+        """Marcar como pagada una factura recibida
+
+        Una factura PPD recibida que la empresa pagó (en efectivo, de caja chica, con un reembolso…) y cuyo proveedor no emitió el complemento de pago: sale de Por pagar como pagada sin complemento, con cuándo, cómo y de dónde se pagó. El SAT la sigue viendo sin pagar: el IVA no se acredita ni el gasto se deduce hasta que llegue el complemento. En una PUE recibida, que ya está pagada, solo anota de dónde salió el dinero (money_source). Lo marcado se ve en paid_otherwise.
+
+        POST /v1/sat_invoices/{id}/mark_paid
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/mark-sat-invoice-paid
+        """
+        result: SatInvoice = self._client.request(
+            "POST", f"/v1/sat_invoices/{_path(id)}/mark_paid", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def mark_unpaid(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatInvoice:
+        """Quitar la marca de pagada
+
+        Deshace mark_paid (o lo que marcó una regla de Pagos sin complemento): una PPD vuelve a Por pagar y una PUE pierde su origen del dinero. Una regla ya no la vuelve a marcar.
+
+        POST /v1/sat_invoices/{id}/mark_unpaid
+        https://fiscalisto.com/docs/api/referencia/descargas-del-sat/mark-sat-invoice-unpaid
+        """
+        result: SatInvoice = self._client.request(
+            "POST", f"/v1/sat_invoices/{_path(id)}/mark_unpaid", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
