@@ -26,6 +26,33 @@ __all__ = [
     "AdvanceTestClockParams",
     "AnnualAdjustment",
     "AnnualAdjustmentEmployeesItem",
+    "AnnualReturn",
+    "AnnualReturnCaptured",
+    "AnnualReturnCapturedItemsItem",
+    "AnnualReturnCapturedLossesItem",
+    "AnnualReturnCapturedPendingDeductionsItem",
+    "AnnualReturnCarryForward",
+    "AnnualReturnCarryForwardLossesItem",
+    "AnnualReturnCarryForwardPendingDeductionsItem",
+    "AnnualReturnItemsItem",
+    "AnnualReturnLimit78b",
+    "AnnualReturnLimit78bPendingDeductionsItem",
+    "AnnualReturnLosses",
+    "AnnualReturnLossesRowsItem",
+    "AnnualReturnNetTaxProfit",
+    "AnnualReturnNewLoss",
+    "AnnualReturnNextYear",
+    "AnnualReturnNextYearLossesItem",
+    "AnnualReturnNextYearPendingDeductionsItem",
+    "AnnualReturnPtu",
+    "AnnualReturnTaxAccounts",
+    "AnnualReturnTaxAccountsMovementsItem",
+    "AnnualReturnTaxAccountsMovementsItemBalances",
+    "AnnualReturnTaxAccountsNextYear",
+    "AnnualReturnTaxAccountsNextYearNegativeNetTaxProfit",
+    "AnnualReturnTaxAccountsNextYearPendingDividendTaxItem",
+    "AnnualReturnTaxAccountsOpening",
+    "AnnualReturnTaxAccountsYearEnd",
     "ApiError",
     "ApiErrorError",
     "ApplyAdvanceParams",
@@ -73,6 +100,7 @@ __all__ = [
     "CancelSalesOrderDeliveryParams",
     "CancelSalesOrderParams",
     "CancelSatRetentionParams",
+    "CarryForwardAnnualReturnParams",
     "CashFlow",
     "CashFlowFinancing",
     "CashFlowFinancingLinesItem",
@@ -460,6 +488,7 @@ __all__ = [
     "GeneralLedgerAccountsItem",
     "GeneralLedgerAccountsItemMovementsItem",
     "GetAnnualAdjustmentParams",
+    "GetAnnualReturnParams",
     "GetAttendanceParams",
     "GetBudgetParams",
     "GetCashFlowParams",
@@ -958,6 +987,14 @@ __all__ = [
     "SatReviewRequestsItem",
     "SatRiskCheck",
     "SatRiskCheckChecksItem",
+    "SaveAnnualReturnParams",
+    "SaveAnnualReturnParamsItemsItem",
+    "SaveAnnualReturnParamsLossesItem",
+    "SaveAnnualReturnParamsPendingDeductionsItem",
+    "SaveAnnualReturnParamsTaxAccounts",
+    "SaveAnnualReturnParamsTaxAccountsMovementsItem",
+    "SaveAnnualReturnParamsTaxAccountsOpening",
+    "SaveAnnualReturnParamsTaxAccountsPendingDividendTaxItem",
     "SaveBookDepreciationRateParams",
     "SaveBudgetParams",
     "SaveBudgetParamsLinesItem",
@@ -7144,6 +7181,423 @@ class InflationAccounts(TypedDict):
     """El emisor."""
     accounts: list[InflationAccountsAccountsItem]
     """Las cuentas que cambió, con cómo cuentan ahora."""
+
+
+class AnnualReturnItemsItem(TypedDict):
+    concept: str
+    """Concepto del pago (ConceptoPago), c_TipoContribuyenteSujetoRetencion."""
+    type: Literal["taxable_income", "non_deductible_expense", "tax_deduction", "non_taxable_income"]
+    """taxable_income (ingreso fiscal no contable, suma), non_deductible_expense (gasto contable no deducible, suma), tax_deduction (deducción fiscal no contable, resta) o non_taxable_income (ingreso contable no acumulable, resta)."""
+    amount: float
+    """Importe."""
+    legal_basis: str
+    """El artículo de la ley."""
+    source: Literal["books", "cfdi", "payroll", "calculation", "captured"]
+    """De dónde sale: books (cuentas de los libros por su código agrupador), cfdi, payroll (nómina), calculation (ajuste por inflación, deducción de inversiones) o captured."""
+    reduces_net_tax_profit: bool
+    """true si resta de la utilidad fiscal neta (artículo 77)."""
+
+
+class AnnualReturnLimit78bPendingDeductionsItem(TypedDict):
+    year: int
+    """El ejercicio en que nació."""
+    amount: float
+    """Lo que quedaba, actualizado hasta updated_to."""
+    updated_to: str
+    """AAAA-MM de su última actualización."""
+    factor: float
+    """El factor de actualización hasta junio del año (artículo 57, cuarto párrafo; CFF 17-A), al diezmilésimo y nunca menor que 1; 1 si el año no aplica nada."""
+    updated_amount: float
+    """amount por factor."""
+    applied: float
+    """Lo aplicado este año."""
+    remaining: float
+    """Lo que queda para los años siguientes."""
+    remaining_updated_to: str
+    """AAAA-MM hasta el que está remaining."""
+    last_year: int
+    """El último ejercicio en que se puede aplicar."""
+    expired: bool
+    """true si pasó su plazo: se perdió."""
+    estimated: bool
+    """true si algún INPC aún no se publica."""
+
+
+class AnnualReturnLimit78b(TypedDict):
+    total: float
+    """Las deducciones del año más las pendientes de años anteriores."""
+    threshold: float
+    """El 96.67% de los ingresos acumulables."""
+    fraction: Literal["I", "II"]
+    """I: total hasta threshold, se deduce el 99%. II: total mayor, se deduce threshold."""
+    limit: float
+    """Lo que se deduce."""
+    pending_deductions: list[AnnualReturnLimit78bPendingDeductionsItem]
+    """Las deducciones pendientes de años anteriores, aplicadas primero."""
+    not_deducted: float
+    """Lo de este año que pasa a los 20 ejercicios siguientes."""
+
+
+class AnnualReturnNewLoss(TypedDict):
+    year: int
+    """El ejercicio en que nació."""
+    amount: float
+    """Lo que queda por aplicar, actualizado hasta updated_to."""
+    updated_to: str
+    """AAAA-MM de su última actualización."""
+
+
+class AnnualReturnLossesRowsItem(TypedDict):
+    year: int
+    """El ejercicio en que nació."""
+    amount: float
+    """Lo que quedaba, actualizado hasta updated_to."""
+    updated_to: str
+    """AAAA-MM de su última actualización."""
+    factor: float
+    """El factor de actualización hasta junio del año (artículo 57, cuarto párrafo; CFF 17-A), al diezmilésimo y nunca menor que 1; 1 si el año no aplica nada."""
+    updated_amount: float
+    """amount por factor."""
+    applied: float
+    """Lo aplicado este año."""
+    remaining: float
+    """Lo que queda para los años siguientes."""
+    remaining_updated_to: str
+    """AAAA-MM hasta el que está remaining."""
+    last_year: int
+    """El último ejercicio en que se puede aplicar."""
+    expired: bool
+    """true si pasó su plazo: se perdió."""
+    estimated: bool
+    """true si algún INPC aún no se publica."""
+
+
+class AnnualReturnLosses(TypedDict):
+    """Las pérdidas de ejercicios anteriores, de la más vieja a la más nueva."""
+    applied: float
+    """Lo aplicado de pérdidas anteriores."""
+    cap: float
+    """Lo más que se podía aplicar: la utilidad fiscal, o la mitad con el artículo 78-C."""
+    term_years: int
+    """El plazo para aplicarlas: 10 años, o 20 con el Capítulo X."""
+    rows: list[AnnualReturnLossesRowsItem]
+    """Cada pérdida, con lo que se aplicó."""
+
+
+class AnnualReturnPtu(TypedDict):
+    """La base de la PTU."""
+    taxable_base: float
+    """La renta gravable (artículo 9, cuarto párrafo)."""
+    amount: float
+    """El 10% para los trabajadores."""
+
+
+class AnnualReturnNetTaxProfit(TypedDict):
+    """La utilidad fiscal neta."""
+    non_deductibles: float
+    """Las partidas no deducibles que restan."""
+    dividend_tax_reduction: float
+    """dividend_tax_credited entre 0.4286, que resta de la utilidad fiscal neta (artículo 10, fracción II)."""
+    amount: float
+    """La utilidad fiscal neta del ejercicio (artículo 77); negativa, disminuye la CUFIN."""
+
+
+class AnnualReturnTaxAccountsOpening(TypedDict):
+    """Los saldos al inicio del año."""
+    cufin: float
+    """La CUFIN de 2014 en adelante."""
+    cufin_2013: float
+    """La CUFIN hasta 2013."""
+    cuca: float
+    """La cuenta de capital de aportación."""
+    cufin_updated_to: str
+    """AAAA-MM de la última actualización de la CUFIN."""
+    cuca_updated_to: str
+    """AAAA-MM de la última actualización de la CUCA."""
+
+
+class AnnualReturnTaxAccountsMovementsItemBalances(TypedDict):
+    """Los saldos después del movimiento."""
+    cufin: float
+    """La CUFIN de 2014 en adelante."""
+    cufin_2013: float
+    """La CUFIN hasta 2013."""
+    cuca: float
+    """La cuenta de capital de aportación."""
+    cufin_updated_to: str
+    """AAAA-MM de la última actualización de la CUFIN."""
+    cuca_updated_to: str
+    """AAAA-MM de la última actualización de la CUCA."""
+
+
+class AnnualReturnTaxAccountsMovementsItem(TypedDict):
+    date: str
+    """El día del movimiento."""
+    type: Literal["dividend_paid", "dividend_received", "capital_contribution", "capital_reduction"]
+    """El tipo de movimiento."""
+    amount: float
+    """Lo pagado, recibido o aportado."""
+    account: Literal["cufin", "cufin_2013"]
+    """De qué CUFIN sale primero."""
+    individual: bool
+    """true si es a una persona física o del extranjero."""
+    factor: float
+    """El factor con que se actualizó la cuenta al mes del movimiento (artículos 77 y 78)."""
+    estimated: bool
+    """true si algún INPC aún no se publica."""
+    distributed_profit: float
+    """La utilidad distribuida: el dividendo, o la del artículo 78 en un reembolso."""
+    from_cufin: float
+    """Lo que sale de la CUFIN de 2014 en adelante."""
+    from_cufin_2013: float
+    """Lo que sale de la CUFIN hasta 2013."""
+    not_from_cufin: float
+    """Lo que no sale de la CUFIN: paga el ISR del artículo 10."""
+    dividend_tax: float
+    """El ISR del artículo 10: not_from_cufin × 1.4286 × 30%."""
+    dividend_tax_due: str | None
+    """El día 17 del mes siguiente, cuando se entera (artículo 10)."""
+    withholding: float
+    """El 10% a retener a una persona física (artículo 140), sobre lo de 2014 en adelante."""
+    cuca_per_share: float | None
+    """capital_reduction: la CUCA por acción a esa fecha."""
+    from_cuca: float
+    """capital_reduction: lo que sale de la CUCA."""
+    distributed_profit_fraction_i: float
+    """capital_reduction: la utilidad distribuida de la fracción I."""
+    distributed_profit_fraction_ii: float
+    """capital_reduction: la de la fracción II, que después cuenta como aportación."""
+    balances: AnnualReturnTaxAccountsMovementsItemBalances
+    """Los saldos después del movimiento."""
+
+
+class AnnualReturnTaxAccountsYearEnd(TypedDict):
+    """Los saldos al 31 de diciembre, actualizados y con la utilidad fiscal neta del año."""
+    cufin: float
+    """La CUFIN de 2014 en adelante."""
+    cufin_2013: float
+    """La CUFIN hasta 2013."""
+    cuca: float
+    """La cuenta de capital de aportación."""
+    cufin_updated_to: str
+    """AAAA-MM de la última actualización de la CUFIN."""
+    cuca_updated_to: str
+    """AAAA-MM de la última actualización de la CUCA."""
+
+
+class AnnualReturnTaxAccountsNextYearPendingDividendTaxItem(TypedDict):
+    year: int
+    """El año en que se pagó."""
+    amount: float
+    """Lo que falta acreditar."""
+
+
+class AnnualReturnTaxAccountsNextYearNegativeNetTaxProfit(TypedDict):
+    amount: float
+    """Lo que falta disminuir."""
+    updated_to: str
+    """AAAA-MM de su última actualización."""
+
+
+class AnnualReturnTaxAccountsNextYear(TypedDict):
+    """Lo que pasa al año siguiente además de los saldos."""
+    pending_dividend_tax: list[AnnualReturnTaxAccountsNextYearPendingDividendTaxItem]
+    """El ISR del artículo 10 que se acredita en los años siguientes (fracción I)."""
+    negative_net_tax_profit: AnnualReturnTaxAccountsNextYearNegativeNetTaxProfit | None
+    """Una utilidad fiscal neta negativa que la CUFIN no alcanzó (artículo 77, quinto párrafo)."""
+
+
+class AnnualReturnTaxAccounts(TypedDict):
+    """La CUFIN (artículo 77) y la CUCA (artículo 78) del año, con sus dividendos y movimientos de capital."""
+    opening_missing: bool
+    """true si no se han capturado los saldos al cierre del año anterior: se calcula desde cero."""
+    opening: AnnualReturnTaxAccountsOpening
+    """Los saldos al inicio del año."""
+    movements: list[AnnualReturnTaxAccountsMovementsItem]
+    """Cada movimiento del año, en orden de fecha."""
+    dividend_tax: float
+    """El ISR del artículo 10 de los movimientos del año."""
+    year_end: AnnualReturnTaxAccountsYearEnd
+    """Los saldos al 31 de diciembre, actualizados y con la utilidad fiscal neta del año."""
+    negative_net_tax_profit_applied: float
+    """Lo que una utilidad fiscal neta negativa de años anteriores restó a la de este año."""
+    next_year: AnnualReturnTaxAccountsNextYear
+    """Lo que pasa al año siguiente además de los saldos."""
+
+
+class AnnualReturnNextYearLossesItem(TypedDict):
+    year: int
+    """El ejercicio en que nació."""
+    amount: float
+    """Lo que queda por aplicar, actualizado hasta updated_to."""
+    updated_to: str
+    """AAAA-MM de su última actualización."""
+
+
+class AnnualReturnNextYearPendingDeductionsItem(TypedDict):
+    year: int
+    """El ejercicio en que nació."""
+    amount: float
+    """Lo que queda por aplicar, actualizado hasta updated_to."""
+    updated_to: str
+    """AAAA-MM de su última actualización."""
+
+
+class AnnualReturnNextYear(TypedDict):
+    """Lo que pasa al año siguiente: las pérdidas que quedan (con la de este año) y desde 2027 las deducciones pendientes del artículo 78-B."""
+    losses: list[AnnualReturnNextYearLossesItem]
+    """Las pérdidas que quedan."""
+    pending_deductions: list[AnnualReturnNextYearPendingDeductionsItem]
+    """Las deducciones pendientes del artículo 78-B."""
+
+
+class AnnualReturnCapturedLossesItem(TypedDict):
+    year: int
+    """El ejercicio en que nació."""
+    amount: float
+    """Lo que queda por aplicar, actualizado hasta updated_to."""
+    updated_to: str
+    """AAAA-MM de su última actualización."""
+
+
+class AnnualReturnCapturedPendingDeductionsItem(TypedDict):
+    year: int
+    """El ejercicio en que nació."""
+    amount: float
+    """Lo que queda por aplicar, actualizado hasta updated_to."""
+    updated_to: str
+    """AAAA-MM de su última actualización."""
+
+
+class AnnualReturnCapturedItemsItem(TypedDict):
+    concept: str
+    """Concepto del pago (ConceptoPago), c_TipoContribuyenteSujetoRetencion."""
+    type: Literal["taxable_income", "non_deductible_expense", "tax_deduction", "non_taxable_income"]
+    """taxable_income (ingreso fiscal no contable, suma), non_deductible_expense (gasto contable no deducible, suma), tax_deduction (deducción fiscal no contable, resta) o non_taxable_income (ingreso contable no acumulable, resta)."""
+    amount: float
+    """Importe."""
+    reduces_net_tax_profit: bool
+    """true si resta de la utilidad fiscal neta."""
+
+
+class AnnualReturnCaptured(TypedDict):
+    """Lo capturado con POST /v1/accounting/annual_returns/{year}."""
+    losses: list[AnnualReturnCapturedLossesItem]
+    """Las pérdidas capturadas."""
+    pending_deductions: list[AnnualReturnCapturedPendingDeductionsItem]
+    """Las deducciones pendientes capturadas."""
+    items: list[AnnualReturnCapturedItemsItem]
+    """Conceptos (Conceptos), al menos uno."""
+    exception_78e: bool
+    """true si está en una excepción del artículo 78-E."""
+    from_month: int
+    """Mes inicial (MesIni), 1 a 12."""
+
+
+class AnnualReturn(TypedDict):
+    """La declaración anual de una persona moral del régimen general, desde su contabilidad: un papel de trabajo para su contador."""
+    object: Literal["annual_return"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    year: int
+    """El ejercicio."""
+    through_month: int
+    """El último mes calculado."""
+    estimated: bool
+    """true si es una estimación: el año sigue o through_month es menor que 12."""
+    book_profit: float
+    """La utilidad contable (negativa si es pérdida) antes de la conciliación."""
+    items: list[AnnualReturnItemsItem]
+    """Las partidas de la conciliación contable-fiscal."""
+    taxable_income: float
+    """Los ingresos acumulables."""
+    nominal_income: float
+    """Los ingresos nominales del artículo 14: los acumulables sin el ajuste anual por inflación acumulable."""
+    deductions: float
+    """Las deducciones autorizadas, después del límite del artículo 78-B."""
+    subject_to_78a: bool
+    """true si le aplican los límites del Capítulo X (desde 2027: más de $50 millones de ingresos, con utilidad fiscal y sin excepción del artículo 78-E)."""
+    limit_78b: AnnualReturnLimit78b | None
+    """El límite del artículo 78-B; null si no aplica."""
+    ptu_paid: float
+    """La PTU pagada en el ejercicio (artículo 9)."""
+    tax_profit: float
+    """La utilidad fiscal (0 si hubo pérdida)."""
+    tax_loss: float
+    """La pérdida fiscal (0 si hubo utilidad)."""
+    new_loss: AnnualReturnNewLoss | None
+    """La pérdida de este año actualizada al último mes del ejercicio (artículo 57), lista para el siguiente."""
+    losses: AnnualReturnLosses
+    """Las pérdidas de ejercicios anteriores, de la más vieja a la más nueva."""
+    tax_result: float
+    """El resultado fiscal."""
+    income_tax: float
+    """El ISR del ejercicio: 30% del resultado fiscal."""
+    provisional_payments: float
+    """Los pagos provisionales del ejercicio."""
+    missing_provisional_months: list[int]
+    """Los meses sin pago provisional capturado ni leído del SAT."""
+    withheld_tax: float
+    """El ISR que le retuvieron."""
+    balance: float
+    """Positivo: ISR a cargo. Negativo: saldo a favor."""
+    profit_ratio: float | None
+    """El coeficiente de utilidad para los pagos provisionales del año siguiente (artículo 14), al diezmilésimo. null sin utilidad fiscal: se usa el del último ejercicio que la tuvo, de hasta cinco años atrás."""
+    ptu: AnnualReturnPtu
+    """La base de la PTU."""
+    dividend_tax_credited: float
+    """El ISR del artículo 10 (dividendos que no salieron de la CUFIN, de este año y los dos anteriores) acreditado contra el ISR del ejercicio; ya restado en balance."""
+    net_tax_profit: AnnualReturnNetTaxProfit
+    """La utilidad fiscal neta."""
+    tax_accounts: AnnualReturnTaxAccounts
+    """La CUFIN (artículo 77) y la CUCA (artículo 78) del año, con sus dividendos y movimientos de capital."""
+    next_year: AnnualReturnNextYear
+    """Lo que pasa al año siguiente: las pérdidas que quedan (con la de este año) y desde 2027 las deducciones pendientes del artículo 78-B."""
+    captured: AnnualReturnCaptured
+    """Lo capturado con POST /v1/accounting/annual_returns/{year}."""
+
+
+class AnnualReturnCarryForwardLossesItem(TypedDict):
+    year: int
+    """El ejercicio en que nació."""
+    amount: float
+    """Lo que queda por aplicar, actualizado hasta updated_to."""
+    updated_to: str
+    """AAAA-MM de su última actualización."""
+
+
+class AnnualReturnCarryForwardPendingDeductionsItem(TypedDict):
+    year: int
+    """El ejercicio en que nació."""
+    amount: float
+    """Lo que queda por aplicar, actualizado hasta updated_to."""
+    updated_to: str
+    """AAAA-MM de su última actualización."""
+
+
+class AnnualReturnCarryForward(TypedDict):
+    """Lo que pasó al año siguiente de la declaración anual."""
+    object: Literal["annual_return_carry_forward"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    year: int
+    """El ejercicio del que salen."""
+    to_year: int
+    """El ejercicio al que pasan."""
+    losses: list[AnnualReturnCarryForwardLossesItem]
+    """Las pérdidas que pasaron."""
+    pending_deductions: list[AnnualReturnCarryForwardPendingDeductionsItem]
+    """Las deducciones pendientes del artículo 78-B que pasaron."""
+    total_losses: float
+    """La suma de las pérdidas que pasaron."""
+    provisional_payments_updated: bool
+    """true si se pusieron en los pagos provisionales del año siguiente (no tenían pérdidas en Impuestos)."""
 
 
 class ChartTemplateAccountsItem(TypedDict):
@@ -17031,6 +17485,114 @@ class SaveInflationAccountsParams(TypedDict):
     """El emisor (iss_…). Por omisión, su único emisor."""
     accounts: list[SaveInflationAccountsParamsAccountsItem]
     """Las cuentas que cambia."""
+
+
+class GetAnnualReturnParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/annual_returns/{year}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    through_month: NotRequired[int]
+    """El último mes, de 1 a 12, para estimar el año en curso. Por omisión 12 en un año pasado y el mes actual en el año en curso."""
+
+
+class SaveAnnualReturnParamsLossesItem(TypedDict):
+    year: int
+    """El ejercicio en que nació."""
+    amount: float
+    """Lo que queda por aplicar, actualizado hasta updated_to."""
+    updated_to: str
+    """AAAA-MM de su última actualización: diciembre de su ejercicio si aún no se aplica nada."""
+
+
+class SaveAnnualReturnParamsPendingDeductionsItem(TypedDict):
+    year: int
+    """El ejercicio en que nació."""
+    amount: float
+    """Lo que queda por aplicar, actualizado hasta updated_to."""
+    updated_to: str
+    """AAAA-MM de su última actualización: diciembre de su ejercicio si aún no se aplica nada."""
+
+
+class SaveAnnualReturnParamsItemsItem(TypedDict):
+    concept: str
+    """Concepto del pago (ConceptoPago), c_TipoContribuyenteSujetoRetencion."""
+    type: Literal["taxable_income", "non_deductible_expense", "tax_deduction", "non_taxable_income"]
+    """taxable_income (ingreso fiscal no contable), non_deductible_expense (gasto contable no deducible), tax_deduction (deducción fiscal no contable) o non_taxable_income (ingreso contable no acumulable, como dividendos de personas morales mexicanas)."""
+    amount: float
+    """Importe."""
+    reduces_net_tax_profit: NotRequired[bool]
+    """true en un gasto no deducible que resta de la utilidad fiscal neta (artículo 77)."""
+
+
+class SaveAnnualReturnParamsTaxAccountsOpening(TypedDict):
+    cufin: float
+    """La CUFIN de utilidades de 2014 en adelante al cierre del año anterior."""
+    cufin_2013: NotRequired[float]
+    """La CUFIN de utilidades hasta 2013 (transitorio 2014, fr. XXX): sus dividendos no pagan el 10% de las personas físicas."""
+    cuca: float
+    """La cuenta de capital de aportación (artículo 78)."""
+    cufin_updated_to: str
+    """AAAA-MM de la última actualización de la CUFIN, antes de este año."""
+    cuca_updated_to: str
+    """AAAA-MM de la última actualización de la CUCA, antes de este año."""
+
+
+class SaveAnnualReturnParamsTaxAccountsMovementsItem(TypedDict):
+    date: str
+    """El día en que se pagó o se recibió, en este año."""
+    type: Literal["dividend_paid", "dividend_received", "capital_contribution", "capital_reduction"]
+    """dividend_paid (dividendo pagado), dividend_received (de otra persona moral mexicana, suma a la CUFIN), capital_contribution (aportación, suma a la CUCA) o capital_reduction (reembolso o reducción de capital, artículo 78)."""
+    amount: float
+    """Importe."""
+    account: NotRequired[Literal["cufin", "cufin_2013"]]
+    """Un dividendo o reembolso: de qué CUFIN sale primero (por omisión cufin, la de 2014 en adelante)."""
+    individual: NotRequired[bool]
+    """true si se paga a una persona física o a un residente en el extranjero: se le retiene el 10% (artículo 140)."""
+    shares: NotRequired[float]
+    """capital_reduction: las acciones que se reembolsan."""
+    total_shares: NotRequired[float]
+    """capital_reduction: el total de acciones a esa fecha."""
+    equity: NotRequired[float]
+    """capital_reduction: el capital contable del estado de posición financiera aprobado, actualizado (artículo 78, fracción II)."""
+
+
+class SaveAnnualReturnParamsTaxAccountsPendingDividendTaxItem(TypedDict):
+    year: int
+    """Año (Ejercicio)."""
+    amount: float
+    """Importe."""
+
+
+class SaveAnnualReturnParamsTaxAccounts(TypedDict):
+    """La CUFIN y la CUCA (artículos 77 y 78): saldos iniciales y movimientos del año. Sin este campo se quedan los guardados."""
+    opening: SaveAnnualReturnParamsTaxAccountsOpening | None
+    """Los saldos al cierre del año anterior; null si no se conocen. carry_forward los pone en el año siguiente."""
+    movements: NotRequired[list[SaveAnnualReturnParamsTaxAccountsMovementsItem]]
+    """Los dividendos, aportaciones y reembolsos del año."""
+    pending_dividend_tax: NotRequired[list[SaveAnnualReturnParamsTaxAccountsPendingDividendTaxItem]]
+    """El ISR del artículo 10 pagado en los dos años anteriores que falta acreditar."""
+
+
+class SaveAnnualReturnParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    losses: list[SaveAnnualReturnParamsLossesItem]
+    """Las pérdidas fiscales de ejercicios anteriores pendientes de aplicar (artículo 57), una por ejercicio. Reemplaza las capturadas."""
+    pending_deductions: NotRequired[list[SaveAnnualReturnParamsPendingDeductionsItem]]
+    """Desde 2027: las deducciones que el límite del artículo 78-B dejó para los 20 ejercicios siguientes."""
+    items: NotRequired[list[SaveAnnualReturnParamsItemsItem]]
+    """Las partidas de la conciliación que los libros, los CFDI y la nómina no dicen."""
+    exception_78e: NotRequired[bool]
+    """true si está en una de las excepciones del artículo 78-E: no le aplican los límites de los artículos 78-A a 78-D."""
+    from_month: NotRequired[int]
+    """El primer mes del ejercicio: 1, o el mes en que empezó si fue en el año."""
+    tax_accounts: NotRequired[SaveAnnualReturnParamsTaxAccounts]
+    """La CUFIN y la CUCA (artículos 77 y 78): saldos iniciales y movimientos del año. Sin este campo se quedan los guardados."""
+
+
+class CarryForwardAnnualReturnParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
 
 
 class GetDepreciationReconciliationParams(TypedDict):

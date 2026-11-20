@@ -314,6 +314,9 @@ class ErrorCode:
     RECURRING_PAUSED: Final = "recurring_paused"
     """La factura recurrente está en pausa: reanúdela con active: true para timbrarla."""
 
+    REGIME_NOT_APPLICABLE: Final = "regime_not_applicable"
+    """Ese emisor no presenta la declaración anual de persona moral del régimen general: es persona física, RESICO, no lucrativa o tiene otro régimen de ISR en Impuestos."""
+
     REQUEST_IN_PROGRESS: Final = "request_in_progress"
     """Otra solicitud con la misma Idempotency-Key sigue en proceso, otra solicitud está cambiando el mismo objeto (dos actualizaciones del mismo cliente a la vez esperan su turno hasta 15 segundos), u otro comprobante que se timbra a la vez no terminó en unos segundos (otro recibo de nómina del mismo empleado, otro pago de la misma factura) (409, con Retry-After). Repítala en un momento con la misma llave: contestará lo mismo."""
 
@@ -531,6 +534,7 @@ ErrorCodeValue = Literal[
     "recurring_limit",
     "recurring_not_due",
     "recurring_paused",
+    "regime_not_applicable",
     "request_in_progress",
     "resource_missing",
     "retention_invalid",
