@@ -195,6 +195,7 @@ if TYPE_CHECKING:
         GetInvoiceXmlParams,
         GetOpeningBalancesParams,
         GetPayrollAccumulatedParams,
+        GetPayrollCalendarParams,
         GetPayrollCostParams,
         GetPayrollProvisionParams,
         GetPayrollTaxParams,
@@ -299,6 +300,7 @@ if TYPE_CHECKING:
         ManualJournalEntry,
         MarkBankMovementParams,
         MarkInvoicePaidParams,
+        MarkPayrollCalendarEventParams,
         MarkPurchaseReceiptInvoicedParams,
         MarkSatInvoicePaidParams,
         MarkSupplierInvoicePaidParams,
@@ -314,6 +316,8 @@ if TYPE_CHECKING:
         PayrollApproval,
         PayrollBankFile,
         PayrollBatch,
+        PayrollCalendar,
+        PayrollCalendarEvent,
         PayrollCost,
         PayrollProvision,
         PayrollReceiptPreview,
@@ -3464,6 +3468,54 @@ class PayrollReportsResource:
         """
         result: PayrollCost = self._client.request(
             "GET", "/v1/payroll_reports/cost", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PayrollCalendarResource:
+    """Nómina: fiscalisto.payroll_calendar."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetPayrollCalendarParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollCalendar:
+        """Calendario de nómina
+
+        Como «Nómina › Calendario» de la app: cada nómina en su fecha de pago (con cuántos de sus recibos están timbrados y el último día para timbrarlos), y lo que se paga por ella, con el artículo de la ley de cada fecha: cuotas del IMSS (día 17 del mes siguiente, LSS art. 39), RCV e Infonavit (bimestrales, día 17), impuesto sobre nómina de cada estado donde trabajan sus empleados, aguinaldo (antes del 20 de diciembre), PTU, prima de riesgo de trabajo (febrero) y ajuste anual. Una fecha de pago al IMSS que cae en día inhábil o viernes pasa al siguiente día hábil (CFF art. 12, RACERF art. 3).
+
+        GET /v1/payroll_calendar
+        https://fiscalisto.com/docs/api/referencia/nomina/get-payroll-calendar
+        """
+        result: PayrollCalendar = self._client.request(
+            "GET", "/v1/payroll_calendar", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def mark(
+        self,
+        params: MarkPayrollCalendarEventParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollCalendarEvent:
+        """Marcar un pago de nómina como pagado
+
+        Marca (paid true) o desmarca (false) un pago del calendario de nómina: imss, rcv_infonavit, isn, aguinaldo, ptu, prima_riesgo o ajuste_anual, con su key como lo da GET /v1/payroll_calendar. Una nómina (pago) queda hecha al timbrar sus recibos.
+
+        POST /v1/payroll_calendar/mark
+        https://fiscalisto.com/docs/api/referencia/nomina/mark-payroll-calendar-event
+        """
+        result: PayrollCalendarEvent = self._client.request(
+            "POST", "/v1/payroll_calendar/mark", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -9597,6 +9649,11 @@ class FiscalistoApi(Core):
     def payroll_reports(self) -> PayrollReportsResource:
         """Nómina."""
         return PayrollReportsResource(self)
+
+    @cached_property
+    def payroll_calendar(self) -> PayrollCalendarResource:
+        """Nómina."""
+        return PayrollCalendarResource(self)
 
     @cached_property
     def invoice_batches(self) -> InvoiceBatchesResource:

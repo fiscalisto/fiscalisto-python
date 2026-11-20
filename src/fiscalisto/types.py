@@ -491,6 +491,7 @@ __all__ = [
     "GetInvoiceXmlParams",
     "GetOpeningBalancesParams",
     "GetPayrollAccumulatedParams",
+    "GetPayrollCalendarParams",
     "GetPayrollCostParams",
     "GetPayrollProvisionParams",
     "GetPayrollTaxParams",
@@ -720,6 +721,7 @@ __all__ = [
     "ManualJournalEntryList",
     "MarkBankMovementParams",
     "MarkInvoicePaidParams",
+    "MarkPayrollCalendarEventParams",
     "MarkPurchaseReceiptInvoicedParams",
     "MarkSatInvoicePaidParams",
     "MarkSupplierInvoicePaidParams",
@@ -755,6 +757,10 @@ __all__ = [
     "PayrollBatchList",
     "PayrollBatchReceiptsItem",
     "PayrollBatchReceiptsItemError",
+    "PayrollCalendar",
+    "PayrollCalendarEvent",
+    "PayrollCalendarEventPayroll",
+    "PayrollCalendarEventPayrollPeriod",
     "PayrollCost",
     "PayrollCostMonthsItem",
     "PayrollCostTotals",
@@ -3851,6 +3857,71 @@ class PayrollTaxSettings(TypedDict):
     """Las percepciones que no suman a la base; null, las comunes."""
     state_options: dict[str, str]
     """La opción de tasa de cada estado, por su c_Estado."""
+    due_days: dict[str, int]
+    """El día del mes siguiente en que se paga el impuesto de cada estado que lo indicó, por su c_Estado; los demás, el de su ley."""
+
+
+class PayrollCalendarEventPayrollPeriod(TypedDict):
+    """El periodo de pago: FechaInicialPago, FechaFinalPago y FechaPago de sus recibos."""
+    start: str
+    """FechaInicialPago."""
+    end: str
+    """FechaFinalPago."""
+    payment_date: str
+    """FechaPago."""
+
+
+class PayrollCalendarEventPayroll(TypedDict):
+    periodicity: str
+    """c_PeriodicidadPago."""
+    period: PayrollCalendarEventPayrollPeriod
+    """El periodo de pago: FechaInicialPago, FechaFinalPago y FechaPago de sus recibos."""
+    stamp_by: str
+    """El último día para timbrar sus recibos (RMF 2.7.5.1: 3 a 11 días hábiles después del pago, según cuántos trabajadores)."""
+    employees: int
+    """Los empleados que paga ese periodo."""
+    stamped: int
+    """Los que ya tienen su recibo timbrado."""
+
+
+class PayrollCalendarEvent(TypedDict):
+    """Una fecha del calendario de nómina."""
+    object: Literal["payroll_calendar_event"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    obligation: Literal["pago", "imss", "rcv_infonavit", "isn", "aguinaldo", "ptu", "prima_riesgo", "ajuste_anual"]
+    """pago (una nómina, en su fecha de pago), imss (cuotas del mes, LSS art. 39), rcv_infonavit (bimestrales), isn (impuesto sobre nómina de un estado), aguinaldo (LFT art. 87), ptu (LFT art. 122), prima_riesgo (determinación anual, RACERF art. 32) o ajuste_anual (LISR art. 97)."""
+    key: str
+    """Lo identifica junto con obligation: 2026-11 (mes), 2026-B6 (bimestre), 2026 (año), 2026-11:CMX (ISN de un estado) o 2026-11-16/2026-11-30:04 (una nómina)."""
+    title: str
+    """Qué es, como lo dice la app."""
+    due_date: str
+    """El último día para pagarlo (YYYY-MM-DD), ya movido al siguiente día hábil cuando la ley lo mueve."""
+    basis: str
+    """El artículo de la ley que da la fecha."""
+    to_confirm: str | None
+    """Si se debe depende de algo que no sabemos (una PTU sin utilidad, una prima que no cambió) o falta el día de pago del ISN de un estado: qué confirmar. No se avisa."""
+    paid: bool
+    """Marcado como pagado; una nómina, cuando todos sus recibos están timbrados."""
+    paid_at: str | None
+    """Cuándo se marcó pagado (ISO 8601); una nómina timbrada, su fecha de pago."""
+    state: str | None
+    """El c_Estado de un isn."""
+    payroll: PayrollCalendarEventPayroll | None
+    """Una nómina (obligation pago): su periodo y cuántos recibos van."""
+
+
+class PayrollCalendar(TypedDict):
+    """El calendario de nómina del emisor, por fecha."""
+    object: Literal["payroll_calendar"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    today: str
+    """Hoy en la Ciudad de México (YYYY-MM-DD)."""
+    events: list[PayrollCalendarEvent]
+    """Eventos que quiere recibir, o ["*"] para todos (por omisión). La lista con cuándo llega cada uno: [Tipos de evento](https://fiscalisto.com/docs/api/webhooks#tipos-de-evento)."""
 
 
 class ImssFilesFilesItem(TypedDict):
@@ -14595,6 +14666,27 @@ class GetPayrollCostParams(TypedDict):
     """El año: 2026 (por omisión, el actual)."""
 
 
+class GetPayrollCalendarParams(TypedDict):
+    """Los parámetros de GET /v1/payroll_calendar."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    days_ahead: NotRequired[int]
+    """Hasta cuántos días adelante (por omisión 90, hasta 366)."""
+    days_back: NotRequired[int]
+    """Desde cuántos días atrás (por omisión 31, hasta 366)."""
+
+
+class MarkPayrollCalendarEventParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    obligation: Literal["imss", "rcv_infonavit", "isn", "aguinaldo", "ptu", "prima_riesgo", "ajuste_anual"]
+    """imss, rcv_infonavit, isn, aguinaldo, ptu, prima_riesgo o ajuste_anual."""
+    key: str
+    """Como lo da GET /v1/payroll_calendar: 2026-11, 2026-B6, 2026, 2026-11:CMX."""
+    paid: bool
+    """true lo marca pagado; false lo desmarca."""
+
+
 class UpdatePayrollTaxSettingsParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…); por omisión, el único de la cuenta."""
@@ -14602,6 +14694,8 @@ class UpdatePayrollTaxSettingsParams(TypedDict):
     """Las percepciones (c_TipoPercepcion) que no suman a la base, como las deja fuera la ley de su estado. Reemplaza la lista entera."""
     state_options: NotRequired[dict[str, str]]
     """La opción de tasa de cada estado que la tiene, por su c_Estado: {"BCN": "hasta50"}."""
+    due_days: NotRequired[dict[str, int | None]]
+    """El día del mes siguiente en que se paga el impuesto de cada estado, por su c_Estado: {"NLE": 17}. null vuelve al día de su ley (Ciudad de México 17, Jalisco 12, Estado de México 10); los demás estados, sin día, salen por confirmar en GET /v1/payroll_calendar. Solo cambia los estados que mande."""
 
 
 class CreateInvoiceBatchParams(TypedDict):
