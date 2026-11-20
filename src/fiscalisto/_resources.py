@@ -26,6 +26,7 @@ if TYPE_CHECKING:
         ApplyVariableSalaryParams,
         ApproveAttendanceOvertimeParams,
         ApproveExpenseReportParams,
+        ApproveVacationRequestParams,
         AttendanceMark,
         AttendanceOvertime,
         AttendanceReport,
@@ -137,6 +138,7 @@ if TYPE_CHECKING:
         Employee,
         EmployeeDeduction,
         EmployeeDeductionList,
+        EmployeePortal,
         EmployeeVacations,
         EntryTemplate,
         EntryTemplateLines,
@@ -282,6 +284,7 @@ if TYPE_CHECKING:
         ListStoreConnectionsParams,
         ListSupplierInvoicesParams,
         ListTicketsParams,
+        ListVacationRequestsParams,
         ListWarehouseStockParams,
         ListWarehousesParams,
         ListWebhookDeliveriesParams,
@@ -320,6 +323,7 @@ if TYPE_CHECKING:
         RecurringInvoice,
         RefreshSatDeclarationsParams,
         RejectQuoteParams,
+        RejectVacationRequestParams,
         RenumberAccountsParams,
         ReportImssMovementsParams,
         RequestPurchaseReceiptInvoiceParams,
@@ -389,6 +393,7 @@ if TYPE_CHECKING:
         UpdateCustomerParams,
         UpdateEmployeeDeductionParams,
         UpdateEmployeeParams,
+        UpdateEmployeePortalParams,
         UpdateEmployeeVacationsParams,
         UpdateEntryTemplateParams,
         UpdateExpenseItemParams,
@@ -418,6 +423,8 @@ if TYPE_CHECKING:
         UploadBranchLogoParams,
         UploadCertificateParams,
         UploadIssuerLogoParams,
+        VacationRequest,
+        VacationRequestList,
         ValidateTaxIdParams,
         VariableSalary,
         VatRefund,
@@ -2501,6 +2508,139 @@ class EmployeesResource:
         """
         result: bytes = self._client.request(
             "GET", f"/v1/employees/{_path(id)}/vacations/certificate", query=params, result="bytes", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def portal(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EmployeePortal:
+        """Portal del empleado
+
+        El enlace personal del empleado (sin cuenta) para ver, descargar y firmar de recibido sus recibos de nómina, ver sus vacaciones y pedir días; los celulares ligados y los recibos que firmó.
+
+        GET /v1/employees/{id}/portal
+        https://fiscalisto.com/docs/api/referencia/nomina/get-employee-portal
+        """
+        result: EmployeePortal = self._client.request(
+            "GET", f"/v1/employees/{_path(id)}/portal", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_portal(
+        self,
+        id: str,
+        params: UpdateEmployeePortalParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EmployeePortal:
+        """Activar, cambiar o apagar el portal
+
+        enable crea el enlace (o deja el que tiene), renew hace uno nuevo (el anterior deja de funcionar y sus celulares se desligan) y disable lo apaga. Lo firmado se queda. Con send_email se lo manda a su correo.
+
+        POST /v1/employees/{id}/portal
+        https://fiscalisto.com/docs/api/referencia/nomina/update-employee-portal
+        """
+        result: EmployeePortal = self._client.request(
+            "POST", f"/v1/employees/{_path(id)}/portal", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class VacationRequestsResource:
+    """Nómina: fiscalisto.vacation_requests."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListVacationRequestsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> VacationRequestList:
+        """Listar solicitudes de vacaciones
+
+        Los días que los empleados pidieron desde su enlace, las más recientes primero.
+
+        GET /v1/vacation_requests
+        https://fiscalisto.com/docs/api/referencia/nomina/list-vacation-requests
+        """
+        result: VacationRequestList = self._client.request(
+            "GET", "/v1/vacation_requests", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> VacationRequest:
+        """Ver una solicitud de vacaciones
+
+        Una solicitud de vacaciones con su estado.
+
+        GET /v1/vacation_requests/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/get-vacation-request
+        """
+        result: VacationRequest = self._client.request(
+            "GET", f"/v1/vacation_requests/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def approve(
+        self,
+        id: str,
+        params: ApproveVacationRequestParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> VacationRequest:
+        """Aprobar una solicitud de vacaciones
+
+        La aprueba con los días calculados o los que mande en days. Los días aprobados se sugieren en las Incidencias del recibo del periodo; no se agregan solos.
+
+        POST /v1/vacation_requests/{id}/approve
+        https://fiscalisto.com/docs/api/referencia/nomina/approve-vacation-request
+        """
+        result: VacationRequest = self._client.request(
+            "POST", f"/v1/vacation_requests/{_path(id)}/approve", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def reject(
+        self,
+        id: str,
+        params: RejectVacationRequestParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> VacationRequest:
+        """Rechazar una solicitud de vacaciones
+
+        La rechaza; note (por qué) es obligatoria y el empleado la ve.
+
+        POST /v1/vacation_requests/{id}/reject
+        https://fiscalisto.com/docs/api/referencia/nomina/reject-vacation-request
+        """
+        result: VacationRequest = self._client.request(
+            "POST", f"/v1/vacation_requests/{_path(id)}/reject", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -9167,6 +9307,11 @@ class FiscalistoApi(Core):
     def employees(self) -> EmployeesResource:
         """Nómina."""
         return EmployeesResource(self)
+
+    @cached_property
+    def vacation_requests(self) -> VacationRequestsResource:
+        """Nómina."""
+        return VacationRequestsResource(self)
 
     @cached_property
     def payroll_receipts(self) -> PayrollReceiptsResource:

@@ -35,6 +35,7 @@ __all__ = [
     "ApplyVariableSalaryParams",
     "ApproveAttendanceOvertimeParams",
     "ApproveExpenseReportParams",
+    "ApproveVacationRequestParams",
     "AttendanceMark",
     "AttendanceOvertime",
     "AttendanceReport",
@@ -351,6 +352,8 @@ __all__ = [
     "EmployeeDeduction",
     "EmployeeDeductionList",
     "EmployeeList",
+    "EmployeePortal",
+    "EmployeePortalSignedReceiptsItem",
     "EmployeeVacations",
     "EmployeeVacationsCurrentYear",
     "EmployeeVacationsOpening",
@@ -693,6 +696,7 @@ __all__ = [
     "ListStoreConnectionsParams",
     "ListSupplierInvoicesParams",
     "ListTicketsParams",
+    "ListVacationRequestsParams",
     "ListWarehouseStockParams",
     "ListWarehousesParams",
     "ListWebhookDeliveriesParams",
@@ -814,6 +818,7 @@ __all__ = [
     "RecurringInvoiceSchedule",
     "RefreshSatDeclarationsParams",
     "RejectQuoteParams",
+    "RejectVacationRequestParams",
     "RenumberAccountsParams",
     "RenumberAccountsParamsMappingItem",
     "ReportImssMovementsParams",
@@ -998,6 +1003,7 @@ __all__ = [
     "UpdateCustomerParamsForeign",
     "UpdateEmployeeDeductionParams",
     "UpdateEmployeeParams",
+    "UpdateEmployeePortalParams",
     "UpdateEmployeeVacationsParams",
     "UpdateEntryTemplateParams",
     "UpdateEntryTemplateParamsLinesItem",
@@ -1081,6 +1087,8 @@ __all__ = [
     "UploadIssuerLogoParams",
     "Usage",
     "UsageHighEvent",
+    "VacationRequest",
+    "VacationRequestList",
     "ValidateTaxIdParams",
     "VariableSalary",
     "VariableSalaryEmployeesItem",
@@ -3483,6 +3491,54 @@ class EmployeeVacations(TypedDict):
     """El saldo de antes de Fiscalisto, o null."""
     taken: list[EmployeeVacationsTakenItem]
     """Los días de vacaciones de sus recibos timbrados."""
+
+
+class EmployeePortalSignedReceiptsItem(TypedDict):
+    uuid: str
+    """El folio fiscal del recibo."""
+    signed_at: str
+    """Cuándo lo firmó de recibido."""
+
+
+class EmployeePortal(TypedDict):
+    """El portal del empleado: su enlace y los recibos que firmó de recibido."""
+    object: Literal["employee_portal"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    employee: str
+    """El empleado (emp_…)."""
+    url: str | None
+    """Su enlace personal (sin cuenta) para ver, descargar y firmar de recibido sus recibos y pedir vacaciones; null si está apagado."""
+    enabled_at: str | None
+    """Cuándo se hizo el enlace."""
+    phones: int
+    """Los celulares ligados: el primero que lo abre y los que lo abren en la hora siguiente, hasta 3."""
+    last_seen_at: str | None
+    """La última vez que lo abrió."""
+    signed_receipts: list[EmployeePortalSignedReceiptsItem]
+    """Los recibos que firmó de recibido desde su enlace (con el día, su celular y su IP guardados), los más recientes primero."""
+
+
+# Días de vacaciones que un empleado pidió desde su enlace.
+VacationRequest = TypedDict(
+    "VacationRequest",
+    {
+        "id": "str",
+        "object": "Literal[\"vacation_request\"]",
+        "livemode": "bool",
+        "employee": "str",
+        "employee_name": "str | None",
+        "from": "str",
+        "to": "str",
+        "days": "float",
+        "note": "str | None",
+        "status": "Literal[\"pending\", \"approved\", \"rejected\", \"canceled\"]",
+        "decided_at": "str | None",
+        "decision_note": "str | None",
+        "created_at": "str",
+    },
+)
 
 
 class PayrollTaxSettings(TypedDict):
@@ -7070,6 +7126,7 @@ class BooksLogEntryActor(TypedDict):
     name: str | None
     """Nombre."""
     label: str | None
+    """El nombre y el id de la llave de la API, o el del asistente («ChatGPT»); null para un usuario del panel."""
 
 
 class BooksLogEntry(TypedDict):
@@ -10582,6 +10639,17 @@ class EmployeeList(TypedDict):
     """La ruta de esta lista."""
 
 
+class VacationRequestList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[VacationRequest]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class PayrollBatchList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -13559,6 +13627,37 @@ class GetEmployeeVacationCertificateParams(TypedDict):
     """El día en que terminan (AAAA-MM-DD), con enjoy_from."""
     as_of: NotRequired[str]
     """El día de la constancia (AAAA-MM-DD); por omisión hoy."""
+
+
+class UpdateEmployeePortalParams(TypedDict):
+    action: Literal["enable", "renew", "disable"]
+    """enable: crea el enlace (o deja el que tiene); renew: uno nuevo (el anterior deja de funcionar y sus celulares se desligan); disable: lo apaga (lo firmado se queda)."""
+    send_email: NotRequired[bool]
+    """Con enable o renew, le manda el enlace al correo del empleado. Falla si el empleado no tiene correo."""
+
+
+class ListVacationRequestsParams(TypedDict):
+    """Los parámetros de GET /v1/vacation_requests."""
+    employee: NotRequired[str]
+    """Solo las de este empleado (emp_…)."""
+    status: NotRequired[Literal["pending", "approved", "rejected", "canceled"]]
+    """pending, approved, rejected o canceled."""
+    limit: NotRequired[int]
+    """Cuántas, de 1 a 500. Por omisión 100."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class ApproveVacationRequestParams(TypedDict):
+    days: NotRequired[float]
+    """Los días que descuenta de sus vacaciones, si no son los que se calcularon (sin domingos ni festivos), por ejemplo sin los sábados de quien descansa."""
+    note: NotRequired[str]
+    """Una nota que el empleado ve en su enlace."""
+
+
+class RejectVacationRequestParams(TypedDict):
+    note: str
+    """Por qué no se aprueba: el empleado lo ve en su enlace."""
 
 
 class CreatePayrollReceiptParamsPeriod(TypedDict):
