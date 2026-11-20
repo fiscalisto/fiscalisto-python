@@ -36,6 +36,7 @@ if TYPE_CHECKING:
         CancelSalesOrderDeliveryParams,
         CancelSalesOrderParams,
         CancelSatRetentionParams,
+        CashFlow,
         CashForecast,
         CashForecastItem,
         CfdiVerification,
@@ -44,6 +45,7 @@ if TYPE_CHECKING:
         CloseSalesOrderParams,
         ClosedPeriod,
         CompanyReport,
+        ComparativeStatements,
         CompleteProductionOrderParams,
         ComplianceOpinion,
         CostCenter,
@@ -122,6 +124,7 @@ if TYPE_CHECKING:
         EmployeeDeduction,
         EmployeeDeductionList,
         EmployeeVacations,
+        EquityChanges,
         Event,
         EventResend,
         ExpensePerson,
@@ -132,6 +135,7 @@ if TYPE_CHECKING:
         ExternalPayrollReceiptCreate,
         ExternalPayrollReceiptPreview,
         ExtraordinaryPayrollReceiptPreview,
+        FinancialRatios,
         FinancialStatements,
         FixedAsset,
         FixedAssetList,
@@ -140,9 +144,11 @@ if TYPE_CHECKING:
         GetAnnualAdjustmentParams,
         GetAttendanceParams,
         GetBudgetParams,
+        GetCashFlowParams,
         GetCashForecastParams,
         GetClosedPeriodParams,
         GetCompanyReportParams,
+        GetComparativeStatementsParams,
         GetCostCenterResultsParams,
         GetCostOfSalesParams,
         GetCrossCheckCfdiParams,
@@ -151,7 +157,9 @@ if TYPE_CHECKING:
         GetDiotParams,
         GetElectronicAccountingParams,
         GetEmployeeVacationsParams,
+        GetEquityChangesParams,
         GetExpensePolicyParams,
+        GetFinancialRatiosParams,
         GetFinancialStatementsParams,
         GetFxRevaluationParams,
         GetGeneralLedgerParams,
@@ -6185,6 +6193,86 @@ class AccountingResource:
         """
         result: FinancialStatements = self._client.request(
             "GET", "/v1/accounting/financial_statements", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def cash_flow(
+        self,
+        params: GetCashFlowParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CashFlow:
+        """Ver el estado de flujos de efectivo
+
+        El estado de flujos de efectivo (NIF B-2, método indirecto) del mes o de enero al mes: la utilidad, la depreciación y amortización que se suman, el cambio en capital de trabajo, y las actividades de inversión y de financiamiento, hasta el efectivo al cierre. Cada cuenta va a su actividad por su código agrupador; difference es 0 cuando la balanza cuadra. Como Estados financieros › Flujo de efectivo en la app.
+
+        GET /v1/accounting/cash_flow
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-cash-flow
+        """
+        result: CashFlow = self._client.request(
+            "GET", "/v1/accounting/cash_flow", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def equity_changes(
+        self,
+        params: GetEquityChangesParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EquityChanges:
+        """Ver el estado de cambios en el capital contable
+
+        El estado de cambios en el capital contable (NIF B-4) de enero al mes: cada cuenta de capital del 1 de enero al cierre, con sus aportaciones, retiros, dividendos y traspasos, y el resultado del ejercicio. Como Estados financieros › Capital contable en la app.
+
+        GET /v1/accounting/equity_changes
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-equity-changes
+        """
+        result: EquityChanges = self._client.request(
+            "GET", "/v1/accounting/equity_changes", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def comparative_statements(
+        self,
+        params: GetComparativeStatementsParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ComparativeStatements:
+        """Comparar los estados financieros con otro mes
+
+        El estado de resultados (del mes y de enero al mes) y el balance general junto a los del mismo mes del año anterior (compare_to=previous_year, por omisión) o del mes anterior (previous_month), con la variación y su porcentaje por grupo de cuentas. Como Estados financieros › Comparativo en la app.
+
+        GET /v1/accounting/comparative_statements
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-comparative-statements
+        """
+        result: ComparativeStatements = self._client.request(
+            "GET", "/v1/accounting/comparative_statements", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def financial_ratios(
+        self,
+        params: GetFinancialRatiosParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> FinancialRatios:
+        """Ver las razones financieras
+
+        Liquidez, prueba ácida, endeudamiento, apalancamiento, márgenes, rendimiento sobre capital y sobre activo, y días de cobro, de pago y de inventario al cierre del mes, con las cifras de que salen. Rentabilidad y rotación usan los resultados de enero al mes. Como Estados financieros › Razones financieras en la app.
+
+        GET /v1/accounting/financial_ratios
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-financial-ratios
+        """
+        result: FinancialRatios = self._client.request(
+            "GET", "/v1/accounting/financial_ratios", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 

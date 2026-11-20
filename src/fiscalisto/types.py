@@ -64,6 +64,14 @@ __all__ = [
     "CancelSalesOrderDeliveryParams",
     "CancelSalesOrderParams",
     "CancelSatRetentionParams",
+    "CashFlow",
+    "CashFlowFinancing",
+    "CashFlowFinancingLinesItem",
+    "CashFlowInvesting",
+    "CashFlowInvestingLinesItem",
+    "CashFlowOperating",
+    "CashFlowOperatingNonCashItem",
+    "CashFlowOperatingWorkingCapitalItem",
     "CashForecast",
     "CashForecastItem",
     "CashForecastLinesItem",
@@ -98,6 +106,21 @@ __all__ = [
     "CompanyReportSuppliersPartiesItem",
     "CompanyReportTotals",
     "CompanyReportYearsItem",
+    "ComparativeStatements",
+    "ComparativeStatementsBalanceSheetItem",
+    "ComparativeStatementsBalanceSheetItemLinesItem",
+    "ComparativeStatementsBalanceSheetItemTotal",
+    "ComparativeStatementsIncomeStatement",
+    "ComparativeStatementsIncomeStatementMonth",
+    "ComparativeStatementsIncomeStatementMonthIncomeBeforeTaxes",
+    "ComparativeStatementsIncomeStatementMonthSectionsItem",
+    "ComparativeStatementsIncomeStatementMonthSectionsItemLinesItem",
+    "ComparativeStatementsIncomeStatementMonthSectionsItemTotal",
+    "ComparativeStatementsIncomeStatementYearToDate",
+    "ComparativeStatementsIncomeStatementYearToDateIncomeBeforeTaxes",
+    "ComparativeStatementsIncomeStatementYearToDateSectionsItem",
+    "ComparativeStatementsIncomeStatementYearToDateSectionsItemLinesItem",
+    "ComparativeStatementsIncomeStatementYearToDateSectionsItemTotal",
     "CompleteProductionOrderParams",
     "CompleteProductionOrderParamsOtherCostsItem",
     "ComplianceOpinion",
@@ -283,6 +306,8 @@ __all__ = [
     "EmployeeVacationsOpening",
     "EmployeeVacationsTakenItem",
     "EmployeeVacationsYearsItem",
+    "EquityChanges",
+    "EquityChangesAccountsItem",
     "Event",
     "EventList",
     "EventResend",
@@ -333,6 +358,9 @@ __all__ = [
     "ExtraordinaryPayrollReceiptPreviewPeriod",
     "ExtraordinaryPayrollReceiptPreviewSeparation",
     "ExtraordinaryPayrollReceiptPreviewTotals",
+    "FinancialRatios",
+    "FinancialRatiosInputs",
+    "FinancialRatiosRatiosItem",
     "FinancialStatements",
     "FinancialStatementsBalanceSheet",
     "FinancialStatementsBalanceSheetAssets",
@@ -366,9 +394,11 @@ __all__ = [
     "GetAnnualAdjustmentParams",
     "GetAttendanceParams",
     "GetBudgetParams",
+    "GetCashFlowParams",
     "GetCashForecastParams",
     "GetClosedPeriodParams",
     "GetCompanyReportParams",
+    "GetComparativeStatementsParams",
     "GetCostCenterResultsParams",
     "GetCostOfSalesParams",
     "GetCrossCheckCfdiParams",
@@ -377,7 +407,9 @@ __all__ = [
     "GetDiotParams",
     "GetElectronicAccountingParams",
     "GetEmployeeVacationsParams",
+    "GetEquityChangesParams",
     "GetExpensePolicyParams",
+    "GetFinancialRatiosParams",
     "GetFinancialStatementsParams",
     "GetFxRevaluationParams",
     "GetGeneralLedgerParams",
@@ -6265,13 +6297,373 @@ class CostCenterResults(TypedDict):
     livemode: bool
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     issuer: str
-    """El emisor (iss_…)."""
+    """El emisor."""
     month: str
-    """Un solo mes, del 1 al 12 (MesIni y MesFin iguales)."""
+    """El mes (AAAA-MM)."""
     month_results: list[CostCenterResultsMonthResultsItem]
-    """El mes."""
+    """Cada centro de costo en el mes."""
     year_to_date: list[CostCenterResultsYearToDateItem]
-    """De enero al mes."""
+    """Cada centro de costo de enero al mes."""
+
+
+class CashFlowOperatingNonCashItem(TypedDict):
+    grouping_code: str
+    """El código agrupador del SAT (su primer nivel, o 202.01 a 202.12)."""
+    name: str
+    """Su nombre en el código agrupador."""
+    amount: float
+    """Lo que su cambio sumó al efectivo (positivo) o le quitó (negativo)."""
+
+
+class CashFlowOperatingWorkingCapitalItem(TypedDict):
+    grouping_code: str
+    """El código agrupador del SAT (su primer nivel, o 202.01 a 202.12)."""
+    name: str
+    """Su nombre en el código agrupador."""
+    amount: float
+    """Lo que su cambio sumó al efectivo (positivo) o le quitó (negativo)."""
+
+
+class CashFlowOperating(TypedDict):
+    """Actividades de operación."""
+    non_cash: list[CashFlowOperatingNonCashItem]
+    """Lo que se suma porque no salió efectivo: depreciación (171), deterioro (172) y amortización (183)."""
+    working_capital: list[CashFlowOperatingWorkingCapitalItem]
+    """El cambio en clientes, inventarios, proveedores, impuestos y demás cuentas de operación."""
+    total: float
+    """El flujo neto de actividades de operación."""
+
+
+class CashFlowInvestingLinesItem(TypedDict):
+    grouping_code: str
+    """El código agrupador del SAT (su primer nivel, o 202.01 a 202.12)."""
+    name: str
+    """Su nombre en el código agrupador."""
+    amount: float
+    """Lo que su cambio sumó al efectivo (positivo) o le quitó (negativo)."""
+
+
+class CashFlowInvesting(TypedDict):
+    """Actividades de inversión: activos fijos, terrenos, diferidos e inversiones permanentes."""
+    lines: list[CashFlowInvestingLinesItem]
+    """Cada grupo de cuentas que cambió."""
+    total: float
+    """El flujo neto de la actividad."""
+
+
+class CashFlowFinancingLinesItem(TypedDict):
+    grouping_code: str
+    """El código agrupador del SAT (su primer nivel, o 202.01 a 202.12)."""
+    name: str
+    """Su nombre en el código agrupador."""
+    amount: float
+    """Lo que su cambio sumó al efectivo (positivo) o le quitó (negativo)."""
+
+
+class CashFlowFinancing(TypedDict):
+    """Actividades de financiamiento: préstamos bancarios, dividendos, aportaciones y capital."""
+    lines: list[CashFlowFinancingLinesItem]
+    """Cada grupo de cuentas que cambió."""
+    total: float
+    """El flujo neto de la actividad."""
+
+
+class CashFlow(TypedDict):
+    """El estado de flujos de efectivo (NIF B-2, método indirecto) del mes o de enero al mes, leído de la balanza: cada cuenta va a operación, inversión o financiamiento por su código agrupador."""
+    object: Literal["cash_flow"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM)."""
+    period: Literal["month", "year_to_date"]
+    """El mes solo (month) o de enero al mes (year_to_date)."""
+    net_income: float
+    """La utilidad (o pérdida) antes de impuestos del periodo."""
+    operating: CashFlowOperating
+    """Actividades de operación."""
+    investing: CashFlowInvesting
+    """Actividades de inversión: activos fijos, terrenos, diferidos e inversiones permanentes."""
+    financing: CashFlowFinancing
+    """Actividades de financiamiento: préstamos bancarios, dividendos, aportaciones y capital."""
+    net_change: float
+    """Aumento (o disminución) neto de efectivo."""
+    cash_beginning: float
+    """Caja, bancos e inversiones (101 a 103) al inicio del periodo."""
+    cash_end: float
+    """Caja, bancos e inversiones al cierre del periodo."""
+    difference: float
+    """cash_end − (cash_beginning + net_change): 0 cuando la balanza cuadra."""
+
+
+class EquityChangesAccountsItem(TypedDict):
+    grouping_code: str
+    """El código agrupador (301 capital social, 304 resultados de ejercicios anteriores…)."""
+    name: str
+    """Su nombre."""
+    beginning: float
+    """Al 1 de enero."""
+    movements: float
+    """Aportaciones, retiros, dividendos y traspasos de enero al mes."""
+    ending: float
+    """Al cierre del mes."""
+
+
+class EquityChanges(TypedDict):
+    """El estado de cambios en el capital contable (NIF B-4) de enero al mes."""
+    object: Literal["equity_changes"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM)."""
+    accounts: list[EquityChangesAccountsItem]
+    """Cada cuenta de capital con saldo o movimiento."""
+    net_income: float
+    """El resultado del ejercicio, de enero al mes."""
+    beginning: float
+    """El capital contable al 1 de enero."""
+    movements: float
+    """Los movimientos de capital de enero al mes."""
+    ending: float
+    """El capital contable al cierre: beginning + movements + net_income, igual al del balance general más el resultado del ejercicio."""
+
+
+class ComparativeStatementsIncomeStatementMonthSectionsItemLinesItem(TypedDict):
+    grouping_code: str
+    """El código agrupador (primer nivel)."""
+    name: str
+    """Su nombre."""
+    current: float
+    """El importe del periodo."""
+    previous: float
+    """El del periodo con que se compara."""
+    change: float
+    """current − previous."""
+    change_percent: float | None
+    """change entre previous, en porcentaje (null cuando previous es 0)."""
+
+
+class ComparativeStatementsIncomeStatementMonthSectionsItemTotal(TypedDict):
+    """El total de la sección."""
+    current: float
+    """El importe del periodo."""
+    previous: float
+    """El del periodo con que se compara."""
+    change: float
+    """current − previous."""
+    change_percent: float | None
+    """change entre previous, en porcentaje (null cuando previous es 0)."""
+
+
+class ComparativeStatementsIncomeStatementMonthSectionsItem(TypedDict):
+    key: Literal["ingresos", "costos", "gastos", "financiamiento", "otros"]
+    """La sección."""
+    name: str
+    """Su nombre."""
+    lines: list[ComparativeStatementsIncomeStatementMonthSectionsItemLinesItem]
+    """Cada grupo de cuentas."""
+    total: ComparativeStatementsIncomeStatementMonthSectionsItemTotal
+    """El total de la sección."""
+
+
+class ComparativeStatementsIncomeStatementMonthIncomeBeforeTaxes(TypedDict):
+    """La utilidad antes de impuestos."""
+    current: float
+    """El importe del periodo."""
+    previous: float
+    """El del periodo con que se compara."""
+    change: float
+    """current − previous."""
+    change_percent: float | None
+    """change entre previous, en porcentaje (null cuando previous es 0)."""
+
+
+class ComparativeStatementsIncomeStatementMonth(TypedDict):
+    """Del mes contra el mes comparado."""
+    sections: list[ComparativeStatementsIncomeStatementMonthSectionsItem]
+    """Cada sección del estado de resultados. Costos y gastos en positivo: un aumento es más gasto."""
+    income_before_taxes: ComparativeStatementsIncomeStatementMonthIncomeBeforeTaxes
+    """La utilidad antes de impuestos."""
+
+
+class ComparativeStatementsIncomeStatementYearToDateSectionsItemLinesItem(TypedDict):
+    grouping_code: str
+    """El código agrupador (primer nivel)."""
+    name: str
+    """Su nombre."""
+    current: float
+    """El importe del periodo."""
+    previous: float
+    """El del periodo con que se compara."""
+    change: float
+    """current − previous."""
+    change_percent: float | None
+    """change entre previous, en porcentaje (null cuando previous es 0)."""
+
+
+class ComparativeStatementsIncomeStatementYearToDateSectionsItemTotal(TypedDict):
+    """El total de la sección."""
+    current: float
+    """El importe del periodo."""
+    previous: float
+    """El del periodo con que se compara."""
+    change: float
+    """current − previous."""
+    change_percent: float | None
+    """change entre previous, en porcentaje (null cuando previous es 0)."""
+
+
+class ComparativeStatementsIncomeStatementYearToDateSectionsItem(TypedDict):
+    key: Literal["ingresos", "costos", "gastos", "financiamiento", "otros"]
+    """La sección."""
+    name: str
+    """Su nombre."""
+    lines: list[ComparativeStatementsIncomeStatementYearToDateSectionsItemLinesItem]
+    """Cada grupo de cuentas."""
+    total: ComparativeStatementsIncomeStatementYearToDateSectionsItemTotal
+    """El total de la sección."""
+
+
+class ComparativeStatementsIncomeStatementYearToDateIncomeBeforeTaxes(TypedDict):
+    """La utilidad antes de impuestos."""
+    current: float
+    """El importe del periodo."""
+    previous: float
+    """El del periodo con que se compara."""
+    change: float
+    """current − previous."""
+    change_percent: float | None
+    """change entre previous, en porcentaje (null cuando previous es 0)."""
+
+
+class ComparativeStatementsIncomeStatementYearToDate(TypedDict):
+    """De enero al mes contra enero al mes comparado."""
+    sections: list[ComparativeStatementsIncomeStatementYearToDateSectionsItem]
+    """Cada sección del estado de resultados. Costos y gastos en positivo: un aumento es más gasto."""
+    income_before_taxes: ComparativeStatementsIncomeStatementYearToDateIncomeBeforeTaxes
+    """La utilidad antes de impuestos."""
+
+
+class ComparativeStatementsIncomeStatement(TypedDict):
+    """El estado de resultados comparativo."""
+    month: ComparativeStatementsIncomeStatementMonth
+    """Del mes contra el mes comparado."""
+    year_to_date: ComparativeStatementsIncomeStatementYearToDate
+    """De enero al mes contra enero al mes comparado."""
+
+
+class ComparativeStatementsBalanceSheetItemLinesItem(TypedDict):
+    grouping_code: str
+    """El código agrupador (primer nivel)."""
+    name: str
+    """Su nombre."""
+    current: float
+    """El importe del periodo."""
+    previous: float
+    """El del periodo con que se compara."""
+    change: float
+    """current − previous."""
+    change_percent: float | None
+    """change entre previous, en porcentaje (null cuando previous es 0)."""
+
+
+class ComparativeStatementsBalanceSheetItemTotal(TypedDict):
+    """El total de la sección."""
+    current: float
+    """El importe del periodo."""
+    previous: float
+    """El del periodo con que se compara."""
+    change: float
+    """current − previous."""
+    change_percent: float | None
+    """change entre previous, en porcentaje (null cuando previous es 0)."""
+
+
+class ComparativeStatementsBalanceSheetItem(TypedDict):
+    key: Literal["assets", "liabilities", "equity"]
+    """La sección."""
+    name: str
+    """Su nombre."""
+    lines: list[ComparativeStatementsBalanceSheetItemLinesItem]
+    """Cada grupo de cuentas."""
+    total: ComparativeStatementsBalanceSheetItemTotal
+    """El total de la sección."""
+
+
+class ComparativeStatements(TypedDict):
+    """El estado de resultados y el balance general de un mes junto a los del mes anterior o del mismo mes del año anterior, con la variación y su porcentaje."""
+    object: Literal["comparative_statements"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM)."""
+    compared_to: str
+    """El mes con que se compara (AAAA-MM)."""
+    income_statement: ComparativeStatementsIncomeStatement
+    """El estado de resultados comparativo."""
+    balance_sheet: list[ComparativeStatementsBalanceSheetItem]
+    """El balance general al cierre de cada mes."""
+
+
+class FinancialRatiosRatiosItem(TypedDict):
+    key: Literal["liquidez", "prueba_acida", "endeudamiento", "apalancamiento", "margen_bruto", "margen_operacion", "margen_neto", "rendimiento_capital", "rendimiento_activo", "dias_cobro", "dias_pago", "dias_inventario"]
+    """La razón."""
+    name: str
+    """Su nombre."""
+    value: float | None
+    """Su valor (null cuando no hay con qué dividir)."""
+    unit: Literal["times", "percent", "days"]
+    """Veces, porcentaje o días."""
+    description: str
+    """Cómo se calcula."""
+
+
+class FinancialRatiosInputs(TypedDict):
+    """Las cifras de que salen."""
+    current_assets: float
+    """Activo circulante (101 a 121)."""
+    current_liabilities: float
+    """Pasivo a corto plazo (201 a 218)."""
+    inventory: float
+    """Inventario (115, menos su estimación 116)."""
+    receivables: float
+    """Clientes (105, menos incobrables 108)."""
+    payables: float
+    """Proveedores (201)."""
+    total_assets: float
+    """Activo total."""
+    total_liabilities: float
+    """Pasivo total."""
+    equity: float
+    """Capital contable con el resultado del ejercicio."""
+    revenue_year_to_date: float
+    """Ingresos de enero al mes."""
+    income_before_taxes_year_to_date: float
+    """Utilidad antes de impuestos de enero al mes."""
+
+
+class FinancialRatios(TypedDict):
+    """Razones financieras al cierre de un mes: de su balance general y de sus resultados de enero al mes."""
+    object: Literal["financial_ratios"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM)."""
+    ratios: list[FinancialRatiosRatiosItem]
+    """Liquidez, endeudamiento, rentabilidad y rotación."""
+    inputs: FinancialRatiosInputs
+    """Las cifras de que salen."""
 
 
 class TaxDetermination(TypedDict):
@@ -14403,6 +14795,42 @@ class GetGeneralLedgerParams(TypedDict):
 
 class GetFinancialStatementsParams(TypedDict):
     """Los parámetros de GET /v1/accounting/financial_statements."""
+    month: str
+    """El mes (AAAA-MM)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetCashFlowParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/cash_flow."""
+    month: str
+    """El mes (AAAA-MM)."""
+    period: NotRequired[Literal["month", "year_to_date"]]
+    """month (solo el mes) o year_to_date (de enero al mes, por omisión)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetEquityChangesParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/equity_changes."""
+    month: str
+    """El mes (AAAA-MM)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetComparativeStatementsParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/comparative_statements."""
+    month: str
+    """El mes (AAAA-MM)."""
+    compare_to: NotRequired[Literal["previous_year", "previous_month"]]
+    """previous_year (el mismo mes del año anterior, por omisión) o previous_month."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetFinancialRatiosParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/financial_ratios."""
     month: str
     """El mes (AAAA-MM)."""
     issuer: NotRequired[str]
