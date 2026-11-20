@@ -33,6 +33,7 @@ if TYPE_CHECKING:
         BankImport,
         BankTransaction,
         BookDepreciationRate,
+        BooksLogEntry,
         Branch,
         Budget,
         CancelInvoiceParams,
@@ -227,6 +228,7 @@ if TYPE_CHECKING:
         ListAdvancesParams,
         ListBankMovementsParams,
         ListBankTransactionsParams,
+        ListBooksLogParams,
         ListBranchesParams,
         ListChartTemplatesParams,
         ListConsolidationEliminationsParams,
@@ -7473,6 +7475,30 @@ class AccountRenumberingsResource:
         return result
 
 
+class BooksLogResource:
+    """Contabilidad: fiscalisto.books_log."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListBooksLogParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[BooksLogEntry]:
+        """Listar la bitácora de la contabilidad
+
+        Cada cambio a la contabilidad del RFC del emisor, del más reciente al más antiguo: pólizas a mano (también las que hacen el cierre del mes, la revaluación y los bancos), saldos iniciales, cuentas y el catálogo (que comparten los RFC del espacio), cierres y reaperturas de mes, eliminaciones de consolidación, pólizas modelo y bajas de activos. Cada uno dice quién lo hizo (un usuario, una llave de la API o un asistente) y cómo estaba antes y después. Guardar algo sin cambios no deja registro.
+
+        GET /v1/accounting/books_log
+        https://fiscalisto.com/docs/api/referencia/contabilidad/list-books-log
+        """
+        return self._client.list("/v1/accounting/books_log", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+
 class ConsolidationEliminationsResource:
     """Contabilidad: fiscalisto.consolidation_eliminations."""
 
@@ -9466,6 +9492,11 @@ class FiscalistoApi(Core):
     def account_renumberings(self) -> AccountRenumberingsResource:
         """Contabilidad."""
         return AccountRenumberingsResource(self)
+
+    @cached_property
+    def books_log(self) -> BooksLogResource:
+        """Contabilidad."""
+        return BooksLogResource(self)
 
     @cached_property
     def consolidation_eliminations(self) -> ConsolidationEliminationsResource:

@@ -52,6 +52,9 @@ __all__ = [
     "BankTransactionList",
     "BankTransactionSuggestedMatch",
     "BookDepreciationRate",
+    "BooksLogEntry",
+    "BooksLogEntryActor",
+    "BooksLogEntryList",
     "Branch",
     "BranchAddress",
     "BranchList",
@@ -636,6 +639,7 @@ __all__ = [
     "ListAdvancesParams",
     "ListBankMovementsParams",
     "ListBankTransactionsParams",
+    "ListBooksLogParams",
     "ListBranchesParams",
     "ListChartTemplatesParams",
     "ListConsolidationEliminationsParams",
@@ -7059,6 +7063,43 @@ class ConsolidationElimination(TypedDict):
     """Cuándo se cambió por última vez."""
 
 
+class BooksLogEntryActor(TypedDict):
+    """Quién: un usuario del panel (user, con su nombre), una llave de la API (api_key, con su nombre en label) o un asistente por MCP (assistant: su nombre en label y el del usuario en name)."""
+    type: Literal["user", "api_key", "assistant"]
+    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    name: str | None
+    """Nombre."""
+    label: str | None
+
+
+class BooksLogEntry(TypedDict):
+    """Un cambio en la contabilidad (bitácora): una póliza, los saldos iniciales, el catálogo, el cierre de un mes, una eliminación, una póliza modelo o la baja de un activo; quién lo hizo y cómo estaba antes y después. No se edita ni se borra."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["books_log_entry"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    created_at: str
+    """Cuándo se hizo el cambio."""
+    subject: Literal["manual_journal_entry", "opening_balances", "account", "chart_of_accounts", "period_close", "consolidation_elimination", "entry_template", "fixed_asset"]
+    """Qué cambió: una póliza a mano (manual_journal_entry), los saldos iniciales, una cuenta, el catálogo completo (una importación o una renumeración), el cierre del mes (period_close), una eliminación de consolidación, una póliza modelo o la baja de un activo fijo."""
+    subject_id: str | None
+    """El id de lo que cambió cuando tiene uno en la API (mje_, cel_, mjt_); null en los demás."""
+    action: Literal["created", "updated", "deleted", "restored", "imported", "closed", "reopened"]
+    """created, updated, deleted, restored (deshecho), imported, closed (se cerró el mes) o reopened (se reabrió)."""
+    description: str
+    """Lo que cambió, para leerlo: «Póliza de diario del 2026-03-15: Préstamo»."""
+    actor: BooksLogEntryActor
+    """Quién: un usuario del panel (user, con su nombre), una llave de la API (api_key, con su nombre en label) o un asistente por MCP (assistant: su nombre en label y el del usuario en name)."""
+    before: Any
+    """Cómo estaba (con los nombres de campo en español de la bitácora); null cuando no existía."""
+    after: Any
+    """Cómo quedó; null cuando se borró."""
+
+
 class EntryTemplateLinesItem(TypedDict):
     account: str
     """El número de cuenta."""
@@ -11018,6 +11059,17 @@ class ChartTemplateList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[ChartTemplate]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class BooksLogEntryList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[BooksLogEntry]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -16353,6 +16405,20 @@ class RenumberAccountsParams(TypedDict):
     """En vez de separator y widths: el número nuevo de cada cuenta que cambia, por ejemplo los del sistema de su contador."""
     dry_run: NotRequired[bool]
     """true: dice qué cambiaría, sin cambiar nada."""
+
+
+# Los parámetros de GET /v1/accounting/books_log.
+ListBooksLogParams = TypedDict(
+    "ListBooksLogParams",
+    {
+        "subject": "NotRequired[Literal[\"manual_journal_entry\", \"opening_balances\", \"account\", \"chart_of_accounts\", \"period_close\", \"consolidation_elimination\", \"entry_template\", \"fixed_asset\"]]",
+        "from": "NotRequired[str]",
+        "to": "NotRequired[str]",
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+    },
+)
 
 
 class GetConsolidatedStatementsParams(TypedDict):
