@@ -416,6 +416,7 @@ __all__ = [
     "GetFinancialStatementsParams",
     "GetFxRevaluationParams",
     "GetGeneralLedgerParams",
+    "GetInflationAdjustmentParams",
     "GetInvoiceCancellationReceiptParams",
     "GetInvoiceParams",
     "GetInvoicePdfParams",
@@ -444,6 +445,10 @@ __all__ = [
     "ImssFilesRefusedItem",
     "ImssMovement",
     "ImssMovementList",
+    "InflationAccounts",
+    "InflationAccountsAccountsItem",
+    "InflationAdjustment",
+    "InflationAdjustmentAccountsItem",
     "Invitation",
     "InvitationList",
     "Invoice",
@@ -852,6 +857,8 @@ __all__ = [
     "SatRiskCheckChecksItem",
     "SaveBudgetParams",
     "SaveBudgetParamsLinesItem",
+    "SaveInflationAccountsParams",
+    "SaveInflationAccountsParamsAccountsItem",
     "ScheduleSupplierInvoiceParams",
     "SelfInvoicing",
     "SendInvoiceParams",
@@ -6529,6 +6536,94 @@ class CostCenterResults(TypedDict):
     """Cada centro de costo en el mes."""
     year_to_date: list[CostCenterResultsYearToDateItem]
     """Cada centro de costo de enero al mes."""
+
+
+class InflationAdjustmentAccountsItem(TypedDict):
+    account: str
+    """El número de la cuenta."""
+    name: str
+    """Su nombre."""
+    grouping_code: str
+    """Su código agrupador del SAT."""
+    treatment: Literal["credit", "debt", "none"]
+    """credit (crédito, art. 45 de la LISR), debt (deuda, art. 46) o none."""
+    changed: bool
+    """true si se cambió del de su código agrupador (POST /v1/accounting/inflation_accounts)."""
+    reason: str
+    """Por qué cuenta así, con el artículo de la ley."""
+    month_end_balances: list[float]
+    """El saldo al último día de cada mes, positivo como crédito o como deuda (en none, el saldo contable)."""
+    average_balance: float
+    """La suma de los saldos entre los meses (0 en none)."""
+
+
+class InflationAdjustment(TypedDict):
+    """El ajuste anual por inflación de una persona moral (artículo 44 de la Ley del ISR), con el promedio de los saldos mensuales de sus créditos y sus deudas."""
+    object: Literal["inflation_adjustment"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    year: int
+    """El ejercicio."""
+    from_month: int
+    """El primer mes del ejercicio (1, o el mes en que empezó si fue en el año)."""
+    through_month: int
+    """El último mes calculado: 12, o uno anterior para una estimación."""
+    months: int
+    """Cuántos meses se promediaron."""
+    accounts: list[InflationAdjustmentAccountsItem]
+    """Cada cuenta de balance con saldo en el ejercicio."""
+    credits_by_month: list[float]
+    """Los créditos al último día de cada mes."""
+    debts_by_month: list[float]
+    """Las deudas al último día de cada mes."""
+    average_credits: float
+    """El saldo promedio anual de los créditos."""
+    average_debts: float
+    """El saldo promedio anual de las deudas."""
+    difference: float
+    """La diferencia entre los dos promedios, en positivo."""
+    factor: float | None
+    """El factor de ajuste anual: INPC del último mes entre el del último mes del ejercicio anterior, menos 1, al diezmilésimo. null sin INPC publicado."""
+    inpc_start: float | None
+    """El INPC de la base."""
+    inpc_end: float | None
+    """El INPC del último mes."""
+    inpc_end_month: str | None
+    """De qué mes es inpc_end (AAAA-MM): diciembre, o el último publicado en una estimación."""
+    estimated: bool
+    """true mientras no hay saldos de diciembre o INPC de diciembre: una estimación."""
+    type: Literal["taxable", "deductible"] | None
+    """taxable (acumulable, art. 18 fr. X) cuando las deudas son mayores; deductible (art. 25 fr. VIII) cuando los créditos lo son."""
+    amount: float | None
+    """El ajuste anual por inflación: difference × factor."""
+
+
+class InflationAccountsAccountsItem(TypedDict):
+    account: str
+    """El número de la cuenta."""
+    name: str
+    """Su nombre."""
+    grouping_code: str
+    """Su código agrupador."""
+    treatment: Literal["credit", "debt", "none"]
+    """credit (crédito, art. 45 de la LISR), debt (deuda, art. 46) o none."""
+    changed: bool
+    """true si difiere del de su código agrupador."""
+
+
+class InflationAccounts(TypedDict):
+    """Cómo cuentan las cuentas en el ajuste anual por inflación, después del cambio."""
+    object: Literal["inflation_accounts"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    accounts: list[InflationAccountsAccountsItem]
+    """Las cuentas que cambió, con cómo cuentan ahora."""
 
 
 class CashFlowOperatingNonCashItem(TypedDict):
@@ -15497,6 +15592,30 @@ class SaveBudgetParams(TypedDict):
     """El centro de costo (ccn_…) del presupuesto. Sin él, el de toda la empresa. Cada centro tiene el suyo."""
     lines: list[SaveBudgetParamsLinesItem]
     """Las cuentas del presupuesto. Reemplaza todo el presupuesto de ese año (y centro): una cuenta que no mande sale; una lista vacía lo borra."""
+
+
+class GetInflationAdjustmentParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/inflation_adjustments/{year}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    from_month: NotRequired[int]
+    """El primer mes del ejercicio, de 1 a 12. Por omisión 1; otro si la empresa empezó en el año."""
+    through_month: NotRequired[int]
+    """El último mes, de 1 a 12. Por omisión 12 en un año pasado y el mes actual en el año en curso."""
+
+
+class SaveInflationAccountsParamsAccountsItem(TypedDict):
+    account: str
+    """El número de la cuenta en el catálogo (GET /v1/accounting/accounts)."""
+    treatment: Literal["credit", "debt", "none"] | None
+    """credit (crédito, art. 45), debt (deuda, art. 46) o none. null regresa al de su código agrupador."""
+
+
+class SaveInflationAccountsParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    accounts: list[SaveInflationAccountsParamsAccountsItem]
+    """Las cuentas que cambia."""
 
 
 class GetCostCenterResultsParams(TypedDict):

@@ -164,6 +164,7 @@ if TYPE_CHECKING:
         GetFinancialStatementsParams,
         GetFxRevaluationParams,
         GetGeneralLedgerParams,
+        GetInflationAdjustmentParams,
         GetInvoiceCancellationReceiptParams,
         GetInvoiceParams,
         GetInvoicePdfParams,
@@ -188,6 +189,8 @@ if TYPE_CHECKING:
         ImssFiles,
         ImssMovement,
         ImssMovementList,
+        InflationAccounts,
+        InflationAdjustment,
         Invitation,
         InvitationList,
         Invoice,
@@ -323,6 +326,7 @@ if TYPE_CHECKING:
         SatReviewList,
         SatRiskCheck,
         SaveBudgetParams,
+        SaveInflationAccountsParams,
         ScheduleSupplierInvoiceParams,
         SelfInvoicing,
         SendInvoiceParams,
@@ -7215,6 +7219,62 @@ class BudgetsResource:
         return result
 
 
+class InflationAdjustmentsResource:
+    """Contabilidad: fiscalisto.inflation_adjustments."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        year: str,
+        params: GetInflationAdjustmentParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> InflationAdjustment:
+        """Calcular el ajuste anual por inflación
+
+        El ajuste anual por inflación de una persona moral (artículo 44 de la Ley del ISR): la suma de los saldos al último día de cada mes de sus créditos y de sus deudas entre los meses del ejercicio, y la diferencia por el factor de ajuste anual. Deudas mayores dan un ajuste acumulable (taxable); créditos mayores, uno deducible. Cada cuenta cuenta por su código agrupador (con la razón en reason) o como la marcó con POST /v1/accounting/inflation_accounts. En el año en curso es una estimación hasta el mes actual. Como Estados financieros › Ajuste por inflación en la app.
+
+        GET /v1/accounting/inflation_adjustments/{year}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-inflation-adjustment
+        """
+        result: InflationAdjustment = self._client.request(
+            "GET", f"/v1/accounting/inflation_adjustments/{_path(year)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class InflationAccountsResource:
+    """Contabilidad: fiscalisto.inflation_accounts."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def save(
+        self,
+        params: SaveInflationAccountsParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> InflationAccounts:
+        """Cambiar cómo cuenta una cuenta en el ajuste por inflación
+
+        Marca cuentas de balance como crédito (credit), deuda (debt) o ninguno (none) para el ajuste anual por inflación, por ejemplo un préstamo a un socio persona moral o una deuda de un gasto no deducible. treatment null regresa al de su código agrupador. Una cuenta de resultados contesta parameter_invalid.
+
+        POST /v1/accounting/inflation_accounts
+        https://fiscalisto.com/docs/api/referencia/contabilidad/save-inflation-accounts
+        """
+        result: InflationAccounts = self._client.request(
+            "POST", "/v1/accounting/inflation_accounts", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class CostCenterResultsResource:
     """Contabilidad: fiscalisto.cost_center_results."""
 
@@ -8976,6 +9036,16 @@ class FiscalistoApi(Core):
     def budgets(self) -> BudgetsResource:
         """Contabilidad."""
         return BudgetsResource(self)
+
+    @cached_property
+    def inflation_adjustments(self) -> InflationAdjustmentsResource:
+        """Contabilidad."""
+        return InflationAdjustmentsResource(self)
+
+    @cached_property
+    def inflation_accounts(self) -> InflationAccountsResource:
+        """Contabilidad."""
+        return InflationAccountsResource(self)
 
     @cached_property
     def cost_center_results(self) -> CostCenterResultsResource:
