@@ -54,6 +54,9 @@ if TYPE_CHECKING:
         ComparativeStatements,
         CompleteProductionOrderParams,
         ComplianceOpinion,
+        ConsolidatedStatements,
+        ConsolidationElimination,
+        ConsolidationEliminationList,
         CostCenter,
         CostCenterResults,
         CostOfSales,
@@ -62,6 +65,7 @@ if TYPE_CHECKING:
         CreateBankTransactionsParams,
         CreateBranchParams,
         CreateCashForecastItemParams,
+        CreateConsolidationEliminationParams,
         CreateCostCenterParams,
         CreateCostOfSalesParams,
         CreateCreditNoteParams,
@@ -161,6 +165,7 @@ if TYPE_CHECKING:
         GetClosedPeriodParams,
         GetCompanyReportParams,
         GetComparativeStatementsParams,
+        GetConsolidatedStatementsParams,
         GetCostCenterResultsParams,
         GetCostOfSalesParams,
         GetCrossCheckCfdiParams,
@@ -224,6 +229,7 @@ if TYPE_CHECKING:
         ListBankTransactionsParams,
         ListBranchesParams,
         ListChartTemplatesParams,
+        ListConsolidationEliminationsParams,
         ListCostCentersParams,
         ListCustomerDataRequestsParams,
         ListCustomerGroupsParams,
@@ -375,6 +381,7 @@ if TYPE_CHECKING:
         UpdateBranchParams,
         UpdateCashForecastItemParams,
         UpdateCashForecastParams,
+        UpdateConsolidationEliminationParams,
         UpdateCostCenterParams,
         UpdateCustomerGroupParams,
         UpdateCustomerParams,
@@ -6632,6 +6639,26 @@ class AccountingResource:
         )
         return result
 
+    def consolidated_statements(
+        self,
+        params: GetConsolidatedStatementsParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ConsolidatedStatements:
+        """Ver los estados financieros consolidados
+
+        El estado de resultados y el balance general de varios RFC del espacio del emisor sumados cuenta por cuenta (comparten el catálogo), menos las eliminaciones del mes (POST /v1/accounting/consolidation_eliminations), con la hoja de consolidación (el saldo de cada cuenta en cada RFC, lo eliminado y el consolidado) y lo que los RFC se facturaron entre ellos sin impuestos. Los libros de cada RFC no cambian. Un emisor con un solo RFC contesta parameter_invalid en rfcs.
+
+        GET /v1/accounting/consolidated_statements
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-consolidated-statements
+        """
+        result: ConsolidatedStatements = self._client.request(
+            "GET", "/v1/accounting/consolidated_statements", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
     def electronic_accounting(
         self,
         params: GetElectronicAccountingParams,
@@ -7442,6 +7469,96 @@ class AccountRenumberingsResource:
         """
         result: AccountRenumbering = self._client.request(
             "POST", "/v1/accounting/account_renumberings", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class ConsolidationEliminationsResource:
+    """Contabilidad: fiscalisto.consolidation_eliminations."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListConsolidationEliminationsParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ConsolidationEliminationList:
+        """Listar las eliminaciones de consolidación de un mes
+
+        Las eliminaciones capturadas para el mes: lo que el consolidado resta al cierre de ese mes (ventas, saldos e inversiones entre los RFC).
+
+        GET /v1/accounting/consolidation_eliminations
+        https://fiscalisto.com/docs/api/referencia/contabilidad/list-consolidation-eliminations
+        """
+        result: ConsolidationEliminationList = self._client.request(
+            "GET", "/v1/accounting/consolidation_eliminations", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create(
+        self,
+        params: CreateConsolidationEliminationParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ConsolidationElimination:
+        """Capturar una eliminación de consolidación
+
+        Guarda una eliminación del mes entre los RFC que dice: renglones de cargo y abono que cuadran, sobre cuentas de su catálogo. Cada mes lleva sus eliminaciones completas a esa fecha (las ventas entre ellos del año hasta ese mes y los saldos entre ellos al cierre), como una hoja de consolidación. Solo cambia el consolidado, nunca los libros de un RFC.
+
+        POST /v1/accounting/consolidation_eliminations
+        https://fiscalisto.com/docs/api/referencia/contabilidad/create-consolidation-elimination
+        """
+        result: ConsolidationElimination = self._client.request(
+            "POST", "/v1/accounting/consolidation_eliminations", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateConsolidationEliminationParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ConsolidationElimination:
+        """Cambiar una eliminación de consolidación
+
+        La reemplaza con lo que manda.
+
+        POST /v1/accounting/consolidation_eliminations/{id}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/update-consolidation-elimination
+        """
+        result: ConsolidationElimination = self._client.request(
+            "POST", f"/v1/accounting/consolidation_eliminations/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar una eliminación de consolidación
+
+        Solo cambia el consolidado: los libros de cada RFC siguen igual.
+
+        DELETE /v1/accounting/consolidation_eliminations/{id}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/delete-consolidation-elimination
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/accounting/consolidation_eliminations/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -9349,6 +9466,11 @@ class FiscalistoApi(Core):
     def account_renumberings(self) -> AccountRenumberingsResource:
         """Contabilidad."""
         return AccountRenumberingsResource(self)
+
+    @cached_property
+    def consolidation_eliminations(self) -> ConsolidationEliminationsResource:
+        """Contabilidad."""
+        return ConsolidationEliminationsResource(self)
 
     @cached_property
     def entry_templates(self) -> EntryTemplatesResource:

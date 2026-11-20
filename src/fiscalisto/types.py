@@ -135,6 +135,31 @@ __all__ = [
     "CompleteProductionOrderParams",
     "CompleteProductionOrderParamsOtherCostsItem",
     "ComplianceOpinion",
+    "ConsolidatedStatements",
+    "ConsolidatedStatementsBalanceSheet",
+    "ConsolidatedStatementsBalanceSheetAssets",
+    "ConsolidatedStatementsBalanceSheetAssetsGroupsItem",
+    "ConsolidatedStatementsBalanceSheetAssetsGroupsItemAccountsItem",
+    "ConsolidatedStatementsBalanceSheetEquity",
+    "ConsolidatedStatementsBalanceSheetEquityGroupsItem",
+    "ConsolidatedStatementsBalanceSheetEquityGroupsItemAccountsItem",
+    "ConsolidatedStatementsBalanceSheetLiabilities",
+    "ConsolidatedStatementsBalanceSheetLiabilitiesGroupsItem",
+    "ConsolidatedStatementsBalanceSheetLiabilitiesGroupsItemAccountsItem",
+    "ConsolidatedStatementsIncomeStatement",
+    "ConsolidatedStatementsIncomeStatementMonth",
+    "ConsolidatedStatementsIncomeStatementMonthSectionsItem",
+    "ConsolidatedStatementsIncomeStatementMonthSectionsItemGroupsItem",
+    "ConsolidatedStatementsIncomeStatementMonthSectionsItemGroupsItemAccountsItem",
+    "ConsolidatedStatementsIncomeStatementYearToDate",
+    "ConsolidatedStatementsIncomeStatementYearToDateSectionsItem",
+    "ConsolidatedStatementsIncomeStatementYearToDateSectionsItemGroupsItem",
+    "ConsolidatedStatementsIncomeStatementYearToDateSectionsItemGroupsItemAccountsItem",
+    "ConsolidatedStatementsIntercompanyItem",
+    "ConsolidatedStatementsWorksheetItem",
+    "ConsolidationElimination",
+    "ConsolidationEliminationLinesItem",
+    "ConsolidationEliminationList",
     "CostCenter",
     "CostCenterList",
     "CostCenterResults",
@@ -153,6 +178,8 @@ __all__ = [
     "CreateBranchParamsAddress",
     "CreateBranchParamsSeries",
     "CreateCashForecastItemParams",
+    "CreateConsolidationEliminationParams",
+    "CreateConsolidationEliminationParamsLinesItem",
     "CreateCostCenterParams",
     "CreateCostOfSalesParams",
     "CreateCreditNoteParams",
@@ -424,6 +451,7 @@ __all__ = [
     "GetClosedPeriodParams",
     "GetCompanyReportParams",
     "GetComparativeStatementsParams",
+    "GetConsolidatedStatementsParams",
     "GetCostCenterResultsParams",
     "GetCostOfSalesParams",
     "GetCrossCheckCfdiParams",
@@ -610,6 +638,7 @@ __all__ = [
     "ListBankTransactionsParams",
     "ListBranchesParams",
     "ListChartTemplatesParams",
+    "ListConsolidationEliminationsParams",
     "ListCostCentersParams",
     "ListCustomerDataRequestsParams",
     "ListCustomerGroupsParams",
@@ -957,6 +986,8 @@ __all__ = [
     "UpdateCashForecastItemParams",
     "UpdateCashForecastParams",
     "UpdateCashForecastParamsStartingBalance",
+    "UpdateConsolidationEliminationParams",
+    "UpdateConsolidationEliminationParamsLinesItem",
     "UpdateCostCenterParams",
     "UpdateCustomerGroupParams",
     "UpdateCustomerParams",
@@ -6757,6 +6788,277 @@ class AccountRenumbering(TypedDict):
     """Las cuentas que cambian o no pueden."""
 
 
+class ConsolidatedStatementsIncomeStatementMonthSectionsItemGroupsItemAccountsItem(TypedDict):
+    number: str
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+
+
+class ConsolidatedStatementsIncomeStatementMonthSectionsItemGroupsItem(TypedDict):
+    grouping_code: str
+    """El primer nivel del código agrupador (401, 601…)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+    accounts: list[ConsolidatedStatementsIncomeStatementMonthSectionsItemGroupsItemAccountsItem]
+    """Las cuentas del grupo con su monto."""
+
+
+class ConsolidatedStatementsIncomeStatementMonthSectionsItem(TypedDict):
+    key: Literal["ingresos", "costos", "gastos", "financiamiento", "otros"]
+    """La sección: ingresos, costos, gastos, financiamiento u otros."""
+    name: str
+    """Nombre."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    groups: list[ConsolidatedStatementsIncomeStatementMonthSectionsItemGroupsItem]
+    """Su monto por el primer nivel del código agrupador."""
+
+
+class ConsolidatedStatementsIncomeStatementMonth(TypedDict):
+    """El estado de resultados del mes."""
+    sections: list[ConsolidatedStatementsIncomeStatementMonthSectionsItem]
+    """Ingresos, costos, gastos, financiamiento y otros, cada uno con su total."""
+    net_income: float
+    """La utilidad (o pérdida, negativa) antes de impuestos del mes."""
+
+
+class ConsolidatedStatementsIncomeStatementYearToDateSectionsItemGroupsItemAccountsItem(TypedDict):
+    number: str
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+
+
+class ConsolidatedStatementsIncomeStatementYearToDateSectionsItemGroupsItem(TypedDict):
+    grouping_code: str
+    """El primer nivel del código agrupador (401, 601…)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+    accounts: list[ConsolidatedStatementsIncomeStatementYearToDateSectionsItemGroupsItemAccountsItem]
+    """Las cuentas del grupo con su monto."""
+
+
+class ConsolidatedStatementsIncomeStatementYearToDateSectionsItem(TypedDict):
+    key: Literal["ingresos", "costos", "gastos", "financiamiento", "otros"]
+    """La sección: ingresos, costos, gastos, financiamiento u otros."""
+    name: str
+    """Nombre."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    groups: list[ConsolidatedStatementsIncomeStatementYearToDateSectionsItemGroupsItem]
+    """Su monto por el primer nivel del código agrupador."""
+
+
+class ConsolidatedStatementsIncomeStatementYearToDate(TypedDict):
+    """El estado de resultados de enero al mes."""
+    sections: list[ConsolidatedStatementsIncomeStatementYearToDateSectionsItem]
+    """Ingresos, costos, gastos, financiamiento y otros, cada uno con su total."""
+    net_income: float
+    """La utilidad (o pérdida, negativa) antes de impuestos de enero al mes."""
+
+
+class ConsolidatedStatementsIncomeStatement(TypedDict):
+    """El estado de resultados consolidado: del mes y de enero al mes."""
+    month: ConsolidatedStatementsIncomeStatementMonth
+    """El estado de resultados del mes."""
+    year_to_date: ConsolidatedStatementsIncomeStatementYearToDate
+    """El estado de resultados de enero al mes."""
+
+
+class ConsolidatedStatementsBalanceSheetAssetsGroupsItemAccountsItem(TypedDict):
+    number: str
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+
+
+class ConsolidatedStatementsBalanceSheetAssetsGroupsItem(TypedDict):
+    grouping_code: str
+    """El primer nivel del código agrupador (401, 601…)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+    accounts: list[ConsolidatedStatementsBalanceSheetAssetsGroupsItemAccountsItem]
+    """Las cuentas del grupo con su monto."""
+
+
+class ConsolidatedStatementsBalanceSheetAssets(TypedDict):
+    """El activo: su total y sus grupos."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    groups: list[ConsolidatedStatementsBalanceSheetAssetsGroupsItem]
+    """Su monto por el primer nivel del código agrupador."""
+
+
+class ConsolidatedStatementsBalanceSheetLiabilitiesGroupsItemAccountsItem(TypedDict):
+    number: str
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+
+
+class ConsolidatedStatementsBalanceSheetLiabilitiesGroupsItem(TypedDict):
+    grouping_code: str
+    """El primer nivel del código agrupador (401, 601…)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+    accounts: list[ConsolidatedStatementsBalanceSheetLiabilitiesGroupsItemAccountsItem]
+    """Las cuentas del grupo con su monto."""
+
+
+class ConsolidatedStatementsBalanceSheetLiabilities(TypedDict):
+    """El pasivo: su total y sus grupos."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    groups: list[ConsolidatedStatementsBalanceSheetLiabilitiesGroupsItem]
+    """Su monto por el primer nivel del código agrupador."""
+
+
+class ConsolidatedStatementsBalanceSheetEquityGroupsItemAccountsItem(TypedDict):
+    number: str
+    """Número de empleado (NumEmpleado)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+
+
+class ConsolidatedStatementsBalanceSheetEquityGroupsItem(TypedDict):
+    grouping_code: str
+    """El primer nivel del código agrupador (401, 601…)."""
+    name: str
+    """Nombre."""
+    amount: float
+    """Importe."""
+    accounts: list[ConsolidatedStatementsBalanceSheetEquityGroupsItemAccountsItem]
+    """Las cuentas del grupo con su monto."""
+
+
+class ConsolidatedStatementsBalanceSheetEquity(TypedDict):
+    """El capital contable sin el resultado del ejercicio: su total y sus grupos."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    groups: list[ConsolidatedStatementsBalanceSheetEquityGroupsItem]
+    """Su monto por el primer nivel del código agrupador."""
+
+
+class ConsolidatedStatementsBalanceSheet(TypedDict):
+    """El balance general consolidado al cierre del mes."""
+    assets: ConsolidatedStatementsBalanceSheetAssets
+    """El activo: su total y sus grupos."""
+    liabilities: ConsolidatedStatementsBalanceSheetLiabilities
+    """El pasivo: su total y sus grupos."""
+    equity: ConsolidatedStatementsBalanceSheetEquity
+    """El capital contable sin el resultado del ejercicio: su total y sus grupos."""
+    net_income_year_to_date: float
+    """El resultado del ejercicio hasta el mes, parte del capital."""
+    liabilities_and_equity: float
+    """Pasivo más capital más el resultado del ejercicio."""
+    difference: float
+    """Activo menos pasivo y capital: 0 cuando los libros cuadran."""
+
+
+class ConsolidatedStatementsWorksheetItem(TypedDict):
+    number: str
+    """El número de la cuenta."""
+    name: str
+    """Su nombre."""
+    grouping_code: str
+    """Su código agrupador del SAT."""
+    by_rfc: dict[str, float]
+    """Su saldo final en cada RFC, por RFC (las acreedoras en positivo)."""
+    eliminations: float
+    """Lo que las eliminaciones le suman (positivo) o restan."""
+    balance: float
+    """Su saldo final consolidado."""
+
+
+class ConsolidatedStatementsIntercompanyItem(TypedDict):
+    issuer_rfc: str
+    """El RFC que facturó."""
+    receiver_rfc: str
+    """El RFC que recibió."""
+    month_amount: float
+    """Lo facturado en el mes, sin impuestos, en pesos (egresos restan)."""
+    year_to_date_amount: float
+    """Lo facturado de enero al mes, sin impuestos, en pesos."""
+    invoices: int
+    """Cuántos CFDI en el año."""
+
+
+class ConsolidatedStatements(TypedDict):
+    """Los estados financieros consolidados de varios RFC de un mes: sus balanzas sumadas cuenta por cuenta menos las eliminaciones del mes."""
+    object: Literal["consolidated_statements"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM)."""
+    rfcs: list[str]
+    """Los RFC que consolida."""
+    income_statement: ConsolidatedStatementsIncomeStatement
+    """El estado de resultados consolidado: del mes y de enero al mes."""
+    balance_sheet: ConsolidatedStatementsBalanceSheet
+    """El balance general consolidado al cierre del mes."""
+    worksheet: list[ConsolidatedStatementsWorksheetItem]
+    """La hoja de consolidación: cada cuenta en cada RFC, lo eliminado y el consolidado."""
+    eliminations: list[ConsolidationElimination]
+    """Las eliminaciones del mes que se aplicaron."""
+    intercompany: list[ConsolidatedStatementsIntercompanyItem]
+    """Lo que los RFC se facturaron entre ellos en el año: lo que normalmente se elimina."""
+
+
+class ConsolidationEliminationLinesItem(TypedDict):
+    account: str
+    """El número de cuenta."""
+    account_name: str
+    """El nombre de la cuenta."""
+    debit: float
+    """El cargo."""
+    credit: float
+    """El abono."""
+
+
+class ConsolidationElimination(TypedDict):
+    """Una eliminación de consolidación: lo que el consolidado de varios RFC resta al cierre de un mes (ventas, saldos o inversiones entre ellos). Nunca cambia los libros de un RFC."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["consolidation_elimination"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM) a cuyo cierre se elimina."""
+    description: str
+    """Su concepto."""
+    rfcs: list[str]
+    """Los RFC entre los que es: se aplica cuando todos están en el consolidado."""
+    lines: list[ConsolidationEliminationLinesItem]
+    """Sus renglones de cargo y abono."""
+    updated_at: str | None
+    """Cuándo se cambió por última vez."""
+
+
 class EntryTemplateLinesItem(TypedDict):
     account: str
     """El número de cuenta."""
@@ -10716,6 +11018,17 @@ class ChartTemplateList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[ChartTemplate]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class ConsolidationEliminationList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[ConsolidationElimination]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -16040,6 +16353,66 @@ class RenumberAccountsParams(TypedDict):
     """En vez de separator y widths: el número nuevo de cada cuenta que cambia, por ejemplo los del sistema de su contador."""
     dry_run: NotRequired[bool]
     """true: dice qué cambiaría, sin cambiar nada."""
+
+
+class GetConsolidatedStatementsParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/consolidated_statements."""
+    rfcs: str
+    """Los RFC que consolida, separados por coma (de 2 a 20)."""
+    month: str
+    """El mes (AAAA-MM)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class ListConsolidationEliminationsParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/consolidation_eliminations."""
+    month: str
+    """El mes (AAAA-MM)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateConsolidationEliminationParamsLinesItem(TypedDict):
+    account: str
+    """El número de la cuenta en su catálogo (GET /v1/accounting/accounts)."""
+    debit: NotRequired[float]
+    """El cargo."""
+    credit: NotRequired[float]
+    """El abono."""
+
+
+class CreateConsolidationEliminationParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    month: str
+    """El mes (AAAA-MM) a cuyo cierre se elimina."""
+    description: str
+    """El concepto: «Ventas entre empresas del grupo»."""
+    rfcs: list[str]
+    """Los RFC entre los que es, del espacio del emisor: se aplica cuando todos están en el consolidado."""
+    lines: list[CreateConsolidationEliminationParamsLinesItem]
+    """Sus renglones: los cargos suman lo mismo que los abonos."""
+
+
+class UpdateConsolidationEliminationParamsLinesItem(TypedDict):
+    account: str
+    """El número de la cuenta en su catálogo (GET /v1/accounting/accounts)."""
+    debit: NotRequired[float]
+    """El cargo."""
+    credit: NotRequired[float]
+    """El abono."""
+
+
+class UpdateConsolidationEliminationParams(TypedDict):
+    month: str
+    """El mes (AAAA-MM) a cuyo cierre se elimina."""
+    description: str
+    """El concepto: «Ventas entre empresas del grupo»."""
+    rfcs: list[str]
+    """Los RFC entre los que es, del espacio del emisor: se aplica cuando todos están en el consolidado."""
+    lines: list[UpdateConsolidationEliminationParamsLinesItem]
+    """Sus renglones: los cargos suman lo mismo que los abonos."""
 
 
 class ListEntryTemplatesParams(TypedDict):
