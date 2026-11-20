@@ -119,6 +119,7 @@ if TYPE_CHECKING:
         Employee,
         EmployeeDeduction,
         EmployeeDeductionList,
+        EmployeeVacations,
         Event,
         EventResend,
         ExpensePerson,
@@ -145,6 +146,7 @@ if TYPE_CHECKING:
         GetDiotFileParams,
         GetDiotParams,
         GetElectronicAccountingParams,
+        GetEmployeeVacationsParams,
         GetExpensePolicyParams,
         GetFinancialStatementsParams,
         GetFxRevaluationParams,
@@ -336,6 +338,7 @@ if TYPE_CHECKING:
         UpdateCustomerParams,
         UpdateEmployeeDeductionParams,
         UpdateEmployeeParams,
+        UpdateEmployeeVacationsParams,
         UpdateExpenseItemParams,
         UpdateExpensePersonParams,
         UpdateExpensePolicyParams,
@@ -2382,6 +2385,49 @@ class EmployeesResource:
         """
         result: Deleted = self._client.request(
             "DELETE", f"/v1/employees/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def vacations(
+        self,
+        id: str,
+        params: GetEmployeeVacationsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EmployeeVacations:
+        """Vacaciones de un empleado
+
+        Los días de vacaciones de cada año de servicio (artículo 76 de la LFT: 12 el primero, dos más cada año hasta 20 y luego dos más cada cinco), los que tomó (los días de vacaciones de sus recibos timbrados, restados del año más antiguo que le quede), hasta cuándo dárselos (seis meses después del aniversario, artículo 81) y cuándo prescriben (un año después, artículo 516). pending_days son los de años cumplidos que no han prescrito: los que paga el finiquito.
+
+        GET /v1/employees/{id}/vacations
+        https://fiscalisto.com/docs/api/referencia/nomina/get-employee-vacations
+        """
+        result: EmployeeVacations = self._client.request(
+            "GET", f"/v1/employees/{_path(id)}/vacations", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_vacations(
+        self,
+        id: str,
+        params: UpdateEmployeeVacationsParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EmployeeVacations:
+        """Saldo de vacaciones antes de Fiscalisto
+
+        Guarda lo que el empleado tenía en un día según sus registros: los días que le quedaban de años cumplidos y los que ya había tomado del año en curso. Los recibos timbrados antes de ese día no se cuentan. opening_date null lo quita.
+
+        POST /v1/employees/{id}/vacations
+        https://fiscalisto.com/docs/api/referencia/nomina/update-employee-vacations
+        """
+        result: EmployeeVacations = self._client.request(
+            "POST", f"/v1/employees/{_path(id)}/vacations", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 

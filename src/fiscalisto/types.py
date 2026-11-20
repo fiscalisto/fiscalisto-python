@@ -267,6 +267,11 @@ __all__ = [
     "EmployeeDeduction",
     "EmployeeDeductionList",
     "EmployeeList",
+    "EmployeeVacations",
+    "EmployeeVacationsCurrentYear",
+    "EmployeeVacationsOpening",
+    "EmployeeVacationsTakenItem",
+    "EmployeeVacationsYearsItem",
     "Event",
     "EventList",
     "EventResend",
@@ -358,6 +363,7 @@ __all__ = [
     "GetDiotFileParams",
     "GetDiotParams",
     "GetElectronicAccountingParams",
+    "GetEmployeeVacationsParams",
     "GetExpensePolicyParams",
     "GetFinancialStatementsParams",
     "GetFxRevaluationParams",
@@ -857,6 +863,7 @@ __all__ = [
     "UpdateCustomerParamsForeign",
     "UpdateEmployeeDeductionParams",
     "UpdateEmployeeParams",
+    "UpdateEmployeeVacationsParams",
     "UpdateExpenseItemParams",
     "UpdateExpensePersonParams",
     "UpdateExpensePolicyParams",
@@ -3257,6 +3264,77 @@ class PayrollTax(TypedDict):
     """Las percepciones del mes."""
     excluded_perception_types: list[str]
     """Las percepciones que no suman a la base."""
+
+
+class EmployeeVacationsCurrentYear(TypedDict):
+    """El año de servicio en curso."""
+    year: int
+    """Su número: 1 el primer año de servicio."""
+    completes_on: str
+    """Su aniversario."""
+    days: float
+    """Los días que le tocan al cumplirlo."""
+    taken_in_advance: float
+    """Los que ya tomó por adelantado."""
+    accrued_days: float
+    """Su parte proporcional al día del saldo, menos lo adelantado."""
+
+
+class EmployeeVacationsYearsItem(TypedDict):
+    year: int
+    """El año de servicio; 0 es el saldo de antes de Fiscalisto."""
+    owed_from: str
+    """El aniversario que lo cumple."""
+    days: float
+    """Los días que le tocan (artículo 76)."""
+    taken_days: float
+    """Los que ya tomó."""
+    remaining_days: float
+    """Los que le quedan."""
+    grant_by: str
+    """El último día para dárselos (artículo 81)."""
+    prescribes_on: str
+    """El día en que prescriben (artículo 516)."""
+    status: Literal["taken", "pending", "late", "prescribed"]
+    """taken, disfrutadas; pending, por disfrutar; late, pasó el plazo para darlas y no han prescrito; prescribed, prescritas."""
+
+
+class EmployeeVacationsOpening(TypedDict):
+    date: str
+    """El día del saldo inicial."""
+    pending_days: float
+    """Los de años cumplidos."""
+    taken_days: float
+    """Los tomados del año en curso."""
+
+
+class EmployeeVacationsTakenItem(TypedDict):
+    date: str
+    """El fin del periodo del recibo."""
+    days: float
+    """Los días de vacaciones que pagó."""
+
+
+class EmployeeVacations(TypedDict):
+    """Las vacaciones de un empleado por año de servicio (LFT 76, 81 y 516)."""
+    object: Literal["employee_vacations"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    employee: str
+    """El empleado (emp_…)."""
+    as_of: str
+    """El día del saldo."""
+    pending_days: float
+    """Los días de años de servicio cumplidos que le quedan y no han prescrito: los que paga el finiquito."""
+    current_year: EmployeeVacationsCurrentYear
+    """El año de servicio en curso."""
+    years: list[EmployeeVacationsYearsItem]
+    """Cada año de servicio cumplido, del más antiguo al más reciente."""
+    opening: EmployeeVacationsOpening | None
+    """El saldo de antes de Fiscalisto, o null."""
+    taken: list[EmployeeVacationsTakenItem]
+    """Los días de vacaciones de sus recibos timbrados."""
 
 
 class PayrollTaxSettings(TypedDict):
@@ -11889,6 +11967,21 @@ class UpdateEmployeeParams(TypedDict):
     """Causa de la baja ante el IMSS, con end_date: 1 término de contrato, 2 separación voluntaria (la usual), 3 abandono, 4 defunción, 5 clausura, 6 otras, 7 ausentismo, 8 rescisión, 9 jubilación, A pensión."""
 
 
+class GetEmployeeVacationsParams(TypedDict):
+    """Los parámetros de GET /v1/employees/{id}/vacations."""
+    as_of: NotRequired[str]
+    """El día del saldo (AAAA-MM-DD); por omisión hoy, o su último día si ya salió."""
+
+
+class UpdateEmployeeVacationsParams(TypedDict):
+    opening_date: str | None
+    """El día del saldo, según sus registros de antes de Fiscalisto; null lo quita. Los recibos timbrados antes de ese día no se cuentan."""
+    opening_pending_days: NotRequired[float]
+    """Los días que ese día le quedaban de años de servicio cumplidos."""
+    opening_taken_days: NotRequired[float]
+    """Los días del año de servicio en curso que ya había tomado ese día."""
+
+
 class CreatePayrollReceiptParamsPeriod(TypedDict):
     """El periodo de pago: primer y último día (FechaInicialPago, FechaFinalPago) y, si no es el último, el día de pago (FechaPago)."""
     start: str
@@ -12023,7 +12116,9 @@ class CreateExtraordinaryPayrollReceiptParams(TypedDict):
     twenty_days_per_year: NotRequired[bool]
     """finiquito con dismissal: incluye 20 días por año de servicio (LFT art. 50), cuando el patrón no lo reinstala."""
     vacation_days_taken: NotRequired[float]
-    """finiquito: los días de vacaciones del año de servicio en curso que ya tomó."""
+    """finiquito: los días de vacaciones del año de servicio en curso que ya tomó. Por omisión, los de sus recibos timbrados (GET /v1/employees/{id}/vacations)."""
+    vacation_days_owed: NotRequired[float]
+    """finiquito: los días de vacaciones de años de servicio cumplidos que no disfrutó ni han prescrito; se pagan con su prima vacacional. Por omisión, pending_days de sus vacaciones."""
     send_email: NotRequired[bool]
     """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
     metadata: NotRequired[dict[str, str]]
@@ -12052,7 +12147,9 @@ class PreviewExtraordinaryPayrollReceiptParams(TypedDict):
     twenty_days_per_year: NotRequired[bool]
     """finiquito con dismissal: incluye 20 días por año de servicio (LFT art. 50), cuando el patrón no lo reinstala."""
     vacation_days_taken: NotRequired[float]
-    """finiquito: los días de vacaciones del año de servicio en curso que ya tomó."""
+    """finiquito: los días de vacaciones del año de servicio en curso que ya tomó. Por omisión, los de sus recibos timbrados (GET /v1/employees/{id}/vacations)."""
+    vacation_days_owed: NotRequired[float]
+    """finiquito: los días de vacaciones de años de servicio cumplidos que no disfrutó ni han prescrito; se pagan con su prima vacacional. Por omisión, pending_days de sus vacaciones."""
     send_email: NotRequired[bool]
     """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
     metadata: NotRequired[dict[str, str]]
