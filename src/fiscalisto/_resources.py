@@ -20,6 +20,7 @@ if TYPE_CHECKING:
         AdvanceTestClockParams,
         AnnualAdjustment,
         ApplyAdvanceParams,
+        ApplyEntryTemplateParams,
         ApplyVariableSalaryParams,
         ApproveAttendanceOvertimeParams,
         ApproveExpenseReportParams,
@@ -65,6 +66,7 @@ if TYPE_CHECKING:
         CreateCustomerParams,
         CreateEmployeeDeductionParams,
         CreateEmployeeParams,
+        CreateEntryTemplateParams,
         CreateExpenseItemParams,
         CreateExpenseMovementParams,
         CreateExpensePersonLinkParams,
@@ -127,6 +129,9 @@ if TYPE_CHECKING:
         EmployeeDeduction,
         EmployeeDeductionList,
         EmployeeVacations,
+        EntryTemplate,
+        EntryTemplateLines,
+        EntryTemplateList,
         EquityChanges,
         Event,
         EventResend,
@@ -219,6 +224,7 @@ if TYPE_CHECKING:
         ListCustomersParams,
         ListEmployeeDeductionsParams,
         ListEmployeesParams,
+        ListEntryTemplatesParams,
         ListEventsParams,
         ListExpensePeopleParams,
         ListExpenseReportsParams,
@@ -368,6 +374,7 @@ if TYPE_CHECKING:
         UpdateEmployeeDeductionParams,
         UpdateEmployeeParams,
         UpdateEmployeeVacationsParams,
+        UpdateEntryTemplateParams,
         UpdateExpenseItemParams,
         UpdateExpensePersonParams,
         UpdateExpensePolicyParams,
@@ -7335,6 +7342,118 @@ class BookDepreciationRatesResource:
         return result
 
 
+class EntryTemplatesResource:
+    """Contabilidad: fiscalisto.entry_templates."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListEntryTemplatesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EntryTemplateList:
+        """Listar las pólizas modelo
+
+        Las pólizas modelo del emisor, por nombre: las cuentas de una póliza que captura seguido con el porcentaje del total de cada renglón. Como «Usar un modelo» en Nueva póliza.
+
+        GET /v1/accounting/entry_templates
+        https://fiscalisto.com/docs/api/referencia/contabilidad/list-entry-templates
+        """
+        result: EntryTemplateList = self._client.request(
+            "GET", "/v1/accounting/entry_templates", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create(
+        self,
+        params: CreateEntryTemplateParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EntryTemplate:
+        """Guardar una póliza modelo
+
+        Guarda las cuentas de una póliza bajo un nombre, cada renglón en su lado con el porcentaje del total (percentage), un importe fijo (amount) o ninguno, para escribirlo cada vez. Los porcentajes de un lado suman hasta 100. El nombre es único en el emisor.
+
+        POST /v1/accounting/entry_templates
+        https://fiscalisto.com/docs/api/referencia/contabilidad/create-entry-template
+        """
+        result: EntryTemplate = self._client.request(
+            "POST", "/v1/accounting/entry_templates", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateEntryTemplateParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EntryTemplate:
+        """Cambiar una póliza modelo
+
+        La reemplaza con lo que manda. Las pólizas que ya se hicieron con ella no cambian.
+
+        POST /v1/accounting/entry_templates/{id}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/update-entry-template
+        """
+        result: EntryTemplate = self._client.request(
+            "POST", f"/v1/accounting/entry_templates/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar una póliza modelo
+
+        Las pólizas que ya se hicieron con ella no cambian.
+
+        DELETE /v1/accounting/entry_templates/{id}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/delete-entry-template
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/accounting/entry_templates/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def apply(
+        self,
+        id: str,
+        params: ApplyEntryTemplateParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EntryTemplateLines:
+        """Calcular los renglones de una póliza modelo
+
+        Los renglones de la póliza modelo para un total: cada porcentaje al centavo, los importes fijos como están y 0 donde no hay ninguno. El centavo del redondeo va al renglón más grande de un lado que suma 100%, para que cuadre. Mándelos como lines en POST /v1/accounting/manual_entries; aquí no se guarda nada.
+
+        POST /v1/accounting/entry_templates/{id}/apply
+        https://fiscalisto.com/docs/api/referencia/contabilidad/apply-entry-template
+        """
+        result: EntryTemplateLines = self._client.request(
+            "POST", f"/v1/accounting/entry_templates/{_path(id)}/apply", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class CostCenterResultsResource:
     """Contabilidad: fiscalisto.cost_center_results."""
 
@@ -9116,6 +9235,11 @@ class FiscalistoApi(Core):
     def book_depreciation_rates(self) -> BookDepreciationRatesResource:
         """Contabilidad."""
         return BookDepreciationRatesResource(self)
+
+    @cached_property
+    def entry_templates(self) -> EntryTemplatesResource:
+        """Contabilidad."""
+        return EntryTemplatesResource(self)
 
     @cached_property
     def cost_center_results(self) -> CostCenterResultsResource:

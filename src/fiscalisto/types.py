@@ -28,6 +28,7 @@ __all__ = [
     "ApiErrorError",
     "ApplyAdvanceParams",
     "ApplyAdvanceParamsRemainder",
+    "ApplyEntryTemplateParams",
     "ApplyVariableSalaryParams",
     "ApproveAttendanceOvertimeParams",
     "ApproveExpenseReportParams",
@@ -152,6 +153,8 @@ __all__ = [
     "CreateCustomerParamsForeign",
     "CreateEmployeeDeductionParams",
     "CreateEmployeeParams",
+    "CreateEntryTemplateParams",
+    "CreateEntryTemplateParamsLinesItem",
     "CreateExpenseItemParams",
     "CreateExpenseMovementParams",
     "CreateExpensePersonLinkParams",
@@ -313,6 +316,11 @@ __all__ = [
     "EmployeeVacationsOpening",
     "EmployeeVacationsTakenItem",
     "EmployeeVacationsYearsItem",
+    "EntryTemplate",
+    "EntryTemplateLines",
+    "EntryTemplateLinesItem",
+    "EntryTemplateLinesLinesItem",
+    "EntryTemplateList",
     "EquityChanges",
     "EquityChangesAccountsItem",
     "Event",
@@ -596,6 +604,7 @@ __all__ = [
     "ListCustomersParams",
     "ListEmployeeDeductionsParams",
     "ListEmployeesParams",
+    "ListEntryTemplatesParams",
     "ListEventsParams",
     "ListExpensePeopleParams",
     "ListExpenseReportsParams",
@@ -940,6 +949,8 @@ __all__ = [
     "UpdateEmployeeDeductionParams",
     "UpdateEmployeeParams",
     "UpdateEmployeeVacationsParams",
+    "UpdateEntryTemplateParams",
+    "UpdateEntryTemplateParamsLinesItem",
     "UpdateExpenseItemParams",
     "UpdateExpensePersonParams",
     "UpdateExpensePolicyParams",
@@ -6104,6 +6115,16 @@ class ManualJournalEntryLinesItem(TypedDict):
     """El abono, en pesos."""
     cost_center: str | None
     """Su centro de costo (ccn_…), o null."""
+    currency: str | None
+    """Su moneda (ISO 4217) si es en otra, o null si es en pesos."""
+    foreign_amount: float | None
+    """Su importe en esa moneda, o null."""
+    exchange_rate: float | None
+    """Su tipo de cambio, o null."""
+    cfdi_uuid: str | None
+    """El UUID del CFDI de este renglón, o null."""
+    cfdi_tax_id: str | None
+    """El RFC de la otra parte de ese CFDI, o null."""
 
 
 class ManualJournalEntry(TypedDict):
@@ -6633,6 +6654,76 @@ class InflationAccounts(TypedDict):
     """El emisor."""
     accounts: list[InflationAccountsAccountsItem]
     """Las cuentas que cambió, con cómo cuentan ahora."""
+
+
+class EntryTemplateLinesItem(TypedDict):
+    account: str
+    """El número de cuenta."""
+    account_name: str
+    """El nombre de la cuenta."""
+    side: Literal["debit", "credit"]
+    """Si el renglón es cargo (debit) o abono (credit)."""
+    percentage: float | None
+    """El porcentaje del total que lleva, o null."""
+    amount: float | None
+    """Su importe fijo, o null."""
+    cost_center: str | None
+    """Su centro de costo (ccn_…), o null."""
+
+
+class EntryTemplate(TypedDict):
+    """Una póliza modelo: las cuentas de una póliza que se captura seguido (una compra, una renta) con el porcentaje del total o el importe fijo de cada renglón, para hacerla otra vez con otro total."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["entry_template"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    name: str
+    """El nombre del modelo."""
+    description: str
+    """El concepto de las pólizas que se hacen con él."""
+    kind: Literal["adjustment", "accrual", "reclassification", "other"]
+    """La clase de las pólizas que se hacen con él: adjustment, accrual, reclassification u other."""
+    journal_type: Literal["journal", "income", "expense"]
+    """Su tipo de póliza: journal, income o expense."""
+    lines: list[EntryTemplateLinesItem]
+    """Sus renglones: la cuenta, el lado y el porcentaje o el importe fijo."""
+    updated_at: str | None
+    """Cuándo cambió por última vez."""
+
+
+class EntryTemplateLinesLinesItem(TypedDict):
+    account: str
+    """El número de cuenta."""
+    debit: float
+    """El cargo, en pesos."""
+    credit: float
+    """El abono, en pesos."""
+    cost_center: str | None
+    """Su centro de costo (ccn_…): la obra, proyecto, sucursal o área a la que pertenece, para ver ingresos y gastos por centro en Reportes. No cambia el CFDI. Sus notas de crédito lo toman solas."""
+
+
+class EntryTemplateLines(TypedDict):
+    """Los renglones de una póliza modelo para un total, listos para POST /v1/accounting/manual_entries. No se guarda nada."""
+    object: Literal["entry_template_lines"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    entry_template: str
+    """La póliza modelo (mjt_…)."""
+    total: float
+    """El total con que se calcularon."""
+    description: str
+    """El concepto del modelo."""
+    kind: Literal["adjustment", "accrual", "reclassification", "other"]
+    """La clase de la póliza, la del modelo."""
+    journal_type: Literal["journal", "income", "expense"]
+    """El tipo de póliza, el del modelo."""
+    lines: list[EntryTemplateLinesLinesItem]
+    """Los renglones, como los recibe POST /v1/accounting/manual_entries."""
 
 
 class BookDepreciationRate(TypedDict):
@@ -10513,6 +10604,17 @@ class FixedAssetList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[FixedAsset]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class EntryTemplateList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[EntryTemplate]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -15450,6 +15552,16 @@ class CreateManualEntryParamsLinesItem(TypedDict):
     """El abono."""
     cost_center: NotRequired[str | None]
     """Su centro de costo (ccn_…, GET /v1/cost_centers), opcional: los resultados por centro de costo y los presupuestos lo leen."""
+    currency: NotRequired[str | None]
+    """Un renglón en otra moneda: su clave ISO 4217 (USD, EUR…). Con ella van foreign_amount y exchange_rate, y debit o credit es su producto en pesos."""
+    foreign_amount: NotRequired[float | None]
+    """El importe del renglón en su moneda."""
+    exchange_rate: NotRequired[float | None]
+    """El tipo de cambio del renglón: pesos por una unidad de su moneda."""
+    cfdi_uuid: NotRequired[str | None]
+    """El CFDI que documenta este renglón, aparte del de la póliza: así una póliza lleva varios."""
+    cfdi_tax_id: NotRequired[str | None]
+    """El RFC de quien emitió o recibió el CFDI del renglón."""
 
 
 class CreateManualEntryParams(TypedDict):
@@ -15497,6 +15609,16 @@ class UpdateManualEntryParamsLinesItem(TypedDict):
     """El abono."""
     cost_center: NotRequired[str | None]
     """Su centro de costo (ccn_…, GET /v1/cost_centers), opcional: los resultados por centro de costo y los presupuestos lo leen."""
+    currency: NotRequired[str | None]
+    """Un renglón en otra moneda: su clave ISO 4217 (USD, EUR…). Con ella van foreign_amount y exchange_rate, y debit o credit es su producto en pesos."""
+    foreign_amount: NotRequired[float | None]
+    """El importe del renglón en su moneda."""
+    exchange_rate: NotRequired[float | None]
+    """El tipo de cambio del renglón: pesos por una unidad de su moneda."""
+    cfdi_uuid: NotRequired[str | None]
+    """El CFDI que documenta este renglón, aparte del de la póliza: así una póliza lleva varios."""
+    cfdi_tax_id: NotRequired[str | None]
+    """El RFC de quien emitió o recibió el CFDI del renglón."""
 
 
 class UpdateManualEntryParams(TypedDict):
@@ -15529,6 +15651,16 @@ class ImportManualEntriesParamsEntriesItemLinesItem(TypedDict):
     """El abono."""
     cost_center: NotRequired[str | None]
     """Su centro de costo (ccn_…, GET /v1/cost_centers), opcional: los resultados por centro de costo y los presupuestos lo leen."""
+    currency: NotRequired[str | None]
+    """Un renglón en otra moneda: su clave ISO 4217 (USD, EUR…). Con ella van foreign_amount y exchange_rate, y debit o credit es su producto en pesos."""
+    foreign_amount: NotRequired[float | None]
+    """El importe del renglón en su moneda."""
+    exchange_rate: NotRequired[float | None]
+    """El tipo de cambio del renglón: pesos por una unidad de su moneda."""
+    cfdi_uuid: NotRequired[str | None]
+    """El CFDI que documenta este renglón, aparte del de la póliza: así una póliza lleva varios."""
+    cfdi_tax_id: NotRequired[str | None]
+    """El RFC de quien emitió o recibió el CFDI del renglón."""
 
 
 class ImportManualEntriesParamsEntriesItem(TypedDict):
@@ -15727,6 +15859,71 @@ class SaveBookDepreciationRateParams(TypedDict):
     """La tasa anual de los libros (0.2 son 5 años de vida útil). null quita la de ese mes y regresa a la anterior."""
     residual_rate: NotRequired[float]
     """El valor residual como fracción del monto original (NIF C-6); 0 si no se manda."""
+
+
+class ListEntryTemplatesParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/entry_templates."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateEntryTemplateParamsLinesItem(TypedDict):
+    account: str
+    """El número de la cuenta en su catálogo (GET /v1/accounting/accounts)."""
+    side: Literal["debit", "credit"]
+    """Si el renglón es cargo (debit) o abono (credit)."""
+    percentage: NotRequired[float | None]
+    """El porcentaje del total que lleva (86.2069 es 86.2069%). Los de un lado suman hasta 100."""
+    amount: NotRequired[float | None]
+    """Un importe fijo, cuando no depende del total. Sin percentage ni amount, el renglón sale en 0 para escribirlo cada vez."""
+    cost_center: NotRequired[str | None]
+    """Su centro de costo (ccn_…, GET /v1/cost_centers), opcional."""
+
+
+class CreateEntryTemplateParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    name: str
+    """El nombre del modelo, único en el emisor: «Compra con IVA al 16%»."""
+    description: str
+    """El concepto de las pólizas que se hacen con él."""
+    kind: NotRequired[Literal["adjustment", "accrual", "reclassification", "other"]]
+    """adjustment (ajuste), accrual (provisión), reclassification (reclasificación) u other."""
+    journal_type: NotRequired[Literal["journal", "income", "expense"]]
+    """El tipo de póliza: journal (diario), income (ingresos) o expense (egresos)."""
+    lines: list[CreateEntryTemplateParamsLinesItem]
+    """Sus renglones: la cuenta, el lado y el porcentaje del total o el importe fijo."""
+
+
+class UpdateEntryTemplateParamsLinesItem(TypedDict):
+    account: str
+    """El número de la cuenta en su catálogo (GET /v1/accounting/accounts)."""
+    side: Literal["debit", "credit"]
+    """Si el renglón es cargo (debit) o abono (credit)."""
+    percentage: NotRequired[float | None]
+    """El porcentaje del total que lleva (86.2069 es 86.2069%). Los de un lado suman hasta 100."""
+    amount: NotRequired[float | None]
+    """Un importe fijo, cuando no depende del total. Sin percentage ni amount, el renglón sale en 0 para escribirlo cada vez."""
+    cost_center: NotRequired[str | None]
+    """Su centro de costo (ccn_…, GET /v1/cost_centers), opcional."""
+
+
+class UpdateEntryTemplateParams(TypedDict):
+    name: str
+    """El nombre del modelo, único en el emisor: «Compra con IVA al 16%»."""
+    description: str
+    """El concepto de las pólizas que se hacen con él."""
+    kind: NotRequired[Literal["adjustment", "accrual", "reclassification", "other"]]
+    """adjustment (ajuste), accrual (provisión), reclassification (reclasificación) u other."""
+    journal_type: NotRequired[Literal["journal", "income", "expense"]]
+    """El tipo de póliza: journal (diario), income (ingresos) o expense (egresos)."""
+    lines: list[UpdateEntryTemplateParamsLinesItem]
+    """Sus renglones: la cuenta, el lado y el porcentaje del total o el importe fijo."""
+
+
+class ApplyEntryTemplateParams(TypedDict):
+    total: float
+    """El total de la póliza: cada porcentaje se calcula sobre él, al centavo."""
 
 
 class GetCostCenterResultsParams(TypedDict):
