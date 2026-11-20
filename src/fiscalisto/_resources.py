@@ -18,6 +18,7 @@ if TYPE_CHECKING:
         AdjustCashForecastParams,
         AdvanceList,
         AdvanceTestClockParams,
+        AnnualAdjustment,
         ApplyAdvanceParams,
         ApplyVariableSalaryParams,
         ApproveAttendanceOvertimeParams,
@@ -131,6 +132,7 @@ if TYPE_CHECKING:
         FixedAssetList,
         FxRevaluation,
         GeneralLedger,
+        GetAnnualAdjustmentParams,
         GetAttendanceParams,
         GetCashForecastParams,
         GetClosedPeriodParams,
@@ -150,6 +152,7 @@ if TYPE_CHECKING:
         GetInvoicePdfParams,
         GetInvoiceXmlParams,
         GetOpeningBalancesParams,
+        GetPayrollTaxParams,
         GetRetentionParams,
         GetRetentionPdfParams,
         GetRetentionXmlParams,
@@ -248,6 +251,8 @@ if TYPE_CHECKING:
         PayrollBankFile,
         PayrollBatch,
         PayrollReceiptPreview,
+        PayrollTax,
+        PayrollTaxSettings,
         PermissionList,
         PortalSupplier,
         PostBankMovementParams,
@@ -315,6 +320,7 @@ if TYPE_CHECKING:
         Ticket,
         TrialBalance,
         UpdateAccountParams,
+        UpdateAnnualAdjustmentParams,
         UpdateBranchParams,
         UpdateCashForecastItemParams,
         UpdateCashForecastParams,
@@ -333,6 +339,7 @@ if TYPE_CHECKING:
         UpdateIssuerParams,
         UpdateManualEntryParams,
         UpdateMemberParams,
+        UpdatePayrollTaxSettingsParams,
         UpdatePriceListParams,
         UpdateProductParams,
         UpdatePurchaseReceiptParams,
@@ -2906,6 +2913,102 @@ class VariableSalariesResource:
         """
         result: VariableSalary = self._client.request(
             "POST", "/v1/variable_salaries", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class AnnualAdjustmentsResource:
+    """Nómina: fiscalisto.annual_adjustments."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetAnnualAdjustmentParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AnnualAdjustment:
+        """Ajuste anual del ISR
+
+        El ISR del ejercicio de cada empleado (tarifa del artículo 152 sobre lo gravado de sus recibos timbrados del año, menos el subsidio para el empleo del año) contra lo que le retuvieron (artículo 97 de la Ley del ISR). balance positivo es a cargo del empleado; negativo, a su favor. excluded dice por qué no se le calcula. No cambia nada: aplíquelo con POST /v1/annual_adjustments.
+
+        GET /v1/annual_adjustments
+        https://fiscalisto.com/docs/api/referencia/nomina/get-annual-adjustment
+        """
+        result: AnnualAdjustment = self._client.request(
+            "GET", "/v1/annual_adjustments", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        params: UpdateAnnualAdjustmentParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AnnualAdjustment:
+        """Aplicar el ajuste anual
+
+        action apply: la diferencia de cada empleado va en sus siguientes recibos ordinarios pagados desde el 1 de enero del año siguiente: a cargo como Deducción 101 (hasta su neto; el resto, en el siguiente), a favor como OtroPago 004 con CompensacionSaldosAFavor. Repetirlo no hace nada. undo la quita mientras ningún recibo timbrado la lleve. files_own_return y no_own_return marcan si el empleado presentará su propia declaración anual.
+
+        POST /v1/annual_adjustments
+        https://fiscalisto.com/docs/api/referencia/nomina/update-annual-adjustment
+        """
+        result: AnnualAdjustment = self._client.request(
+            "POST", "/v1/annual_adjustments", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PayrollTaxesResource:
+    """Nómina: fiscalisto.payroll_taxes."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetPayrollTaxParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollTax:
+        """Impuesto sobre nómina del mes
+
+        El impuesto sobre nómina de cada estado: la suma de los recibos timbrados con fecha de pago en el mes, por el estado donde trabaja cada empleado (ClaveEntFed), menos las percepciones de excluded_perception_types, por la tasa del estado y sus sobretasas. Se declara y paga en el portal de finanzas de cada estado.
+
+        GET /v1/payroll_taxes
+        https://fiscalisto.com/docs/api/referencia/nomina/get-payroll-tax
+        """
+        result: PayrollTax = self._client.request(
+            "GET", "/v1/payroll_taxes", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_settings(
+        self,
+        params: UpdatePayrollTaxSettingsParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollTaxSettings:
+        """Qué no grava el impuesto sobre nómina
+
+        Las percepciones que no suman a la base (por omisión, las que casi todos los estados dejan fuera: PTU, reembolsos, indemnizaciones, primas de antigüedad, jubilaciones, cuotas de seguridad social pagadas por el patrón y viáticos) y la opción de tasa de cada estado que la tiene, guardadas para el emisor. Lo que no mande se queda como estaba.
+
+        POST /v1/payroll_taxes/settings
+        https://fiscalisto.com/docs/api/referencia/nomina/update-payroll-tax-settings
+        """
+        result: PayrollTaxSettings = self._client.request(
+            "POST", "/v1/payroll_taxes/settings", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -8012,6 +8115,16 @@ class FiscalistoApi(Core):
     def variable_salaries(self) -> VariableSalariesResource:
         """Nómina."""
         return VariableSalariesResource(self)
+
+    @cached_property
+    def annual_adjustments(self) -> AnnualAdjustmentsResource:
+        """Nómina."""
+        return AnnualAdjustmentsResource(self)
+
+    @cached_property
+    def payroll_taxes(self) -> PayrollTaxesResource:
+        """Nómina."""
+        return PayrollTaxesResource(self)
 
     @cached_property
     def invoice_batches(self) -> InvoiceBatchesResource:

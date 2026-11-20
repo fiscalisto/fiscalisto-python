@@ -22,6 +22,8 @@ __all__ = [
     "AdvanceCustomer",
     "AdvanceList",
     "AdvanceTestClockParams",
+    "AnnualAdjustment",
+    "AnnualAdjustmentEmployeesItem",
     "ApiError",
     "ApiErrorError",
     "ApplyAdvanceParams",
@@ -342,6 +344,7 @@ __all__ = [
     "GeneralLedger",
     "GeneralLedgerAccountsItem",
     "GeneralLedgerAccountsItemMovementsItem",
+    "GetAnnualAdjustmentParams",
     "GetAttendanceParams",
     "GetCashForecastParams",
     "GetClosedPeriodParams",
@@ -361,6 +364,7 @@ __all__ = [
     "GetInvoicePdfParams",
     "GetInvoiceXmlParams",
     "GetOpeningBalancesParams",
+    "GetPayrollTaxParams",
     "GetRetentionParams",
     "GetRetentionPdfParams",
     "GetRetentionXmlParams",
@@ -607,6 +611,12 @@ __all__ = [
     "PayrollReceiptPreviewPeriod",
     "PayrollReceiptPreviewTotals",
     "PayrollReceiptPreviewWarningsItem",
+    "PayrollTax",
+    "PayrollTaxPerceptionsItem",
+    "PayrollTaxSettings",
+    "PayrollTaxStatesItem",
+    "PayrollTaxStatesItemOptionsItem",
+    "PayrollTaxStatesItemSurchargesItem",
     "Permission",
     "PermissionList",
     "PortalStyle",
@@ -822,6 +832,7 @@ __all__ = [
     "TrialBalanceAccountsItem",
     "TrialBalanceTotals",
     "UpdateAccountParams",
+    "UpdateAnnualAdjustmentParams",
     "UpdateBranchParams",
     "UpdateBranchParamsAddress",
     "UpdateBranchParamsSeries",
@@ -847,6 +858,7 @@ __all__ = [
     "UpdateManualEntryParams",
     "UpdateManualEntryParamsLinesItem",
     "UpdateMemberParams",
+    "UpdatePayrollTaxSettingsParams",
     "UpdatePriceListParams",
     "UpdatePriceListParamsItemsItem",
     "UpdateProductParams",
@@ -3104,6 +3116,147 @@ class VariableSalary(TypedDict):
     """El último día para presentar la modificación en IDSE: el quinto día hábil del mes (artículo 34 de la LSS)."""
     employees: list[VariableSalaryEmployeesItem]
     """Cada empleado con ingresos variables, o con una parte variable que cambia."""
+
+
+class AnnualAdjustmentEmployeesItem(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    employee_number: str
+    """Su número de empleado."""
+    employee_name: str
+    """Su nombre."""
+    income: float
+    """Todo lo que le pagaron sus recibos del año, gravado y exento: si pasa de $400,000 presenta su propia declaración."""
+    taxable_income: float
+    """Lo gravado del año."""
+    annual_tax: float
+    """El ISR del ejercicio: la tarifa del artículo 152 sobre taxable_income."""
+    employment_subsidy: float
+    """El subsidio para el empleo que le correspondió en el año."""
+    tax_due: float
+    """annual_tax menos employment_subsidy, nunca negativo."""
+    tax_withheld: float
+    """El ISR que le retuvieron sus recibos del año."""
+    balance: float
+    """tax_due menos tax_withheld: positivo a cargo, negativo a favor."""
+    excluded: Literal["started", "left", "income", "files_own"] | None
+    """Por qué no se le calcula (artículo 97): started, entró después del 1 de enero; left, salió antes del 1 de diciembre; income, ganó más de $400,000; files_own, presenta su declaración."""
+    files_own_return: bool
+    """Si avisó por escrito que presentará su declaración anual."""
+    missing_months: list[int]
+    """Los meses sin recibo timbrado: falta alguno de otro sistema."""
+    applied_amount: float | None
+    """La diferencia aplicada (positiva a cargo, negativa a favor), o null."""
+    remaining: float | None
+    """Lo que de applied_amount aún no lleva ningún recibo timbrado."""
+
+
+class AnnualAdjustment(TypedDict):
+    """El ajuste anual del ISR de un ejercicio (artículo 97 de la Ley del ISR): el ISR del año de cada empleado contra lo retenido."""
+    object: Literal["annual_adjustment"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    year: int
+    """El ejercicio."""
+    applies_from: str
+    """Desde cuándo lo llevan los recibos: el 1 de enero del año siguiente."""
+    last_payment_date: str | None
+    """La fecha de pago del último recibo timbrado del año."""
+    employees: list[AnnualAdjustmentEmployeesItem]
+    """Cada empleado que trabajó en el año."""
+
+
+class PayrollTaxStatesItemSurchargesItem(TypedDict):
+    label: str
+    """La sobretasa."""
+    amount: float
+    """Importe."""
+
+
+class PayrollTaxStatesItemOptionsItem(TypedDict):
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    label: str
+    """La opción, como la muestra la app."""
+
+
+class PayrollTaxStatesItem(TypedDict):
+    state: str
+    """El estado donde trabajan (c_Estado de ClaveEntFed): CMX."""
+    name: str
+    """Su nombre."""
+    employees: int
+    """Los empleados con recibo."""
+    receipts: int
+    """Los recibos timbrados."""
+    paid: float
+    """Lo que pagaron sus percepciones, gravado y exento."""
+    excluded: float
+    """Lo de excluded_perception_types: no suma a la base."""
+    base: float
+    """paid menos excluded."""
+    rate: float
+    """La tasa (0.03 es 3%); en Sinaloa, la efectiva de su tabla."""
+    tax: float
+    """El impuesto sobre nómina: base por rate."""
+    surcharges: list[PayrollTaxStatesItemSurchargesItem]
+    """Las sobretasas del estado sobre el impuesto o la base."""
+    total: float
+    """tax más surcharges."""
+    option: str | None
+    """La opción de tasa elegida, en los estados que la tienen."""
+    options: list[PayrollTaxStatesItemOptionsItem] | None
+    """Las opciones de tasa del estado (tamaño de la empresa), o null."""
+    law: str | None
+    """El artículo que lo cobra."""
+
+
+class PayrollTaxPerceptionsItem(TypedDict):
+    type: str
+    """c_TipoPercepcion."""
+    label: str
+    """Su nombre en el catálogo del SAT."""
+    amount: float
+    """Lo que pagó en el mes."""
+    excluded: bool
+    """Si no suma a la base."""
+
+
+class PayrollTax(TypedDict):
+    """El impuesto sobre nómina de un mes, por estado."""
+    object: Literal["payroll_tax"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    month: str
+    """El mes: 2026-11."""
+    total: float
+    """Lo que paga en todos los estados."""
+    states: list[PayrollTaxStatesItem]
+    """Cada estado con recibos del mes, de mayor a menor base."""
+    perceptions: list[PayrollTaxPerceptionsItem]
+    """Las percepciones del mes."""
+    excluded_perception_types: list[str]
+    """Las percepciones que no suman a la base."""
+
+
+class PayrollTaxSettings(TypedDict):
+    """Qué no grava el impuesto sobre nómina del emisor y sus opciones de tasa."""
+    object: Literal["payroll_tax_settings"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    excluded_perception_types: list[str] | None
+    """Las percepciones que no suman a la base; null, las comunes."""
+    state_options: dict[str, str]
+    """La opción de tasa de cada estado, por su c_Estado."""
 
 
 class ImssFilesFilesItem(TypedDict):
@@ -11960,11 +12113,47 @@ class GetVariableSalaryParams(TypedDict):
 
 class ApplyVariableSalaryParams(TypedDict):
     issuer: NotRequired[str]
-    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    """El emisor (iss_…); por omisión, el único de la cuenta."""
     bimester: str
     """El bimestre: AAAA-B, de 1 (enero–febrero) a 6 (noviembre–diciembre)."""
     employees: list[str]
     """Los empleados (emp_…) a los que se aplica."""
+
+
+class GetAnnualAdjustmentParams(TypedDict):
+    """Los parámetros de GET /v1/annual_adjustments."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    year: int
+    """El ejercicio: 2026."""
+
+
+class UpdateAnnualAdjustmentParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…); por omisión, el único de la cuenta."""
+    year: int
+    """El ejercicio: 2026."""
+    action: Literal["apply", "undo", "files_own_return", "no_own_return"]
+    """apply: aplica la diferencia en sus siguientes recibos (desde enero del año siguiente). undo: la quita si ningún recibo timbrado la lleva. files_own_return: avisó por escrito que presentará su declaración anual (artículo 97, c): no se le calcula. no_own_return: lo deshace."""
+    employees: list[str]
+    """Los empleados (emp_…)."""
+
+
+class GetPayrollTaxParams(TypedDict):
+    """Los parámetros de GET /v1/payroll_taxes."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    month: str
+    """El mes: 2026-11."""
+
+
+class UpdatePayrollTaxSettingsParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…); por omisión, el único de la cuenta."""
+    excluded_perception_types: NotRequired[list[str]]
+    """Las percepciones (c_TipoPercepcion) que no suman a la base, como las deja fuera la ley de su estado. Reemplaza la lista entera."""
+    state_options: NotRequired[dict[str, str]]
+    """La opción de tasa de cada estado que la tiene, por su c_Estado: {"BCN": "hasta50"}."""
 
 
 class CreateInvoiceBatchParams(TypedDict):
