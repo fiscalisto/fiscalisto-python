@@ -13,6 +13,7 @@ from ._core import Core, ListObject
 if TYPE_CHECKING:
     from .types import (
         Account,
+        AccountRenumbering,
         AccountingBankMovement,
         AccountingBankMovementList,
         AdjustCashForecastParams,
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
         AdvanceTestClockParams,
         AnnualAdjustment,
         ApplyAdvanceParams,
+        ApplyChartTemplateParams,
         ApplyEntryTemplateParams,
         ApplyVariableSalaryParams,
         ApproveAttendanceOvertimeParams,
@@ -42,6 +44,8 @@ if TYPE_CHECKING:
         CashForecast,
         CashForecastItem,
         CfdiVerification,
+        ChartTemplateList,
+        ChartTemplateResult,
         CheckSatListsParams,
         ClassifyBankTransactionParams,
         CloseSalesOrderParams,
@@ -219,6 +223,7 @@ if TYPE_CHECKING:
         ListBankMovementsParams,
         ListBankTransactionsParams,
         ListBranchesParams,
+        ListChartTemplatesParams,
         ListCostCentersParams,
         ListCustomerDataRequestsParams,
         ListCustomerGroupsParams,
@@ -307,6 +312,7 @@ if TYPE_CHECKING:
         RecurringInvoice,
         RefreshSatDeclarationsParams,
         RejectQuoteParams,
+        RenumberAccountsParams,
         ReportImssMovementsParams,
         RequestPurchaseReceiptInvoiceParams,
         ResendEventParams,
@@ -7363,6 +7369,83 @@ class BookDepreciationRatesResource:
         return result
 
 
+class ChartTemplatesResource:
+    """Contabilidad: fiscalisto.chart_templates."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListChartTemplatesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ChartTemplateList:
+        """Listar los catálogos por giro
+
+        Los catálogos por giro (comercio, restaurante, construcción, servicios profesionales, manufactura, transporte, arrendamiento, agropecuario) con las cuentas que agregaría cada uno a su catálogo y cuáles ya tiene.
+
+        GET /v1/accounting/chart_templates
+        https://fiscalisto.com/docs/api/referencia/contabilidad/list-chart-templates
+        """
+        result: ChartTemplateList = self._client.request(
+            "GET", "/v1/accounting/chart_templates", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def apply(
+        self,
+        id: str,
+        params: ApplyChartTemplateParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ChartTemplateResult:
+        """Agregar las cuentas de un giro
+
+        Agrega a su catálogo las cuentas del giro que faltan, cada una bajo su código agrupador. Un código que ya tiene cuenta la conserva y nada se borra ni se renombra, así que se puede llamar otra vez sin duplicar.
+
+        POST /v1/accounting/chart_templates/{id}/apply
+        https://fiscalisto.com/docs/api/referencia/contabilidad/apply-chart-template
+        """
+        result: ChartTemplateResult = self._client.request(
+            "POST", f"/v1/accounting/chart_templates/{_path(id)}/apply", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class AccountRenumberingsResource:
+    """Contabilidad: fiscalisto.account_renumberings."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: RenumberAccountsParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AccountRenumbering:
+        """Renumerar el catálogo
+
+        Cambia el número de todas las cuentas a la vez: con separator y widths (cada nivel rellenado con ceros) o con mapping (el número nuevo de cada una). Las pólizas, saldos iniciales y presupuestos siguen en las mismas cuentas. Si alguna no puede tomar su número (un nivel que no cabe, el de una cuenta de mayor, dos cuentas en un número) no cambia ninguna y contesta parameter_invalid; con dry_run solo dice qué cambiaría. Las subcuentas de banco conservan el suyo.
+
+        POST /v1/accounting/account_renumberings
+        https://fiscalisto.com/docs/api/referencia/contabilidad/renumber-accounts
+        """
+        result: AccountRenumbering = self._client.request(
+            "POST", "/v1/accounting/account_renumberings", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class EntryTemplatesResource:
     """Contabilidad: fiscalisto.entry_templates."""
 
@@ -9256,6 +9339,16 @@ class FiscalistoApi(Core):
     def book_depreciation_rates(self) -> BookDepreciationRatesResource:
         """Contabilidad."""
         return BookDepreciationRatesResource(self)
+
+    @cached_property
+    def chart_templates(self) -> ChartTemplatesResource:
+        """Contabilidad."""
+        return ChartTemplatesResource(self)
+
+    @cached_property
+    def account_renumberings(self) -> AccountRenumberingsResource:
+        """Contabilidad."""
+        return AccountRenumberingsResource(self)
 
     @cached_property
     def entry_templates(self) -> EntryTemplatesResource:

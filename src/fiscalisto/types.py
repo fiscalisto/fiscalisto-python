@@ -15,6 +15,8 @@ elif TYPE_CHECKING:  # pragma: no cover
 __all__ = [
     "Account",
     "AccountKey",
+    "AccountRenumbering",
+    "AccountRenumberingAccountsItem",
     "AccountingBankMovement",
     "AccountingBankMovementList",
     "AdjustCashForecastParams",
@@ -28,6 +30,7 @@ __all__ = [
     "ApiErrorError",
     "ApplyAdvanceParams",
     "ApplyAdvanceParamsRemainder",
+    "ApplyChartTemplateParams",
     "ApplyEntryTemplateParams",
     "ApplyVariableSalaryParams",
     "ApproveAttendanceOvertimeParams",
@@ -90,6 +93,12 @@ __all__ = [
     "CfdiVerification",
     "CfdiVerificationSat",
     "CfdiVerificationXml",
+    "ChartTemplate",
+    "ChartTemplateAccountsItem",
+    "ChartTemplateList",
+    "ChartTemplateResult",
+    "ChartTemplateResultAddedItem",
+    "ChartTemplateResultExistingItem",
     "CheckSatListsParams",
     "ClassifyBankTransactionParams",
     "CloseSalesOrderParams",
@@ -600,6 +609,7 @@ __all__ = [
     "ListBankMovementsParams",
     "ListBankTransactionsParams",
     "ListBranchesParams",
+    "ListChartTemplatesParams",
     "ListCostCentersParams",
     "ListCustomerDataRequestsParams",
     "ListCustomerGroupsParams",
@@ -771,6 +781,8 @@ __all__ = [
     "RecurringInvoiceSchedule",
     "RefreshSatDeclarationsParams",
     "RejectQuoteParams",
+    "RenumberAccountsParams",
+    "RenumberAccountsParamsMappingItem",
     "ReportImssMovementsParams",
     "RequestPurchaseReceiptInvoiceParams",
     "ResendEventParams",
@@ -6659,6 +6671,92 @@ class InflationAccounts(TypedDict):
     """Las cuentas que cambió, con cómo cuentan ahora."""
 
 
+class ChartTemplateAccountsItem(TypedDict):
+    number: str
+    """El número de la cuenta en su catálogo."""
+    name: str
+    """Su nombre."""
+    grouping_code: str
+    """Su código agrupador del SAT."""
+    in_chart: bool
+    """true si su código agrupador ya tiene cuenta en su catálogo (number y name son los de esa); no se agrega."""
+
+
+class ChartTemplate(TypedDict):
+    """Un catálogo por giro: las cuentas que usa un negocio de ese tipo además de las que la app ya lleva."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["chart_template"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    name: str
+    """El nombre del giro."""
+    description: str
+    """Para qué negocio es."""
+    accounts: list[ChartTemplateAccountsItem]
+    """Las cuentas del giro."""
+
+
+class ChartTemplateResultAddedItem(TypedDict):
+    number: str
+    """El número de la cuenta en su catálogo."""
+    name: str
+    """Su nombre."""
+    grouping_code: str
+    """Su código agrupador del SAT."""
+
+
+class ChartTemplateResultExistingItem(TypedDict):
+    number: str
+    """El número de la cuenta en su catálogo."""
+    name: str
+    """Su nombre."""
+    grouping_code: str
+    """Su código agrupador del SAT."""
+
+
+class ChartTemplateResult(TypedDict):
+    """Lo que agregó un catálogo por giro y lo que ya estaba."""
+    object: Literal["chart_template_result"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    chart_template: str
+    """El giro."""
+    added: list[ChartTemplateResultAddedItem]
+    """Las cuentas que se agregaron."""
+    existing: list[ChartTemplateResultExistingItem]
+    """Las que ya estaban (su código ya tenía cuenta)."""
+
+
+class AccountRenumberingAccountsItem(TypedDict):
+    number: str
+    """El número de la cuenta en su catálogo."""
+    name: str
+    """Su nombre."""
+    grouping_code: str
+    """Su código agrupador del SAT."""
+    previous_number: str
+    """Su número antes."""
+    problem: str | None
+    """Por qué no puede tomar el número nuevo, o null."""
+
+
+class AccountRenumbering(TypedDict):
+    """Una renumeración del catálogo: cada cuenta que cambia de número (o no puede) con el de antes y el nuevo."""
+    object: Literal["account_renumbering"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    dry_run: bool
+    """true si solo dijo qué cambiaría."""
+    changes: int
+    """Cuántas cuentas cambian de número."""
+    problems: int
+    """Cuántas no pueden tomar su número nuevo (si hay, no cambia ninguna)."""
+    accounts: list[AccountRenumberingAccountsItem]
+    """Las cuentas que cambian o no pueden."""
+
+
 class EntryTemplateLinesItem(TypedDict):
     account: str
     """El número de cuenta."""
@@ -10607,6 +10705,17 @@ class FixedAssetList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[FixedAsset]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class ChartTemplateList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[ChartTemplate]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -15898,6 +16007,39 @@ class SaveBookDepreciationRateParams(TypedDict):
     """La tasa anual de los libros (0.2 son 5 años de vida útil). null quita la de ese mes y regresa a la anterior."""
     residual_rate: NotRequired[float]
     """El valor residual como fracción del monto original (NIF C-6); 0 si no se manda."""
+
+
+class ListChartTemplatesParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/chart_templates."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class ApplyChartTemplateParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+
+
+RenumberAccountsParamsMappingItem = TypedDict(
+    "RenumberAccountsParamsMappingItem",
+    {
+        "from": "str",
+        "to": "str",
+    },
+)
+
+
+class RenumberAccountsParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    separator: NotRequired[Literal["-", ".", ""]]
+    """Lo que separa los niveles: «-» (601-48), «.» (601.48) o «» (60148)."""
+    widths: NotRequired[list[int]]
+    """Los dígitos de cada nivel, rellenados con ceros a la izquierda: [4, 3] hace 601-48 0601-048. Los niveles que no lleva conservan los suyos."""
+    mapping: NotRequired[list[RenumberAccountsParamsMappingItem]]
+    """En vez de separator y widths: el número nuevo de cada cuenta que cambia, por ejemplo los del sistema de su contador."""
+    dry_run: NotRequired[bool]
+    """true: dice qué cambiaría, sin cambiar nada."""
 
 
 class ListEntryTemplatesParams(TypedDict):
