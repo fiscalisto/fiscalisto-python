@@ -422,6 +422,7 @@ __all__ = [
     "GetDiotFileParams",
     "GetDiotParams",
     "GetElectronicAccountingParams",
+    "GetEmployeeVacationCertificateParams",
     "GetEmployeeVacationsParams",
     "GetEquityChangesParams",
     "GetExpensePolicyParams",
@@ -13072,6 +13073,16 @@ class UpdateEmployeeVacationsParams(TypedDict):
     """Los días que ese día le quedaban de años de servicio cumplidos."""
     opening_taken_days: NotRequired[float]
     """Los días del año de servicio en curso que ya había tomado ese día."""
+
+
+class GetEmployeeVacationCertificateParams(TypedDict):
+    """Los parámetros de GET /v1/employees/{id}/vacations/certificate."""
+    enjoy_from: NotRequired[str]
+    """El día en que empezará a disfrutarlas (AAAA-MM-DD), con enjoy_to."""
+    enjoy_to: NotRequired[str]
+    """El día en que terminan (AAAA-MM-DD), con enjoy_from."""
+    as_of: NotRequired[str]
+    """El día de la constancia (AAAA-MM-DD); por omisión hoy."""
 
 
 class CreatePayrollReceiptParamsPeriod(TypedDict):

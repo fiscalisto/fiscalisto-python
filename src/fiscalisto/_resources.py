@@ -165,6 +165,7 @@ if TYPE_CHECKING:
         GetDiotFileParams,
         GetDiotParams,
         GetElectronicAccountingParams,
+        GetEmployeeVacationCertificateParams,
         GetEmployeeVacationsParams,
         GetEquityChangesParams,
         GetExpensePolicyParams,
@@ -2465,6 +2466,26 @@ class EmployeesResource:
         """
         result: EmployeeVacations = self._client.request(
             "POST", f"/v1/employees/{_path(id)}/vacations", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def vacation_certificate(
+        self,
+        id: str,
+        params: GetEmployeeVacationCertificateParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> bytes:
+        """Constancia de vacaciones
+
+        El PDF de la constancia que el artículo 81 de la LFT pide entregar cada año: su antigüedad al último aniversario, los días de vacaciones que le corresponden (artículo 76) con su prima vacacional, cuándo disfrutarlos (las fechas que mande, o los seis meses siguientes al aniversario) y los días pendientes de años anteriores con cuándo prescriben, con espacio para las firmas. Antes de su primer aniversario dice cuándo lo cumple y cuántos días le tocarán.
+
+        GET /v1/employees/{id}/vacations/certificate
+        https://fiscalisto.com/docs/api/referencia/nomina/get-employee-vacation-certificate
+        """
+        result: bytes = self._client.request(
+            "GET", f"/v1/employees/{_path(id)}/vacations/certificate", query=params, result="bytes", timeout=timeout, max_retries=max_retries
         )
         return result
 
