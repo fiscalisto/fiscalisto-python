@@ -3455,8 +3455,8 @@ class AnnualAdjustmentEmployeesItem(TypedDict):
     """El ISR que le retuvieron sus recibos del año."""
     balance: float
     """tax_due menos tax_withheld: positivo a cargo, negativo a favor."""
-    excluded: Literal["started", "left", "income", "files_own"] | None
-    """Por qué no se le calcula (artículo 97): started, entró después del 1 de enero; left, salió antes del 1 de diciembre; income, ganó más de $400,000; files_own, presenta su declaración."""
+    excluded: Literal["started", "left", "income", "files_own", "minimum"] | None
+    """Por qué no se le calcula (artículo 97): started, entró después del 1 de enero; left, salió antes del 1 de diciembre; income, ganó más de $400,000; files_own, presenta su declaración; minimum, gana el salario mínimo y su saldo a cargo no se le descuenta (Constitución art. 123-A-VIII, LFT 97)."""
     files_own_return: bool
     """Si avisó por escrito que presentará su declaración anual."""
     missing_months: list[int]
@@ -5060,8 +5060,8 @@ class RuleConditions(TypedDict):
 class RuleActionsItem(TypedDict):
     type: Literal["tag", "cost_center", "stage", "close", "notify"]
     """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
-    tag: NotRequired[int]
-    """tag: la etiqueta."""
+    tag: NotRequired[str]
+    """tag: la etiqueta (tag_…, GET /v1/tags)."""
     remove_when_unmet: NotRequired[bool]
     """tag: se quita si la orden deja de cumplir."""
     cost_center: NotRequired[str]
@@ -16087,8 +16087,8 @@ class CreateRuleParamsConditions(TypedDict):
 class CreateRuleParamsActionsItem(TypedDict):
     type: Literal["tag", "cost_center", "stage", "close", "notify"]
     """tag (órdenes): poner la etiqueta `tag`; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; notify: avisar a `members` (mem_…)."""
-    tag: NotRequired[int]
-    """tag: la etiqueta."""
+    tag: NotRequired[str | int]
+    """tag: la etiqueta (tag_…, GET /v1/tags). Un número, el id de antes, también se acepta."""
     remove_when_unmet: NotRequired[bool]
     """tag: quitarla si la orden deja de cumplir."""
     cost_center: NotRequired[str]
@@ -16189,8 +16189,8 @@ class UpdateRuleParamsConditions(TypedDict):
 class UpdateRuleParamsActionsItem(TypedDict):
     type: Literal["tag", "cost_center", "stage", "close", "notify"]
     """tag (órdenes): poner la etiqueta `tag`; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; notify: avisar a `members` (mem_…)."""
-    tag: NotRequired[int]
-    """tag: la etiqueta."""
+    tag: NotRequired[str | int]
+    """tag: la etiqueta (tag_…, GET /v1/tags). Un número, el id de antes, también se acepta."""
     remove_when_unmet: NotRequired[bool]
     """tag: quitarla si la orden deja de cumplir."""
     cost_center: NotRequired[str]
