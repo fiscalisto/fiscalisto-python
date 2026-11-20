@@ -508,6 +508,7 @@ __all__ = [
     "GetDiotFileParams",
     "GetDiotParams",
     "GetElectronicAccountingParams",
+    "GetEmployeePayStatementParams",
     "GetEmployeeVacationCertificateParams",
     "GetEmployeeVacationsParams",
     "GetEquityChangesParams",
@@ -1319,6 +1320,8 @@ class AttendanceReportEmployeesItemDaysItem(TypedDict):
     """De esos, los que cuentan para la nómina: con overtime_policy approval, hasta lo autorizado ese día; con all, todos; con none, ninguno."""
     rejected_overtime_minutes: int
     """De esos, los que la empresa rechazó ese día: no cuentan para la nómina."""
+    week_excess_minutes: int
+    """Minutos de su horario de ese día que pasan de la jornada ordinaria de la semana (ordinary_week_hours, LFT art. 59): son horas extra por ley aunque estén en su horario, y cuentan para la nómina."""
     note: Literal["vacaciones", "incapacidad", "permiso_con_goce", "permiso_sin_goce", "descanso", "festivo", "falta"] | None
     """La nota del día que puso la empresa, o null."""
     holiday: str | None
@@ -1353,11 +1356,13 @@ class AttendanceReportEmployeesItem(TypedDict):
     flagged_marks: int
     """Marcas con una nota para revisar (flags)."""
     overtime_double_minutes: int
-    """Horas extra que se pagan dobles (hasta 9 por semana en 2026, 12 desde 2027)."""
+    """Horas extra que se pagan dobles: hasta 9 por semana en 2026 y 2027, 10 en 2028, 11 en 2029 y 12 desde 2030 (LFT art. 66 y transitorio cuarto del decreto DOF 01-05-2026)."""
     overtime_triple_minutes: int
-    """Horas extra que se pagan triples (las que pasan del límite de la semana)."""
+    """Horas extra que se pagan triples: las que pasan de las dobles de la semana, hasta 4 por semana (LFT art. 68)."""
     overtime_minutes: int
     """Todos los minutos de más en el registro, autorizados o no."""
+    week_excess_minutes: int
+    """De las dobles y triples, los minutos de su horario que pasan de la jornada ordinaria de la semana (ordinary_week_hours, LFT art. 59): un horario de 48 horas en 2027 da 2 horas extra cada semana."""
     unapproved_overtime_minutes: int
     """Minutos de más que nadie autorizó: quedan en el registro y no cuentan para la nómina."""
     rejected_overtime_minutes: int
@@ -1387,6 +1392,8 @@ AttendanceReport = TypedDict(
         "to": "str",
         "overtime_approval": "bool",
         "overtime_policy": "Literal[\"approval\", \"all\", \"none\"]",
+        "ordinary_week_hours": "int",
+        "weekly_hours": "int | None",
         "employees": "list[AttendanceReportEmployeesItem]",
     },
 )
@@ -14950,6 +14957,12 @@ class GetEmployeeVacationCertificateParams(TypedDict):
     """El día de la constancia (AAAA-MM-DD); por omisión hoy."""
 
 
+class GetEmployeePayStatementParams(TypedDict):
+    """Los parámetros de GET /v1/employees/{id}/pay_statement."""
+    year: str
+    """El año (AAAA), desde 2014."""
+
+
 class UpdateEmployeePortalParams(TypedDict):
     action: Literal["enable", "renew", "disable"]
     """enable: crea el enlace (o deja el que tiene); renew: uno nuevo (el anterior deja de funcionar y sus celulares se desligan); disable: lo apaga (lo firmado se queda)."""
@@ -18067,7 +18080,7 @@ class SaveAnnualReturnParamsTaxAccountsMovementsItem(TypedDict):
     amount: float
     """Importe."""
     account: NotRequired[Literal["cufin", "cufin_2013"]]
-    """Un dividendo o reembolso: de qué CUFIN sale primero (por omisión cufin, la de 2014 en adelante)."""
+    """Un dividendo o reembolso: de qué CUFIN sale primero (por omisión cufin, la de 2014 en adelante). Un dividend_received: a cuál se suma (cufin_2013 si viene de utilidades de quien paga generadas hasta 2013, regla 3.23.6 de la RMF)."""
     individual: NotRequired[bool]
     """true si se paga a una persona física o a un residente en el extranjero: se le retiene el 10% (artículo 140)."""
     shares: NotRequired[float]
