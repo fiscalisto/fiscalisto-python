@@ -47,6 +47,7 @@ __all__ = [
     "BankTransaction",
     "BankTransactionList",
     "BankTransactionSuggestedMatch",
+    "BookDepreciationRate",
     "Branch",
     "BranchAddress",
     "BranchList",
@@ -183,6 +184,7 @@ __all__ = [
     "CreatePayrollReceiptParams",
     "CreatePayrollReceiptParamsIncidents",
     "CreatePayrollReceiptParamsIncidentsBonusesItem",
+    "CreatePayrollReceiptParamsIncidentsDisabilityPay",
     "CreatePayrollReceiptParamsPeriod",
     "CreatePriceListParams",
     "CreatePriceListParamsItemsItem",
@@ -295,6 +297,8 @@ __all__ = [
     "DeleteRoleParams",
     "DeleteTaxDeterminationParams",
     "Deleted",
+    "DepreciationReconciliation",
+    "DepreciationReconciliationItemsItem",
     "Diot",
     "DiotLinesItem",
     "DiotLinesItemPaid",
@@ -406,6 +410,7 @@ __all__ = [
     "GetCostOfSalesParams",
     "GetCrossCheckCfdiParams",
     "GetCrossChecksParams",
+    "GetDepreciationReconciliationParams",
     "GetDiotFileParams",
     "GetDiotParams",
     "GetElectronicAccountingParams",
@@ -710,6 +715,7 @@ __all__ = [
     "PreviewPayrollReceiptParams",
     "PreviewPayrollReceiptParamsIncidents",
     "PreviewPayrollReceiptParamsIncidentsBonusesItem",
+    "PreviewPayrollReceiptParamsIncidentsDisabilityPay",
     "PreviewPayrollReceiptParamsPeriod",
     "PriceList",
     "PriceListItemsItem",
@@ -855,6 +861,7 @@ __all__ = [
     "SatReviewRequestsItem",
     "SatRiskCheck",
     "SatRiskCheckChecksItem",
+    "SaveBookDepreciationRateParams",
     "SaveBudgetParams",
     "SaveBudgetParamsLinesItem",
     "SaveInflationAccountsParams",
@@ -6162,6 +6169,8 @@ FixedAsset = TypedDict(
         "in_use_since": "str",
         "cost": "float",
         "annual_rate": "float",
+        "residual_rate": "float",
+        "tax_annual_rate": "float",
         "monthly_depreciation": "float",
         "month": "str",
         "month_depreciation": "float",
@@ -6624,6 +6633,67 @@ class InflationAccounts(TypedDict):
     """El emisor."""
     accounts: list[InflationAccountsAccountsItem]
     """Las cuentas que cambió, con cómo cuentan ahora."""
+
+
+class BookDepreciationRate(TypedDict):
+    """La tasa anual y el valor residual con que los libros deprecian un activo o un tipo de activo desde un mes (NIF C-6), aparte de la deducción fiscal."""
+    object: Literal["book_depreciation_rate"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    fixed_asset: str | None
+    """El activo fijo que lleva la tasa, o null si es de un tipo."""
+    cfdi_use: str | None
+    """El tipo de activo (uso CFDI) que la lleva, o null si es de un activo."""
+    from_month: str
+    """El mes (AAAA-MM) desde el que aplica."""
+    annual_rate: float | None
+    """La tasa anual contable, o null si se quitó."""
+    residual_rate: float | None
+    """El valor residual como fracción del monto original, o null si se quitó."""
+    removed: bool
+    """true si quitó la tasa de ese mes."""
+
+
+class DepreciationReconciliationItemsItem(TypedDict):
+    fixed_asset: str | None
+    """El activo fijo (fxa_… o fxc_…), o null si no tiene registro contable."""
+    description: str
+    """Qué es."""
+    cfdi_use: str | None
+    """Su tipo por uso CFDI (I01 a I08)."""
+    book_depreciation: float
+    """Su depreciación contable del año."""
+    tax_deduction: float
+    """Su deducción fiscal del año, actualizada con el INPC."""
+    inflation_factor: float
+    """El factor de actualización de la deducción fiscal (1 sin actualizar)."""
+    difference: float
+    """tax_deduction menos book_depreciation."""
+
+
+class DepreciationReconciliation(TypedDict):
+    """La depreciación contable del año contra la deducción de inversiones (artículos 31 y 34 de la Ley del ISR) de cada activo, para la conciliación contable-fiscal."""
+    object: Literal["depreciation_reconciliation"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    year: int
+    """El año."""
+    items: list[DepreciationReconciliationItemsItem]
+    """Cada activo con depreciación contable o deducción fiscal en el año."""
+    book_depreciation: float
+    """La depreciación contable del año de todos los activos."""
+    tax_deduction: float
+    """La deducción de inversiones del año, actualizada."""
+    difference: float
+    """tax_deduction menos book_depreciation: la partida de la conciliación contable-fiscal."""
+    inpc_estimated_months: list[str]
+    """Los meses cuyo INPC no se ha publicado, estimados con el último (AAAA-MM)."""
 
 
 class CashFlowOperatingNonCashItem(TypedDict):
@@ -12912,6 +12982,14 @@ class CreatePayrollReceiptParamsPeriod(TypedDict):
     """Fecha de pago (FechaPago), AAAA-MM-DD. Por omisión el último día del periodo."""
 
 
+class CreatePayrollReceiptParamsIncidentsDisabilityPay(TypedDict):
+    """Si la empresa paga los disability_days del recibo: percepción 014 con su nodo Incapacidad. Exenta como previsión social con el límite de 7 UMA al año (art. 93 de la LISR); la de un riesgo de trabajo, toda."""
+    type: Literal["01", "02", "03", "04"]
+    """Tipo de incapacidad (c_TipoIncapacidad): 01 riesgo de trabajo, 02 enfermedad general, 03 maternidad, 04 licencia por cuidados médicos de hijos con cáncer."""
+    rate: float
+    """Lo que paga la empresa de cada día de incapacidad, como fracción del salario diario: 1 todo; 0.4 lo que completa el 60% que paga el IMSS."""
+
+
 class CreatePayrollReceiptParamsIncidentsBonusesItem(TypedDict):
     type: Literal["010", "049", "028", "038"]
     """010 premio de puntualidad, 049 premio de asistencia, 028 comisiones, 038 otro bono (c_TipoPercepcion)."""
@@ -12937,6 +13015,8 @@ class CreatePayrollReceiptParamsIncidents(TypedDict):
     """Días de descanso obligatorio que trabajó (1 de enero, 1 de mayo, 16 de septiembre, 25 de diciembre, los lunes del art. 74 y la jornada electoral): salario doble por cada uno además del día (LFT art. 75), exento como rest_days_worked."""
     vacation_days: NotRequired[float]
     """Días de vacaciones que disfrutó en el periodo (se pagan como sueldo dentro de days): su prima vacacional con el porcentaje del empleado, exenta hasta 15 UMA en el año."""
+    disability_pay: NotRequired[CreatePayrollReceiptParamsIncidentsDisabilityPay]
+    """Si la empresa paga los disability_days del recibo: percepción 014 con su nodo Incapacidad. Exenta como previsión social con el límite de 7 UMA al año (art. 93 de la LISR); la de un riesgo de trabajo, toda."""
     bonuses: NotRequired[list[CreatePayrollReceiptParamsIncidentsBonusesItem]]
     """Premios, comisiones y bonos del periodo, gravados."""
 
@@ -12974,6 +13054,14 @@ class PreviewPayrollReceiptParamsPeriod(TypedDict):
     """Fecha de pago (FechaPago), AAAA-MM-DD. Por omisión el último día del periodo."""
 
 
+class PreviewPayrollReceiptParamsIncidentsDisabilityPay(TypedDict):
+    """Si la empresa paga los disability_days del recibo: percepción 014 con su nodo Incapacidad. Exenta como previsión social con el límite de 7 UMA al año (art. 93 de la LISR); la de un riesgo de trabajo, toda."""
+    type: Literal["01", "02", "03", "04"]
+    """Tipo de incapacidad (c_TipoIncapacidad): 01 riesgo de trabajo, 02 enfermedad general, 03 maternidad, 04 licencia por cuidados médicos de hijos con cáncer."""
+    rate: float
+    """Lo que paga la empresa de cada día de incapacidad, como fracción del salario diario: 1 todo; 0.4 lo que completa el 60% que paga el IMSS."""
+
+
 class PreviewPayrollReceiptParamsIncidentsBonusesItem(TypedDict):
     type: Literal["010", "049", "028", "038"]
     """010 premio de puntualidad, 049 premio de asistencia, 028 comisiones, 038 otro bono (c_TipoPercepcion)."""
@@ -12999,6 +13087,8 @@ class PreviewPayrollReceiptParamsIncidents(TypedDict):
     """Días de descanso obligatorio que trabajó (1 de enero, 1 de mayo, 16 de septiembre, 25 de diciembre, los lunes del art. 74 y la jornada electoral): salario doble por cada uno además del día (LFT art. 75), exento como rest_days_worked."""
     vacation_days: NotRequired[float]
     """Días de vacaciones que disfrutó en el periodo (se pagan como sueldo dentro de days): su prima vacacional con el porcentaje del empleado, exenta hasta 15 UMA en el año."""
+    disability_pay: NotRequired[PreviewPayrollReceiptParamsIncidentsDisabilityPay]
+    """Si la empresa paga los disability_days del recibo: percepción 014 con su nodo Incapacidad. Exenta como previsión social con el límite de 7 UMA al año (art. 93 de la LISR); la de un riesgo de trabajo, toda."""
     bonuses: NotRequired[list[PreviewPayrollReceiptParamsIncidentsBonusesItem]]
     """Premios, comisiones y bonos del periodo, gravados."""
 
@@ -15616,6 +15706,27 @@ class SaveInflationAccountsParams(TypedDict):
     """El emisor (iss_…). Por omisión, su único emisor."""
     accounts: list[SaveInflationAccountsParamsAccountsItem]
     """Las cuentas que cambia."""
+
+
+class GetDepreciationReconciliationParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/depreciation_reconciliations/{year}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class SaveBookDepreciationRateParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    fixed_asset: NotRequired[str]
+    """El activo fijo (fxa_… o fxc_…) que lleva su propia tasa. Mande este o cfdi_use."""
+    cfdi_use: NotRequired[Literal["I01", "I02", "I03", "I04", "I05", "I06", "I07", "I08"]]
+    """El tipo de activo (uso CFDI I01–I08) cuyos activos toman la tasa. Mande este o fixed_asset."""
+    from_month: str
+    """El mes, AAAA-MM y abierto, desde el que aplica."""
+    annual_rate: float | None
+    """La tasa anual de los libros (0.2 son 5 años de vida útil). null quita la de ese mes y regresa a la anterior."""
+    residual_rate: NotRequired[float]
+    """El valor residual como fracción del monto original (NIF C-6); 0 si no se manda."""
 
 
 class GetCostCenterResultsParams(TypedDict):

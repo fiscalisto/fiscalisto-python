@@ -29,6 +29,7 @@ if TYPE_CHECKING:
         Balance,
         BankImport,
         BankTransaction,
+        BookDepreciationRate,
         Branch,
         Budget,
         CancelInvoiceParams,
@@ -119,6 +120,7 @@ if TYPE_CHECKING:
         DeleteRoleParams,
         DeleteTaxDeterminationParams,
         Deleted,
+        DepreciationReconciliation,
         Diot,
         DisposeFixedAssetParams,
         Employee,
@@ -154,6 +156,7 @@ if TYPE_CHECKING:
         GetCostOfSalesParams,
         GetCrossCheckCfdiParams,
         GetCrossChecksParams,
+        GetDepreciationReconciliationParams,
         GetDiotFileParams,
         GetDiotParams,
         GetElectronicAccountingParams,
@@ -325,6 +328,7 @@ if TYPE_CHECKING:
         SatReview,
         SatReviewList,
         SatRiskCheck,
+        SaveBookDepreciationRateParams,
         SaveBudgetParams,
         SaveInflationAccountsParams,
         ScheduleSupplierInvoiceParams,
@@ -7275,6 +7279,62 @@ class InflationAccountsResource:
         return result
 
 
+class DepreciationReconciliationsResource:
+    """Contabilidad: fiscalisto.depreciation_reconciliations."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        year: str,
+        params: GetDepreciationReconciliationParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> DepreciationReconciliation:
+        """Comparar la depreciación contable con la fiscal
+
+        La depreciación contable del año de cada activo fijo contra su deducción fiscal (artículo 34 de la Ley del ISR, actualizada con el INPC del artículo 31) y la diferencia, que es partida de la conciliación contable-fiscal de la declaración anual. Las notas de crédito sobre un activo van en su propio renglón. Como Activos fijos › Contable contra fiscal en la app.
+
+        GET /v1/accounting/depreciation_reconciliations/{year}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-depreciation-reconciliation
+        """
+        result: DepreciationReconciliation = self._client.request(
+            "GET", f"/v1/accounting/depreciation_reconciliations/{_path(year)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class BookDepreciationRatesResource:
+    """Contabilidad: fiscalisto.book_depreciation_rates."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def save(
+        self,
+        params: SaveBookDepreciationRateParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> BookDepreciationRate:
+        """Fijar la tasa de depreciación contable
+
+        Fija la tasa anual y el valor residual con que los libros deprecian un activo (fixed_asset) o todos los de un tipo (cfdi_use) desde from_month en adelante (NIF C-6); la del activo gana sobre la de su tipo. Los meses anteriores no cambian, y la deducción fiscal sigue con la tasa del artículo 34. annual_rate null quita la de ese mes. Un mes cerrado contesta parameter_invalid en from_month.
+
+        POST /v1/accounting/book_depreciation_rates
+        https://fiscalisto.com/docs/api/referencia/contabilidad/save-book-depreciation-rate
+        """
+        result: BookDepreciationRate = self._client.request(
+            "POST", "/v1/accounting/book_depreciation_rates", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class CostCenterResultsResource:
     """Contabilidad: fiscalisto.cost_center_results."""
 
@@ -9046,6 +9106,16 @@ class FiscalistoApi(Core):
     def inflation_accounts(self) -> InflationAccountsResource:
         """Contabilidad."""
         return InflationAccountsResource(self)
+
+    @cached_property
+    def depreciation_reconciliations(self) -> DepreciationReconciliationsResource:
+        """Contabilidad."""
+        return DepreciationReconciliationsResource(self)
+
+    @cached_property
+    def book_depreciation_rates(self) -> BookDepreciationRatesResource:
+        """Contabilidad."""
+        return BookDepreciationRatesResource(self)
 
     @cached_property
     def cost_center_results(self) -> CostCenterResultsResource:
