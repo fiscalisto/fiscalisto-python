@@ -145,6 +145,7 @@ __all__ = [
     "CreatePayrollBatchParamsPeriod",
     "CreatePayrollBatchParamsReceiptsItem",
     "CreatePayrollBatchParamsReceiptsItemPeriod",
+    "CreatePayrollProvisionParams",
     "CreatePayrollReceiptParams",
     "CreatePayrollReceiptParamsIncidents",
     "CreatePayrollReceiptParamsIncidentsBonusesItem",
@@ -253,6 +254,7 @@ __all__ = [
     "DeleteCostOfSalesParams",
     "DeleteFxRevaluationParams",
     "DeleteMemberParams",
+    "DeletePayrollProvisionParams",
     "DeleteRoleParams",
     "DeleteTaxDeterminationParams",
     "Deleted",
@@ -339,6 +341,7 @@ __all__ = [
     "FixedAssetDisposal",
     "FixedAssetList",
     "FxRevaluation",
+    "FxRevaluationBankAccountsItem",
     "FxRevaluationCurrenciesItem",
     "FxRevaluationDocumentsItem",
     "GeneralLedger",
@@ -364,6 +367,7 @@ __all__ = [
     "GetInvoicePdfParams",
     "GetInvoiceXmlParams",
     "GetOpeningBalancesParams",
+    "GetPayrollProvisionParams",
     "GetPayrollTaxParams",
     "GetRetentionParams",
     "GetRetentionPdfParams",
@@ -514,6 +518,8 @@ __all__ = [
     "JournalEntryList",
     "LedgerAccount",
     "LedgerAccountList",
+    "LedgerBankAccount",
+    "LedgerBankAccountList",
     "ListAdvancesParams",
     "ListBankMovementsParams",
     "ListBankTransactionsParams",
@@ -536,6 +542,7 @@ __all__ = [
     "ListIssuersParams",
     "ListJournalEntriesParams",
     "ListLedgerAccountsParams",
+    "ListLedgerBankAccountsParams",
     "ListManualEntriesParams",
     "ListMaterialityInvoicesParams",
     "ListMaterialitySuppliersParams",
@@ -598,6 +605,11 @@ __all__ = [
     "PayrollBatchList",
     "PayrollBatchReceiptsItem",
     "PayrollBatchReceiptsItemError",
+    "PayrollProvision",
+    "PayrollProvisionCalculated",
+    "PayrollProvisionEmployeesItem",
+    "PayrollProvisionPayrollTaxStatesItem",
+    "PayrollProvisionPosted",
     "PayrollReceiptPreview",
     "PayrollReceiptPreviewDeductionsItem",
     "PayrollReceiptPreviewImssDays",
@@ -855,6 +867,7 @@ __all__ = [
     "UpdateIssuerBrandingParams",
     "UpdateIssuerParams",
     "UpdateIssuerParamsDonationAuthorization",
+    "UpdateLedgerBankAccountParams",
     "UpdateManualEntryParams",
     "UpdateManualEntryParamsLinesItem",
     "UpdateMemberParams",
@@ -916,6 +929,7 @@ __all__ = [
     "UpdateStoreConnectionParams",
     "UpdateStoreConnectionParamsSettings",
     "UpdateWebhookEndpointParams",
+    "UploadBranchLogoParams",
     "UploadCertificateParams",
     "UploadIssuerLogoParams",
     "Usage",
@@ -5403,6 +5417,8 @@ class Ticket(TypedDict):
     """La factura global (inv_…) en que entró, o null."""
     customer: TicketCustomer | None
     """A quién se facturó, o null."""
+    branch: str | None
+    """La sucursal (brn_…) donde se hizo la venta, o null (la Matriz). Su factura se timbra desde ahí y el portal muestra su nombre y su logo."""
     buyer: TicketBuyer | None
     """Quién pagó, como lo conoce el origen de la venta (el `buyer` que mandó, o el cliente de un pago de Stripe). No es el receptor de la factura (`customer`)."""
     created_at: str | None
@@ -5673,7 +5689,7 @@ class JournalEntry(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     issuer: str
     """El emisor."""
-    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal"]
+    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal", "bank_identification"]
     """De qué es: invoice (un CFDI de ingreso o egreso), payment_received o payment_made (un pago de un complemento), payroll (un recibo de nómina), employee_expenses (un anticipo, reembolso, devolución o comprobación de viáticos, contra 107.01 «Funcionarios y empleados»), depreciation (la depreciación del mes de los activos fijos), manual (una póliza capturada a mano, o la reversión de una provisión) o asset_disposal (la venta o baja de un activo fijo)."""
     manual_entry: str | None
     """Con type manual: la póliza capturada (mje_…), también en su reversión; null en las demás."""
@@ -5881,6 +5897,19 @@ class FxRevaluationDocumentsItem(TypedDict):
     """Su TipoCambio: los pesos por unidad a los que se registró."""
 
 
+class FxRevaluationBankAccountsItem(TypedDict):
+    name: str
+    """Nombre."""
+    currency: str
+    """Moneda, clave ISO 4217 de c_Moneda (MXN, USD, EUR…). Por omisión MXN."""
+    statement_balance: float | None
+    """El saldo de su último estado de cuenta del mes, en su moneda, o null si no hay."""
+    statement_date: str | None
+    """La fecha de ese saldo, o null."""
+    book_balance: float
+    """Los pesos que la cuenta lleva en los libros al cierre, sin la póliza de revaluación."""
+
+
 class FxRevaluation(TypedDict):
     """La revaluación cambiaria de un mes (NIF B-15): las facturas PPD en otra moneda que seguían pendientes al cierre, lo que se debe por moneda con el tipo de cambio de cierre que sugerimos (el FIX del DOF) y la póliza de ajuste que registra la diferencia, si ya se registró."""
     object: Literal["fx_revaluation"]
@@ -5897,8 +5926,93 @@ class FxRevaluation(TypedDict):
     """Cada moneda con saldos pendientes: receivable (lo que le deben sus clientes, en esa moneda), payable (lo que usted debe a sus proveedores), closing_rate (el FIX publicado en el DOF el día hábil siguiente al cierre, o null si no se pudo leer) y closing_rate_date (el día de esa publicación)."""
     documents: list[FxRevaluationDocumentsItem]
     """Las facturas PPD en otra moneda aún pendientes al cierre: direction issued (de un cliente) o received (de un proveedor), balance (lo que faltaba pagar, en su moneda) y booked_rate (su TipoCambio, al que se registró)."""
+    bank_accounts: list[FxRevaluationBankAccountsItem]
+    """Sus cuentas de banco en otra moneda: statement_balance (el saldo del último estado de cuenta al cierre, en su moneda, o null si no hay), statement_date y book_balance (lo que sus libros traen en pesos antes de la revaluación). La diferencia contra statement_balance × el tipo de cambio de cierre va a Utilidad o Pérdida cambiaria."""
     manual_entry: str | None
     """La póliza de revaluación (mje_…) si ya se registró, o null. Es una póliza a mano de tipo adjustment con reverse_next_month."""
+
+
+class PayrollProvisionCalculated(TypedDict):
+    """Lo calculado: imss (enfermedades y maternidad, invalidez y vida, riesgos de trabajo y guarderías), sar (retiro y cesantía y vejez), infonavit y payroll_tax (el impuesto sobre nómina del mes, como GET /v1/payroll_taxes)."""
+    imss: float
+    """Calculado: enfermedades y maternidad, invalidez y vida, riesgos de trabajo y guarderías."""
+    sar: float
+    """Calculado: retiro y cesantía en edad avanzada y vejez."""
+    infonavit: float
+    """Calculado: la aportación al Infonavit (5%)."""
+    payroll_tax: float
+    """Calculado: el impuesto sobre nómina del mes."""
+
+
+class PayrollProvisionPosted(TypedDict):
+    imss: float
+    """Registrado: enfermedades y maternidad, invalidez y vida, riesgos de trabajo y guarderías."""
+    sar: float
+    """Registrado: retiro y cesantía en edad avanzada y vejez."""
+    infonavit: float
+    """Registrado: la aportación al Infonavit (5%)."""
+    payroll_tax: float
+    """Registrado: el impuesto sobre nómina del mes."""
+
+
+class PayrollProvisionEmployeesItem(TypedDict):
+    employee: str | None
+    """El empleado (emp_…)."""
+    name: str
+    """Nombre."""
+    sbc: float
+    """Su salario base de cotización: el SDI del recibo, entre el salario mínimo y 25 UMA."""
+    days_health: float
+    """Días del mes en enfermedades y maternidad: menos las incapacidades."""
+    days_disability_life: float
+    """Días en invalidez y vida, riesgos de trabajo, guarderías y cesantía y vejez: menos faltas (hasta 7 al mes) e incapacidades."""
+    days_retirement: float
+    """Días en retiro e Infonavit: menos las faltas; las incapacidades sí cuentan."""
+    minimum_wage: bool
+    """Gana el salario mínimo: la empresa paga también su parte (LSS art. 36)."""
+    imss: float
+    """Sus cuotas patronales al IMSS."""
+    sar: float
+    """Su retiro y cesantía y vejez."""
+    infonavit: float
+    """Su aportación al Infonavit."""
+
+
+class PayrollProvisionPayrollTaxStatesItem(TypedDict):
+    state: str
+    """Entidad federativa donde trabaja (ClaveEntFed): JAL, CMX, NLE…"""
+    base: float
+    """Base del impuesto retenido (BaseRet)."""
+    amount: float
+    """Importe."""
+
+
+class PayrollProvision(TypedDict):
+    """Las cuotas patronales de un mes en la contabilidad: lo que la empresa debe al IMSS, al SAR y al Infonavit por los días del mes según sus recibos de nómina timbrados, el impuesto sobre nómina del mes y la póliza de provisión que los registra, si ya se registró."""
+    object: Literal["payroll_provision"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes (AAAA-MM)."""
+    date: str
+    """El último día del mes: la fecha de la póliza."""
+    employer_risk_premium: float
+    """La prima de riesgo de trabajo del cálculo, como fracción (0.0054355 es 0.54355%)."""
+    employer_risk_premium_saved: bool
+    """true si es la que se guardó al registrar; false si es la prima media de la clase de sus empleados."""
+    calculated: PayrollProvisionCalculated
+    """Lo calculado: imss (enfermedades y maternidad, invalidez y vida, riesgos de trabajo y guarderías), sar (retiro y cesantía y vejez), infonavit y payroll_tax (el impuesto sobre nómina del mes, como GET /v1/payroll_taxes)."""
+    posted: PayrollProvisionPosted | None
+    """Los importes de la póliza registrada (pueden ser los que escribió), o null si no se ha registrado."""
+    employees: list[PayrollProvisionEmployeesItem]
+    """El cálculo por empleado: su salario base de cotización, los días de cada ramo (las faltas solo cotizan en enfermedades y maternidad; las incapacidades solo en retiro e Infonavit) y lo que toca a cada parte. minimum_wage: la empresa paga también la parte del trabajador (LSS art. 36)."""
+    payroll_tax_states: list[PayrollProvisionPayrollTaxStatesItem]
+    """El impuesto sobre nómina de cada estado."""
+    manual_entry: str | None
+    """La póliza de provisión (mje_…) si ya se registró, o null. Es una póliza a mano de tipo adjustment."""
 
 
 class TaxDetermination(TypedDict):
@@ -5965,6 +6079,24 @@ class CostOfSales(TypedDict):
     """Lo que valen sus existencias al cierre del mes según Inventario (con su método de valuación), o null si no lleva existencias en Fiscalisto: entonces use su conteo físico."""
     manual_entry: str | None
     """La póliza de costo de ventas (mje_…) si ya se registró, o null. Es una póliza a mano de tipo adjustment."""
+
+
+class LedgerBankAccount(TypedDict):
+    """Una cuenta de banco que la contabilidad lleva aparte: su propia subcuenta de Bancos, con la moneda en que se revalúa."""
+    object: Literal["ledger_bank_account"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    last4: str
+    """Los últimos 4 dígitos de la cuenta, como los muestra su estado de cuenta."""
+    name: str
+    """Su nombre en el catálogo."""
+    account: str
+    """Su número de cuenta en el catálogo (código agrupador 102.01)."""
+    currency: str
+    """Su moneda (MXN, USD…)."""
 
 
 # Las pólizas que entraron de otro sistema (CONTPAQi, COI, una hoja de cálculo) en una importación.
@@ -6061,7 +6193,7 @@ class GeneralLedgerAccountsItemMovementsItem(TypedDict):
     """Fecha de emisión (Fecha), hora de la Ciudad de México."""
     journal_entry: str
     """La póliza (el mismo id de GET /v1/accounting/journal_entries)."""
-    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal"]
+    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal", "bank_identification"]
     """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
     description: str
     """Descripción."""
@@ -9336,6 +9468,17 @@ class FixedAssetList(TypedDict):
     """La ruta de esta lista."""
 
 
+class LedgerBankAccountList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[LedgerBankAccount]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class AccountingBankMovementList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -12306,6 +12449,11 @@ class UpdateBranchParams(TypedDict):
     """true la archiva: ya no se puede facturar desde ella, y sus facturas la siguen nombrando. false la restaura."""
 
 
+class UploadBranchLogoParams(TypedDict):
+    file: str
+    """El logo, PNG o JPG de hasta 1 MB, en base64 (con o sin el prefijo data:image/png;base64,). Uno muy grande se reduce para el PDF."""
+
+
 class CreateCostCenterParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…). Por omisión, su único emisor."""
@@ -13635,6 +13783,8 @@ class CreateTicketParams(TypedDict):
     """Impuestos locales incluidos en su total, como el ISH 3.5% de hospedaje, con `product_key` (un producto lleva los suyos). Cada uno se calcula sobre la base de este concepto y la factura los suma por nombre y tasa en el complemento de impuestos locales."""
     buyer: NotRequired[CreateTicketParamsBuyer]
     """Quién pagó, para reconocer la venta en Tickets. No es el receptor de la factura (eso lo escribe el comprador en el portal) y no se le manda nada."""
+    branch: NotRequired[str]
+    """Sucursal (brn_…) donde se hizo la venta: su factura se timbra desde ahí (su código postal en LugarExpedicion) y el portal muestra el nombre comercial y el logo de la sucursal. Sin ella, la Matriz."""
     lines: NotRequired[list[CreateTicketParamsLinesItem]]
     """Una venta de varios conceptos (el folio de un hotel: noches, desayunos, lavandería), cada uno con su producto o sus claves, sus impuestos y lo que se cobró por él; hasta 200. En lugar de `product`, `description`, `product_key`, `unit_key` e `iva`. La factura del cliente lleva un concepto por línea; la factura global, uno por cada combinación de impuestos del ticket."""
 
@@ -14227,6 +14377,33 @@ class DeleteCostOfSalesParams(TypedDict):
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 
 
+class GetPayrollProvisionParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/payroll_provisions/{month}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreatePayrollProvisionParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    employer_risk_premium: NotRequired[float]
+    """La prima de riesgo de trabajo de su determinación anual, como fracción (0.0054355 es 0.54355%). Se guarda para los meses siguientes. Sin ella, la guardada o la prima media de la clase."""
+    imss: NotRequired[float]
+    """Las cuotas patronales al IMSS en pesos, si no quiere el calculado (el del SUA, por ejemplo)."""
+    sar: NotRequired[float]
+    """Retiro y cesantía y vejez en pesos, si no quiere el calculado (el del SUA, por ejemplo)."""
+    infonavit: NotRequired[float]
+    """La aportación al Infonavit en pesos, si no quiere el calculado (el del SUA, por ejemplo)."""
+    payroll_tax: NotRequired[float]
+    """El impuesto sobre nómina en pesos, si no quiere el calculado (el del SUA, por ejemplo)."""
+
+
+class DeletePayrollProvisionParams(TypedDict):
+    """Los parámetros de DELETE /v1/accounting/payroll_provisions/{month}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
 class GetTaxDeterminationParams(TypedDict):
     """Los parámetros de GET /v1/accounting/tax_determinations/{month}."""
     issuer: NotRequired[str]
@@ -14244,6 +14421,21 @@ class DeleteTaxDeterminationParams(TypedDict):
     """Los parámetros de DELETE /v1/accounting/tax_determinations/{month}."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class ListLedgerBankAccountsParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/bank_accounts."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateLedgerBankAccountParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    currency: str
+    """La moneda de la cuenta (ISO 4217: MXN, USD…). Una en otra moneda se revalúa con las revaluaciones cambiarias."""
+    name: NotRequired[str]
+    """Su nombre en el catálogo."""
 
 
 class ListBankMovementsParams(TypedDict):
