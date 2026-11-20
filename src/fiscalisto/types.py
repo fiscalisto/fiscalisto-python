@@ -480,6 +480,8 @@ __all__ = [
     "GetInvoicePdfParams",
     "GetInvoiceXmlParams",
     "GetOpeningBalancesParams",
+    "GetPayrollAccumulatedParams",
+    "GetPayrollCostParams",
     "GetPayrollProvisionParams",
     "GetPayrollTaxParams",
     "GetRetentionParams",
@@ -725,6 +727,9 @@ __all__ = [
     "NetToGrossPeriod",
     "OpeningBalances",
     "OpeningBalancesLinesItem",
+    "PayrollAccumulated",
+    "PayrollAccumulatedConceptsItem",
+    "PayrollAccumulatedEmployeesItem",
     "PayrollBankFile",
     "PayrollBankFileExcludedItem",
     "PayrollBankFilePaymentsItem",
@@ -733,6 +738,9 @@ __all__ = [
     "PayrollBatchList",
     "PayrollBatchReceiptsItem",
     "PayrollBatchReceiptsItemError",
+    "PayrollCost",
+    "PayrollCostMonthsItem",
+    "PayrollCostTotals",
     "PayrollProvision",
     "PayrollProvisionCalculated",
     "PayrollProvisionEmployeesItem",
@@ -3580,6 +3588,133 @@ class NetToGross(TypedDict):
     """Otros pagos."""
     net: float
     """El neto del recibo con ese salario."""
+
+
+class PayrollAccumulatedConceptsItem(TypedDict):
+    kind: Literal["percepcion", "deduccion", "otro_pago"]
+    """percepcion, deduccion u otro_pago."""
+    type: str
+    """c_TipoPercepcion, c_TipoDeduccion o c_TipoOtroPago."""
+    key: str
+    """La clave del patrón."""
+    concept: str
+    """El concepto de la línea de captura (ISR, IVA…) como lo da el SAT."""
+    months: list[float]
+    """El importe de cada mes, de enero (posición 0) a diciembre. Percepciones: gravado más exento."""
+    total: float
+    """Total en la moneda del comprobante (Total)."""
+    taxed: float | None
+    """Percepciones: lo gravado."""
+    exempt: float | None
+    """Percepciones: lo exento."""
+    receipts: float
+    """Cuántos recibos lo llevan."""
+
+
+class PayrollAccumulatedEmployeesItem(TypedDict):
+    employee: str | None
+    """emp_…, o null."""
+    name: str
+    """Nombre."""
+    rfc: str
+    """El RFC del empleado."""
+    number: str | None
+    """Número de empleado (NumEmpleado)."""
+    receipts: float
+    """Sus recibos en el año."""
+    perceptions: float
+    """El total de sus percepciones del año, gravado más exento."""
+    taxed: float
+    """Monto gravado (MontoTotGrav). Por omisión, operation menos exempt."""
+    exempt: float
+    """Monto exento (MontoTotExent). Por omisión 0."""
+    isr_withheld: float
+    """ISR retenido (deducción 002)."""
+    imss_withheld: float
+    """IMSS retenido (deducción 001)."""
+    other_deductions: float
+    """Las demás deducciones (Infonavit, préstamos, fondo de ahorro…)."""
+    other_payments: float
+    """El total de sus otros pagos del año (el subsidio entregado entre ellos)."""
+    employment_subsidy: float
+    """Subsidio para el empleo causado (otro pago 002)."""
+    net: float
+    """Su neto del año."""
+
+
+class PayrollAccumulated(TypedDict):
+    """Los acumulados de nómina del año: por concepto, mes por mes, y por empleado."""
+    object: Literal["payroll_accumulated"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """iss_…"""
+    year: float
+    """Año (Ejercicio)."""
+    employee: str | None
+    """El empleado que pidió (emp_…), o null."""
+    receipts: float
+    """Los recibos vigentes con fecha de pago en el año."""
+    concepts: list[PayrollAccumulatedConceptsItem]
+    """Percepciones, luego deducciones y otros pagos, por clave del SAT."""
+    employees: list[PayrollAccumulatedEmployeesItem]
+    """Cada empleado, de más a menos percepciones."""
+
+
+class PayrollCostMonthsItem(TypedDict):
+    month: str
+    """2026-11"""
+    receipts: float
+    """Los recibos con fecha de pago en el mes."""
+    employees: float
+    """Los empleados con recibo en el mes."""
+    paid: float
+    """Percepciones y otros pagos de los recibos, sin el subsidio para el empleo."""
+    imss: float | None
+    """Cuotas del patrón al IMSS, o null si las tasas del año aún no están cargadas."""
+    sar: float | None
+    """Retiro y cesantía y vejez del patrón, o null si las tasas del año aún no están cargadas."""
+    infonavit: float | None
+    """Aportación al Infonavit, o null si las tasas del año aún no están cargadas."""
+    payroll_tax: float | None
+    """Impuesto sobre nómina, o null si las tasas del año aún no están cargadas."""
+    total: float | None
+    """Lo pagado más las cuotas y el ISN, o null si las tasas del año aún no están cargadas."""
+
+
+class PayrollCostTotals(TypedDict):
+    """Totales (Totales)."""
+    paid: float
+    """Lo pagado a los empleados en el año."""
+    imss: float | None
+    """Cuotas del patrón al IMSS, o null si las tasas del año aún no están cargadas."""
+    sar: float | None
+    """Retiro y cesantía y vejez del patrón, o null si las tasas del año aún no están cargadas."""
+    infonavit: float | None
+    """Aportación al Infonavit, o null si las tasas del año aún no están cargadas."""
+    payroll_tax: float | None
+    """Impuesto sobre nómina, o null si las tasas del año aún no están cargadas."""
+    total: float | None
+    """El costo total, o null si las tasas del año aún no están cargadas."""
+
+
+class PayrollCost(TypedDict):
+    """Lo que cuesta la nómina del año mes por mes: lo pagado más las cuotas del patrón y el impuesto sobre nómina."""
+    object: Literal["payroll_cost"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """iss_…"""
+    year: float
+    """Año (Ejercicio)."""
+    rates_loaded: bool
+    """Si las cuotas del patrón y el ISN del año se pueden calcular."""
+    months: list[PayrollCostMonthsItem]
+    """Cada mes con recibos, del más antiguo al más reciente."""
+    totals: PayrollCostTotals
+    """Totales (Totales)."""
 
 
 class PayrollTaxSettings(TypedDict):
@@ -14179,6 +14314,24 @@ class GetPayrollTaxParams(TypedDict):
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
     month: str
     """El mes: 2026-11."""
+
+
+class GetPayrollAccumulatedParams(TypedDict):
+    """Los parámetros de GET /v1/payroll_reports/accumulated."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    year: NotRequired[int]
+    """El año: 2026 (por omisión, el actual)."""
+    employee: NotRequired[str]
+    """Un empleado (emp_…): solo sus recibos."""
+
+
+class GetPayrollCostParams(TypedDict):
+    """Los parámetros de GET /v1/payroll_reports/cost."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    year: NotRequired[int]
+    """El año: 2026 (por omisión, el actual)."""
 
 
 class UpdatePayrollTaxSettingsParams(TypedDict):

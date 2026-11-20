@@ -191,6 +191,8 @@ if TYPE_CHECKING:
         GetInvoicePdfParams,
         GetInvoiceXmlParams,
         GetOpeningBalancesParams,
+        GetPayrollAccumulatedParams,
+        GetPayrollCostParams,
         GetPayrollProvisionParams,
         GetPayrollTaxParams,
         GetRetentionParams,
@@ -303,8 +305,10 @@ if TYPE_CHECKING:
         NetToGross,
         NetToGrossParams,
         OpeningBalances,
+        PayrollAccumulated,
         PayrollBankFile,
         PayrollBatch,
+        PayrollCost,
         PayrollProvision,
         PayrollReceiptPreview,
         PayrollTax,
@@ -3300,6 +3304,53 @@ class PayrollTaxesResource:
         """
         result: PayrollTaxSettings = self._client.request(
             "POST", "/v1/payroll_taxes/settings", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PayrollReportsResource:
+    """Nómina: fiscalisto.payroll_reports."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def accumulated(
+        self,
+        params: GetPayrollAccumulatedParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollAccumulated:
+        """Acumulados de nómina
+
+        Los acumulados del año de los recibos de nómina timbrados vigentes (ordinarios y extraordinarios, por fecha de pago), como «Nómina › Reportes» de la app: cada percepción, deducción y otro pago por su clave del SAT y la del patrón, mes por mes, y los totales de cada empleado (percepciones gravadas y exentas, ISR e IMSS retenidos, subsidio para el empleo causado y neto). Con employee, solo los de ese empleado.
+
+        GET /v1/payroll_reports/accumulated
+        https://fiscalisto.com/docs/api/referencia/nomina/get-payroll-accumulated
+        """
+        result: PayrollAccumulated = self._client.request(
+            "GET", "/v1/payroll_reports/accumulated", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def cost(
+        self,
+        params: GetPayrollCostParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollCost:
+        """Costo de la nómina
+
+        Lo que cuesta la nómina del año mes por mes: lo pagado a los empleados (percepciones y otros pagos de los recibos timbrados, sin el subsidio para el empleo) más las cuotas del patrón al IMSS, SAR e Infonavit y el impuesto sobre nómina, calculados como GET /v1/accounting/payroll_provisions/{month}. En un año cuyas tasas aún no están cargadas (rates_loaded false), esas columnas y total vienen en null.
+
+        GET /v1/payroll_reports/cost
+        https://fiscalisto.com/docs/api/referencia/nomina/get-payroll-cost
+        """
+        result: PayrollCost = self._client.request(
+            "GET", "/v1/payroll_reports/cost", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -9380,6 +9431,11 @@ class FiscalistoApi(Core):
     def payroll_taxes(self) -> PayrollTaxesResource:
         """Nómina."""
         return PayrollTaxesResource(self)
+
+    @cached_property
+    def payroll_reports(self) -> PayrollReportsResource:
+        """Nómina."""
+        return PayrollReportsResource(self)
 
     @cached_property
     def invoice_batches(self) -> InvoiceBatchesResource:
