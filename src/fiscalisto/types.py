@@ -26,6 +26,7 @@ __all__ = [
     "ApiErrorError",
     "ApplyAdvanceParams",
     "ApplyAdvanceParamsRemainder",
+    "ApplyVariableSalaryParams",
     "ApproveAttendanceOvertimeParams",
     "ApproveExpenseReportParams",
     "AttendanceMark",
@@ -112,6 +113,7 @@ __all__ = [
     "CreateCustomerGroupParams",
     "CreateCustomerParams",
     "CreateCustomerParamsForeign",
+    "CreateEmployeeDeductionParams",
     "CreateEmployeeParams",
     "CreateExpenseItemParams",
     "CreateExpenseMovementParams",
@@ -258,6 +260,8 @@ __all__ = [
     "DiotLinesItemReturns",
     "DisposeFixedAssetParams",
     "Employee",
+    "EmployeeDeduction",
+    "EmployeeDeductionList",
     "EmployeeList",
     "Event",
     "EventList",
@@ -365,6 +369,7 @@ __all__ = [
     "GetSatDeclarationCalendarParams",
     "GetTaxDeterminationParams",
     "GetTrialBalanceParams",
+    "GetVariableSalaryParams",
     "GetVatRefundParams",
     "ImportManualEntriesParams",
     "ImportManualEntriesParamsEntriesItem",
@@ -513,6 +518,7 @@ __all__ = [
     "ListCustomerDataRequestsParams",
     "ListCustomerGroupsParams",
     "ListCustomersParams",
+    "ListEmployeeDeductionsParams",
     "ListEmployeesParams",
     "ListEventsParams",
     "ListExpensePeopleParams",
@@ -826,6 +832,7 @@ __all__ = [
     "UpdateCustomerGroupParams",
     "UpdateCustomerParams",
     "UpdateCustomerParamsForeign",
+    "UpdateEmployeeDeductionParams",
     "UpdateEmployeeParams",
     "UpdateExpenseItemParams",
     "UpdateExpensePersonParams",
@@ -902,6 +909,9 @@ __all__ = [
     "Usage",
     "UsageHighEvent",
     "ValidateTaxIdParams",
+    "VariableSalary",
+    "VariableSalaryEmployeesItem",
+    "VariableSalaryEmployeesItemLinesItem",
     "VatRefund",
     "VatRefundBalancesItem",
     "VatRefundBalancesItemCreditedInItem",
@@ -2083,7 +2093,11 @@ class Employee(TypedDict):
     daily_salary: float
     """Salario diario."""
     integrated_daily_salary: float
-    """Salario diario integrado (SalarioDiarioIntegrado): no menor al salario diario."""
+    """El SDI de los elementos fijos (cuota diaria con aguinaldo, prima vacacional y demás prestaciones fijas)."""
+    variable_integrated_daily_salary: float
+    """La parte variable del SDI desde variable_salary_from: lo que las horas extra triples, la prima dominical y los premios del bimestre anterior suman por día (artículo 30 de la LSS). Se fija con POST /v1/variable_salaries; los recibos usan integrated_daily_salary más esta."""
+    variable_salary_from: str | None
+    """Desde cuándo aplica variable_integrated_daily_salary (AAAA-MM-DD)."""
     contract_type: str
     """Tipo de contrato (TipoContrato), c_TipoContrato. Por omisión 01, por tiempo indeterminado."""
     workday_type: str
@@ -2994,6 +3008,102 @@ class ImssMovement(TypedDict):
     """Cuándo se marcó como presentado, o null."""
     problems: list[str]
     """Lo que el IMSS rechazaría en su renglón (vacío: listo para el archivo)."""
+
+
+class EmployeeDeduction(TypedDict):
+    """Un descuento que se repite en cada recibo ordinario de un empleado: Infonavit, Fonacot, pensión alimenticia, préstamo, caja de ahorro o cuota sindical. Cada recibo lo toma con los límites de la Ley Federal del Trabajo."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["employee_deduction"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (iss_…)."""
+    employee: str
+    """El empleado (emp_…)."""
+    kind: Literal["infonavit", "fonacot", "pension", "prestamo", "anticipo", "caja", "sindical"]
+    """infonavit, fonacot, pension (pensión alimenticia), prestamo, anticipo (de salarios), caja (de ahorro) o sindical."""
+    deduction_type: str
+    """La clave del SAT con que va en el recibo (c_TipoDeduccion): 010, 011, 007, 004, 012, 018 o 019."""
+    mode: Literal["percent_sbc", "fixed_month", "vsm", "percent_net", "percent_gross", "fixed_period", "percent_salary"]
+    """Cómo se calcula (vea POST /v1/employee_deductions)."""
+    value: float
+    """El porcentaje, el factor de VSM o el monto."""
+    total: float | None
+    """El monto de un préstamo o anticipo."""
+    paid: float
+    """Lo que ya descontaron los recibos timbrados."""
+    balance: float | None
+    """Lo que falta de un préstamo o anticipo."""
+    reference: str | None
+    """El número de crédito, el expediente o una nota."""
+    beneficiary: str | None
+    """A quién se paga una pensión."""
+    start_date: str
+    """Desde qué día se descuenta."""
+    end_date: str | None
+    """Hasta qué día, o null."""
+    extraordinary: bool
+    """Una pensión que también se descuenta del aguinaldo, la PTU y el finiquito."""
+
+
+class VariableSalaryEmployeesItemLinesItem(TypedDict):
+    type: str
+    """El tipo de percepción (019, 020, 010, 049, 038)."""
+    label: str
+    """Qué es."""
+    amount: float
+    """Lo que se integra."""
+
+
+class VariableSalaryEmployeesItem(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    employee_number: str
+    """Su número de empleado."""
+    employee_name: str
+    """Su nombre."""
+    variable_income: float
+    """Lo que se integra del bimestre (artículo 27 de la LSS)."""
+    days: float
+    """Los días de salario devengado: los del bimestre menos faltas e incapacidades."""
+    daily_variable: float
+    """variable_income entre days."""
+    fixed_integrated_daily_salary: float
+    """El SDI de los elementos fijos."""
+    current_variable: float
+    """La parte variable que tiene hoy."""
+    new_integrated_daily_salary: float
+    """El SDI desde effective_date: el fijo más daily_variable."""
+    changes: bool
+    """Si cambia lo que tiene."""
+    applied: bool
+    """Si ya se aplicó este bimestre."""
+    lines: list[VariableSalaryEmployeesItemLinesItem]
+    """De dónde sale variable_income."""
+
+
+class VariableSalary(TypedDict):
+    """La parte variable del SDI de un bimestre (artículo 30 de la LSS): las horas extra triples, la prima dominical, otros ingresos y lo que los premios de puntualidad y asistencia pasan del 10% del SBC, entre los días trabajados."""
+    object: Literal["variable_salary"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    bimester: str
+    """AAAA-B: 1 es enero–febrero, 6 noviembre–diciembre."""
+    period_start: str
+    """El primer día del bimestre."""
+    period_end: str
+    """El último día del bimestre."""
+    effective_date: str
+    """Desde cuándo aplica: el primer día del bimestre siguiente."""
+    deadline: str
+    """El último día para presentar la modificación en IDSE: el quinto día hábil del mes (artículo 34 de la LSS)."""
+    employees: list[VariableSalaryEmployeesItem]
+    """Cada empleado con ingresos variables, o con una parte variable que cambia."""
 
 
 class ImssFilesFilesItem(TypedDict):
@@ -8633,6 +8743,17 @@ class ImssMovementList(TypedDict):
     """La ruta de esta lista."""
 
 
+class EmployeeDeductionList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[EmployeeDeduction]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class InvoiceBatchList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -11775,6 +11896,75 @@ class CreateImssFilesParams(TypedDict):
     """Los movimientos (imv_…) pendientes que van en los archivos. Por omisión, todos los pendientes."""
     guide: NotRequired[str]
     """IDSE: la guía de 5 dígitos de su subdelegación. Por omisión, la que se guardó en la app."""
+
+
+class CreateEmployeeDeductionParams(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    kind: Literal["infonavit", "fonacot", "pension", "prestamo", "anticipo", "caja", "sindical"]
+    """infonavit (deducción 010), fonacot (011), pension (pensión alimenticia, 007), prestamo (préstamo del patrón, 004), anticipo (anticipo de salarios, 012), caja (caja de ahorro, 018) o sindical (cuota sindical, 019)."""
+    mode: Literal["percent_sbc", "fixed_month", "vsm", "percent_net", "percent_gross", "fixed_period", "percent_salary"]
+    """Cómo se calcula. infonavit: percent_sbc (porcentaje del SBC por día), fixed_month (cuota fija al mes) o vsm (factor de VSM al mes, por la UMI de 100.81), como dice el aviso de retención. fonacot: fixed_month (la retención mensual de la cédula). pension: percent_net (del neto después de ISR e IMSS), percent_gross (de todas las percepciones) o fixed_month. prestamo, anticipo y caja: fixed_period (monto por recibo). sindical: percent_salary (del sueldo) o fixed_period."""
+    value: float
+    """El porcentaje (de más de 0 a 100), el factor de VSM o el monto en pesos, según mode."""
+    total: NotRequired[float | None]
+    """Solo prestamo y anticipo: el monto prestado. Se descuenta hasta pagarlo; no puede pasar de un mes de salario (artículo 110 de la LFT)."""
+    reference: NotRequired[str | None]
+    """El número de crédito de Infonavit o Fonacot, el expediente o una nota."""
+    beneficiary: NotRequired[str | None]
+    """Solo pension, y obligatorio: a quién se paga."""
+    start_date: str
+    """Desde qué día se descuenta (AAAA-MM-DD)."""
+    end_date: NotRequired[str | None]
+    """Hasta qué día (incluido). Sin él, hasta que se borre (o se pague el préstamo)."""
+    extraordinary: NotRequired[bool]
+    """Solo pension: también se descuenta del aguinaldo, la PTU y el finiquito (por omisión, true)."""
+
+
+class ListEmployeeDeductionsParams(TypedDict):
+    """Los parámetros de GET /v1/employee_deductions."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    employee: NotRequired[str]
+    """Solo los de este empleado (emp_…)."""
+
+
+class UpdateEmployeeDeductionParams(TypedDict):
+    kind: NotRequired[Literal["infonavit", "fonacot", "pension", "prestamo", "anticipo", "caja", "sindical"]]
+    """infonavit (deducción 010), fonacot (011), pension (pensión alimenticia, 007), prestamo (préstamo del patrón, 004), anticipo (anticipo de salarios, 012), caja (caja de ahorro, 018) o sindical (cuota sindical, 019)."""
+    mode: NotRequired[Literal["percent_sbc", "fixed_month", "vsm", "percent_net", "percent_gross", "fixed_period", "percent_salary"]]
+    """Cómo se calcula. infonavit: percent_sbc (porcentaje del SBC por día), fixed_month (cuota fija al mes) o vsm (factor de VSM al mes, por la UMI de 100.81), como dice el aviso de retención. fonacot: fixed_month (la retención mensual de la cédula). pension: percent_net (del neto después de ISR e IMSS), percent_gross (de todas las percepciones) o fixed_month. prestamo, anticipo y caja: fixed_period (monto por recibo). sindical: percent_salary (del sueldo) o fixed_period."""
+    value: NotRequired[float]
+    """El porcentaje (de más de 0 a 100), el factor de VSM o el monto en pesos, según mode."""
+    total: NotRequired[float | None]
+    """Solo prestamo y anticipo: el monto prestado. Se descuenta hasta pagarlo; no puede pasar de un mes de salario (artículo 110 de la LFT)."""
+    reference: NotRequired[str | None]
+    """El número de crédito de Infonavit o Fonacot, el expediente o una nota."""
+    beneficiary: NotRequired[str | None]
+    """Solo pension, y obligatorio: a quién se paga."""
+    start_date: NotRequired[str]
+    """Desde qué día se descuenta (AAAA-MM-DD)."""
+    end_date: NotRequired[str | None]
+    """Hasta qué día (incluido). Sin él, hasta que se borre (o se pague el préstamo)."""
+    extraordinary: NotRequired[bool]
+    """Solo pension: también se descuenta del aguinaldo, la PTU y el finiquito (por omisión, true)."""
+
+
+class GetVariableSalaryParams(TypedDict):
+    """Los parámetros de GET /v1/variable_salaries."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    bimester: str
+    """AAAA-B: 2026-5 es septiembre–octubre de 2026."""
+
+
+class ApplyVariableSalaryParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    bimester: str
+    """El bimestre: AAAA-B, de 1 (enero–febrero) a 6 (noviembre–diciembre)."""
+    employees: list[str]
+    """Los empleados (emp_…) a los que se aplica."""
 
 
 class CreateInvoiceBatchParams(TypedDict):

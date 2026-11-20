@@ -19,6 +19,7 @@ if TYPE_CHECKING:
         AdvanceList,
         AdvanceTestClockParams,
         ApplyAdvanceParams,
+        ApplyVariableSalaryParams,
         ApproveAttendanceOvertimeParams,
         ApproveExpenseReportParams,
         AttendanceMark,
@@ -56,6 +57,7 @@ if TYPE_CHECKING:
         CreateCustomerDataRequestParams,
         CreateCustomerGroupParams,
         CreateCustomerParams,
+        CreateEmployeeDeductionParams,
         CreateEmployeeParams,
         CreateExpenseItemParams,
         CreateExpenseMovementParams,
@@ -112,6 +114,8 @@ if TYPE_CHECKING:
         Diot,
         DisposeFixedAssetParams,
         Employee,
+        EmployeeDeduction,
+        EmployeeDeductionList,
         Event,
         EventResend,
         ExpensePerson,
@@ -154,6 +158,7 @@ if TYPE_CHECKING:
         GetSatDeclarationCalendarParams,
         GetTaxDeterminationParams,
         GetTrialBalanceParams,
+        GetVariableSalaryParams,
         GetVatRefundParams,
         ImportManualEntriesParams,
         ImportStoreOrdersParams,
@@ -181,6 +186,7 @@ if TYPE_CHECKING:
         ListCustomerDataRequestsParams,
         ListCustomerGroupsParams,
         ListCustomersParams,
+        ListEmployeeDeductionsParams,
         ListEmployeesParams,
         ListEventsParams,
         ListExpensePeopleParams,
@@ -315,6 +321,7 @@ if TYPE_CHECKING:
         UpdateCostCenterParams,
         UpdateCustomerGroupParams,
         UpdateCustomerParams,
+        UpdateEmployeeDeductionParams,
         UpdateEmployeeParams,
         UpdateExpenseItemParams,
         UpdateExpensePersonParams,
@@ -340,6 +347,7 @@ if TYPE_CHECKING:
         UploadCertificateParams,
         UploadIssuerLogoParams,
         ValidateTaxIdParams,
+        VariableSalary,
         VatRefund,
         VerifyCfdiParams,
         VoidAttendanceMarkParams,
@@ -2740,6 +2748,164 @@ class ImssFilesResource:
         """
         result: ImssFiles = self._client.request(
             "POST", "/v1/imss_files", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class EmployeeDeductionsResource:
+    """Nómina: fiscalisto.employee_deductions."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateEmployeeDeductionParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EmployeeDeduction:
+        """Agregar un descuento a un empleado
+
+        Infonavit, Fonacot, pensión alimenticia, préstamo o anticipo del patrón, caja de ahorro o cuota sindical. Cada recibo ordinario desde start_date lo toma solo (POST /v1/payroll_receipts), con los límites de la Ley Federal del Trabajo: Infonavit por cada día del periodo aunque haya faltas, más $15 de seguro de daños por bimestre; Fonacot hasta el 20% del sueldo; préstamos, anticipos y caja hasta el 30% de lo que el sueldo excede del salario mínimo; del salario mínimo solo la pensión, Infonavit (20%) y Fonacot (10%). La pensión va primero, y lo que no alcanza del neto no se descuenta.
+
+        POST /v1/employee_deductions
+        https://fiscalisto.com/docs/api/referencia/nomina/create-employee-deduction
+        """
+        result: EmployeeDeduction = self._client.request(
+            "POST", "/v1/employee_deductions", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListEmployeeDeductionsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EmployeeDeductionList:
+        """Listar descuentos
+
+        Los descuentos vigentes del emisor, o de un empleado con employee.
+
+        GET /v1/employee_deductions
+        https://fiscalisto.com/docs/api/referencia/nomina/list-employee-deductions
+        """
+        result: EmployeeDeductionList = self._client.request(
+            "GET", "/v1/employee_deductions", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EmployeeDeduction:
+        """Ver un descuento
+
+        El descuento con lo que ya tomaron los recibos (paid) y lo que falta de un préstamo (balance).
+
+        GET /v1/employee_deductions/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/get-employee-deduction
+        """
+        result: EmployeeDeduction = self._client.request(
+            "GET", f"/v1/employee_deductions/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateEmployeeDeductionParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EmployeeDeduction:
+        """Cambiar un descuento
+
+        Desde el siguiente recibo; los timbrados se quedan como están.
+
+        POST /v1/employee_deductions/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/update-employee-deduction
+        """
+        result: EmployeeDeduction = self._client.request(
+            "POST", f"/v1/employee_deductions/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Quitar un descuento
+
+        Los recibos siguientes ya no lo toman; los timbrados lo conservan.
+
+        DELETE /v1/employee_deductions/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/delete-employee-deduction
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/employee_deductions/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class VariableSalariesResource:
+    """Nómina: fiscalisto.variable_salaries."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetVariableSalaryParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> VariableSalary:
+        """Salario variable de un bimestre
+
+        Lo que las horas extra triples, la prima dominical, otros ingresos y lo que los premios de puntualidad y asistencia pasan del 10% del SBC suman al SDI de cada empleado, de los recibos timbrados del bimestre, entre sus días trabajados (artículos 27 y 30 de la LSS). Las horas dobles no cuentan. No cambia nada: aplíquelo con POST /v1/variable_salaries.
+
+        GET /v1/variable_salaries
+        https://fiscalisto.com/docs/api/referencia/nomina/get-variable-salary
+        """
+        result: VariableSalary = self._client.request(
+            "GET", "/v1/variable_salaries", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def apply(
+        self,
+        params: ApplyVariableSalaryParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> VariableSalary:
+        """Aplicar el salario variable de un bimestre
+
+        A los empleados que diga: su parte variable del SDI desde el primer día del bimestre siguiente (los recibos de periodos anteriores siguen con la que tenían) y la modificación de salario pendiente de presentar en IDSE (GET /v1/imss_movements), a más tardar el quinto día hábil del mes (artículo 34 de la LSS). Repetirlo no hace nada.
+
+        POST /v1/variable_salaries
+        https://fiscalisto.com/docs/api/referencia/nomina/apply-variable-salary
+        """
+        result: VariableSalary = self._client.request(
+            "POST", "/v1/variable_salaries", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -7836,6 +8002,16 @@ class FiscalistoApi(Core):
     def imss_files(self) -> ImssFilesResource:
         """Nómina."""
         return ImssFilesResource(self)
+
+    @cached_property
+    def employee_deductions(self) -> EmployeeDeductionsResource:
+        """Nómina."""
+        return EmployeeDeductionsResource(self)
+
+    @cached_property
+    def variable_salaries(self) -> VariableSalariesResource:
+        """Nómina."""
+        return VariableSalariesResource(self)
 
     @cached_property
     def invoice_batches(self) -> InvoiceBatchesResource:
