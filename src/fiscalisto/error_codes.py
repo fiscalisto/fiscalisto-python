@@ -254,6 +254,18 @@ class ErrorCode:
     PARAMETER_UNKNOWN: Final = "parameter_unknown"
     """Mandó un campo o un parámetro de la URL que no existe (casi siempre un nombre mal escrito, como legalName en vez de legal_name, o ?statuss= en vez de ?status=). Nunca se ignora en silencio."""
 
+    PAYOUT_INVALID: Final = "payout_invalid"
+    """El pago no se puede preparar o cambiar así (una factura ya pagada o en otro pago, un proveedor sin cuenta aprobada, una regla que no deja pagar, un límite, o ya salió). El mensaje dice por qué, renglón por renglón."""
+
+    PAYOUT_NOT_FROM_API: Final = "payout_not_from_api"
+    """El pago se preparó en la app: se cancela ahí."""
+
+    PAYOUTS_API_DISABLED: Final = "payouts_api_disabled"
+    """La empresa no deja que la API prepare pagos: se enciende en la app, en Pagos › Configurar pagos."""
+
+    PAYOUTS_NOT_ENABLED: Final = "payouts_not_enabled"
+    """El RFC del emisor no paga a proveedores con Fiscalisto: se conecta Fintoc en la app, en Pagos."""
+
     PAYROLL_APPROVAL_REQUIRED: Final = "payroll_approval_required"
     """El emisor pide aprobar la prenómina antes de timbrar, y este recibo no está en la prenómina aprobada del periodo con estos importes y fecha de pago (no se ha pedido, espera aprobación, se rechazó o el recibo cambió). No se timbró: pídala con POST /v1/payroll_approvals y espere a que una persona la apruebe en la app."""
 
@@ -514,6 +526,10 @@ ErrorCodeValue = Literal[
     "parameter_invalid",
     "parameter_missing",
     "parameter_unknown",
+    "payout_invalid",
+    "payout_not_from_api",
+    "payouts_api_disabled",
+    "payouts_not_enabled",
     "payroll_approval_required",
     "payroll_calculation_changed",
     "payroll_calculation_unsupported",

@@ -40,6 +40,7 @@ if TYPE_CHECKING:
         Branch,
         Budget,
         CancelInvoiceParams,
+        CancelPayoutParams,
         CancelRetentionParams,
         CancelSalesOrderDeliveryParams,
         CancelSalesOrderParams,
@@ -99,6 +100,7 @@ if TYPE_CHECKING:
         CreateLedgerAccountParams,
         CreateManualEntryParams,
         CreatePaymentParams,
+        CreatePayoutParams,
         CreatePayrollApprovalParams,
         CreatePayrollBankFileParams,
         CreatePayrollBatchParams,
@@ -268,6 +270,10 @@ if TYPE_CHECKING:
         ListMaterialityInvoicesParams,
         ListMaterialitySuppliersParams,
         ListMembersParams,
+        ListPayableInvoicesParams,
+        ListPayeeAccountsParams,
+        ListPayoutMandatesParams,
+        ListPayoutsParams,
         ListPayrollApprovalsParams,
         ListPayrollBatchesParams,
         ListPortalSuppliersParams,
@@ -316,6 +322,10 @@ if TYPE_CHECKING:
         NetToGross,
         NetToGrossParams,
         OpeningBalances,
+        PayableInvoiceList,
+        PayeeAccountList,
+        Payout,
+        PayoutMandateList,
         PayrollAccumulated,
         PayrollApproval,
         PayrollBankFile,
@@ -6494,6 +6504,174 @@ class SupplierInvoicesResource:
         return result
 
 
+class PayableInvoicesResource:
+    """Pagos a proveedores: fiscalisto.payable_invoices."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListPayableInvoicesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayableInvoiceList:
+        """Listar lo que falta por pagar
+
+        Las facturas recibidas con algo por pagar, como Pagos › Por pagar, las más recientes primero; con uuid, esas facturas (pagadas o no). Lo pagado cuenta complementos, notas de crédito, pagos de Fiscalisto y pagos registrados a mano. Si el emisor no paga con Fintoc, 400 payouts_not_enabled.
+
+        GET /v1/payable_invoices
+        https://fiscalisto.com/docs/api/referencia/pagos-a-proveedores/list-payable-invoices
+        """
+        result: PayableInvoiceList = self._client.request(
+            "GET", "/v1/payable_invoices", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PayoutsResource:
+    """Pagos a proveedores: fiscalisto.payouts."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreatePayoutParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Payout:
+        """Preparar un pago a proveedores
+
+        Un pago en borrador con estas facturas, revisado como en la app: las reglas antes de pagar, los límites y las cuentas aprobadas de cada proveedor. Las de un proveedor van en una transferencia. Nunca sale solo: alguien del equipo lo abre en app_url y lo firma con su llave de acceso. Solo si la empresa lo permite en Pagos › Configurar pagos (si no, 403 payouts_api_disabled); lo que no se puede pagar contesta 400 payout_invalid con el motivo. Pide Idempotency-Key: si la respuesta se pierde, repítala con el mismo valor y contesta el mismo pago, nunca uno nuevo.
+
+        POST /v1/payouts
+        https://fiscalisto.com/docs/api/referencia/pagos-a-proveedores/create-payout
+        """
+        result: Payout = self._client.request(
+            "POST", "/v1/payouts", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListPayoutsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[Payout]:
+        """Listar pagos a proveedores
+
+        Los pagos del emisor, hechos en la app o por la API, los más recientes primero, con sus transferencias.
+
+        GET /v1/payouts
+        https://fiscalisto.com/docs/api/referencia/pagos-a-proveedores/list-payouts
+        """
+        return self._client.list("/v1/payouts", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Payout:
+        """Ver un pago a proveedores
+
+        Con sus firmas, cada transferencia, su clave de rastreo y su CEP cuando llega.
+
+        GET /v1/payouts/{id}
+        https://fiscalisto.com/docs/api/referencia/pagos-a-proveedores/get-payout
+        """
+        result: Payout = self._client.request(
+            "GET", f"/v1/payouts/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def cancel(
+        self,
+        id: str,
+        params: CancelPayoutParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Payout:
+        """Cancelar un pago a proveedores
+
+        Uno que preparó la API, mientras no ha salido nada (draft, pending_approval o approved): sus facturas vuelven a Por pagar y llega payout.canceled. Uno preparado en la app se cancela en la app (400 payout_not_from_api).
+
+        POST /v1/payouts/{id}/cancel
+        https://fiscalisto.com/docs/api/referencia/pagos-a-proveedores/cancel-payout
+        """
+        result: Payout = self._client.request(
+            "POST", f"/v1/payouts/{_path(id)}/cancel", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PayeeAccountsResource:
+    """Pagos a proveedores: fiscalisto.payee_accounts."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListPayeeAccountsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayeeAccountList:
+        """Listar cuentas de proveedores
+
+        Las cuentas a las que se les paga a sus proveedores, verificadas con el banco, y si ya se les puede pagar. Solo lectura: agregar o cambiar una CLABE se hace en la app, con su espera y su aprobación.
+
+        GET /v1/payee_accounts
+        https://fiscalisto.com/docs/api/referencia/pagos-a-proveedores/list-payee-accounts
+        """
+        result: PayeeAccountList = self._client.request(
+            "GET", "/v1/payee_accounts", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PayoutMandatesResource:
+    """Pagos a proveedores: fiscalisto.payout_mandates."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListPayoutMandatesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayoutMandateList:
+        """Listar pagos recurrentes
+
+        Los pagos recurrentes firmados en la app (o por firmar): a qué cuenta, cuánto como máximo, qué día y qué meses, y los pagos que ya hicieron. Solo lectura.
+
+        GET /v1/payout_mandates
+        https://fiscalisto.com/docs/api/referencia/pagos-a-proveedores/list-payout-mandates
+        """
+        result: PayoutMandateList = self._client.request(
+            "GET", "/v1/payout_mandates", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class SatDeclarationsResource:
     """Declaraciones del SAT: fiscalisto.sat_declarations."""
 
@@ -9926,6 +10104,26 @@ class FiscalistoApi(Core):
     def supplier_invoices(self) -> SupplierInvoicesResource:
         """Portal de proveedores."""
         return SupplierInvoicesResource(self)
+
+    @cached_property
+    def payable_invoices(self) -> PayableInvoicesResource:
+        """Pagos a proveedores."""
+        return PayableInvoicesResource(self)
+
+    @cached_property
+    def payouts(self) -> PayoutsResource:
+        """Pagos a proveedores."""
+        return PayoutsResource(self)
+
+    @cached_property
+    def payee_accounts(self) -> PayeeAccountsResource:
+        """Pagos a proveedores."""
+        return PayeeAccountsResource(self)
+
+    @cached_property
+    def payout_mandates(self) -> PayoutMandatesResource:
+        """Pagos a proveedores."""
+        return PayoutMandatesResource(self)
 
     @cached_property
     def sat_declarations(self) -> SatDeclarationsResource:
