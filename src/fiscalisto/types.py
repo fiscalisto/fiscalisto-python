@@ -12174,8 +12174,8 @@ class CreatePayrollReceiptParamsPeriod(TypedDict):
 
 
 class CreatePayrollReceiptParamsIncidentsBonusesItem(TypedDict):
-    type: Literal["010", "049", "038"]
-    """010 premio de puntualidad, 049 premio de asistencia, 038 otro bono (c_TipoPercepcion)."""
+    type: Literal["010", "049", "028", "038"]
+    """010 premio de puntualidad, 049 premio de asistencia, 028 comisiones, 038 otro bono (c_TipoPercepcion)."""
     amount: float
     """Importe."""
     concept: NotRequired[str]
@@ -12183,7 +12183,7 @@ class CreatePayrollReceiptParamsIncidentsBonusesItem(TypedDict):
 
 
 class CreatePayrollReceiptParamsIncidents(TypedDict):
-    """Incidencias del periodo, como en Nómina › Emitir recibos: horas extra, domingos trabajados, vacaciones y premios. Fiscalisto calcula sus importes, su parte exenta y el ISR con el sueldo."""
+    """Incidencias del periodo, como en Nómina › Emitir recibos: horas extra, domingos, descansos y festivos trabajados, vacaciones, premios y comisiones. Fiscalisto calcula sus importes, su parte exenta y el ISR con el sueldo."""
     double_hours: NotRequired[int]
     """Horas extra dobles (pagadas al doble), horas completas: hasta 9 por semana en 2026 y 2027, 10 en 2028, 11 en 2029 y 12 desde 2030 (LFT arts. 66 y transitorio cuarto del decreto DOF 01-05-2026). Exentas la mitad, hasta 5 UMA por semana; todas si gana el salario mínimo (LISR art. 93 fr. I)."""
     triple_hours: NotRequired[int]
@@ -12192,10 +12192,14 @@ class CreatePayrollReceiptParamsIncidents(TypedDict):
     """Días en que se trabajaron las horas extra (nodo HorasExtra); uno por cada 3 horas si no lo manda."""
     sundays: NotRequired[int]
     """Domingos trabajados: prima dominical del 25% del salario diario por cada uno (LFT art. 71), exenta hasta 1 UMA por domingo."""
+    rest_days_worked: NotRequired[int]
+    """Días de descanso semanal que trabajó sin descansar otro en su lugar: salario doble por cada uno además del día (LFT art. 73). Exentos con las horas extra: la mitad, hasta 5 UMA por semana entre ambos; todo si gana el salario mínimo (LISR art. 93 fr. I)."""
+    holidays_worked: NotRequired[int]
+    """Días de descanso obligatorio que trabajó (1 de enero, 1 de mayo, 16 de septiembre, 25 de diciembre, los lunes del art. 74 y la jornada electoral): salario doble por cada uno además del día (LFT art. 75), exento como rest_days_worked."""
     vacation_days: NotRequired[float]
     """Días de vacaciones que disfrutó en el periodo (se pagan como sueldo dentro de days): su prima vacacional con el porcentaje del empleado, exenta hasta 15 UMA en el año."""
     bonuses: NotRequired[list[CreatePayrollReceiptParamsIncidentsBonusesItem]]
-    """Premios y bonos del periodo, gravados."""
+    """Premios, comisiones y bonos del periodo, gravados."""
 
 
 class CreatePayrollReceiptParams(TypedDict):
@@ -12210,7 +12214,7 @@ class CreatePayrollReceiptParams(TypedDict):
     disability_days: NotRequired[int]
     """Días de incapacidad que expidió el IMSS en el periodo, de 0 a 31: no se pagan (salen de days) y no causan cuotas obreras del IMSS (LSS art. 31 fr. IV)."""
     incidents: NotRequired[CreatePayrollReceiptParamsIncidents]
-    """Incidencias del periodo, como en Nómina › Emitir recibos: horas extra, domingos trabajados, vacaciones y premios. Fiscalisto calcula sus importes, su parte exenta y el ISR con el sueldo."""
+    """Incidencias del periodo, como en Nómina › Emitir recibos: horas extra, domingos, descansos y festivos trabajados, vacaciones, premios y comisiones. Fiscalisto calcula sus importes, su parte exenta y el ISR con el sueldo."""
     replaces: NotRequired[str]
     """El recibo vigente (inv_… o UUID) que este corrige, calculado por Fiscalisto para el mismo empleado: el nuevo se calcula con los datos del empleado como están ahora, va relacionado con 04 y el anterior se cancela con motivo 01. Para un recibo que calculó su sistema use POST /v1/payroll_receipts/external con replaces."""
     send_email: NotRequired[bool]
@@ -12232,8 +12236,8 @@ class PreviewPayrollReceiptParamsPeriod(TypedDict):
 
 
 class PreviewPayrollReceiptParamsIncidentsBonusesItem(TypedDict):
-    type: Literal["010", "049", "038"]
-    """010 premio de puntualidad, 049 premio de asistencia, 038 otro bono (c_TipoPercepcion)."""
+    type: Literal["010", "049", "028", "038"]
+    """010 premio de puntualidad, 049 premio de asistencia, 028 comisiones, 038 otro bono (c_TipoPercepcion)."""
     amount: float
     """Importe."""
     concept: NotRequired[str]
@@ -12241,7 +12245,7 @@ class PreviewPayrollReceiptParamsIncidentsBonusesItem(TypedDict):
 
 
 class PreviewPayrollReceiptParamsIncidents(TypedDict):
-    """Incidencias del periodo, como en Nómina › Emitir recibos: horas extra, domingos trabajados, vacaciones y premios. Fiscalisto calcula sus importes, su parte exenta y el ISR con el sueldo."""
+    """Incidencias del periodo, como en Nómina › Emitir recibos: horas extra, domingos, descansos y festivos trabajados, vacaciones, premios y comisiones. Fiscalisto calcula sus importes, su parte exenta y el ISR con el sueldo."""
     double_hours: NotRequired[int]
     """Horas extra dobles (pagadas al doble), horas completas: hasta 9 por semana en 2026 y 2027, 10 en 2028, 11 en 2029 y 12 desde 2030 (LFT arts. 66 y transitorio cuarto del decreto DOF 01-05-2026). Exentas la mitad, hasta 5 UMA por semana; todas si gana el salario mínimo (LISR art. 93 fr. I)."""
     triple_hours: NotRequired[int]
@@ -12250,10 +12254,14 @@ class PreviewPayrollReceiptParamsIncidents(TypedDict):
     """Días en que se trabajaron las horas extra (nodo HorasExtra); uno por cada 3 horas si no lo manda."""
     sundays: NotRequired[int]
     """Domingos trabajados: prima dominical del 25% del salario diario por cada uno (LFT art. 71), exenta hasta 1 UMA por domingo."""
+    rest_days_worked: NotRequired[int]
+    """Días de descanso semanal que trabajó sin descansar otro en su lugar: salario doble por cada uno además del día (LFT art. 73). Exentos con las horas extra: la mitad, hasta 5 UMA por semana entre ambos; todo si gana el salario mínimo (LISR art. 93 fr. I)."""
+    holidays_worked: NotRequired[int]
+    """Días de descanso obligatorio que trabajó (1 de enero, 1 de mayo, 16 de septiembre, 25 de diciembre, los lunes del art. 74 y la jornada electoral): salario doble por cada uno además del día (LFT art. 75), exento como rest_days_worked."""
     vacation_days: NotRequired[float]
     """Días de vacaciones que disfrutó en el periodo (se pagan como sueldo dentro de days): su prima vacacional con el porcentaje del empleado, exenta hasta 15 UMA en el año."""
     bonuses: NotRequired[list[PreviewPayrollReceiptParamsIncidentsBonusesItem]]
-    """Premios y bonos del periodo, gravados."""
+    """Premios, comisiones y bonos del periodo, gravados."""
 
 
 class PreviewPayrollReceiptParams(TypedDict):
@@ -12268,7 +12276,7 @@ class PreviewPayrollReceiptParams(TypedDict):
     disability_days: NotRequired[int]
     """Días de incapacidad que expidió el IMSS en el periodo, de 0 a 31: no se pagan (salen de days) y no causan cuotas obreras del IMSS (LSS art. 31 fr. IV)."""
     incidents: NotRequired[PreviewPayrollReceiptParamsIncidents]
-    """Incidencias del periodo, como en Nómina › Emitir recibos: horas extra, domingos trabajados, vacaciones y premios. Fiscalisto calcula sus importes, su parte exenta y el ISR con el sueldo."""
+    """Incidencias del periodo, como en Nómina › Emitir recibos: horas extra, domingos, descansos y festivos trabajados, vacaciones, premios y comisiones. Fiscalisto calcula sus importes, su parte exenta y el ISR con el sueldo."""
     replaces: NotRequired[str]
     """El recibo vigente (inv_… o UUID) que este corrige, calculado por Fiscalisto para el mismo empleado: el nuevo se calcula con los datos del empleado como están ahora, va relacionado con 04 y el anterior se cancela con motivo 01. Para un recibo que calculó su sistema use POST /v1/payroll_receipts/external con replaces."""
     send_email: NotRequired[bool]
