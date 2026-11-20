@@ -193,6 +193,7 @@ __all__ = [
     "CreateCustomerParamsForeign",
     "CreateEmployeeDeductionParams",
     "CreateEmployeeParams",
+    "CreateEmployeeRaiseParams",
     "CreateEntryTemplateParams",
     "CreateEntryTemplateParamsLinesItem",
     "CreateExpenseItemParams",
@@ -354,6 +355,8 @@ __all__ = [
     "EmployeeList",
     "EmployeePortal",
     "EmployeePortalSignedReceiptsItem",
+    "EmployeeRaise",
+    "EmployeeRaiseEmployeesItem",
     "EmployeeVacations",
     "EmployeeVacationsCurrentYear",
     "EmployeeVacationsOpening",
@@ -3660,6 +3663,43 @@ class PayrollAccumulated(TypedDict):
     """Percepciones, luego deducciones y otros pagos, por clave del SAT."""
     employees: list[PayrollAccumulatedEmployeesItem]
     """Cada empleado, de más a menos percepciones."""
+
+
+class EmployeeRaiseEmployeesItem(TypedDict):
+    employee: str
+    """emp_…"""
+    number: str
+    """Su número de empleado."""
+    name: str
+    """Su nombre."""
+    daily_salary_before: float
+    """Su salario diario antes."""
+    daily_salary: float
+    """Su salario diario nuevo."""
+    integrated_daily_salary_before: float
+    """Su SDI antes (la parte fija)."""
+    integrated_daily_salary: float
+    """Su SDI nuevo, con el mismo factor de integración."""
+    error: str | None
+    """Por qué no puede recibir el aumento, o null."""
+
+
+class EmployeeRaise(TypedDict):
+    """Un aumento de sueldo para varios empleados, con la modificación de salario de cada uno para el IMSS."""
+    object: Literal["employee_raise"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """iss_…"""
+    applied: bool
+    """false con dry_run: no se guardó nada."""
+    effective_date: str
+    """Desde cuándo rige: la fecha de la modificación de salario."""
+    imss_deadline: str
+    """El último día para presentar las modificaciones al IMSS (5 días hábiles)."""
+    employees: list[EmployeeRaiseEmployeesItem]
+    """Cada empleado del aumento."""
 
 
 class PayrollCostMonthsItem(TypedDict):
@@ -13709,6 +13749,23 @@ class ListEmployeesParams(TypedDict):
     """El id del último de la página anterior, para la siguiente."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateEmployeeRaiseParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    employees: NotRequired[list[str]]
+    """Los empleados (emp_…). Sin employees, todos los que trabajan en effective_date."""
+    percent: NotRequired[float]
+    """Aumento en porcentaje: 5 es 5%."""
+    amount: NotRequired[float]
+    """Aumento en pesos por día."""
+    daily_salary: NotRequired[float]
+    """Un salario diario nuevo, igual para todos."""
+    effective_date: NotRequired[str]
+    """Desde cuándo rige, hoy o antes (por omisión, hoy). Es la fecha de la modificación de salario."""
+    dry_run: NotRequired[bool]
+    """true: dice cómo quedaría cada empleado, sin guardar nada."""
 
 
 class UpdateEmployeeParams(TypedDict):

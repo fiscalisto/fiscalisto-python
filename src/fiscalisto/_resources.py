@@ -76,6 +76,7 @@ if TYPE_CHECKING:
         CreateCustomerParams,
         CreateEmployeeDeductionParams,
         CreateEmployeeParams,
+        CreateEmployeeRaiseParams,
         CreateEntryTemplateParams,
         CreateExpenseItemParams,
         CreateExpenseMovementParams,
@@ -139,6 +140,7 @@ if TYPE_CHECKING:
         EmployeeDeduction,
         EmployeeDeductionList,
         EmployeePortal,
+        EmployeeRaise,
         EmployeeVacations,
         EntryTemplate,
         EntryTemplateLines,
@@ -2391,6 +2393,27 @@ class EmployeesResource:
         https://fiscalisto.com/docs/api/referencia/nomina/list-employees
         """
         return self._client.list("/v1/employees", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def raise(
+        self,
+        params: CreateEmployeeRaiseParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EmployeeRaise:
+        """Aumento de sueldo
+
+        Un aumento para varios empleados a la vez, como «Aumento de sueldo» en Nómina › Empleados de la app: percent (porcentaje), amount (pesos más por día) o daily_salary (un salario nuevo). Cada empleado conserva su factor de integración (SDI ÷ salario), y el SDI nuevo queda como modificación de salario con fecha effective_date en Movimientos del IMSS, para presentarla a más tardar en imss_deadline (5 días hábiles, artículo 34 de la Ley del Seguro Social). Rige desde hoy o antes; los periodos ya timbrados desde entonces se pagan con el retroactivo de las incidencias. Si un empleado no puede recibirlo (no es un aumento, queda bajo el salario mínimo, no trabajaba ese día), contesta 400 y no cambia a nadie; dry_run true dice cómo quedaría cada uno, con su error, sin guardar.
+
+        POST /v1/employee_raises
+        https://fiscalisto.com/docs/api/referencia/nomina/create-employee-raise
+        """
+        result: EmployeeRaise = self._client.request(
+            "POST", "/v1/employee_raises", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
 
     def get(
         self,
