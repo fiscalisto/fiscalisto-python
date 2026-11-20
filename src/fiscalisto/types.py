@@ -2196,6 +2196,14 @@ class Employee(TypedDict):
     """La parte variable del SDI desde variable_salary_from: lo que las horas extra triples, la prima dominical y los premios del bimestre anterior suman por día (artículo 30 de la LSS). Se fija con POST /v1/variable_salaries; los recibos usan integrated_daily_salary más esta."""
     variable_salary_from: str | None
     """Desde cuándo aplica variable_integrated_daily_salary (AAAA-MM-DD)."""
+    aguinaldo_days: float
+    """Días de aguinaldo al año (al menos 15)."""
+    vacation_premium: float
+    """Prima vacacional, fracción del salario de las vacaciones (al menos 0.25)."""
+    pantry_vouchers: float
+    """Vales de despensa al mes que lleva cada recibo ordinario (percepción 029)."""
+    savings_fund_rate: float
+    """Fracción del sueldo que aportan al fondo de ahorro la empresa y el trabajador por igual (percepción 005)."""
     contract_type: str
     """Tipo de contrato (TipoContrato), c_TipoContrato. Por omisión 01, por tiempo indeterminado."""
     workday_type: str
@@ -12659,6 +12667,14 @@ class CreateEmployeeParams(TypedDict):
     """Salario diario."""
     integrated_daily_salary: float
     """Salario diario integrado (SalarioDiarioIntegrado): no menor al salario diario."""
+    aguinaldo_days: NotRequired[float]
+    """Días de aguinaldo al año: al menos 15 (LFT art. 87), que es el valor por omisión."""
+    vacation_premium: NotRequired[float]
+    """Prima vacacional como fracción del salario de sus vacaciones: al menos 0.25 (LFT art. 80), el valor por omisión."""
+    pantry_vouchers: NotRequired[float]
+    """Vales de despensa al mes (percepción 029), por los días pagados de cada recibo ordinario: exentos como previsión social con el límite del artículo 93 de la LISR. 0 por omisión."""
+    savings_fund_rate: NotRequired[float]
+    """Fondo de ahorro: fracción del sueldo de cada recibo que aporta la empresa y el trabajador por igual, hasta 0.13 (LISR art. 27 fr. XI). Va como percepción 005 y como deducciones 004 (claves FAT y FAE) de ambas aportaciones. 0 por omisión."""
     contract_type: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
     """Tipo de contrato (TipoContrato), c_TipoContrato. Por omisión 01, por tiempo indeterminado."""
     workday_type: NotRequired[str]
@@ -12730,6 +12746,14 @@ class UpdateEmployeeParams(TypedDict):
     """Salario diario."""
     integrated_daily_salary: NotRequired[float]
     """Salario diario integrado (SalarioDiarioIntegrado): no menor al salario diario."""
+    aguinaldo_days: NotRequired[float]
+    """Días de aguinaldo al año: al menos 15 (LFT art. 87), que es el valor por omisión."""
+    vacation_premium: NotRequired[float]
+    """Prima vacacional como fracción del salario de sus vacaciones: al menos 0.25 (LFT art. 80), el valor por omisión."""
+    pantry_vouchers: NotRequired[float]
+    """Vales de despensa al mes (percepción 029), por los días pagados de cada recibo ordinario: exentos como previsión social con el límite del artículo 93 de la LISR. 0 por omisión."""
+    savings_fund_rate: NotRequired[float]
+    """Fondo de ahorro: fracción del sueldo de cada recibo que aporta la empresa y el trabajador por igual, hasta 0.13 (LISR art. 27 fr. XI). Va como percepción 005 y como deducciones 004 (claves FAT y FAE) de ambas aportaciones. 0 por omisión."""
     contract_type: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
     """Tipo de contrato (TipoContrato), c_TipoContrato. Por omisión 01, por tiempo indeterminado."""
     workday_type: NotRequired[str]
@@ -14166,7 +14190,7 @@ class CreateSatReviewParamsNoticesItem(TypedDict):
     step: NotRequired[str]
     """Qué oficio es, de los de su tipo (en desk_audit: solicitud, observaciones o resolucion); por omisión, el primero, el que abre la revisión. Otro contesta con los de su tipo."""
     notified_on: str
-    """El día en que se lo notificaron (en el Buzón, el día en que lo abrió o el quinto día hábil después del aviso, lo que pase primero). No puede ser futuro."""
+    """El día en que se lo notificaron (en el Buzón, el día en que lo abrió o, si no lo abrió, el cuarto día hábil después del aviso). No puede ser futuro."""
     business_days: NotRequired[int | None]
     """Los días hábiles que da el oficio, solo cuando no son los de la ley (una carta invitación con fecha, «otro» oficio)."""
     extension: NotRequired[bool]
@@ -14225,7 +14249,7 @@ class UpdateSatReviewParamsNoticesItem(TypedDict):
     step: NotRequired[str]
     """Qué oficio es, de los de su tipo (en desk_audit: solicitud, observaciones o resolucion); por omisión, el primero, el que abre la revisión. Otro contesta con los de su tipo."""
     notified_on: str
-    """El día en que se lo notificaron (en el Buzón, el día en que lo abrió o el quinto día hábil después del aviso, lo que pase primero). No puede ser futuro."""
+    """El día en que se lo notificaron (en el Buzón, el día en que lo abrió o, si no lo abrió, el cuarto día hábil después del aviso). No puede ser futuro."""
     business_days: NotRequired[int | None]
     """Los días hábiles que da el oficio, solo cuando no son los de la ley (una carta invitación con fecha, «otro» oficio)."""
     extension: NotRequired[bool]
