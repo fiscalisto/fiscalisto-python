@@ -300,6 +300,8 @@ if TYPE_CHECKING:
         MaterialitySupplierList,
         Member,
         MemberList,
+        NetToGross,
+        NetToGrossParams,
         OpeningBalances,
         PayrollBankFile,
         PayrollBatch,
@@ -2669,6 +2671,27 @@ class PayrollReceiptsResource:
         """
         result: Invoice = self._client.request(
             "POST", "/v1/payroll_receipts", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def net_to_gross(
+        self,
+        params: NetToGrossParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> NetToGross:
+        """Neto a bruto
+
+        El salario diario y el SDI cuyo recibo ordinario de un periodo completo paga el neto que pide, con el ISR y el IMSS de hoy, como «Calcular desde el neto» en cada empleado de la app. Con employee toma su periodicidad y prestaciones; sin él, las que mande o las de la ley. Sin faltas, incidencias ni descuentos como Infonavit o préstamos. No guarda nada: para usarlo, actualice al empleado.
+
+        POST /v1/payroll/net_to_gross
+        https://fiscalisto.com/docs/api/referencia/nomina/net-to-gross
+        """
+        result: NetToGross = self._client.request(
+            "POST", "/v1/payroll/net_to_gross", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 

@@ -720,6 +720,9 @@ __all__ = [
     "MaterialitySupplierStates",
     "Member",
     "MemberList",
+    "NetToGross",
+    "NetToGrossParams",
+    "NetToGrossPeriod",
     "OpeningBalances",
     "OpeningBalancesLinesItem",
     "PayrollBankFile",
@@ -2333,7 +2336,7 @@ class Employee(TypedDict):
 
 class PayrollReceiptPreviewWarningsItem(TypedDict):
     code: str
-    """finiquito_not_included: el empleado se fue en el periodo y el recibo no trae su finiquito; absences_over_monthly_limit: con este recibo pasa de 7 faltas en el mes y las de más cotizan como días trabajados (para dejar de cotizar, presente su aviso de baja); payroll_rates_pending: aún no se cargan los valores (ISR, subsidio, salario mínimo, UMA) de una fecha próxima."""
+    """finiquito_not_included: el empleado se fue en el periodo y el recibo no trae su finiquito; absences_over_monthly_limit: con este recibo pasa de 7 faltas en el mes y las de más cotizan como días trabajados (para dejar de cotizar, presente su aviso de baja); payroll_rates_pending: aún no se cargan los valores (ISR, subsidio, salario mínimo, UMA) de una fecha próxima; net_changed_vs_previous: el neto cambia 10% o más (y al menos $100) contra el recibo ordinario anterior del empleado; salary_changed_vs_previous: cambió su salario diario integrado desde ese recibo (presente la modificación al IMSS); low_net: las deducciones le dejan menos del 30% de sus percepciones."""
     message: str
     """Qué pasó y cómo corregirlo, para una persona."""
 
@@ -3539,6 +3542,44 @@ VacationRequest = TypedDict(
         "created_at": "str",
     },
 )
+
+
+class NetToGrossPeriod(TypedDict):
+    """El periodo con que se calculó (el actual de la periodicidad)."""
+    start: str
+    """Primer día del periodo (FechaInicialPago), AAAA-MM-DD."""
+    end: str
+    """Último día del periodo (FechaFinalPago), AAAA-MM-DD."""
+
+
+class NetToGross(TypedDict):
+    """Neto a bruto: el salario diario cuyo recibo ordinario de un periodo completo paga un neto, sin faltas, incidencias ni descuentos como Infonavit o préstamos. No guarda nada."""
+    object: Literal["net_to_gross"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    employee: str | None
+    """El empleado (emp_…) cuyas prestaciones usó, o null."""
+    periodicity: str
+    """02 semanal, 03 catorcenal, 04 quincenal o 05 mensual."""
+    net_requested: float
+    """El neto que pidió."""
+    daily_salary: float
+    """El salario diario cuyo recibo paga al menos ese neto (redondeado al centavo hacia arriba)."""
+    integrated_daily_salary: float
+    """Su salario diario integrado (SDI) con el factor de sus prestaciones."""
+    period: NetToGrossPeriod
+    """El periodo con que se calculó (el actual de la periodicidad)."""
+    days: float
+    """Los días pagados de un periodo completo."""
+    perceptions: float
+    """Total de percepciones del recibo."""
+    deductions: float
+    """Total de deducciones (ISR, IMSS, fondo de ahorro)."""
+    taxes_withheld: float
+    """ISR retenido."""
+    other_payments: float
+    """Otros pagos."""
+    net: float
+    """El neto del recibo con ese salario."""
 
 
 class PayrollTaxSettings(TypedDict):
@@ -13743,6 +13784,27 @@ class CreatePayrollReceiptParams(TypedDict):
     """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     confirmation_token: NotRequired[str]
     """El confirmation_token de POST /v1/payroll_receipts/preview: timbra solo si el recibo calculado ahora es exactamente el que revisó (si no, 409 payroll_calculation_changed y no timbra). Sin él, timbra el que calcule en ese momento."""
+
+
+class NetToGrossParams(TypedDict):
+    net: float
+    """El neto que quiere pagar por un periodo completo, en pesos."""
+    employee: NotRequired[str]
+    """Un empleado (emp_…): toma su periodicidad, zona y prestaciones (aguinaldo, prima vacacional, antigüedad, vales y fondo de ahorro), y su factor SDI ÷ salario si los tiene."""
+    periodicity: NotRequired[Literal["02", "03", "04", "05"]]
+    """02 semanal, 03 catorcenal, 04 quincenal o 05 mensual. Sin employee, obligatoria."""
+    border_zone: NotRequired[bool]
+    """En la zona libre de la frontera norte (su salario mínimo)."""
+    start_date: NotRequired[str]
+    """Fecha de ingreso: los días de vacaciones de su antigüedad."""
+    aguinaldo_days: NotRequired[int]
+    """Días de aguinaldo al año (al menos 15)."""
+    vacation_premium: NotRequired[float]
+    """Prima vacacional como fracción (al menos 0.25)."""
+    pantry_vouchers: NotRequired[float]
+    """Vales de despensa al mes."""
+    savings_fund_rate: NotRequired[float]
+    """Fondo de ahorro como fracción del salario (hasta 0.13)."""
 
 
 class PreviewPayrollReceiptParamsPeriod(TypedDict):
