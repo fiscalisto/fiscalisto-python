@@ -401,6 +401,12 @@ class ErrorCode:
     SUPPLIER_INVOICE_INVALID: Final = "supplier_invoice_invalid"
     """La factura del proveedor no admite eso en su estado (por ejemplo, programar una que no está aprobada, una fecha de pago pasada o marcar pagada una ya pagada), o el SAT la reporta cancelada. El mensaje dice por qué."""
 
+    TAG_EXISTS: Final = "tag_exists"
+    """Ya hay una etiqueta con ese nombre (sin importar mayúsculas ni acentos): el mensaje trae su id (tag_…)."""
+
+    TAG_LIMIT: Final = "tag_limit"
+    """La empresa llegó a 200 etiquetas: borre las que ya no use."""
+
     TEAM_CHANGE_REQUIRES_APP: Final = "team_change_requires_app"
     """El cambio da, quita o toca un permiso delicado (equipo, credenciales, seguridad o plan), o nombra a un propietario: pide confirmar la identidad de quien lo hace, y eso se hace en la app, en Ajustes › Miembros o Ajustes › Roles."""
 
@@ -578,6 +584,8 @@ ErrorCodeValue = Literal[
     "store_platform_unavailable",
     "substitution_unsupported",
     "supplier_invoice_invalid",
+    "tag_exists",
+    "tag_limit",
     "team_change_requires_app",
     "team_invalid",
     "team_permission_denied",

@@ -122,6 +122,7 @@ if TYPE_CHECKING:
         CreateSatReviewParams,
         CreateStockAdjustmentParams,
         CreateStoreConnectionParams,
+        CreateTagParams,
         CreateTaxDeterminationParams,
         CreateTestClockParams,
         CreateTicketParams,
@@ -304,6 +305,7 @@ if TYPE_CHECKING:
         ListStockMovementsParams,
         ListStoreConnectionsParams,
         ListSupplierInvoicesParams,
+        ListTagsParams,
         ListTicketsParams,
         ListVacationRequestsParams,
         ListWarehouseStockParams,
@@ -413,6 +415,7 @@ if TYPE_CHECKING:
         StoreConnection,
         StoreImport,
         SupplierInvoice,
+        Tag,
         TaxDetermination,
         TaxDiscrepancy,
         TaxIdValidation,
@@ -461,6 +464,7 @@ if TYPE_CHECKING:
         UpdateSatReviewParams,
         UpdateSelfInvoicingParams,
         UpdateStoreConnectionParams,
+        UpdateTagParams,
         UpdateWebhookEndpointParams,
         UploadBranchLogoParams,
         UploadCertificateParams,
@@ -4084,6 +4088,113 @@ class CostCentersResource:
         return result
 
 
+class TagsResource:
+    """Etiquetas: fiscalisto.tags."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateTagParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Tag:
+        """Crear una etiqueta
+
+        Una palabra suya para juntar facturas y órdenes de compra: una obra, un evento, un cliente, «Urgente». Es la misma lista de Etiquetas en la app. Un nombre que ya existe (sin importar mayúsculas ni acentos) contesta tag_exists con su id. Hasta 200 por empresa.
+
+        POST /v1/tags
+        https://fiscalisto.com/docs/api/referencia/etiquetas/create-tag
+        """
+        result: Tag = self._client.request(
+            "POST", "/v1/tags", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListTagsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[Tag]:
+        """Listar etiquetas
+
+        Las etiquetas del emisor, las más recientes primero, con cuántas órdenes de compra y facturas lleva cada una.
+
+        GET /v1/tags
+        https://fiscalisto.com/docs/api/referencia/etiquetas/list-tags
+        """
+        return self._client.list("/v1/tags", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Tag:
+        """Ver una etiqueta
+
+        Una etiqueta del emisor.
+
+        GET /v1/tags/{id}
+        https://fiscalisto.com/docs/api/referencia/etiquetas/get-tag
+        """
+        result: Tag = self._client.request(
+            "GET", f"/v1/tags/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateTagParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Tag:
+        """Actualizar una etiqueta
+
+        Cambia su nombre o su color; se ve así en todas sus facturas y órdenes. Un nombre que ya tiene otra contesta tag_exists.
+
+        POST /v1/tags/{id}
+        https://fiscalisto.com/docs/api/referencia/etiquetas/update-tag
+        """
+        result: Tag = self._client.request(
+            "POST", f"/v1/tags/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar una etiqueta
+
+        Se quita de sus facturas y órdenes de compra, que no cambian en nada más, y se borran sus etiquetas automáticas. No se puede deshacer.
+
+        DELETE /v1/tags/{id}
+        https://fiscalisto.com/docs/api/referencia/etiquetas/delete-tag
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/tags/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class PriceListsResource:
     """Listas de precios: fiscalisto.price_lists."""
 
@@ -6375,7 +6486,7 @@ class SatInvoicesResource:
     ) -> SatInvoice:
         """Actualizar una factura del SAT
 
-        Lo que se puede cambiar de un CFDI del SAT sin tocarlo: su centro de costo (cost_center, o null para quitárselo), para ver sus gastos por obra, proyecto o área.
+        Lo que se puede cambiar de un CFDI del SAT sin tocarlo: su centro de costo (cost_center, o null para quitárselo), para ver sus gastos por obra, proyecto o área, y sus etiquetas (tags, exactamente las que manda: ids tag_… o nombres; un nombre nuevo crea la etiqueta).
 
         POST /v1/sat_invoices/{id}
         https://fiscalisto.com/docs/api/referencia/descargas-del-sat/update-sat-invoice
@@ -10133,6 +10244,11 @@ class FiscalistoApi(Core):
     def cost_centers(self) -> CostCentersResource:
         """Centros de costo."""
         return CostCentersResource(self)
+
+    @cached_property
+    def tags(self) -> TagsResource:
+        """Etiquetas."""
+        return TagsResource(self)
 
     @cached_property
     def price_lists(self) -> PriceListsResource:

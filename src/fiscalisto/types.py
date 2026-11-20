@@ -341,6 +341,7 @@ __all__ = [
     "CreateStockAdjustmentParamsLinesItem",
     "CreateStoreConnectionParams",
     "CreateStoreConnectionParamsSettings",
+    "CreateTagParams",
     "CreateTaxDeterminationParams",
     "CreateTestClockParams",
     "CreateTicketParams",
@@ -754,6 +755,7 @@ __all__ = [
     "ListStockMovementsParams",
     "ListStoreConnectionsParams",
     "ListSupplierInvoicesParams",
+    "ListTagsParams",
     "ListTicketsParams",
     "ListVacationRequestsParams",
     "ListWarehouseStockParams",
@@ -1009,6 +1011,7 @@ __all__ = [
     "SatInvoiceIssuedTo",
     "SatInvoiceList",
     "SatInvoicePaidOtherwise",
+    "SatInvoiceTagsItem",
     "SatInvoiceTaxes",
     "SatListCheck",
     "SatListCheckList",
@@ -1082,6 +1085,8 @@ __all__ = [
     "SupplierInvoiceRejectedEvent",
     "SupplierInvoiceScheduledEvent",
     "SupplierInvoiceWarningsItem",
+    "Tag",
+    "TagList",
     "TaxDetermination",
     "TaxDiscrepancy",
     "TaxDiscrepancyMonthsItem",
@@ -1208,6 +1213,7 @@ __all__ = [
     "UpdateSelfInvoicingParamsPortalStyleWays",
     "UpdateStoreConnectionParams",
     "UpdateStoreConnectionParamsSettings",
+    "UpdateTagParams",
     "UpdateWebhookEndpointParams",
     "UploadBranchLogoParams",
     "UploadCertificateParams",
@@ -4412,6 +4418,17 @@ class SatInvoicePaidOtherwise(TypedDict):
     """true cuando la marcó una regla de Ajustes › Pagos sin complemento."""
 
 
+class SatInvoiceTagsItem(TypedDict):
+    id: str
+    """La etiqueta (tag_…)."""
+    name: str
+    """Su nombre."""
+    color: str
+    """Su color."""
+    automatic: bool
+    """true si la puso una regla (su orden de compra o Ajustes › Reglas), no una persona."""
+
+
 class SatInvoice(TypedDict):
     """Una factura que el SAT tiene del emisor, emitida o recibida, traída con una descarga."""
     id: str
@@ -4460,6 +4477,8 @@ class SatInvoice(TypedDict):
     """Solo recibidas, marcadas con mark_paid, en la app o por una regla: without_complement true en una PPD pagada sin complemento de pago (el SAT la sigue viendo sin pagar); false en una PUE, donde solo se anotó de dónde salió el dinero."""
     cost_center: str | None
     """Su centro de costo (ccn_…), o null. Póngalo o cámbielo con POST /v1/sat_invoices/{id}."""
+    tags: list[SatInvoiceTagsItem]
+    """Sus etiquetas, por nombre. automatic: true en las que puso una regla (la orden de compra a la que se vinculó o una regla de Ajustes › Reglas). Cámbielas con POST /v1/sat_invoices/{id}."""
     sat_download: str | None
     """La descarga (sdl_…) que la trajo, o null."""
     downloaded_at: str | None
@@ -4967,6 +4986,28 @@ class CostCenter(TypedDict):
     """Cuándo se creó."""
     updated_at: str | None
     """Cuándo cambió por última vez."""
+
+
+class Tag(TypedDict):
+    """Una etiqueta del emisor: una palabra suya para juntar facturas y órdenes de compra."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["tag"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor de la etiqueta."""
+    name: str
+    """Cómo la llama su equipo, por ejemplo «Obra Norte»."""
+    color: Literal["info", "positive", "warning", "critical", "muted"]
+    """Su color: info, positive, warning, critical o muted."""
+    purchase_orders: int
+    """Cuántas órdenes de compra la llevan."""
+    invoices: int
+    """Cuántas facturas la llevan, emitidas y recibidas."""
+    created_at: str | None
+    """Cuándo se creó."""
 
 
 class RuleConditionsConditionsItem(TypedDict):
@@ -12193,6 +12234,17 @@ class CostCenterList(TypedDict):
     """La ruta de esta lista."""
 
 
+class TagList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[Tag]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class PriceListList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -16219,6 +16271,32 @@ class DeleteCostCenterParams(TypedDict):
     """Otro centro de costo (ccn_…) que se queda con sus facturas."""
 
 
+class CreateTagParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    name: str
+    """Cómo la llama su equipo, por ejemplo «Obra Norte». No se repite (sin importar mayúsculas ni acentos)."""
+    color: NotRequired[Literal["info", "positive", "warning", "critical", "muted"]]
+    """Su color: info (azul), positive (verde), warning (ámbar), critical (rojo) o muted (gris). Por omisión, el siguiente de la lista."""
+
+
+class ListTagsParams(TypedDict):
+    """Los parámetros de GET /v1/tags."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateTagParams(TypedDict):
+    name: NotRequired[str]
+    """Cómo la llama su equipo, por ejemplo «Obra Norte». No se repite (sin importar mayúsculas ni acentos)."""
+    color: NotRequired[Literal["info", "positive", "warning", "critical", "muted"]]
+    """Su color: info (azul), positive (verde), warning (ámbar), critical (rojo) o muted (gris). Por omisión, el siguiente de la lista."""
+
+
 class CreatePriceListParamsItemsItem(TypedDict):
     product: str
     """El producto (prd_…)."""
@@ -17435,11 +17513,15 @@ class ListSatInvoicesParams(TypedDict):
     """Con fecha hasta este día (AAAA-MM-DD), incluido."""
     cost_center: NotRequired[str]
     """Solo las de este centro de costo (ccn_…), o none para las que no tienen."""
+    tag: NotRequired[str]
+    """Solo las que llevan esta etiqueta (tag_…)."""
 
 
 class UpdateSatInvoiceParams(TypedDict):
     cost_center: NotRequired[str | None]
     """Su centro de costo (ccn_…), o null para quitárselo. Los complementos de pago y los traslados no llevan."""
+    tags: NotRequired[list[str]]
+    """Sus etiquetas, exactamente estas (hasta 10): ids (tag_…) o nombres; un nombre nuevo crea la etiqueta. [] se las quita. Una que puso una regla y no manda se queda quitada."""
 
 
 class MarkSatInvoicePaidParams(TypedDict):
