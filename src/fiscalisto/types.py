@@ -188,6 +188,7 @@ __all__ = [
     "CreatePayrollReceiptParamsIncidents",
     "CreatePayrollReceiptParamsIncidentsBonusesItem",
     "CreatePayrollReceiptParamsIncidentsDisabilityPay",
+    "CreatePayrollReceiptParamsIncidentsRetroactive",
     "CreatePayrollReceiptParamsPeriod",
     "CreatePriceListParams",
     "CreatePriceListParamsItemsItem",
@@ -726,6 +727,7 @@ __all__ = [
     "PreviewPayrollReceiptParamsIncidents",
     "PreviewPayrollReceiptParamsIncidentsBonusesItem",
     "PreviewPayrollReceiptParamsIncidentsDisabilityPay",
+    "PreviewPayrollReceiptParamsIncidentsRetroactive",
     "PreviewPayrollReceiptParamsPeriod",
     "PriceList",
     "PriceListItemsItem",
@@ -13103,6 +13105,17 @@ class CreatePayrollReceiptParamsIncidentsDisabilityPay(TypedDict):
     """Lo que paga la empresa de cada día de incapacidad, como fracción del salario diario: 1 todo; 0.4 lo que completa el 60% que paga el IMSS."""
 
 
+# Retroactivo de un aumento: la diferencia de salario de los días ya pagados con el anterior, como percepción 001 (clave RET) gravada, que paga ISR con el sueldo del periodo (art. 96 de la LISR). Las cuotas IMSS de la diferencia las cubre la modificación de salario con su fecha en el SUA; el recibo no retiene la parte del trabajador (art. 38 de la LSS).
+CreatePayrollReceiptParamsIncidentsRetroactive = TypedDict(
+    "CreatePayrollReceiptParamsIncidentsRetroactive",
+    {
+        "from": "str",
+        "previous_salary": "float",
+        "days": "NotRequired[float]",
+    },
+)
+
+
 class CreatePayrollReceiptParamsIncidentsBonusesItem(TypedDict):
     type: Literal["010", "049", "028", "038"]
     """010 premio de puntualidad, 049 premio de asistencia, 028 comisiones, 038 otro bono (c_TipoPercepcion)."""
@@ -13130,6 +13143,8 @@ class CreatePayrollReceiptParamsIncidents(TypedDict):
     """Días de vacaciones que disfrutó en el periodo (se pagan como sueldo dentro de days): su prima vacacional con el porcentaje del empleado, exenta hasta 15 UMA en el año."""
     disability_pay: NotRequired[CreatePayrollReceiptParamsIncidentsDisabilityPay]
     """Si la empresa paga los disability_days del recibo: percepción 014 con su nodo Incapacidad. Exenta como previsión social con el límite de 7 UMA al año (art. 93 de la LISR); la de un riesgo de trabajo, toda."""
+    retroactive: NotRequired[CreatePayrollReceiptParamsIncidentsRetroactive]
+    """Retroactivo de un aumento: la diferencia de salario de los días ya pagados con el anterior, como percepción 001 (clave RET) gravada, que paga ISR con el sueldo del periodo (art. 96 de la LISR). Las cuotas IMSS de la diferencia las cubre la modificación de salario con su fecha en el SUA; el recibo no retiene la parte del trabajador (art. 38 de la LSS)."""
     bonuses: NotRequired[list[CreatePayrollReceiptParamsIncidentsBonusesItem]]
     """Premios, comisiones y bonos del periodo, gravados."""
 
@@ -13175,6 +13190,17 @@ class PreviewPayrollReceiptParamsIncidentsDisabilityPay(TypedDict):
     """Lo que paga la empresa de cada día de incapacidad, como fracción del salario diario: 1 todo; 0.4 lo que completa el 60% que paga el IMSS."""
 
 
+# Retroactivo de un aumento: la diferencia de salario de los días ya pagados con el anterior, como percepción 001 (clave RET) gravada, que paga ISR con el sueldo del periodo (art. 96 de la LISR). Las cuotas IMSS de la diferencia las cubre la modificación de salario con su fecha en el SUA; el recibo no retiene la parte del trabajador (art. 38 de la LSS).
+PreviewPayrollReceiptParamsIncidentsRetroactive = TypedDict(
+    "PreviewPayrollReceiptParamsIncidentsRetroactive",
+    {
+        "from": "str",
+        "previous_salary": "float",
+        "days": "NotRequired[float]",
+    },
+)
+
+
 class PreviewPayrollReceiptParamsIncidentsBonusesItem(TypedDict):
     type: Literal["010", "049", "028", "038"]
     """010 premio de puntualidad, 049 premio de asistencia, 028 comisiones, 038 otro bono (c_TipoPercepcion)."""
@@ -13202,6 +13228,8 @@ class PreviewPayrollReceiptParamsIncidents(TypedDict):
     """Días de vacaciones que disfrutó en el periodo (se pagan como sueldo dentro de days): su prima vacacional con el porcentaje del empleado, exenta hasta 15 UMA en el año."""
     disability_pay: NotRequired[PreviewPayrollReceiptParamsIncidentsDisabilityPay]
     """Si la empresa paga los disability_days del recibo: percepción 014 con su nodo Incapacidad. Exenta como previsión social con el límite de 7 UMA al año (art. 93 de la LISR); la de un riesgo de trabajo, toda."""
+    retroactive: NotRequired[PreviewPayrollReceiptParamsIncidentsRetroactive]
+    """Retroactivo de un aumento: la diferencia de salario de los días ya pagados con el anterior, como percepción 001 (clave RET) gravada, que paga ISR con el sueldo del periodo (art. 96 de la LISR). Las cuotas IMSS de la diferencia las cubre la modificación de salario con su fecha en el SUA; el recibo no retiene la parte del trabajador (art. 38 de la LSS)."""
     bonuses: NotRequired[list[PreviewPayrollReceiptParamsIncidentsBonusesItem]]
     """Premios, comisiones y bonos del periodo, gravados."""
 
