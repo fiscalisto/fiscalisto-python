@@ -98,6 +98,7 @@ if TYPE_CHECKING:
         CreateSalesOrderParams,
         CreateSandboxParams,
         CreateSatDownloadParams,
+        CreateSatReviewParams,
         CreateStockAdjustmentParams,
         CreateStoreConnectionParams,
         CreateTaxDeterminationParams,
@@ -176,7 +177,9 @@ if TYPE_CHECKING:
         GetSatAnnualPreloadParams,
         GetSatCatalogParams,
         GetSatDeclarationCalendarParams,
+        GetSatRiskCheckParams,
         GetTaxDeterminationParams,
+        GetTaxDiscrepancyParams,
         GetTrialBalanceParams,
         GetVariableSalaryParams,
         GetVatRefundParams,
@@ -247,6 +250,7 @@ if TYPE_CHECKING:
         ListSatMailboxMessagesParams,
         ListSatRefreshesParams,
         ListSatRetentionsParams,
+        ListSatReviewsParams,
         ListStockAdjustmentsParams,
         ListStockMovementsParams,
         ListStoreConnectionsParams,
@@ -315,6 +319,9 @@ if TYPE_CHECKING:
         SatMailboxMessage,
         SatRefresh,
         SatRetention,
+        SatReview,
+        SatReviewList,
+        SatRiskCheck,
         SaveBudgetParams,
         ScheduleSupplierInvoiceParams,
         SelfInvoicing,
@@ -334,6 +341,7 @@ if TYPE_CHECKING:
         StoreImport,
         SupplierInvoice,
         TaxDetermination,
+        TaxDiscrepancy,
         TaxIdValidation,
         TaxStatusCertificate,
         TestClock,
@@ -372,6 +380,7 @@ if TYPE_CHECKING:
         UpdateRoleParams,
         UpdateSalesOrderParams,
         UpdateSatInvoiceParams,
+        UpdateSatReviewParams,
         UpdateSelfInvoicingParams,
         UpdateStoreConnectionParams,
         UpdateWebhookEndpointParams,
@@ -4631,6 +4640,210 @@ class MaterialityInvoicesResource:
         return result
 
 
+class SatReviewsResource:
+    """Cumplimiento SAT: fiscalisto.sat_reviews."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateSatReviewParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatReview:
+        """Registrar una revisión del SAT
+
+        Como «Registrar oficio» en Revisiones del SAT: una carta invitación, requerimiento u oficio que el SAT mandó al RFC del emisor, con la fecha en que se lo notificaron. Fiscalisto calcula el plazo en días hábiles desde que surte efectos la notificación (sin sábados, domingos ni los inhábiles del SAT) y avisa por correo 5, 3 y 1 día hábil antes. Sin requests, lleva lo que el SAT suele pedir en ese tipo. No responde nada al SAT. No usa timbres.
+
+        POST /v1/sat_reviews
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/create-sat-review
+        """
+        result: SatReview = self._client.request(
+            "POST", "/v1/sat_reviews", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListSatReviewsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatReviewList:
+        """Listar revisiones del SAT
+
+        Las revisiones del RFC del emisor, primero las que siguen abiertas, después las más recientes, cada una con su plazo y lo que pide. Una página, hasta 500.
+
+        GET /v1/sat_reviews
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/list-sat-reviews
+        """
+        result: SatReviewList = self._client.request(
+            "GET", "/v1/sat_reviews", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatReview:
+        """Ver una revisión del SAT
+
+        Una revisión con cada oficio y su plazo, lo que pide con cuánto de eso tiene Fiscalisto (ready de total) y su última respuesta armada.
+
+        GET /v1/sat_reviews/{id}
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/get-sat-review
+        """
+        result: SatReview = self._client.request(
+            "GET", f"/v1/sat_reviews/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateSatReviewParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatReview:
+        """Actualizar una revisión del SAT
+
+        Cambia solo lo que manda. notices y requests reemplazan la lista: mande todos sus oficios (con answered_on en el que ya respondió) y todo lo que pide (con done en lo que ya tiene).
+
+        POST /v1/sat_reviews/{id}
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/update-sat-review
+        """
+        result: SatReview = self._client.request(
+            "POST", f"/v1/sat_reviews/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar una revisión del SAT
+
+        Borra de Fiscalisto el seguimiento, sus avisos y los enlaces de sus asesores; su trámite en el SAT sigue igual. No se puede deshacer.
+
+        DELETE /v1/sat_reviews/{id}
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/delete-sat-review
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/sat_reviews/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def arm_answer(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatReview:
+        """Armar la respuesta
+
+        Como «Armar respuesta»: arma en segundo plano un ZIP con lo que la revisión pide: los XML y la relación de CFDI del periodo, el papel de trabajo, la contabilidad electrónica con el número de orden, las declaraciones, los documentos subidos en la app y un índice de qué archivo responde a cada cosa. Contesta la revisión con answer.status processing; consulte GET /v1/sat_reviews/{id} hasta que sea completed y descárguelo con GET /v1/sat_reviews/{id}/answer. Una a la vez (answer_running). No usa timbres.
+
+        POST /v1/sat_reviews/{id}/answer
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/arm-sat-review-answer
+        """
+        result: SatReview = self._client.request(
+            "POST", f"/v1/sat_reviews/{_path(id)}/answer", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def download_answer(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> str:
+        """Descargar la respuesta
+
+        El ZIP de la última respuesta armada, cuando answer.status es completed (si no, answer_not_ready). Se guarda 30 días.
+
+        GET /v1/sat_reviews/{id}/answer
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/download-sat-review-answer
+        """
+        result: str = self._client.request(
+            "GET", f"/v1/sat_reviews/{_path(id)}/answer", result="text", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
+class SatRiskCheckResource:
+    """Cumplimiento SAT: fiscalisto.sat_risk_check."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetSatRiskCheckParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SatRiskCheck:
+        """Revisar como el SAT
+
+        Como «Revise como el SAT»: lo que los sistemas del SAT cruzan para mandar cartas invitación y escoger a quién revisar (plazos de revisiones abiertas, Buzón Tributario, CFDI contra declaraciones, declaraciones omitidas, opinión de cumplimiento, listas del SAT, proveedores en 69-B, materialidad, depósitos sin aclarar, discrepancia fiscal y vigencia de la e.firma), con lo que Fiscalisto ya leyó. No consulta al SAT y no usa timbres.
+
+        GET /v1/sat_risk_check
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/get-sat-risk-check
+        """
+        result: SatRiskCheck = self._client.request(
+            "GET", "/v1/sat_risk_check", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class TaxDiscrepancyResource:
+    """Cumplimiento SAT: fiscalisto.tax_discrepancy."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetTaxDiscrepancyParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TaxDiscrepancy:
+        """Calcular la discrepancia fiscal
+
+        Como «Discrepancia fiscal» (personas físicas, art. 91 LISR): gastos con CFDI a su nombre y depósitos en sus cuentas del año, menos traspasos entre sus cuentas, préstamos y devoluciones, contra los ingresos declarados; lo que queda es lo que el SAT presumiría ingreso. Un emisor persona moral contesta parameter_invalid. No usa timbres.
+
+        GET /v1/tax_discrepancy
+        https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/get-tax-discrepancy
+        """
+        result: TaxDiscrepancy = self._client.request(
+            "GET", "/v1/tax_discrepancy", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class WarehousesResource:
     """Inventario: fiscalisto.warehouses."""
 
@@ -8608,6 +8821,21 @@ class FiscalistoApi(Core):
     def materiality_invoices(self) -> MaterialityInvoicesResource:
         """Cumplimiento SAT."""
         return MaterialityInvoicesResource(self)
+
+    @cached_property
+    def sat_reviews(self) -> SatReviewsResource:
+        """Cumplimiento SAT."""
+        return SatReviewsResource(self)
+
+    @cached_property
+    def sat_risk_check(self) -> SatRiskCheckResource:
+        """Cumplimiento SAT."""
+        return SatRiskCheckResource(self)
+
+    @cached_property
+    def tax_discrepancy(self) -> TaxDiscrepancyResource:
+        """Cumplimiento SAT."""
+        return TaxDiscrepancyResource(self)
 
     @cached_property
     def warehouses(self) -> WarehousesResource:

@@ -17,6 +17,18 @@ class ErrorCode:
     ACCOUNT_SUSPENDED: Final = "account_suspended"
     """Suspendimos la API de la empresa (todas sus llaves, o solo las de producción) por un uso que rompe los términos del servicio. El mensaje dice por qué; escríbanos a soporte@fiscalisto.com para reactivarla."""
 
+    ANSWER_EXPIRED: Final = "answer_expired"
+    """La respuesta armada se guarda 30 días. Pídala otra vez con POST /v1/sat_reviews/{id}/answer."""
+
+    ANSWER_MISSING: Final = "answer_missing"
+    """Esta revisión del SAT aún no tiene respuesta armada. Pídala con POST /v1/sat_reviews/{id}/answer."""
+
+    ANSWER_NOT_READY: Final = "answer_not_ready"
+    """La respuesta aún se arma (answer.status processing) o falló (failed). Consulte GET /v1/sat_reviews/{id}; si falló, pídala otra vez con POST /v1/sat_reviews/{id}/answer."""
+
+    ANSWER_RUNNING: Final = "answer_running"
+    """Ya se está armando la respuesta de esta revisión del SAT. Espere a que answer.status sea completed (GET /v1/sat_reviews/{id})."""
+
     API_VERSION_INVALID: Final = "api_version_invalid"
     """No existe esa versión de la API (en Fiscalisto-Version o api_version). El mensaje dice cuáles hay; vea Versiones."""
 
@@ -414,6 +426,10 @@ class ErrorCode:
 ErrorCodeValue = Literal[
     "account_missing",
     "account_suspended",
+    "answer_expired",
+    "answer_missing",
+    "answer_not_ready",
+    "answer_running",
     "api_version_invalid",
     "asset_already_disposed",
     "asset_from_cfdi",

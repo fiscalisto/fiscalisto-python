@@ -243,6 +243,9 @@ __all__ = [
     "CreateSalesOrderParamsItemsItemUsedVehicleCustomsItem",
     "CreateSandboxParams",
     "CreateSatDownloadParams",
+    "CreateSatReviewParams",
+    "CreateSatReviewParamsNoticesItem",
+    "CreateSatReviewParamsRequestsItem",
     "CreateStockAdjustmentParams",
     "CreateStockAdjustmentParamsLinesItem",
     "CreateStoreConnectionParams",
@@ -426,7 +429,9 @@ __all__ = [
     "GetSatAnnualPreloadParams",
     "GetSatCatalogParams",
     "GetSatDeclarationCalendarParams",
+    "GetSatRiskCheckParams",
     "GetTaxDeterminationParams",
+    "GetTaxDiscrepancyParams",
     "GetTrialBalanceParams",
     "GetVariableSalaryParams",
     "GetVatRefundParams",
@@ -618,6 +623,7 @@ __all__ = [
     "ListSatMailboxMessagesParams",
     "ListSatRefreshesParams",
     "ListSatRetentionsParams",
+    "ListSatReviewsParams",
     "ListStockAdjustmentsParams",
     "ListStockMovementsParams",
     "ListStoreConnectionsParams",
@@ -837,6 +843,13 @@ __all__ = [
     "SatRetentionPeriod",
     "SatRetentionTotals",
     "SatRetentionWithheldTaxesItem",
+    "SatReview",
+    "SatReviewAnswer",
+    "SatReviewList",
+    "SatReviewNoticesItem",
+    "SatReviewRequestsItem",
+    "SatRiskCheck",
+    "SatRiskCheckChecksItem",
     "SaveBudgetParams",
     "SaveBudgetParamsLinesItem",
     "ScheduleSupplierInvoiceParams",
@@ -874,6 +887,8 @@ __all__ = [
     "SupplierInvoiceScheduledEvent",
     "SupplierInvoiceWarningsItem",
     "TaxDetermination",
+    "TaxDiscrepancy",
+    "TaxDiscrepancyMonthsItem",
     "TaxIdValidation",
     "TaxIdValidationErrorsItem",
     "TaxIdValidationSatRecord",
@@ -957,6 +972,9 @@ __all__ = [
     "UpdateSalesOrderParamsItemsItemUsedVehicle",
     "UpdateSalesOrderParamsItemsItemUsedVehicleCustomsItem",
     "UpdateSatInvoiceParams",
+    "UpdateSatReviewParams",
+    "UpdateSatReviewParamsNoticesItem",
+    "UpdateSatReviewParamsRequestsItem",
     "UpdateSelfInvoicingParams",
     "UpdateSelfInvoicingParamsInvoiceConcepts",
     "UpdateSelfInvoicingParamsInvoiceConceptsGroupsItem",
@@ -5460,6 +5478,205 @@ class MaterialityInvoice(TypedDict):
     """De dónde salió cada evidencia: source es un código estable (orden_compra, recepcion, complemento_pago, pago_banco, foto, mensaje_portal…), proves lo que prueba (null: respaldo que no prueba nada solo) y label lo dice en palabras."""
 
 
+class SatReviewNoticesItem(TypedDict):
+    step: str
+    """Qué oficio es, de los de su tipo."""
+    name: str
+    """Su nombre («Solicitud de información»)."""
+    notified_on: str
+    """El día en que se lo notificaron."""
+    effective_on: str
+    """El día en que surte efectos (el hábil siguiente)."""
+    business_days: int | None
+    """Los días hábiles que da, con la prórroga si la pidió; null si la ley no da plazo."""
+    extension: bool
+    """Si pidió la prórroga o presentó el aviso."""
+    due_on: str | None
+    """Su último día para responder, o null."""
+    business_days_left: int | None
+    """Días hábiles que le quedan (0 es hoy, negativo ya pasó), o null."""
+    answered_on: str | None
+    """El día en que lo respondió, o null."""
+    law: str
+    """El artículo que da el plazo («art. 53 inciso c) CFF»)."""
+    conclusive_agreement_until: str | None
+    """Hasta cuándo puede pedir un acuerdo conclusivo en Prodecon (art. 69-C CFF), cuando aplica."""
+
+
+class SatReviewRequestsItem(TypedDict):
+    key: Literal["working_paper", "tax_discrepancy", "issued_invoices", "received_invoices", "retentions", "tax_returns", "electronic_accounting", "materiality", "bank_statements", "contracts", "inventory", "assets_and_staff", "articles_and_power", "written_answer", "other"]
+    """Qué pide."""
+    name: str
+    """Cómo se llama (o como lo dice el oficio)."""
+    made_by: Literal["fiscalisto", "you"]
+    """fiscalisto: lo arma la respuesta con sus datos; you: se sube (contratos, escrito…)."""
+    done: bool
+    """Si lo marcó como listo."""
+    note: str | None
+    """Su nota, o null."""
+    have: str | None
+    """Lo que Fiscalisto tiene para eso en el periodo («412 CFDI»), o null."""
+    documents: int
+    """Cuántos documentos subió para eso en la app."""
+    ready: bool
+    """Listo: lo marcó, Fiscalisto lo arma con lo que tiene, o subió al menos un documento."""
+
+
+class SatReviewAnswer(TypedDict):
+    status: Literal["processing", "completed", "failed", "expired"]
+    """processing, completed (se descarga), failed o expired."""
+    size_bytes: int | None
+    """El tamaño del ZIP, ya completo."""
+    error: str | None
+    """Por qué falló, o null."""
+    created_at: str
+    """Cuándo se pidió."""
+    completed_at: str | None
+    """Cuándo quedó lista, o null."""
+    expires_at: str | None
+    """Hasta cuándo se descarga, o null."""
+
+
+class SatReview(TypedDict):
+    """Una carta invitación, requerimiento u oficio del SAT al RFC del emisor: su plazo en días hábiles desde que surte efectos la notificación (sin los inhábiles del SAT), lo que pide, cuánto de eso tiene Fiscalisto y su última respuesta armada."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["sat_review"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor cuyo RFC recibió el oficio."""
+    type: Literal["invitation_letter", "return_clarification", "missing_returns", "desk_audit", "field_audit", "electronic_audit", "supplier_69b", "presumption_69b", "csd_restriction", "tax_discrepancy", "refund", "other"]
+    """Qué le llegó (invitation_letter, desk_audit, field_audit…)."""
+    type_name: str
+    """Su nombre como lo muestra la app («Revisión de gabinete»)."""
+    status: Literal["open", "answered", "concluded", "assessed", "in_defense", "closed"]
+    """open (por atender), answered, concluded (sin observaciones), assessed (con crédito fiscal), in_defense o closed."""
+    status_name: str
+    """Su estado como lo muestra la app («Por atender»)."""
+    reference: str | None
+    """El número del oficio, o null."""
+    order_number: str | None
+    """El número de orden o de trámite que va en las pólizas de la contabilidad electrónica, o null."""
+    authority: str | None
+    """La autoridad que lo firma, o null."""
+    period_start: str | None
+    """Primer día del periodo revisado, o null."""
+    period_end: str | None
+    """Último día del periodo revisado, o null."""
+    amount: float | None
+    """El monto que señala el SAT, en pesos, o null."""
+    due_on: str | None
+    """El último día para responder el oficio pendiente (el más reciente sin responder), o null si la ley no da plazo o ya respondió todos."""
+    business_days_left: int | None
+    """Días hábiles que le quedan: 0 es hoy, negativo ya pasó. null sin plazo."""
+    sat_must_conclude_by: str | None
+    """El día en que el SAT debe terminar la revisión (12 meses en gabinete y visita, 6 en electrónica), o null."""
+    notices: list[SatReviewNoticesItem]
+    """Sus oficios, del primero al último, cada uno con su plazo."""
+    requests: list[SatReviewRequestsItem]
+    """Lo que el oficio pide entregar y qué tan listo está."""
+    ready: int
+    """Cuántas de requests están listas («Ya tiene N de M»)."""
+    total: int
+    """Cuántas pide."""
+    answer: SatReviewAnswer | None
+    """La última respuesta armada (POST /v1/sat_reviews/{id}/answer), o null. Se descarga con GET /v1/sat_reviews/{id}/answer."""
+    notes: str | None
+    """Sus notas, o null."""
+    created_at: str
+    """Cuándo se registró."""
+    updated_at: str
+    """Su último cambio."""
+
+
+class SatRiskCheckChecksItem(TypedDict):
+    key: str
+    """Qué revisa: revisiones, buzon, cruces, omisiones, opinion, listas, efos, materialidad, depositos, discrepancia o efirma."""
+    result: Literal["ok", "warning", "critical", "unknown"]
+    """ok, warning (revisar), critical (atender ya) o unknown (Fiscalisto aún no lo lee)."""
+    title: str
+    """Lo que encontró, en una línea."""
+    detail: str
+    """El detalle, con cifras."""
+    why: str
+    """Por qué le importa al SAT."""
+
+
+class SatRiskCheck(TypedDict):
+    """Revise como el SAT: lo que los sistemas del SAT cruzan para mandar cartas invitación y escoger a quién revisar, con lo que Fiscalisto ya leyó del emisor. No consulta al SAT."""
+    object: Literal["sat_risk_check"]
+    """Siempre sat_risk_check."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    tax_id: str
+    """Su RFC."""
+    critical: int
+    """Cuántas revisiones salen para atender ya."""
+    warning: int
+    """Cuántas salen para revisar."""
+    checks: list[SatRiskCheckChecksItem]
+    """Cada cruce, los que hay que atender primero."""
+
+
+class TaxDiscrepancyMonthsItem(TypedDict):
+    month: str
+    """El mes (AAAA-MM)."""
+    spending: float
+    """Sus gastos con CFDI a su nombre."""
+    deposits: float
+    """Los depósitos en sus cuentas."""
+    own_transfers: float
+    """Los traspasos entre sus cuentas."""
+    loans: float
+    """Los préstamos que clasificó."""
+    declared_income: float
+    """Los ingresos declarados del mes."""
+
+
+class TaxDiscrepancy(TypedDict):
+    """La discrepancia fiscal de una persona física en un año (art. 91 LISR): lo que gastó y recibió en sus cuentas contra lo que declaró."""
+    object: Literal["tax_discrepancy"]
+    """Siempre tax_discrepancy."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…), una persona física."""
+    tax_id: str
+    """Su RFC (13 caracteres)."""
+    year: int
+    """El ejercicio."""
+    spending: float
+    """Gastos con CFDI a su nombre (recibidos, sin cancelados, menos notas de crédito)."""
+    deposits: float
+    """Depósitos en sus cuentas (de los estados de cuenta en Conciliación)."""
+    own_transfers: float
+    """Traspasos entre sus cuentas, que la ley deja fuera (art. 91 LISR)."""
+    loans: float
+    """Préstamos que clasificó."""
+    refunds: float
+    """Devoluciones que clasificó."""
+    outflows: float
+    """Erogaciones: gastos más depósitos, menos traspasos."""
+    declared_income: float
+    """Los ingresos declarados que se restan."""
+    declared_income_source: Literal["tax_returns", "payroll", "declared_income", "none"]
+    """De dónde salen: tax_returns (sus declaraciones), payroll (sus recibos de nómina), declared_income (el que mandó) o none."""
+    discrepancy: float
+    """Erogaciones menos préstamos, devoluciones e ingresos declarados, si es positivo: lo que el SAT presumiría ingreso."""
+    unclassified_deposits: float
+    """Depósitos sin clasificar en Conciliación («Por aclarar»): cada uno que explique baja la discrepancia."""
+    loans_to_report: bool
+    """Si sus préstamos pasan de $600,000 en el año: solo cuentan si los informó en su declaración anual (art. 90 LISR)."""
+    bank_statements: bool
+    """Si hay estados de cuenta del año; sin ellos solo cuentan los gastos con CFDI."""
+    months: list[TaxDiscrepancyMonthsItem]
+    """El cálculo mes por mes."""
+
+
 class TicketLinesItemLocalTaxesItem(TypedDict):
     retention: bool
     """true si es una retención local; false si es un traslado."""
@@ -9855,6 +10072,17 @@ class MaterialityInvoiceList(TypedDict):
     """La ruta de esta lista."""
 
 
+class SatReviewList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[SatReview]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class WarehouseList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -13932,6 +14160,130 @@ class ListMaterialityInvoicesParams(TypedDict):
     """Solo las de este proveedor (su RFC)."""
     state: NotRequired[Literal["complete", "partial", "none"]]
     """Solo las de este estado: complete, partial o none. Sin él, las que no están completas."""
+
+
+class CreateSatReviewParamsNoticesItem(TypedDict):
+    step: NotRequired[str]
+    """Qué oficio es, de los de su tipo (en desk_audit: solicitud, observaciones o resolucion); por omisión, el primero, el que abre la revisión. Otro contesta con los de su tipo."""
+    notified_on: str
+    """El día en que se lo notificaron (en el Buzón, el día en que lo abrió o el quinto día hábil después del aviso, lo que pase primero). No puede ser futuro."""
+    business_days: NotRequired[int | None]
+    """Los días hábiles que da el oficio, solo cuando no son los de la ley (una carta invitación con fecha, «otro» oficio)."""
+    extension: NotRequired[bool]
+    """true si pidió la prórroga (o presentó el aviso) que la ley permite en ese oficio: suma sus días al plazo."""
+    answered_on: NotRequired[str | None]
+    """El día en que lo respondió; null mientras no."""
+
+
+class CreateSatReviewParamsRequestsItem(TypedDict):
+    key: Literal["working_paper", "tax_discrepancy", "issued_invoices", "received_invoices", "retentions", "tax_returns", "electronic_accounting", "materiality", "bank_statements", "contracts", "inventory", "assets_and_staff", "articles_and_power", "written_answer", "other"]
+    """Qué pide (vea requests en la guía)."""
+    name: NotRequired[str]
+    """Cómo lo dice el oficio, si quiere sus palabras; con other, obligatorio."""
+    done: NotRequired[bool]
+    """true cuando ya lo tiene listo."""
+    note: NotRequired[str]
+    """Una nota suya."""
+
+
+class CreateSatReviewParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    type: Literal["invitation_letter", "return_clarification", "missing_returns", "desk_audit", "field_audit", "electronic_audit", "supplier_69b", "presumption_69b", "csd_restriction", "tax_discrepancy", "refund", "other"]
+    """Qué le llegó: invitation_letter, return_clarification, missing_returns, desk_audit (revisión de gabinete), field_audit (visita domiciliaria), electronic_audit, supplier_69b, presumption_69b, csd_restriction, tax_discrepancy, refund u other."""
+    notices: list[CreateSatReviewParamsNoticesItem]
+    """Sus oficios con su fecha de notificación: el que la abrió y los que siguieron (prórroga, segundo requerimiento, observaciones…)."""
+    requests: NotRequired[list[CreateSatReviewParamsRequestsItem]]
+    """Lo que el oficio pide entregar. Sin esto, lo que el SAT suele pedir en ese tipo."""
+    status: NotRequired[Literal["open", "answered", "concluded", "assessed", "in_defense", "closed"]]
+    """open (por atender, por omisión), answered, concluded (sin observaciones), assessed (con crédito fiscal), in_defense o closed. Mientras está open, answered, assessed o in_defense, Fiscalisto cuenta sus plazos y avisa."""
+    reference: NotRequired[str | None]
+    """El número del oficio, como viene en él (por ejemplo 500-05-2026-1234)."""
+    order_number: NotRequired[str | None]
+    """El número de orden (ABC1234567/26) o de trámite (AB123456789012) si pide la contabilidad electrónica: va en sus pólizas."""
+    authority: NotRequired[str | None]
+    """La autoridad que lo firma (por ejemplo «ADAF de Occidente»)."""
+    period_start: NotRequired[str | None]
+    """Primer día del periodo que revisa. Con period_end, Fiscalisto arma lo suyo."""
+    period_end: NotRequired[str | None]
+    """Último día del periodo que revisa (a lo más 7 ejercicios)."""
+    amount: NotRequired[float | None]
+    """El monto que señala el SAT, en pesos, si señala uno."""
+    notes: NotRequired[str | None]
+    """Sus notas."""
+
+
+class ListSatReviewsParams(TypedDict):
+    """Los parámetros de GET /v1/sat_reviews."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    status: NotRequired[Literal["open", "answered", "concluded", "assessed", "in_defense", "closed"]]
+    """Solo las de este estado: open, answered, concluded, assessed, in_defense o closed."""
+
+
+class UpdateSatReviewParamsNoticesItem(TypedDict):
+    step: NotRequired[str]
+    """Qué oficio es, de los de su tipo (en desk_audit: solicitud, observaciones o resolucion); por omisión, el primero, el que abre la revisión. Otro contesta con los de su tipo."""
+    notified_on: str
+    """El día en que se lo notificaron (en el Buzón, el día en que lo abrió o el quinto día hábil después del aviso, lo que pase primero). No puede ser futuro."""
+    business_days: NotRequired[int | None]
+    """Los días hábiles que da el oficio, solo cuando no son los de la ley (una carta invitación con fecha, «otro» oficio)."""
+    extension: NotRequired[bool]
+    """true si pidió la prórroga (o presentó el aviso) que la ley permite en ese oficio: suma sus días al plazo."""
+    answered_on: NotRequired[str | None]
+    """El día en que lo respondió; null mientras no."""
+
+
+class UpdateSatReviewParamsRequestsItem(TypedDict):
+    key: Literal["working_paper", "tax_discrepancy", "issued_invoices", "received_invoices", "retentions", "tax_returns", "electronic_accounting", "materiality", "bank_statements", "contracts", "inventory", "assets_and_staff", "articles_and_power", "written_answer", "other"]
+    """Qué pide (vea requests en la guía)."""
+    name: NotRequired[str]
+    """Cómo lo dice el oficio, si quiere sus palabras; con other, obligatorio."""
+    done: NotRequired[bool]
+    """true cuando ya lo tiene listo."""
+    note: NotRequired[str]
+    """Una nota suya."""
+
+
+class UpdateSatReviewParams(TypedDict):
+    type: NotRequired[Literal["invitation_letter", "return_clarification", "missing_returns", "desk_audit", "field_audit", "electronic_audit", "supplier_69b", "presumption_69b", "csd_restriction", "tax_discrepancy", "refund", "other"]]
+    """Qué le llegó (vea type al crearla)."""
+    notices: NotRequired[list[UpdateSatReviewParamsNoticesItem]]
+    """Todos sus oficios: reemplaza los que tenía."""
+    requests: NotRequired[list[UpdateSatReviewParamsRequestsItem]]
+    """Todo lo que pide, con done para marcar lo que ya tiene: reemplaza la lista."""
+    status: NotRequired[Literal["open", "answered", "concluded", "assessed", "in_defense", "closed"]]
+    """open (por atender, por omisión), answered, concluded (sin observaciones), assessed (con crédito fiscal), in_defense o closed. Mientras está open, answered, assessed o in_defense, Fiscalisto cuenta sus plazos y avisa."""
+    reference: NotRequired[str | None]
+    """El número del oficio, como viene en él (por ejemplo 500-05-2026-1234)."""
+    order_number: NotRequired[str | None]
+    """El número de orden (ABC1234567/26) o de trámite (AB123456789012) si pide la contabilidad electrónica: va en sus pólizas."""
+    authority: NotRequired[str | None]
+    """La autoridad que lo firma (por ejemplo «ADAF de Occidente»)."""
+    period_start: NotRequired[str | None]
+    """Primer día del periodo que revisa. Con period_end, Fiscalisto arma lo suyo."""
+    period_end: NotRequired[str | None]
+    """Último día del periodo que revisa (a lo más 7 ejercicios)."""
+    amount: NotRequired[float | None]
+    """El monto que señala el SAT, en pesos, si señala uno."""
+    notes: NotRequired[str | None]
+    """Sus notas."""
+
+
+class GetSatRiskCheckParams(TypedDict):
+    """Los parámetros de GET /v1/sat_risk_check."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetTaxDiscrepancyParams(TypedDict):
+    """Los parámetros de GET /v1/tax_discrepancy."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    year: NotRequired[int]
+    """El ejercicio (por omisión, el año pasado)."""
+    declared_income: NotRequired[float]
+    """Los ingresos de su declaración anual, si tiene ingresos que Fiscalisto no ve (rentas, intereses, otro patrón): reemplazan los que calcula."""
 
 
 class ListWarehousesParams(TypedDict):
