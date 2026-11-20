@@ -51,6 +51,14 @@ __all__ = [
     "BranchAddress",
     "BranchList",
     "BranchSeries",
+    "Budget",
+    "BudgetComparisonItem",
+    "BudgetComparisonItemMonth",
+    "BudgetComparisonItemYearToDate",
+    "BudgetIncomeBeforeTaxes",
+    "BudgetIncomeBeforeTaxesMonth",
+    "BudgetIncomeBeforeTaxesYearToDate",
+    "BudgetLinesItem",
     "CancelInvoiceParams",
     "CancelRetentionParams",
     "CancelSalesOrderDeliveryParams",
@@ -95,6 +103,9 @@ __all__ = [
     "ComplianceOpinion",
     "CostCenter",
     "CostCenterList",
+    "CostCenterResults",
+    "CostCenterResultsMonthResultsItem",
+    "CostCenterResultsYearToDateItem",
     "CostOfSales",
     "CostOfSalesPurchaseReturnsItem",
     "CostOfSalesPurchasesItem",
@@ -354,9 +365,11 @@ __all__ = [
     "GeneralLedgerAccountsItemMovementsItem",
     "GetAnnualAdjustmentParams",
     "GetAttendanceParams",
+    "GetBudgetParams",
     "GetCashForecastParams",
     "GetClosedPeriodParams",
     "GetCompanyReportParams",
+    "GetCostCenterResultsParams",
     "GetCostOfSalesParams",
     "GetCrossCheckCfdiParams",
     "GetCrossChecksParams",
@@ -792,6 +805,8 @@ __all__ = [
     "SatRetentionPeriod",
     "SatRetentionTotals",
     "SatRetentionWithheldTaxesItem",
+    "SaveBudgetParams",
+    "SaveBudgetParamsLinesItem",
     "ScheduleSupplierInvoiceParams",
     "SelfInvoicing",
     "SendInvoiceParams",
@@ -5816,6 +5831,8 @@ class ManualJournalEntryLinesItem(TypedDict):
     """El cargo, en pesos."""
     credit: float
     """El abono, en pesos."""
+    cost_center: str | None
+    """Su centro de costo (ccn_…), o null."""
 
 
 class ManualJournalEntry(TypedDict):
@@ -6091,6 +6108,170 @@ class PayrollProvision(TypedDict):
     """El impuesto sobre nómina de cada estado."""
     manual_entry: str | None
     """La póliza de provisión (mje_…) si ya se registró, o null. Es una póliza a mano de tipo adjustment."""
+
+
+class BudgetLinesItem(TypedDict):
+    account: str
+    """El número de cuenta."""
+    account_name: str
+    """El nombre de la cuenta."""
+    grouping_code: str
+    """Su código agrupador del SAT."""
+    months: list[float]
+    """Enero a diciembre."""
+    annual: float
+    """La suma de los 12 meses."""
+
+
+class BudgetComparisonItemMonth(TypedDict):
+    """El mes."""
+    budget: float
+    """El mes: lo presupuestado."""
+    actual: float
+    """El mes: lo real, de sus pólizas."""
+    variance: float
+    """Real menos presupuesto."""
+    variance_percent: float | None
+    """La variación como porcentaje del presupuesto (null sin presupuesto)."""
+    favorable: bool
+    """true si lo real deja al menos la utilidad presupuestada: más ingresos o menos gastos."""
+
+
+class BudgetComparisonItemYearToDate(TypedDict):
+    """De enero al mes."""
+    budget: float
+    """De enero al mes: lo presupuestado."""
+    actual: float
+    """De enero al mes: lo real, de sus pólizas."""
+    variance: float
+    """Real menos presupuesto."""
+    variance_percent: float | None
+    """La variación como porcentaje del presupuesto (null sin presupuesto)."""
+    favorable: bool
+    """true si lo real deja al menos la utilidad presupuestada: más ingresos o menos gastos."""
+
+
+class BudgetComparisonItem(TypedDict):
+    account: str
+    """El número de la cuenta en su catálogo."""
+    account_name: str
+    """Su nombre."""
+    grouping_code: str
+    """Su código agrupador del SAT."""
+    section: Literal["revenue", "cost_of_sales", "operating_expenses", "financing", "other"]
+    """Su parte del estado de resultados."""
+    month: BudgetComparisonItemMonth
+    """El mes."""
+    year_to_date: BudgetComparisonItemYearToDate
+    """De enero al mes."""
+    annual_budget: float
+    """Lo presupuestado en todo el año."""
+
+
+class BudgetIncomeBeforeTaxesMonth(TypedDict):
+    """El mes."""
+    budget: float
+    """Presupuestada."""
+    actual: float
+    """Real."""
+
+
+class BudgetIncomeBeforeTaxesYearToDate(TypedDict):
+    """De enero al mes."""
+    budget: float
+    """Presupuestada."""
+    actual: float
+    """Real."""
+
+
+class BudgetIncomeBeforeTaxes(TypedDict):
+    """La utilidad antes de impuestos."""
+    month: BudgetIncomeBeforeTaxesMonth
+    """El mes."""
+    year_to_date: BudgetIncomeBeforeTaxesYearToDate
+    """De enero al mes."""
+    annual_budget: float
+    """Presupuestada en todo el año."""
+
+
+class Budget(TypedDict):
+    """El presupuesto de un año (de toda la empresa o de un centro de costo) por cuenta de resultados y mes, y cómo va lo real contra él: el mes y de enero a ese mes."""
+    object: Literal["budget"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    year: int
+    """Año (Ejercicio)."""
+    month: int
+    """El mes de la comparación: el que pidió, el actual en el año en curso, 12 en uno pasado (0 en uno futuro)."""
+    cost_center: str | None
+    """El centro de costo (ccn_…) del presupuesto, o null: toda la empresa."""
+    lines: list[BudgetLinesItem]
+    """Lo presupuestado por cuenta, como se guardó."""
+    comparison: list[BudgetComparisonItem]
+    """Cada cuenta con presupuesto o con movimiento: lo presupuestado contra lo real."""
+    income_before_taxes: BudgetIncomeBeforeTaxes
+    """La utilidad antes de impuestos."""
+
+
+class CostCenterResultsMonthResultsItem(TypedDict):
+    cost_center: str | None
+    """El centro de costo (ccn_…), o null: lo que no tiene centro."""
+    cost_center_name: str | None
+    """Su nombre."""
+    revenue: float
+    """Ingresos."""
+    cost_of_sales: float
+    """Costo de ventas, en negativo."""
+    operating_expenses: float
+    """Gastos de operación, en negativo."""
+    financing: float
+    """Resultado integral de financiamiento."""
+    other: float
+    """Otros ingresos y gastos."""
+    income_before_taxes: float
+    """Utilidad (o pérdida) antes de impuestos."""
+    margin_percent: float | None
+    """Utilidad entre ingresos, en porcentaje (null sin ingresos)."""
+
+
+class CostCenterResultsYearToDateItem(TypedDict):
+    cost_center: str | None
+    """El centro de costo (ccn_…), o null: lo que no tiene centro."""
+    cost_center_name: str | None
+    """Su nombre."""
+    revenue: float
+    """Ingresos."""
+    cost_of_sales: float
+    """Costo de ventas, en negativo."""
+    operating_expenses: float
+    """Gastos de operación, en negativo."""
+    financing: float
+    """Resultado integral de financiamiento."""
+    other: float
+    """Otros ingresos y gastos."""
+    income_before_taxes: float
+    """Utilidad (o pérdida) antes de impuestos."""
+    margin_percent: float | None
+    """Utilidad entre ingresos, en porcentaje (null sin ingresos)."""
+
+
+class CostCenterResults(TypedDict):
+    """El estado de resultados por centro de costo: lo que cada uno dejó de utilidad, de las facturas que se le pusieron y de los renglones de póliza que lo llevan. Juntos suman el estado de resultados de la empresa."""
+    object: Literal["cost_center_results"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    month: str
+    """Un solo mes, del 1 al 12 (MesIni y MesFin iguales)."""
+    month_results: list[CostCenterResultsMonthResultsItem]
+    """El mes."""
+    year_to_date: list[CostCenterResultsYearToDateItem]
+    """De enero al mes."""
 
 
 class TaxDetermination(TypedDict):
@@ -14270,6 +14451,8 @@ class CreateManualEntryParamsLinesItem(TypedDict):
     """El cargo."""
     credit: NotRequired[float]
     """El abono."""
+    cost_center: NotRequired[str | None]
+    """Su centro de costo (ccn_…, GET /v1/cost_centers), opcional: los resultados por centro de costo y los presupuestos lo leen."""
 
 
 class CreateManualEntryParams(TypedDict):
@@ -14315,6 +14498,8 @@ class UpdateManualEntryParamsLinesItem(TypedDict):
     """El cargo."""
     credit: NotRequired[float]
     """El abono."""
+    cost_center: NotRequired[str | None]
+    """Su centro de costo (ccn_…, GET /v1/cost_centers), opcional: los resultados por centro de costo y los presupuestos lo leen."""
 
 
 class UpdateManualEntryParams(TypedDict):
@@ -14345,6 +14530,8 @@ class ImportManualEntriesParamsEntriesItemLinesItem(TypedDict):
     """El cargo."""
     credit: NotRequired[float]
     """El abono."""
+    cost_center: NotRequired[str | None]
+    """Su centro de costo (ccn_…, GET /v1/cost_centers), opcional: los resultados por centro de costo y los presupuestos lo leen."""
 
 
 class ImportManualEntriesParamsEntriesItem(TypedDict):
@@ -14470,6 +14657,38 @@ class CreateCostOfSalesParams(TypedDict):
 
 class DeleteCostOfSalesParams(TypedDict):
     """Los parámetros de DELETE /v1/accounting/cost_of_sales/{month}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetBudgetParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/budgets/{year}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    cost_center: NotRequired[str]
+    """El centro de costo (ccn_…). Sin él, toda la empresa."""
+    month: NotRequired[int]
+    """El mes de la comparación, de 1 a 12. Por omisión el actual en el año en curso, 12 en uno pasado."""
+
+
+class SaveBudgetParamsLinesItem(TypedDict):
+    account: str
+    """El número de una cuenta de resultados (código agrupador 4 a 7) de su catálogo, por ejemplo 601-84."""
+    months: list[float]
+    """Los 12 meses, de enero a diciembre, en pesos y en la naturaleza de la cuenta: un ingreso como ingreso, un gasto como gasto."""
+
+
+class SaveBudgetParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    cost_center: NotRequired[str | None]
+    """El centro de costo (ccn_…) del presupuesto. Sin él, el de toda la empresa. Cada centro tiene el suyo."""
+    lines: list[SaveBudgetParamsLinesItem]
+    """Las cuentas del presupuesto. Reemplaza todo el presupuesto de ese año (y centro): una cuenta que no mande sale; una lista vacía lo borra."""
+
+
+class GetCostCenterResultsParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/cost_center_results/{month}."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 

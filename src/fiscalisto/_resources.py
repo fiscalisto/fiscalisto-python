@@ -30,6 +30,7 @@ if TYPE_CHECKING:
         BankImport,
         BankTransaction,
         Branch,
+        Budget,
         CancelInvoiceParams,
         CancelRetentionParams,
         CancelSalesOrderDeliveryParams,
@@ -46,6 +47,7 @@ if TYPE_CHECKING:
         CompleteProductionOrderParams,
         ComplianceOpinion,
         CostCenter,
+        CostCenterResults,
         CostOfSales,
         CreateAdvanceParams,
         CreateAttendanceMarkParams,
@@ -137,9 +139,11 @@ if TYPE_CHECKING:
         GeneralLedger,
         GetAnnualAdjustmentParams,
         GetAttendanceParams,
+        GetBudgetParams,
         GetCashForecastParams,
         GetClosedPeriodParams,
         GetCompanyReportParams,
+        GetCostCenterResultsParams,
         GetCostOfSalesParams,
         GetCrossCheckCfdiParams,
         GetCrossChecksParams,
@@ -303,6 +307,7 @@ if TYPE_CHECKING:
         SatMailboxMessage,
         SatRefresh,
         SatRetention,
+        SaveBudgetParams,
         ScheduleSupplierInvoiceParams,
         SelfInvoicing,
         SendInvoiceParams,
@@ -6859,6 +6864,84 @@ class CostOfSalesResource:
         return result
 
 
+class BudgetsResource:
+    """Contabilidad: fiscalisto.budgets."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        year: str,
+        params: GetBudgetParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Budget:
+        """Ver el presupuesto de un año contra lo real
+
+        El presupuesto del año por cuenta de resultados y mes, y la comparación con lo real de sus pólizas: el mes y de enero a ese mes, con la variación, su porcentaje y si es favorable (deja más utilidad que lo planeado). Con cost_center, el presupuesto y lo real de ese centro de costo; sin él, de toda la empresa. Como Estados financieros › Presupuesto en la app.
+
+        GET /v1/accounting/budgets/{year}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-budget
+        """
+        result: Budget = self._client.request(
+            "GET", f"/v1/accounting/budgets/{_path(year)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def save(
+        self,
+        year: str,
+        params: SaveBudgetParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Budget:
+        """Guardar el presupuesto de un año
+
+        Reemplaza el presupuesto del año (de toda la empresa, o del centro de costo de cost_center) con las cuentas que mande: cada una con sus 12 meses en la naturaleza de la cuenta. Solo cuentas de resultados (códigos agrupadores 4 a 7); una cuenta dos veces contesta parameter_invalid en lines. Una lista vacía borra el presupuesto.
+
+        POST /v1/accounting/budgets/{year}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/save-budget
+        """
+        result: Budget = self._client.request(
+            "POST", f"/v1/accounting/budgets/{_path(year)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class CostCenterResultsResource:
+    """Contabilidad: fiscalisto.cost_center_results."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        month: str,
+        params: GetCostCenterResultsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> CostCenterResults:
+        """Ver el estado de resultados por centro de costo
+
+        Lo que cada centro de costo dejó de utilidad en el mes y de enero a ese mes: sus ingresos, costo de ventas, gastos y otros, de las facturas que se le pusieron (POST /v1/cost_centers/{id}/invoices) y de los renglones de póliza a mano que lo llevan (lines[].cost_center). Lo que no tiene centro va con cost_center null; todos suman el estado de resultados de la empresa.
+
+        GET /v1/accounting/cost_center_results/{month}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-cost-center-results
+        """
+        result: CostCenterResults = self._client.request(
+            "GET", f"/v1/accounting/cost_center_results/{_path(month)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class PayrollProvisionsResource:
     """Contabilidad: fiscalisto.payroll_provisions."""
 
@@ -8572,6 +8655,16 @@ class FiscalistoApi(Core):
     def cost_of_sales(self) -> CostOfSalesResource:
         """Contabilidad."""
         return CostOfSalesResource(self)
+
+    @cached_property
+    def budgets(self) -> BudgetsResource:
+        """Contabilidad."""
+        return BudgetsResource(self)
+
+    @cached_property
+    def cost_center_results(self) -> CostCenterResultsResource:
+        """Contabilidad."""
+        return CostCenterResultsResource(self)
 
     @cached_property
     def payroll_provisions(self) -> PayrollProvisionsResource:
