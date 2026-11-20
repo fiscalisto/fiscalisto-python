@@ -114,6 +114,7 @@ if TYPE_CHECKING:
         CreateRecurringInvoiceParams,
         CreateRetentionParams,
         CreateRoleParams,
+        CreateRuleParams,
         CreateSalesOrderDeliveryParams,
         CreateSalesOrderParams,
         CreateSandboxParams,
@@ -287,6 +288,8 @@ if TYPE_CHECKING:
         ListRecurringInvoicesParams,
         ListRetentionsParams,
         ListRolesParams,
+        ListRuleRunsParams,
+        ListRulesParams,
         ListSalesOrdersParams,
         ListSatDeclarationsParams,
         ListSatDownloadsParams,
@@ -323,6 +326,7 @@ if TYPE_CHECKING:
         NetToGross,
         NetToGrossParams,
         OpeningBalances,
+        OrderRulesParams,
         PayableInvoiceList,
         PayeeAccountList,
         Payout,
@@ -365,6 +369,10 @@ if TYPE_CHECKING:
         Role,
         RoleList,
         RollWebhookSecretParams,
+        Rule,
+        RuleList,
+        RuleRun,
+        RuleTestList,
         SalesOrder,
         Sandbox,
         SandboxList,
@@ -411,6 +419,7 @@ if TYPE_CHECKING:
         TaxStatusCertificate,
         TestClock,
         TestDataReset,
+        TestRuleParams,
         TestWebhookEndpointParams,
         Ticket,
         TrialBalance,
@@ -446,6 +455,7 @@ if TYPE_CHECKING:
         UpdateQuoteParams,
         UpdateRecurringInvoiceParams,
         UpdateRoleParams,
+        UpdateRuleParams,
         UpdateSalesOrderParams,
         UpdateSatInvoiceParams,
         UpdateSatReviewParams,
@@ -3796,6 +3806,174 @@ class BranchesResource:
             "DELETE", f"/v1/branches/{_path(id)}/logo", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
+
+
+class RulesResource:
+    """Reglas: fiscalisto.rules."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateRuleParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Rule:
+        """Crear una regla
+
+        Cuando pasa trigger, si se cumplen conditions, hace actions. Corre desde ese momento con lo que llegue; no cambia lo que ya existe. Va al final del orden de su empresa. Lo que no se puede guardar contesta rule_invalid con el porqué (una acción que no va con su trigger, una etiqueta o centro de costo que no existe).
+
+        POST /v1/rules
+        https://fiscalisto.com/docs/api/referencia/reglas/create-rule
+        """
+        result: Rule = self._client.request(
+            "POST", "/v1/rules", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListRulesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[Rule]:
+        """Listar reglas
+
+        En el orden en que corren, también las que están en pausa (enabled: false).
+
+        GET /v1/rules
+        https://fiscalisto.com/docs/api/referencia/reglas/list-rules
+        """
+        return self._client.list("/v1/rules", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def order(
+        self,
+        params: OrderRulesParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> RuleList:
+        """Ordenar las reglas
+
+        rules de la primera a la última; las que no mande siguen después, en su orden. Importa cuando una tiene stop_after o dos ponen cosas distintas: corren de arriba abajo.
+
+        POST /v1/rules/order
+        https://fiscalisto.com/docs/api/referencia/reglas/order-rules
+        """
+        result: RuleList = self._client.request(
+            "POST", "/v1/rules/order", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Rule:
+        """Ver una regla
+
+        Una regla de la empresa del emisor.
+
+        GET /v1/rules/{id}
+        https://fiscalisto.com/docs/api/referencia/reglas/get-rule
+        """
+        result: Rule = self._client.request(
+            "GET", f"/v1/rules/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateRuleParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Rule:
+        """Cambiar una regla
+
+        Solo lo que mande cambia; conditions y actions se reemplazan completos. enabled: false la pone en pausa. Lo que ya hizo se queda.
+
+        POST /v1/rules/{id}
+        https://fiscalisto.com/docs/api/referencia/reglas/update-rule
+        """
+        result: Rule = self._client.request(
+            "POST", f"/v1/rules/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar una regla
+
+        Deja de correr. Lo que ya puso (centros de costo, etiquetas, etapas) se queda; para dejarla de usar un tiempo, mejor enabled: false.
+
+        DELETE /v1/rules/{id}
+        https://fiscalisto.com/docs/api/referencia/reglas/delete-rule
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/rules/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def test(
+        self,
+        id: str,
+        params: TestRuleParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> RuleTestList:
+        """Probar una regla
+
+        Lo que haría con una factura (uuid) o con las más recientes de su trigger, sin cambiar nada: cada condición con lo que tiene el registro y si se cumple.
+
+        POST /v1/rules/{id}/test
+        https://fiscalisto.com/docs/api/referencia/reglas/test-rule
+        """
+        result: RuleTestList = self._client.request(
+            "POST", f"/v1/rules/{_path(id)}/test", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list_runs(
+        self,
+        id: str,
+        params: ListRuleRunsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[RuleRun]:
+        """Historial de una regla
+
+        Cada vez que corrió, la más reciente primero: sobre qué factura u orden, qué hizo (did) o por qué no pudo (error). Se guardan 180 días.
+
+        GET /v1/rules/{id}/runs
+        https://fiscalisto.com/docs/api/referencia/reglas/list-rule-runs
+        """
+        return self._client.list(f"/v1/rules/{_path(id)}/runs", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
 
 class CostCentersResource:
@@ -9945,6 +10123,11 @@ class FiscalistoApi(Core):
     def branches(self) -> BranchesResource:
         """Sucursales."""
         return BranchesResource(self)
+
+    @cached_property
+    def rules(self) -> RulesResource:
+        """Reglas."""
+        return RulesResource(self)
 
     @cached_property
     def cost_centers(self) -> CostCentersResource:

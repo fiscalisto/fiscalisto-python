@@ -315,6 +315,12 @@ __all__ = [
     "CreateRetentionParamsTrustLease",
     "CreateRetentionParamsTrustWithholding",
     "CreateRoleParams",
+    "CreateRuleParams",
+    "CreateRuleParamsActionsItem",
+    "CreateRuleParamsConditions",
+    "CreateRuleParamsConditionsConditionsItem",
+    "CreateRuleParamsConditionsGroupsItem",
+    "CreateRuleParamsConditionsGroupsItemConditionsItem",
     "CreateSalesOrderDeliveryParams",
     "CreateSalesOrderDeliveryParamsItemsItem",
     "CreateSalesOrderParams",
@@ -732,6 +738,8 @@ __all__ = [
     "ListRecurringInvoicesParams",
     "ListRetentionsParams",
     "ListRolesParams",
+    "ListRuleRunsParams",
+    "ListRulesParams",
     "ListSalesOrdersParams",
     "ListSatDeclarationsParams",
     "ListSatDownloadsParams",
@@ -778,6 +786,7 @@ __all__ = [
     "NetToGrossPeriod",
     "OpeningBalances",
     "OpeningBalancesLinesItem",
+    "OrderRulesParams",
     "PayableInvoice",
     "PayableInvoiceList",
     "PayeeAccount",
@@ -932,6 +941,18 @@ __all__ = [
     "Role",
     "RoleList",
     "RollWebhookSecretParams",
+    "Rule",
+    "RuleActionsItem",
+    "RuleConditions",
+    "RuleConditionsConditionsItem",
+    "RuleConditionsGroupsItem",
+    "RuleConditionsGroupsItemConditionsItem",
+    "RuleList",
+    "RuleRun",
+    "RuleRunList",
+    "RuleTest",
+    "RuleTestConditionsItem",
+    "RuleTestList",
     "SalesOrder",
     "SalesOrderCanceledEvent",
     "SalesOrderConfirmedEvent",
@@ -1074,6 +1095,7 @@ __all__ = [
     "TestClockAdvanced",
     "TestClockReadyEvent",
     "TestDataReset",
+    "TestRuleParams",
     "TestWebhookEndpointParams",
     "Ticket",
     "TicketBuyer",
@@ -1142,6 +1164,12 @@ __all__ = [
     "UpdateRecurringInvoiceParamsInvoice",
     "UpdateRecurringInvoiceParamsSchedule",
     "UpdateRoleParams",
+    "UpdateRuleParams",
+    "UpdateRuleParamsActionsItem",
+    "UpdateRuleParamsConditions",
+    "UpdateRuleParamsConditionsConditionsItem",
+    "UpdateRuleParamsConditionsGroupsItem",
+    "UpdateRuleParamsConditionsGroupsItemConditionsItem",
     "UpdateSalesOrderParams",
     "UpdateSalesOrderParamsCustomer",
     "UpdateSalesOrderParamsCustomerForeign",
@@ -4939,6 +4967,155 @@ class CostCenter(TypedDict):
     """Cuándo se creó."""
     updated_at: str | None
     """Cuándo cambió por última vez."""
+
+
+class RuleConditionsConditionsItem(TypedDict):
+    field: str
+    """Qué se revisa (supplier, total, metodo, category…)."""
+    operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
+    """Cómo se compara."""
+    values: NotRequired[list[str]]
+    """Para is / not: los valores (RFC, claves, ccn_…)."""
+    value: NotRequired[float]
+    """Para gte, lte y between: el monto en pesos."""
+    to: NotRequired[float]
+    """Para between: el monto hasta."""
+    text: NotRequired[str]
+    """Para contains, not_contains y starts."""
+
+
+class RuleConditionsGroupsItemConditionsItem(TypedDict):
+    field: str
+    """Qué se revisa (supplier, total, metodo, category…)."""
+    operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
+    """Cómo se compara."""
+    values: NotRequired[list[str]]
+    """Para is / not: los valores (RFC, claves, ccn_…)."""
+    value: NotRequired[float]
+    """Para gte, lte y between: el monto en pesos."""
+    to: NotRequired[float]
+    """Para between: el monto hasta."""
+    text: NotRequired[str]
+    """Para contains, not_contains y starts."""
+
+
+class RuleConditionsGroupsItem(TypedDict):
+    match: Literal["all", "any"]
+    """Cómo se juntan las del grupo."""
+    conditions: list[RuleConditionsGroupsItemConditionsItem]
+    """Las condiciones del grupo."""
+
+
+class RuleConditions(TypedDict):
+    """Si: lo que tiene que cumplir la factura u orden. Sin condiciones, corre siempre."""
+    match: Literal["all", "any"]
+    """all: se cumplen todas; any: basta con una."""
+    conditions: list[RuleConditionsConditionsItem]
+    """Las condiciones sueltas."""
+    groups: list[RuleConditionsGroupsItem]
+    """Condiciones que van juntas, con su propio match."""
+
+
+class RuleActionsItem(TypedDict):
+    type: Literal["tag", "cost_center", "stage", "close", "notify"]
+    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    tag: NotRequired[int]
+    """tag: la etiqueta."""
+    remove_when_unmet: NotRequired[bool]
+    """tag: se quita si la orden deja de cumplir."""
+    cost_center: NotRequired[str]
+    """Su centro de costo (ccn_…): la obra, proyecto, sucursal o área a la que pertenece, para ver ingresos y gastos por centro en Reportes. No cambia el CFDI. Sus notas de crédito lo toman solas."""
+    stage: NotRequired[int]
+    """stage: la etapa."""
+    members: NotRequired[list[str]]
+    """notify: a quién (mem_…)."""
+    note: NotRequired[str | None]
+    """notify: lo que dice el aviso."""
+
+
+class Rule(TypedDict):
+    """Una regla de la empresa: cuando pasa algo (trigger), si se cumplen sus condiciones, hace sus acciones. Las mismas de Ajustes › Reglas en la app."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["rule"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (iss_…)."""
+    name: str
+    """Nombre."""
+    trigger: Literal["invoice.received", "invoice.issued", "purchase_order.saved", "purchase_order.approved", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
+    """Cuándo corre."""
+    conditions: RuleConditions
+    """Si: lo que tiene que cumplir la factura u orden. Sin condiciones, corre siempre."""
+    actions: list[RuleActionsItem]
+    """Entonces: lo que hace, en este orden."""
+    once_per_record: bool
+    """true: corre una sola vez por factura u orden."""
+    stop_after: bool
+    """true: si se cumple, las reglas que siguen no corren para ese registro."""
+    enabled: bool
+    """false: en pausa."""
+    position: int
+    """Su lugar en el orden en que corren (1 primero)."""
+    created_at: str | None
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    updated_at: str | None
+    """Cuándo cambió por última vez, ISO 8601 (-06:00)."""
+
+
+class RuleTestConditionsItem(TypedDict):
+    condition: str
+    """La condición, en palabras."""
+    holds: bool
+    """Si se cumple."""
+    actual: str
+    """Lo que tiene el registro."""
+
+
+class RuleTest(TypedDict):
+    """Lo que la regla haría con una factura u orden (sin cambiar nada)."""
+    object: Literal["rule_test"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    record: str
+    """La factura u orden, en palabras."""
+    invoice_uuid: NotRequired[str | None]
+    """El folio fiscal, para una factura."""
+    purchase_order: NotRequired[int]
+    """La orden de compra."""
+    matches: bool
+    """Si se cumplen sus condiciones."""
+    already_ran: bool
+    """Ya corrió sobre este registro y no lo hará de nuevo."""
+    conditions: list[RuleTestConditionsItem]
+    """Cada condición con lo que tiene el registro."""
+    would_do: list[str]
+    """Lo que haría, en palabras (nada cambia)."""
+
+
+class RuleRun(TypedDict):
+    """Una vez que la regla corrió sobre una factura u orden."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["rule_run"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    rule: str
+    """La regla (rul_…)."""
+    trigger: Literal["invoice.received", "invoice.issued", "purchase_order.saved", "purchase_order.approved", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
+    """Cuándo corre."""
+    record: str
+    """La factura u orden, en palabras."""
+    record_type: Literal["invoice", "purchase_order"]
+    """Qué es el registro."""
+    outcome: Literal["done", "nothing", "failed"]
+    """done: hizo cambios; nothing: ya estaba así; failed: no pudo (ver error)."""
+    did: list[str]
+    """Lo que hizo, en palabras."""
+    error: str | None
+    """Por qué no pudo, o null."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
 
 
 class PriceListItemsItem(TypedDict):
@@ -11972,6 +12149,39 @@ class BranchList(TypedDict):
     """La ruta de esta lista."""
 
 
+class RuleList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[Rule]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class RuleTestList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[RuleTest]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class RuleRunList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[RuleRun]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class CostCenterList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -15773,6 +15983,204 @@ class UpdateBranchParams(TypedDict):
 class UploadBranchLogoParams(TypedDict):
     file: str
     """El logo, PNG o JPG de hasta 1 MB, en base64 (con o sin el prefijo data:image/png;base64,). Uno muy grande se reduce para el PDF."""
+
+
+class CreateRuleParamsConditionsConditionsItem(TypedDict):
+    field: str
+    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, total, subtotal, tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note."""
+    operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
+    """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
+    values: NotRequired[list[str]]
+    """Para is / not: RFC, claves del SAT, ccn_…, whs_… o mem_…."""
+    value: NotRequired[float]
+    """Valor de la mercancía (ValorMercancia); obligatorio en transporte aéreo."""
+    to: NotRequired[float]
+    """Para between: el monto hasta."""
+    text: NotRequired[str]
+    """Texto de la leyenda (textoLeyenda)."""
+
+
+class CreateRuleParamsConditionsGroupsItemConditionsItem(TypedDict):
+    field: str
+    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, total, subtotal, tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note."""
+    operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
+    """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
+    values: NotRequired[list[str]]
+    """Para is / not: RFC, claves del SAT, ccn_…, whs_… o mem_…."""
+    value: NotRequired[float]
+    """Valor de la mercancía (ValorMercancia); obligatorio en transporte aéreo."""
+    to: NotRequired[float]
+    """Para between: el monto hasta."""
+    text: NotRequired[str]
+    """Texto de la leyenda (textoLeyenda)."""
+
+
+class CreateRuleParamsConditionsGroupsItem(TypedDict):
+    match: Literal["all", "any"]
+    """Cómo se juntan las del grupo."""
+    conditions: list[CreateRuleParamsConditionsGroupsItemConditionsItem]
+    """Las condiciones del grupo."""
+
+
+class CreateRuleParamsConditions(TypedDict):
+    """Si: lo que tiene que cumplir. Sin condiciones, corre siempre."""
+    match: NotRequired[Literal["all", "any"]]
+    """all: se cumplen todas (las condiciones y los grupos); any: basta con una."""
+    conditions: NotRequired[list[CreateRuleParamsConditionsConditionsItem]]
+    """Las condiciones sueltas."""
+    groups: NotRequired[list[CreateRuleParamsConditionsGroupsItem]]
+    """Condiciones que van juntas, con su propio all / any (un nivel)."""
+
+
+class CreateRuleParamsActionsItem(TypedDict):
+    type: Literal["tag", "cost_center", "stage", "close", "notify"]
+    """tag (órdenes): poner la etiqueta `tag`; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; notify: avisar a `members` (mem_…)."""
+    tag: NotRequired[int]
+    """tag: la etiqueta."""
+    remove_when_unmet: NotRequired[bool]
+    """tag: quitarla si la orden deja de cumplir."""
+    cost_center: NotRequired[str]
+    """Su centro de costo (ccn_…): la obra, proyecto, sucursal o área a la que pertenece, para ver ingresos y gastos por centro en Reportes. No cambia el CFDI. Sus notas de crédito lo toman solas."""
+    stage: NotRequired[int]
+    """stage: la etapa."""
+    members: NotRequired[list[str]]
+    """notify: a quién (mem_…, GET /v1/members)."""
+    note: NotRequired[str | None]
+    """notify: lo que dice el aviso."""
+
+
+class CreateRuleParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    name: NotRequired[str]
+    """Cómo se llama en Ajustes › Reglas. Sin él, se nombra por lo que hace."""
+    trigger: Literal["invoice.received", "invoice.issued", "purchase_order.saved", "purchase_order.approved", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
+    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), purchase_order.saved, .approved, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered."""
+    conditions: NotRequired[CreateRuleParamsConditions]
+    """Si: lo que tiene que cumplir. Sin condiciones, corre siempre."""
+    actions: list[CreateRuleParamsActionsItem]
+    """Entonces: de 1 a 8, en este orden."""
+    once_per_record: NotRequired[bool]
+    """true: corre una sola vez por factura u orden. Por omisión true, salvo purchase_order.saved."""
+    stop_after: NotRequired[bool]
+    """true: si se cumple, las reglas que siguen no corren para ese registro."""
+    enabled: NotRequired[bool]
+    """false la deja en pausa."""
+
+
+class ListRulesParams(TypedDict):
+    """Los parámetros de GET /v1/rules."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    trigger: NotRequired[str]
+    """Solo las de este trigger, por ejemplo invoice.received."""
+
+
+class OrderRulesParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…)."""
+    rules: list[str]
+    """Las reglas (rul_…), de la primera a la última."""
+
+
+class UpdateRuleParamsConditionsConditionsItem(TypedDict):
+    field: str
+    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, total, subtotal, tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note."""
+    operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
+    """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
+    values: NotRequired[list[str]]
+    """Para is / not: RFC, claves del SAT, ccn_…, whs_… o mem_…."""
+    value: NotRequired[float]
+    """Valor de la mercancía (ValorMercancia); obligatorio en transporte aéreo."""
+    to: NotRequired[float]
+    """Para between: el monto hasta."""
+    text: NotRequired[str]
+    """Texto de la leyenda (textoLeyenda)."""
+
+
+class UpdateRuleParamsConditionsGroupsItemConditionsItem(TypedDict):
+    field: str
+    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, total, subtotal, tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note."""
+    operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
+    """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
+    values: NotRequired[list[str]]
+    """Para is / not: RFC, claves del SAT, ccn_…, whs_… o mem_…."""
+    value: NotRequired[float]
+    """Valor de la mercancía (ValorMercancia); obligatorio en transporte aéreo."""
+    to: NotRequired[float]
+    """Para between: el monto hasta."""
+    text: NotRequired[str]
+    """Texto de la leyenda (textoLeyenda)."""
+
+
+class UpdateRuleParamsConditionsGroupsItem(TypedDict):
+    match: Literal["all", "any"]
+    """Cómo se juntan las del grupo."""
+    conditions: list[UpdateRuleParamsConditionsGroupsItemConditionsItem]
+    """Las condiciones del grupo."""
+
+
+class UpdateRuleParamsConditions(TypedDict):
+    """Si: lo que tiene que cumplir. Sin condiciones, corre siempre."""
+    match: NotRequired[Literal["all", "any"]]
+    """all: se cumplen todas (las condiciones y los grupos); any: basta con una."""
+    conditions: NotRequired[list[UpdateRuleParamsConditionsConditionsItem]]
+    """Las condiciones sueltas."""
+    groups: NotRequired[list[UpdateRuleParamsConditionsGroupsItem]]
+    """Condiciones que van juntas, con su propio all / any (un nivel)."""
+
+
+class UpdateRuleParamsActionsItem(TypedDict):
+    type: Literal["tag", "cost_center", "stage", "close", "notify"]
+    """tag (órdenes): poner la etiqueta `tag`; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; notify: avisar a `members` (mem_…)."""
+    tag: NotRequired[int]
+    """tag: la etiqueta."""
+    remove_when_unmet: NotRequired[bool]
+    """tag: quitarla si la orden deja de cumplir."""
+    cost_center: NotRequired[str]
+    """Su centro de costo (ccn_…): la obra, proyecto, sucursal o área a la que pertenece, para ver ingresos y gastos por centro en Reportes. No cambia el CFDI. Sus notas de crédito lo toman solas."""
+    stage: NotRequired[int]
+    """stage: la etapa."""
+    members: NotRequired[list[str]]
+    """notify: a quién (mem_…, GET /v1/members)."""
+    note: NotRequired[str | None]
+    """notify: lo que dice el aviso."""
+
+
+class UpdateRuleParams(TypedDict):
+    name: NotRequired[str]
+    """Cómo se llama en Ajustes › Reglas. Sin él, se nombra por lo que hace."""
+    trigger: NotRequired[Literal["invoice.received", "invoice.issued", "purchase_order.saved", "purchase_order.approved", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]]
+    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), purchase_order.saved, .approved, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered."""
+    conditions: NotRequired[UpdateRuleParamsConditions]
+    """Si: lo que tiene que cumplir. Sin condiciones, corre siempre."""
+    actions: NotRequired[list[UpdateRuleParamsActionsItem]]
+    """Entonces: de 1 a 8, en este orden."""
+    once_per_record: NotRequired[bool]
+    """true: corre una sola vez por factura u orden. Por omisión true, salvo purchase_order.saved."""
+    stop_after: NotRequired[bool]
+    """true: si se cumple, las reglas que siguen no corren para ese registro."""
+    enabled: NotRequired[bool]
+    """false la deja en pausa."""
+
+
+class TestRuleParams(TypedDict):
+    uuid: NotRequired[str]
+    """El folio fiscal (UUID) de una factura; sin él, las más recientes."""
+    limit: NotRequired[int]
+    """Cuántas de las más recientes (10 por omisión)."""
+
+
+class ListRuleRunsParams(TypedDict):
+    """Los parámetros de GET /v1/rules/{id}/runs."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
 
 
 class CreateCostCenterParams(TypedDict):

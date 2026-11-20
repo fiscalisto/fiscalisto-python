@@ -350,6 +350,9 @@ class ErrorCode:
     ROUTE_NOT_FOUND: Final = "route_not_found"
     """No existe esa ruta. Revise la dirección y la versión (/v1)."""
 
+    RULE_INVALID: Final = "rule_invalid"
+    """La regla no se puede guardar así: el mensaje dice por qué (una acción que no va con su trigger, como cost_center en una orden de compra; una etiqueta, etapa o centro de costo que no existe; un campo o un valor que no va con su operador; más de 200 reglas)."""
+
     SALES_ORDER_DRAFT: Final = "sales_order_draft"
     """El pedido está en borrador: confírmelo primero con POST /v1/sales_orders/{id}/confirm."""
 
@@ -558,6 +561,7 @@ ErrorCodeValue = Literal[
     "retention_not_stamped",
     "retention_rejected",
     "route_not_found",
+    "rule_invalid",
     "sales_order_draft",
     "sales_order_invalid",
     "sales_order_not_deletable",
