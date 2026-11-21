@@ -329,6 +329,7 @@ __all__ = [
     "CreateRoleParams",
     "CreateRuleParams",
     "CreateRuleParamsActionsItem",
+    "CreateRuleParamsActionsItemColumns",
     "CreateRuleParamsConditions",
     "CreateRuleParamsConditionsConditionsItem",
     "CreateRuleParamsConditionsGroupsItem",
@@ -989,6 +990,7 @@ __all__ = [
     "RollWebhookSecretParams",
     "Rule",
     "RuleActionsItem",
+    "RuleActionsItemColumns",
     "RuleConditions",
     "RuleConditionsConditionsItem",
     "RuleConditionsGroupsItem",
@@ -1223,6 +1225,7 @@ __all__ = [
     "UpdateRoleParams",
     "UpdateRuleParams",
     "UpdateRuleParamsActionsItem",
+    "UpdateRuleParamsActionsItemColumns",
     "UpdateRuleParamsConditions",
     "UpdateRuleParamsConditionsConditionsItem",
     "UpdateRuleParamsConditionsGroupsItem",
@@ -1253,6 +1256,7 @@ __all__ = [
     "UpdateSelfInvoicingParamsPortalStyleTextsConceptsSingle",
     "UpdateSelfInvoicingParamsPortalStyleTextsConceptsTitle",
     "UpdateSelfInvoicingParamsPortalStyleTextsDetailLabel",
+    "UpdateSelfInvoicingParamsPortalStyleTextsErrorHelp",
     "UpdateSelfInvoicingParamsPortalStyleTextsFindButton",
     "UpdateSelfInvoicingParamsPortalStyleTextsHowQuestion",
     "UpdateSelfInvoicingParamsPortalStyleTextsMessage",
@@ -5421,6 +5425,15 @@ class RuleConditions(TypedDict):
     """Condiciones que van juntas, con su propio match."""
 
 
+class RuleActionsItemColumns(TypedDict):
+    tabla_facturas: NotRequired[list[str]]
+    """Columnas de {tabla_facturas}, en su orden."""
+    tabla_conceptos: NotRequired[list[str]]
+    """Columnas de {tabla_conceptos}, en su orden."""
+    tabla_productos: NotRequired[list[str]]
+    """Columnas de {tabla_productos}, en su orden."""
+
+
 class RuleActionsItem(TypedDict):
     type: Literal["tag", "cost_center", "category", "stage", "close", "ask_approval", "notify", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature"]
     """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
@@ -5446,6 +5459,10 @@ class RuleActionsItem(TypedDict):
     """email_supplier: el mensaje."""
     per: NotRequired[Literal["payout", "invoice"]]
     """email_supplier en los disparadores de pagos: payout, un correo por pago y proveedor; invoice, uno por factura."""
+    columns: NotRequired[RuleActionsItemColumns | None]
+    """email_supplier: las columnas de cada tabla del mensaje; null: las de siempre."""
+    cc: NotRequired[list[str]]
+    """email_supplier: personas del equipo con copia (mem_…)."""
     findings: NotRequired[list[str]]
     """review_findings: los hallazgos que da por revisados (sus códigos)."""
     signatures: NotRequired[int]
@@ -7125,6 +7142,8 @@ class SelfInvoicing(TypedDict):
     """La serie de las facturas que se emiten desde el portal y desde un ticket, como AF, o null para la serie de facturas del emisor. La factura global no la usa."""
     customer_notes: bool
     """true: el portal le pide al comprador una nota para el PDF de su factura (hasta 500 caracteres). Solo sale en el PDF, nunca en el XML."""
+    failure_email: bool
+    """true: cuando un comprador no puede facturar por algo del emisor, se avisa por correo; false: solo queda en Alertas."""
     global_concepts: Literal["ticket", "summary"]
     """ticket: la factura global lleva un concepto «Venta» por ticket, con su folio. summary: solo el monto total del periodo, uno por combinación de impuestos (NoIdentificacion «Resumen»), para una persona física en RESICO (regla 2.7.1.21 de la RMF 2026)."""
 
@@ -16879,6 +16898,15 @@ class CreateRuleParamsConditions(TypedDict):
     """Condiciones que van juntas, con su propio all / any (un nivel)."""
 
 
+class CreateRuleParamsActionsItemColumns(TypedDict):
+    tabla_facturas: NotRequired[list[Literal["folio", "uuid", "fecha", "total", "retenido", "pagado"]]]
+    """Columnas de {tabla_facturas}, en su orden."""
+    tabla_conceptos: NotRequired[list[Literal["clave", "descripcion", "cantidad", "unidad", "precio", "importe"]]]
+    """Columnas de {tabla_conceptos}, en su orden."""
+    tabla_productos: NotRequired[list[Literal["producto", "codigo", "cantidad", "recibido", "pendiente", "precio", "importe"]]]
+    """Columnas de {tabla_productos}, en su orden."""
+
+
 class CreateRuleParamsActionsItem(TypedDict):
     type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature"]
     """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura; extra_signature (payout.submitted): el pago necesita `signatures` firmas más que las de Configurar pagos, con `reason` para quien firma (nunca las baja; no cambia un pago que ya salió)."""
@@ -16901,19 +16929,23 @@ class CreateRuleParamsActionsItem(TypedDict):
     members: NotRequired[list[str]]
     """notify: a quién (mem_…, GET /v1/members)."""
     note: NotRequired[str | None]
-    """notify: lo que dice el aviso. hold_payment: por qué se retiene (hasta 200)."""
+    """notify: lo que dice el aviso. hold_payment: por qué se retiene (hasta 200). Puede llevar las variables de `message`, menos las tablas."""
     topic: NotRequired[Literal["ordenes", "pagos", "facturas", "complementos", "documentos", "precios"]]
     """email_supplier: el tema de los correos del proveedor a los que va (ordenes, pagos, facturas, complementos, documentos, precios; Ajustes › Correos a proveedores). Sin correos de ese tema, va a sus correos generales. Por omisión, facturas."""
     subject: NotRequired[str]
-    """email_supplier: el asunto. Puede llevar {folio}, {total}, {fecha} y {empresa}. En los momentos de pagos también {facturas}, {pagado}, {fecha_pago}, {pago}, {cuenta}, {banco} y {referencia}; en payout.paid, {rastreo} y {cep}; en payout.failed, {motivo}."""
+    """email_supplier: el asunto. Lleva las variables de `message`, menos las tablas."""
     message: NotRequired[str]
-    """email_supplier: el mensaje. Puede llevar {folio}, {total}, {fecha} y {empresa}. En los momentos de pagos también {facturas}, {pagado}, {fecha_pago}, {pago}, {cuenta}, {banco} y {referencia}; en payout.paid, {rastreo} y {cep}; en payout.failed, {motivo}."""
+    """email_supplier: el mensaje. Variables: {folio}, {total}, {fecha}, {empresa}, {rfc_empresa}, {proveedor}, {rfc_proveedor}, {subtotal}, {iva}, {retenciones} y {moneda}; de una factura también {uuid}, {metodo_pago}, {forma_pago}, {uso_cfdi}, {conceptos}, {categoria}, {saldo}, {orden}, {contrarecibo}, {fecha_promesa}, {hallazgos} y la tabla {tabla_conceptos}; de una orden {entrega}, {almacen}, {credito}, {comprador}, {nota}, {enlace} y la tabla {tabla_productos}; en invoice.rejected y purchase_order.rejected, {motivo_rechazo}; en los momentos de pagos {facturas}, la tabla {tabla_facturas}, {pagado}, {fecha_pago}, {pago}, {cuenta}, {banco} y {referencia}, en payout.paid {rastreo} y {cep}, en payout.failed {motivo}. Un correo por pago (per payout) no lleva las de una sola factura. Cada {tabla_…} se dibuja como tabla, con las columnas de `columns`; un dato que el registro no tiene queda en blanco."""
     per: NotRequired[Literal["payout", "invoice"]]
     """email_supplier en payout.submitted, payout.paid y payout.failed: payout manda un correo por pago y proveedor con todas sus facturas ({folio} es la lista de folios, {total} lo que se le paga y {fecha} la fecha del pago); invoice, uno por factura. Por omisión, payout."""
+    columns: NotRequired[CreateRuleParamsActionsItemColumns | None]
+    """email_supplier: las columnas de cada tabla del mensaje, en su orden. tabla_facturas: folio, uuid, fecha, total, retenido, pagado; tabla_conceptos: clave, descripcion, cantidad, unidad, precio, importe; tabla_productos: producto, codigo, cantidad, recibido, pendiente, precio, importe. Sin columnas, las de siempre."""
+    cc: NotRequired[list[str] | None]
+    """email_supplier: personas del equipo que reciben copia (mem_…, GET /v1/members)."""
     signatures: NotRequired[int]
     """extra_signature: cuántas firmas más pide (1 a 3). Por omisión, 1."""
     reason: NotRequired[str | None]
-    """extra_signature: por qué, para quien firma («Proveedor nuevo»)."""
+    """extra_signature: por qué, para quien firma («Proveedor nuevo»). Puede llevar las variables de `message`, menos las tablas."""
     findings: NotRequired[list[str]]
     """review_findings: los hallazgos que da por revisados (sus códigos, `code` en GET /v1/sat_findings). No los que cambian impuestos o la lista negra: cancelado, efos_definitivo, efos_presunto, lista_69b_bis, lista_69."""
 
@@ -17003,6 +17035,15 @@ class UpdateRuleParamsConditions(TypedDict):
     """Condiciones que van juntas, con su propio all / any (un nivel)."""
 
 
+class UpdateRuleParamsActionsItemColumns(TypedDict):
+    tabla_facturas: NotRequired[list[Literal["folio", "uuid", "fecha", "total", "retenido", "pagado"]]]
+    """Columnas de {tabla_facturas}, en su orden."""
+    tabla_conceptos: NotRequired[list[Literal["clave", "descripcion", "cantidad", "unidad", "precio", "importe"]]]
+    """Columnas de {tabla_conceptos}, en su orden."""
+    tabla_productos: NotRequired[list[Literal["producto", "codigo", "cantidad", "recibido", "pendiente", "precio", "importe"]]]
+    """Columnas de {tabla_productos}, en su orden."""
+
+
 class UpdateRuleParamsActionsItem(TypedDict):
     type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature"]
     """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura; extra_signature (payout.submitted): el pago necesita `signatures` firmas más que las de Configurar pagos, con `reason` para quien firma (nunca las baja; no cambia un pago que ya salió)."""
@@ -17025,19 +17066,23 @@ class UpdateRuleParamsActionsItem(TypedDict):
     members: NotRequired[list[str]]
     """notify: a quién (mem_…, GET /v1/members)."""
     note: NotRequired[str | None]
-    """notify: lo que dice el aviso. hold_payment: por qué se retiene (hasta 200)."""
+    """notify: lo que dice el aviso. hold_payment: por qué se retiene (hasta 200). Puede llevar las variables de `message`, menos las tablas."""
     topic: NotRequired[Literal["ordenes", "pagos", "facturas", "complementos", "documentos", "precios"]]
     """email_supplier: el tema de los correos del proveedor a los que va (ordenes, pagos, facturas, complementos, documentos, precios; Ajustes › Correos a proveedores). Sin correos de ese tema, va a sus correos generales. Por omisión, facturas."""
     subject: NotRequired[str]
-    """email_supplier: el asunto. Puede llevar {folio}, {total}, {fecha} y {empresa}. En los momentos de pagos también {facturas}, {pagado}, {fecha_pago}, {pago}, {cuenta}, {banco} y {referencia}; en payout.paid, {rastreo} y {cep}; en payout.failed, {motivo}."""
+    """email_supplier: el asunto. Lleva las variables de `message`, menos las tablas."""
     message: NotRequired[str]
-    """email_supplier: el mensaje. Puede llevar {folio}, {total}, {fecha} y {empresa}. En los momentos de pagos también {facturas}, {pagado}, {fecha_pago}, {pago}, {cuenta}, {banco} y {referencia}; en payout.paid, {rastreo} y {cep}; en payout.failed, {motivo}."""
+    """email_supplier: el mensaje. Variables: {folio}, {total}, {fecha}, {empresa}, {rfc_empresa}, {proveedor}, {rfc_proveedor}, {subtotal}, {iva}, {retenciones} y {moneda}; de una factura también {uuid}, {metodo_pago}, {forma_pago}, {uso_cfdi}, {conceptos}, {categoria}, {saldo}, {orden}, {contrarecibo}, {fecha_promesa}, {hallazgos} y la tabla {tabla_conceptos}; de una orden {entrega}, {almacen}, {credito}, {comprador}, {nota}, {enlace} y la tabla {tabla_productos}; en invoice.rejected y purchase_order.rejected, {motivo_rechazo}; en los momentos de pagos {facturas}, la tabla {tabla_facturas}, {pagado}, {fecha_pago}, {pago}, {cuenta}, {banco} y {referencia}, en payout.paid {rastreo} y {cep}, en payout.failed {motivo}. Un correo por pago (per payout) no lleva las de una sola factura. Cada {tabla_…} se dibuja como tabla, con las columnas de `columns`; un dato que el registro no tiene queda en blanco."""
     per: NotRequired[Literal["payout", "invoice"]]
     """email_supplier en payout.submitted, payout.paid y payout.failed: payout manda un correo por pago y proveedor con todas sus facturas ({folio} es la lista de folios, {total} lo que se le paga y {fecha} la fecha del pago); invoice, uno por factura. Por omisión, payout."""
+    columns: NotRequired[UpdateRuleParamsActionsItemColumns | None]
+    """email_supplier: las columnas de cada tabla del mensaje, en su orden. tabla_facturas: folio, uuid, fecha, total, retenido, pagado; tabla_conceptos: clave, descripcion, cantidad, unidad, precio, importe; tabla_productos: producto, codigo, cantidad, recibido, pendiente, precio, importe. Sin columnas, las de siempre."""
+    cc: NotRequired[list[str] | None]
+    """email_supplier: personas del equipo que reciben copia (mem_…, GET /v1/members)."""
     signatures: NotRequired[int]
     """extra_signature: cuántas firmas más pide (1 a 3). Por omisión, 1."""
     reason: NotRequired[str | None]
-    """extra_signature: por qué, para quien firma («Proveedor nuevo»)."""
+    """extra_signature: por qué, para quien firma («Proveedor nuevo»). Puede llevar las variables de `message`, menos las tablas."""
     findings: NotRequired[list[str]]
     """review_findings: los hallazgos que da por revisados (sus códigos, `code` en GET /v1/sat_findings). No los que cambian impuestos o la lista negra: cancelado, efos_definitivo, efos_presunto, lista_69b_bis, lista_69."""
 
@@ -18776,6 +18821,13 @@ class UpdateSelfInvoicingParamsPortalStyleTextsSuccessMessage(TypedDict):
     """El mensaje al terminar en inglés."""
 
 
+class UpdateSelfInvoicingParamsPortalStyleTextsErrorHelp(TypedDict):
+    es: NotRequired[str]
+    """Lo que dice el portal antes de su correo y teléfono cuando no se pudo facturar («¿Sigue con problemas?») en español."""
+    en: NotRequired[str]
+    """Lo que dice el portal antes de su correo y teléfono cuando no se pudo facturar («¿Sigue con problemas?») en inglés."""
+
+
 class UpdateSelfInvoicingParamsPortalStyleTextsConceptsTitle(TypedDict):
     es: NotRequired[str]
     """El título de la elección de conceptos («Conceptos en su factura»; ver `invoice_concepts`) en español."""
@@ -18835,6 +18887,8 @@ class UpdateSelfInvoicingParamsPortalStyleTexts(TypedDict):
     """El título al terminar; `null` vuelve al de Fiscalisto."""
     success_message: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsSuccessMessage | None]
     """El mensaje al terminar; `null` vuelve al de Fiscalisto."""
+    error_help: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsErrorHelp | None]
+    """Lo que dice el portal antes de su correo y teléfono cuando no se pudo facturar («¿Sigue con problemas?»); `null` vuelve al de Fiscalisto."""
     concepts_title: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsConceptsTitle | None]
     """El título de la elección de conceptos («Conceptos en su factura»; ver `invoice_concepts`); `null` vuelve al de Fiscalisto."""
     concepts_itemized: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsConceptsItemized | None]
@@ -18976,6 +19030,8 @@ class UpdateSelfInvoicingParams(TypedDict):
     """La serie de las facturas que los compradores se hacen en el portal (y las que se emiten desde un ticket), como `AF`: hasta 25 caracteres, sin `|`. `null` o una vacía usa la serie de facturas del emisor. La factura global sigue con la serie de siempre."""
     customer_notes: NotRequired[bool]
     """`true`: el portal le pide al comprador una nota para el PDF de su factura (hasta 500 caracteres; Autofactura › Nota del cliente). Solo sale en el PDF, nunca en el XML. Por omisión `false`."""
+    failure_email: NotRequired[bool]
+    """`true` (por omisión): cuando un comprador no puede facturar por algo del emisor (su CSD, sus datos, el PAC), se avisa por correo a los dueños y administradores. `false`: solo queda en Alertas, sin correo. Un error en los datos del comprador nunca avisa: el portal le dice cómo corregirlo."""
     invoice_concepts: NotRequired[UpdateSelfInvoicingParamsInvoiceConcepts | None]
     """Los conceptos de la factura que se hace el comprador (Autofactura › Conceptos de la factura): desglosados o en uno solo, y si el comprador puede elegir. Mande solo lo que cambia; `null` regresa a desglosados sin elección."""
     global_concepts: NotRequired[Literal["ticket", "summary"]]
