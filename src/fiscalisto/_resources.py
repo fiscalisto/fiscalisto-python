@@ -374,6 +374,7 @@ if TYPE_CHECKING:
         Quote,
         QuotePricesParams,
         Receivable,
+        RecoverWebhookEndpointParams,
         RecurringInvoice,
         RefreshSatDeclarationsParams,
         RejectQuoteParams,
@@ -503,6 +504,7 @@ if TYPE_CHECKING:
         WarehouseList,
         WebhookDelivery,
         WebhookEndpoint,
+        WebhookRecovery,
         WebhookTest,
         WithdrawQuoteParams,
     )
@@ -10518,6 +10520,28 @@ class WebhookEndpointsResource:
         https://fiscalisto.com/docs/api/referencia/webhooks/list-webhook-deliveries
         """
         return self._client.list(f"/v1/webhook_endpoints/{_path(id)}/deliveries", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def recover(
+        self,
+        id: str,
+        params: RecoverWebhookEndpointParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> WebhookRecovery:
+        """Recuperar eventos fallidos
+
+        Después de que su servidor estuvo caído: le manda otra vez, ahora, todos los eventos desde since que este webhook escucha y no recibió (los que fallaron todos sus intentos y los que pasaron mientras estuvo apagado), del más antiguo al más reciente. Hasta 1,000 por llamada; si quedan más, next_since dice desde dónde volver a llamar. Cada uno es un intento aparte, firmado con su webhook-id de siempre, para que su servidor descarte los que ya tenía. El webhook tiene que estar encendido.
+
+        POST /v1/webhook_endpoints/{id}/recover
+        https://fiscalisto.com/docs/api/referencia/webhooks/recover-webhook-endpoint
+        """
+        result: WebhookRecovery = self._client.request(
+            "POST", f"/v1/webhook_endpoints/{_path(id)}/recover", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
 
 
 class EventsResource:

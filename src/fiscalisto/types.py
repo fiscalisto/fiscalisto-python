@@ -948,6 +948,7 @@ __all__ = [
     "Receivable",
     "ReceivableCustomer",
     "ReceivableList",
+    "RecoverWebhookEndpointParams",
     "RecurringInvoice",
     "RecurringInvoiceCustomer",
     "RecurringInvoiceFailedEvent",
@@ -1289,6 +1290,7 @@ __all__ = [
     "WebhookDeliveryList",
     "WebhookEndpoint",
     "WebhookEndpointList",
+    "WebhookRecovery",
     "WebhookTest",
     "WebhookTestDelivery",
     "WithdrawQuoteParams",
@@ -5429,6 +5431,8 @@ class RuleActionsItem(TypedDict):
     """email_supplier: el asunto."""
     message: NotRequired[str]
     """email_supplier: el mensaje."""
+    per: NotRequired[Literal["payout", "invoice"]]
+    """email_supplier en los disparadores de pagos: payout, un correo por pago y proveedor; invoice, uno por factura."""
     findings: NotRequired[list[str]]
     """review_findings: los hallazgos que da por revisados (sus códigos)."""
     signatures: NotRequired[int]
@@ -11232,6 +11236,20 @@ class EventResend(TypedDict):
     """A cuántos webhooks salió. 0 si ninguno encendido escucha ese tipo de evento."""
 
 
+class WebhookRecovery(TypedDict):
+    """Los eventos que un webhook no recibió, mandados otra vez: desde cuándo se buscaron, cuántos salieron y, si quedaron más de 1,000, desde dónde seguir."""
+    object: Literal["webhook_recovery"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    endpoint: str
+    """El webhook (whe_…) al que se mandaron."""
+    since: str
+    """Desde cuándo se buscaron: el since que mandó, o la creación del webhook si es posterior."""
+    events: int
+    """Cuántos eventos salieron otra vez. 0: no le faltaba ninguno."""
+    next_since: str | None
+    """Si quedaron más de 1,000: llame otra vez con este since. null: ya salieron todos."""
+
+
 class IssuerBranding(TypedDict):
     """Cómo se ven los documentos de un emisor: nombre comercial, estilo y color del PDF, y logo."""
     object: Literal["issuer_branding"]
@@ -12447,6 +12465,8 @@ class ApiErrorError(TypedDict):
     """La explicación de este código en la documentación."""
     request_id: str
     """El id de la solicitud (req_…). Inclúyalo si nos escribe."""
+    request_log_url: NotRequired[str]
+    """La solicitud en Desarrolladores › Solicitudes: lo que mandó, lo que contestamos y cómo repetirla. Viene en todos los errores salvo los 429."""
 
 
 class ApiError(TypedDict):
@@ -16835,6 +16855,8 @@ class CreateRuleParamsActionsItem(TypedDict):
     """email_supplier: el asunto. Puede llevar {folio}, {total}, {fecha} y {empresa}."""
     message: NotRequired[str]
     """email_supplier: el mensaje. Puede llevar {folio}, {total}, {fecha} y {empresa}."""
+    per: NotRequired[Literal["payout", "invoice"]]
+    """email_supplier en payout.submitted, payout.paid y payout.failed: payout manda un correo por pago y proveedor con todas sus facturas ({folio} es la lista de folios, {total} lo que se le paga y {fecha} la fecha del pago); invoice, uno por factura. Por omisión, payout."""
     signatures: NotRequired[int]
     """extra_signature: cuántas firmas más pide (1 a 3). Por omisión, 1."""
     reason: NotRequired[str | None]
@@ -16957,6 +16979,8 @@ class UpdateRuleParamsActionsItem(TypedDict):
     """email_supplier: el asunto. Puede llevar {folio}, {total}, {fecha} y {empresa}."""
     message: NotRequired[str]
     """email_supplier: el mensaje. Puede llevar {folio}, {total}, {fecha} y {empresa}."""
+    per: NotRequired[Literal["payout", "invoice"]]
+    """email_supplier en payout.submitted, payout.paid y payout.failed: payout manda un correo por pago y proveedor con todas sus facturas ({folio} es la lista de folios, {total} lo que se le paga y {fecha} la fecha del pago); invoice, uno por factura. Por omisión, payout."""
     signatures: NotRequired[int]
     """extra_signature: cuántas firmas más pide (1 a 3). Por omisión, 1."""
     reason: NotRequired[str | None]
@@ -20813,6 +20837,11 @@ class ListWebhookDeliveriesParams(TypedDict):
     """El id del último de la página anterior, para la siguiente."""
     succeeded: NotRequired[bool]
     """false: solo los que fallaron en su último intento. true: solo los que llegaron."""
+
+
+class RecoverWebhookEndpointParams(TypedDict):
+    since: str
+    """Desde cuándo (ISO 8601, de los últimos 30 días): por ejemplo, cuando empezó a fallar su servidor (failing_since del webhook)."""
 
 
 class ListEventsParams(TypedDict):

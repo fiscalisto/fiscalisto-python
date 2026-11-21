@@ -18,7 +18,7 @@ from urllib.parse import urlencode
 from urllib.request import Request as _UrllibRequest
 from urllib.request import urlopen
 
-VERSION = "0.1.159"
+VERSION = "0.1.160"
 # La versión de la API para la que se hizo este SDK: va en cada solicitud (Fiscalisto-Version).
 API_VERSION = "2026-10-24"
 DEFAULT_BASE_URL = "https://api.fiscalisto.com"
@@ -53,6 +53,8 @@ class FiscalistoError(Exception):
     doc_url: str | None
     #: Búsquelo en Desarrolladores › Solicitudes o mándelo a soporte.
     request_id: str | None
+    #: La solicitud en Desarrolladores › Solicitudes, para abrirla en el navegador.
+    request_log_url: str | None
     #: El código HTTP (sin él, la solicitud no llegó).
     status: int | None
     #: El objeto error tal como llegó.
@@ -74,6 +76,7 @@ class FiscalistoError(Exception):
         self.invoice = text("invoice")
         self.doc_url = text("doc_url")
         self.request_id = text("request_id") or request_id
+        self.request_log_url = text("request_log_url")
         self.status = status
         super().__init__(self.message)
 
