@@ -15822,8 +15822,8 @@ class CreateExtraordinaryPayrollReceiptParams(TypedDict):
     """ptu: lo que le toca a este empleado (la mitad de la PTU por días trabajados y la mitad por salario, con el tope de tres meses de salario). Fiscalisto calcula su parte exenta (15 UMA) y su ISR."""
     isr_method: NotRequired[Literal["lower", "art96", "art174"]]
     """aguinaldo y ptu: cómo retener el ISR de la parte gravada. lower (por omisión) el que retenga menos; art96 sumada al sueldo del mes; art174 el procedimiento opcional del Reglamento de la LISR."""
-    exit_reason: NotRequired[Literal["resignation", "dismissal"]]
-    """finiquito: resignation (renuncia o común acuerdo, por omisión) o dismissal (despido sin causa: suma 3 meses de salario integrado y la prima de antigüedad)."""
+    exit_reason: NotRequired[Literal["resignation", "dismissal", "justified_dismissal", "worker_rescission", "death"]]
+    """finiquito: resignation (renuncia, común acuerdo o fin de contrato, por omisión; prima de antigüedad solo con 15 años o más), dismissal (despido sin causa: suma 3 meses de salario integrado y la prima de antigüedad), justified_dismissal (despido por una causa del art. 47 de la LFT: sin indemnización, con prima de antigüedad), worker_rescission (el trabajador rescinde por una causa del art. 51: 3 meses, 20 días por año y prima de antigüedad) o death (fallecimiento: prima de antigüedad a sus beneficiarios, sin importar los años)."""
     twenty_days_per_year: NotRequired[bool]
     """finiquito con dismissal: incluye 20 días por año de servicio (LFT art. 50), cuando el patrón no lo reinstala."""
     vacation_days_taken: NotRequired[float]
@@ -15853,8 +15853,8 @@ class PreviewExtraordinaryPayrollReceiptParams(TypedDict):
     """ptu: lo que le toca a este empleado (la mitad de la PTU por días trabajados y la mitad por salario, con el tope de tres meses de salario). Fiscalisto calcula su parte exenta (15 UMA) y su ISR."""
     isr_method: NotRequired[Literal["lower", "art96", "art174"]]
     """aguinaldo y ptu: cómo retener el ISR de la parte gravada. lower (por omisión) el que retenga menos; art96 sumada al sueldo del mes; art174 el procedimiento opcional del Reglamento de la LISR."""
-    exit_reason: NotRequired[Literal["resignation", "dismissal"]]
-    """finiquito: resignation (renuncia o común acuerdo, por omisión) o dismissal (despido sin causa: suma 3 meses de salario integrado y la prima de antigüedad)."""
+    exit_reason: NotRequired[Literal["resignation", "dismissal", "justified_dismissal", "worker_rescission", "death"]]
+    """finiquito: resignation (renuncia, común acuerdo o fin de contrato, por omisión; prima de antigüedad solo con 15 años o más), dismissal (despido sin causa: suma 3 meses de salario integrado y la prima de antigüedad), justified_dismissal (despido por una causa del art. 47 de la LFT: sin indemnización, con prima de antigüedad), worker_rescission (el trabajador rescinde por una causa del art. 51: 3 meses, 20 días por año y prima de antigüedad) o death (fallecimiento: prima de antigüedad a sus beneficiarios, sin importar los años)."""
     twenty_days_per_year: NotRequired[bool]
     """finiquito con dismissal: incluye 20 días por año de servicio (LFT art. 50), cuando el patrón no lo reinstala."""
     vacation_days_taken: NotRequired[float]
