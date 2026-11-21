@@ -71,6 +71,9 @@ __all__ = [
     "AttendanceReportEmployeesItemDaysItem",
     "AttendanceReportEmployeesItemDaysItemScheduled",
     "AttendanceReportEmployeesItemWeeksDisputedItem",
+    "AutomaticJournalEntry",
+    "AutomaticJournalEntryLinesItem",
+    "AutomaticJournalEntryOriginalLinesItem",
     "Balance",
     "BalanceAutoRecharge",
     "BalanceLowEvent",
@@ -514,6 +517,7 @@ __all__ = [
     "GetAnnualAdjustmentParams",
     "GetAnnualReturnParams",
     "GetAttendanceParams",
+    "GetAutomaticEntryParams",
     "GetBooksExportParams",
     "GetBudgetParams",
     "GetCashFlowParams",
@@ -985,6 +989,7 @@ __all__ = [
     "RetentionTaxesItem",
     "RetentionTotals",
     "ReturnExpenseReportParams",
+    "RevertAutomaticEntryParams",
     "Role",
     "RoleList",
     "RollWebhookSecretParams",
@@ -1162,6 +1167,8 @@ __all__ = [
     "TrialBalanceTotals",
     "UpdateAccountParams",
     "UpdateAnnualAdjustmentParams",
+    "UpdateAutomaticEntryParams",
+    "UpdateAutomaticEntryParamsLinesItem",
     "UpdateBranchParams",
     "UpdateBranchParamsAddress",
     "UpdateBranchParamsSeries",
@@ -7275,6 +7282,8 @@ class JournalEntry(TypedDict):
     """La moneda del documento."""
     exchange_rate: float | None
     """El tipo de cambio, si no es en pesos; null si es en pesos."""
+    edited: bool
+    """Sus renglones se editaron a mano (POST /v1/accounting/automatic_entries/{uuid})."""
     lines: list[JournalEntryLinesItem]
     """Los movimientos, en pesos: el cargo (debit) o abono (credit) a cada cuenta."""
 
@@ -7354,6 +7363,64 @@ class ManualJournalEntry(TypedDict):
     """Cuándo se capturó."""
     updated_at: str | None
     """Cuándo cambió por última vez."""
+
+
+class AutomaticJournalEntryLinesItem(TypedDict):
+    account: str
+    """El número de cuenta."""
+    account_name: str
+    """El nombre de la cuenta."""
+    grouping_code: str
+    """Su código agrupador del SAT."""
+    debit: float
+    """El cargo, en pesos."""
+    credit: float
+    """El abono, en pesos."""
+    cost_center: str | None
+    """Su centro de costo (ccn_…), o null."""
+
+
+class AutomaticJournalEntryOriginalLinesItem(TypedDict):
+    account: str
+    """El número de cuenta."""
+    account_name: str
+    """El nombre de la cuenta."""
+    grouping_code: str
+    """Su código agrupador del SAT."""
+    debit: float
+    """El cargo, en pesos."""
+    credit: float
+    """El abono, en pesos."""
+    cost_center: str | None
+    """Su centro de costo (ccn_…), o null."""
+
+
+class AutomaticJournalEntry(TypedDict):
+    """La póliza que Fiscalisto arma para un CFDI (factura, nota de crédito o recibo de nómina), con la edición a mano si la tiene: se queda aunque el CFDI se vuelva a descargar, hasta volver a la original."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["automatic_journal_entry"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor."""
+    uuid: str
+    """El UUID del CFDI de la póliza."""
+    type: Literal["invoice", "payroll"]
+    """invoice: una factura o nota de crédito; payroll: un recibo de nómina."""
+    date: str
+    """La fecha de la póliza: la del CFDI, o la del pago de la nómina."""
+    description: str
+    """Su concepto."""
+    lines: list[AutomaticJournalEntryLinesItem]
+    """Los renglones que usan los libros."""
+    edited: bool
+    """true si se editó a mano."""
+    edited_at: str | None
+    """Cuándo se editó por última vez, o null."""
+    original_lines: list[AutomaticJournalEntryOriginalLinesItem] | None
+    """Editada: los renglones que arma Fiscalisto hoy para su CFDI."""
+    original_changed: bool | None
+    """Editada: true si la póliza que arma su CFDI cambió desde que se editó (su cuenta o su categoría), para revisar que la edición siga bien."""
 
 
 class FixedAssetDisposal(TypedDict):
@@ -8643,7 +8710,7 @@ class BooksLogEntry(TypedDict):
     """El emisor."""
     created_at: str
     """Cuándo se hizo el cambio."""
-    subject: Literal["manual_journal_entry", "opening_balances", "account", "chart_of_accounts", "period_close", "consolidation_elimination", "entry_template", "fixed_asset", "invoice_account"]
+    subject: Literal["manual_journal_entry", "opening_balances", "account", "chart_of_accounts", "period_close", "consolidation_elimination", "entry_template", "fixed_asset", "invoice_account", "automatic_journal_entry"]
     """Qué cambió: una póliza a mano (manual_journal_entry), los saldos iniciales, una cuenta, el catálogo completo (una importación o una renumeración), el cierre del mes (period_close), una eliminación de consolidación, una póliza modelo o la baja de un activo fijo."""
     subject_id: str | None
     """El id de lo que cambió cuando tiene uno en la API (mje_, cel_, mjt_); null en los demás."""
@@ -19266,6 +19333,48 @@ class UpdateManualEntryParams(TypedDict):
     """Sus cargos y abonos: cada renglón uno u otro; los cargos suman lo mismo que los abonos."""
 
 
+class GetAutomaticEntryParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/automatic_entries/{uuid}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateAutomaticEntryParamsLinesItem(TypedDict):
+    account: str
+    """El número de la cuenta en su catálogo (GET /v1/accounting/accounts), por ejemplo 205-06."""
+    debit: NotRequired[float]
+    """El cargo."""
+    credit: NotRequired[float]
+    """El abono."""
+    cost_center: NotRequired[str | None]
+    """Su centro de costo (ccn_…, GET /v1/cost_centers), opcional: los resultados por centro de costo y los presupuestos lo leen."""
+    currency: NotRequired[str | None]
+    """Un renglón en otra moneda: su clave ISO 4217 (USD, EUR…). Con ella van foreign_amount y exchange_rate, y debit o credit es su producto en pesos."""
+    foreign_amount: NotRequired[float | None]
+    """El importe del renglón en su moneda."""
+    exchange_rate: NotRequired[float | None]
+    """El tipo de cambio del renglón: pesos por una unidad de su moneda."""
+    cfdi_uuid: NotRequired[str | None]
+    """El CFDI que documenta este renglón, aparte del de la póliza: así una póliza lleva varios."""
+    cfdi_tax_id: NotRequired[str | None]
+    """El RFC de quien emitió o recibió el CFDI del renglón."""
+
+
+class UpdateAutomaticEntryParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    description: NotRequired[str]
+    """Su concepto. Sin él, queda el que tiene."""
+    lines: list[UpdateAutomaticEntryParamsLinesItem]
+    """Sus cargos y abonos en lugar de los que arma Fiscalisto: cada renglón uno u otro; los cargos suman lo mismo que los abonos."""
+
+
+class RevertAutomaticEntryParams(TypedDict):
+    """Los parámetros de DELETE /v1/accounting/automatic_entries/{uuid}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
 class ImportManualEntriesParamsEntriesItemLinesItem(TypedDict):
     account: str
     """El número de la cuenta en su catálogo (GET /v1/accounting/accounts), por ejemplo 205-06."""
@@ -19630,7 +19739,7 @@ class RenumberAccountsParams(TypedDict):
 ListBooksLogParams = TypedDict(
     "ListBooksLogParams",
     {
-        "subject": "NotRequired[Literal[\"manual_journal_entry\", \"opening_balances\", \"account\", \"chart_of_accounts\", \"period_close\", \"consolidation_elimination\", \"entry_template\", \"fixed_asset\", \"invoice_account\"]]",
+        "subject": "NotRequired[Literal[\"manual_journal_entry\", \"opening_balances\", \"account\", \"chart_of_accounts\", \"period_close\", \"consolidation_elimination\", \"entry_template\", \"fixed_asset\", \"invoice_account\", \"automatic_journal_entry\"]]",
         "from": "NotRequired[str]",
         "to": "NotRequired[str]",
         "limit": "NotRequired[int]",

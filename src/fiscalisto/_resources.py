@@ -33,6 +33,7 @@ if TYPE_CHECKING:
         AttendanceMark,
         AttendanceOvertime,
         AttendanceReport,
+        AutomaticJournalEntry,
         Balance,
         BankImport,
         BankTransaction,
@@ -179,6 +180,7 @@ if TYPE_CHECKING:
         GetAnnualAdjustmentParams,
         GetAnnualReturnParams,
         GetAttendanceParams,
+        GetAutomaticEntryParams,
         GetBooksExportParams,
         GetBudgetParams,
         GetCashFlowParams,
@@ -389,6 +391,7 @@ if TYPE_CHECKING:
         ResetTestDataParams,
         Retention,
         ReturnExpenseReportParams,
+        RevertAutomaticEntryParams,
         Role,
         RoleList,
         RollWebhookSecretParams,
@@ -450,6 +453,7 @@ if TYPE_CHECKING:
         TrialBalance,
         UpdateAccountParams,
         UpdateAnnualAdjustmentParams,
+        UpdateAutomaticEntryParams,
         UpdateBranchParams,
         UpdateCandidateParams,
         UpdateCashForecastItemParams,
@@ -8334,6 +8338,77 @@ class ManualEntriesResource:
         return result
 
 
+class AutomaticEntriesResource:
+    """Contabilidad: fiscalisto.automatic_entries."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        uuid: str,
+        params: GetAutomaticEntryParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AutomaticJournalEntry:
+        """Ver la póliza de un CFDI
+
+        La póliza que arma Fiscalisto para una factura, nota de crédito o recibo de nómina del emisor (por el UUID del CFDI), con su edición a mano si la tiene. Un pago no tiene una propia que se edite: se corrige con una póliza capturada.
+
+        GET /v1/accounting/automatic_entries/{uuid}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-automatic-entry
+        """
+        result: AutomaticJournalEntry = self._client.request(
+            "GET", f"/v1/accounting/automatic_entries/{_path(uuid)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        uuid: str,
+        params: UpdateAutomaticEntryParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AutomaticJournalEntry:
+        """Editar la póliza de un CFDI
+
+        Sus renglones (y su concepto) en lugar de los que arma Fiscalisto, con las reglas de una póliza capturada: cuentas del catálogo y cargos que suman lo mismo que los abonos (entry_unbalanced). Se queda aunque el CFDI se vuelva a descargar, en su mes y en los saldos de los siguientes, y va a la bitácora. Un mes cerrado contesta period_closed. Los mismos renglones que la original quitan la edición.
+
+        POST /v1/accounting/automatic_entries/{uuid}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/update-automatic-entry
+        """
+        result: AutomaticJournalEntry = self._client.request(
+            "POST", f"/v1/accounting/automatic_entries/{_path(uuid)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def revert(
+        self,
+        uuid: str,
+        params: RevertAutomaticEntryParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AutomaticJournalEntry:
+        """Volver a la póliza original de un CFDI
+
+        Quita la edición a mano: los libros vuelven a usar los renglones que arma Fiscalisto. Un mes cerrado contesta period_closed.
+
+        DELETE /v1/accounting/automatic_entries/{uuid}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/revert-automatic-entry
+        """
+        result: AutomaticJournalEntry = self._client.request(
+            "DELETE", f"/v1/accounting/automatic_entries/{_path(uuid)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class OpeningBalancesResource:
     """Contabilidad: fiscalisto.opening_balances."""
 
@@ -11062,6 +11137,11 @@ class FiscalistoApi(Core):
     def manual_entries(self) -> ManualEntriesResource:
         """Contabilidad."""
         return ManualEntriesResource(self)
+
+    @cached_property
+    def automatic_entries(self) -> AutomaticEntriesResource:
+        """Contabilidad."""
+        return AutomaticEntriesResource(self)
 
     @cached_property
     def opening_balances(self) -> OpeningBalancesResource:
