@@ -5399,7 +5399,7 @@ class RuleConditions(TypedDict):
 
 
 class RuleActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "category", "stage", "close", "ask_approval", "notify"]
+    type: Literal["tag", "cost_center", "category", "stage", "close", "ask_approval", "notify", "lote"]
     """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
     tag: NotRequired[str]
     """tag: la etiqueta (tag_…, GET /v1/tags)."""
@@ -5415,6 +5415,12 @@ class RuleActionsItem(TypedDict):
     """notify: a quién (mem_…)."""
     note: NotRequired[str | None]
     """notify: lo que dice el aviso."""
+    lote_name: NotRequired[str | None]
+    """lote: el nombre del lote; null: «Lote del jueves 27 nov»."""
+    pay_on: NotRequired[Literal["monday", "tuesday", "wednesday", "thursday", "friday", "in_days", "due"]]
+    """lote: el día que paga (siguiente día de la semana, a los días, o el del contrarecibo)."""
+    days: NotRequired[int]
+    """lote con pay_on in_days: cuántos días."""
 
 
 class Rule(TypedDict):
@@ -10515,6 +10521,10 @@ class PayeeAccount(TypedDict):
     """Cómo se confió en la cuenta: bank (el banco confirmó el RFC del proveedor), by_hand (alguien la verificó a mano porque el RFC del banco solo cambiaba la homoclave o no venía), third_party (se autorizó como de un tercero), o null si aún no está aprobada."""
     verified_by_hand_reason: str | None
     """Cómo la verificó a mano quien la aprobó, o null."""
+    account_number: str | None
+    """Su número de cuenta, si se anotó junto a la CLABE (solo de referencia: la transferencia usa la CLABE), o null."""
+    is_default: bool
+    """true si es la cuenta predeterminada del proveedor: la que usa un pago cuando no se elige otra."""
     status: Literal["verifying", "pending_approval", "holder_mismatch", "failed", "approved", "rejected", "replaced"]
     """verifying (verificando con el banco), pending_approval (verificada, por aprobar), holder_mismatch (es de otra persona), failed (no existe o no recibe), approved, rejected o replaced (la sustituyó otra)."""
     usable: bool
@@ -16717,14 +16727,20 @@ class CreateRuleParamsConditions(TypedDict):
 
 
 class CreateRuleParamsActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category"]
-    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…)."""
+    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "lote"]
+    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla."""
     tag: NotRequired[str | int]
     """tag: la etiqueta (tag_…, GET /v1/tags). Un número, el id de antes, también se acepta."""
     category: NotRequired[Literal["Renta y arrendamiento", "Servicios profesionales", "Nómina y personal", "Transporte y fletes", "Combustible", "Viáticos y viajes", "Alimentos y representación", "Telecomunicaciones e internet", "Energía y agua", "Software y suscripciones", "Equipo de cómputo", "Papelería y oficina", "Mantenimiento y reparaciones", "Publicidad y marketing", "Seguros y fianzas", "Comisiones bancarias y financieras", "Impuestos y derechos", "Compras de mercancía e inventario", "Materias primas y producción", "Activo fijo y mobiliario", "Vehículos", "Capacitación", "Donativos", "Otros gastos"]]
     """category: la categoría de gasto, como la app la nombra («Combustible»)."""
     remove_when_unmet: NotRequired[bool]
     """tag: quitarla si la orden deja de cumplir."""
+    lote_name: NotRequired[str | None]
+    """lote: el nombre del lote («Fletes»); vacío o null: «Lote del jueves 27 nov»."""
+    pay_on: NotRequired[Literal["monday", "tuesday", "wednesday", "thursday", "friday", "in_days", "due"]]
+    """lote: el día que paga: el siguiente lunes … viernes (hoy incluido), a los `days` días, o `due`, la fecha de pago del contrarecibo del portal. Un día inhábil pasa al siguiente hábil. Por omisión, friday."""
+    days: NotRequired[int]
+    """lote con pay_on in_days: cuántos días después."""
     cost_center: NotRequired[str]
     """Su centro de costo (ccn_…): la obra, proyecto, sucursal o área a la que pertenece, para ver ingresos y gastos por centro en Reportes. No cambia el CFDI. Sus notas de crédito lo toman solas."""
     stage: NotRequired[int]
@@ -16821,14 +16837,20 @@ class UpdateRuleParamsConditions(TypedDict):
 
 
 class UpdateRuleParamsActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category"]
-    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…)."""
+    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "lote"]
+    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla."""
     tag: NotRequired[str | int]
     """tag: la etiqueta (tag_…, GET /v1/tags). Un número, el id de antes, también se acepta."""
     category: NotRequired[Literal["Renta y arrendamiento", "Servicios profesionales", "Nómina y personal", "Transporte y fletes", "Combustible", "Viáticos y viajes", "Alimentos y representación", "Telecomunicaciones e internet", "Energía y agua", "Software y suscripciones", "Equipo de cómputo", "Papelería y oficina", "Mantenimiento y reparaciones", "Publicidad y marketing", "Seguros y fianzas", "Comisiones bancarias y financieras", "Impuestos y derechos", "Compras de mercancía e inventario", "Materias primas y producción", "Activo fijo y mobiliario", "Vehículos", "Capacitación", "Donativos", "Otros gastos"]]
     """category: la categoría de gasto, como la app la nombra («Combustible»)."""
     remove_when_unmet: NotRequired[bool]
     """tag: quitarla si la orden deja de cumplir."""
+    lote_name: NotRequired[str | None]
+    """lote: el nombre del lote («Fletes»); vacío o null: «Lote del jueves 27 nov»."""
+    pay_on: NotRequired[Literal["monday", "tuesday", "wednesday", "thursday", "friday", "in_days", "due"]]
+    """lote: el día que paga: el siguiente lunes … viernes (hoy incluido), a los `days` días, o `due`, la fecha de pago del contrarecibo del portal. Un día inhábil pasa al siguiente hábil. Por omisión, friday."""
+    days: NotRequired[int]
+    """lote con pay_on in_days: cuántos días después."""
     cost_center: NotRequired[str]
     """Su centro de costo (ccn_…): la obra, proyecto, sucursal o área a la que pertenece, para ver ingresos y gastos por centro en Reportes. No cambia el CFDI. Sus notas de crédito lo toman solas."""
     stage: NotRequired[int]
