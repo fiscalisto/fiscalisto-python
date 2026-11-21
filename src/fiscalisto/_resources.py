@@ -210,6 +210,7 @@ if TYPE_CHECKING:
         GetInvoicePdfParams,
         GetInvoiceXmlParams,
         GetOpeningBalancesParams,
+        GetPayoutsPauseParams,
         GetPayrollAccumulatedParams,
         GetPayrollCalendarParams,
         GetPayrollCostParams,
@@ -341,10 +342,12 @@ if TYPE_CHECKING:
         NetToGrossParams,
         OpeningBalances,
         OrderRulesParams,
+        PausePayoutsParams,
         PayableInvoiceList,
         PayeeAccountList,
         Payout,
         PayoutMandateList,
+        PayoutsPause,
         PayrollAccumulated,
         PayrollApproval,
         PayrollBankFile,
@@ -7314,7 +7317,7 @@ class PayoutsResource:
     ) -> Payout:
         """Preparar un pago a proveedores
 
-        Un pago en borrador con estas facturas, revisado como en la app: las reglas antes de pagar, los límites y las cuentas aprobadas de cada proveedor. Las de un proveedor van en una transferencia. Nunca sale solo: alguien del equipo lo abre en app_url y lo firma con su llave de acceso. Solo si la empresa lo permite en Pagos › Configurar pagos (si no, 403 payouts_api_disabled); lo que no se puede pagar contesta 400 payout_invalid con el motivo. Pide Idempotency-Key: si la respuesta se pierde, repítala con el mismo valor y contesta el mismo pago, nunca uno nuevo.
+        Un pago en borrador con estas facturas, revisado como en la app: las reglas antes de pagar, los límites y las cuentas aprobadas de cada proveedor. Las de un proveedor van en una transferencia. Nunca sale solo: alguien del equipo lo abre en app_url y lo firma con su llave de acceso. Solo si la empresa lo permite en Pagos › Configurar pagos (si no, 403 payouts_api_disabled); lo que no se puede pagar contesta 400 payout_invalid con el motivo. Pide Idempotency-Key: si la respuesta se pierde, repítala con el mismo valor y contesta el mismo pago, nunca uno nuevo. La misma llave con otra solicitud (otras facturas, montos o día) contesta 409 idempotency_key_reused, aunque hayan pasado más de 24 horas.
 
         POST /v1/payouts
         https://fiscalisto.com/docs/api/referencia/pagos-a-proveedores/create-payout
@@ -7340,6 +7343,47 @@ class PayoutsResource:
         https://fiscalisto.com/docs/api/referencia/pagos-a-proveedores/list-payouts
         """
         return self._client.list("/v1/payouts", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get_pause(
+        self,
+        params: GetPayoutsPauseParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayoutsPause:
+        """Ver si los pagos están en pausa
+
+        Si la empresa pausó todos sus pagos («Pausar todos los pagos»), desde cuándo y por qué.
+
+        GET /v1/payouts/pause
+        https://fiscalisto.com/docs/api/referencia/pagos-a-proveedores/get-payouts-pause
+        """
+        result: PayoutsPause = self._client.request(
+            "GET", "/v1/payouts/pause", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def pause(
+        self,
+        params: PausePayoutsParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayoutsPause:
+        """Pausar todos los pagos
+
+        El freno de emergencia de la empresa, para una herramienta de seguridad o el botón de su ERP: al instante no sale ninguna transferencia (pagos firmados, reintentos ni recurrentes) y les llega el aviso a los administradores con el motivo. La API nunca reanuda: lo firman en la app las personas de Quién firma, cada una con su llave de acceso. Solo si la empresa deja que la API trabaje con sus pagos en Pagos › Configurar pagos (si no, 403 payouts_api_disabled). Pausar lo que ya está en pausa no cambia nada.
+
+        POST /v1/payouts/pause
+        https://fiscalisto.com/docs/api/referencia/pagos-a-proveedores/pause-payouts
+        """
+        result: PayoutsPause = self._client.request(
+            "POST", "/v1/payouts/pause", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
 
     def get(
         self,

@@ -543,6 +543,7 @@ __all__ = [
     "GetInvoicePdfParams",
     "GetInvoiceXmlParams",
     "GetOpeningBalancesParams",
+    "GetPayoutsPauseParams",
     "GetPayrollAccumulatedParams",
     "GetPayrollCalendarParams",
     "GetPayrollCostParams",
@@ -811,6 +812,7 @@ __all__ = [
     "OpeningBalances",
     "OpeningBalancesLinesItem",
     "OrderRulesParams",
+    "PausePayoutsParams",
     "PayableInvoice",
     "PayableInvoiceList",
     "PayeeAccount",
@@ -830,6 +832,7 @@ __all__ = [
     "PayoutTransferInvoicesItem",
     "PayoutTransferReturnedEvent",
     "PayoutTransferSucceededEvent",
+    "PayoutsPause",
     "PayrollAccumulated",
     "PayrollAccumulatedConceptsItem",
     "PayrollAccumulatedEmployeesItem",
@@ -10537,6 +10540,24 @@ class PayeeAccount(TypedDict):
     """Cuándo se agregó."""
 
 
+class PayoutsPause(TypedDict):
+    """«Pausar todos los pagos» de la empresa: mientras está en pausa no sale ninguna transferencia (ni firmadas, ni reintentos, ni recurrentes). Se reanuda solo en la app, con las firmas de Quién firma."""
+    object: Literal["payouts_pause"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    paused: bool
+    """true mientras los pagos están en pausa."""
+    paused_at: str | None
+    """Desde cuándo están en pausa, o null."""
+    reason: str | None
+    """Por qué se pausaron, o null."""
+    paused_by_api: bool
+    """true si los pausó una llave de la API (no una persona en la app)."""
+
+
 class PayoutMandate(TypedDict):
     """Un pago recurrente (Pagos › Recurrentes): firmado una vez, sale cada mes a la misma cuenta por hasta ese monto. Solo lectura."""
     id: str
@@ -11357,6 +11378,11 @@ class PayoutEventData(TypedDict):
 
 class PayoutTransferEventData(TypedDict):
     object: PayoutTransfer
+    """El objeto como quedó: el lote completo, como lo contesta su GET."""
+
+
+class PayoutsPauseEventData(TypedDict):
+    object: PayoutsPause
     """El objeto como quedó: el lote completo, como lo contesta su GET."""
 
 
@@ -18316,6 +18342,19 @@ class ListPayoutsParams(TypedDict):
     """Solo los que salen desde este día (AAAA-MM-DD)."""
     pay_on_to: NotRequired[str]
     """Solo los que salen hasta este día (AAAA-MM-DD)."""
+
+
+class GetPayoutsPauseParams(TypedDict):
+    """Los parámetros de GET /v1/payouts/pause."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class PausePayoutsParams(TypedDict):
+    issuer: NotRequired[str]
+    """La empresa (iss_…); sin él, la de la llave."""
+    reason: str
+    """Por qué se pausan los pagos; lo ve el equipo y llega en el aviso."""
 
 
 class CancelPayoutParams(TypedDict):
