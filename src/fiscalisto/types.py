@@ -10354,6 +10354,8 @@ class Payout(TypedDict):
     """Su número en la empresa (Pago 12), como en la app."""
     status: Literal["draft", "pending_approval", "approved", "sending", "paid", "partially_paid", "failed", "canceled"]
     """draft (borrador: falta que alguien lo firme en la app), pending_approval (faltan firmas), approved (firmado: sale en su día), sending, paid (llegaron todas), partially_paid (llegaron algunas), failed (no llegó ninguna) o canceled."""
+    name: str | None
+    """El nombre del lote («Fletes»), o null: la app lo llama por su día."""
     pay_on: str
     """El día en que sale (AAAA-MM-DD, hora de la Ciudad de México)."""
     exchange_rate: Literal["official", "fixed"] | None
@@ -18268,6 +18270,8 @@ class CreatePayoutParams(TypedDict):
     """El emisor (iss_…). Por omisión, su único emisor."""
     pay_on: NotRequired[str]
     """El día en que sale (AAAA-MM-DD, hoy o después). Por omisión, hoy: sale en cuanto lo firmen."""
+    name: NotRequired[str | None]
+    """El nombre del lote («Fletes»), para encontrarlo en la app entre los lotes abiertos. Sin nombre, la app lo llama por su día («Lote del jueves 27 nov»)."""
     note: NotRequired[str | None]
     """Una nota para quien lo revisa y lo firma."""
     exchange_rate: NotRequired[Literal["official", "fixed"]]
