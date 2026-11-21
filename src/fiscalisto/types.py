@@ -500,6 +500,7 @@ __all__ = [
     "GetAnnualAdjustmentParams",
     "GetAnnualReturnParams",
     "GetAttendanceParams",
+    "GetBooksExportParams",
     "GetBudgetParams",
     "GetCashFlowParams",
     "GetCashForecastParams",
@@ -18918,6 +18919,16 @@ class GetElectronicAccountingParams(TypedDict):
     """AF y FC: el número de orden (ABC1234567/26)."""
     procedure_number: NotRequired[str]
     """DE y CO: el número de trámite (AB123456789012)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetBooksExportParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/books_export."""
+    from_month: str
+    """El primer mes (AAAA-MM), de 2015-01 al mes actual."""
+    to_month: NotRequired[str]
+    """El último mes (AAAA-MM), hasta 24 meses después y no después del mes actual; por omisión, from_month."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 

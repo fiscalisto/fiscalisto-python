@@ -173,6 +173,7 @@ if TYPE_CHECKING:
         GetAnnualAdjustmentParams,
         GetAnnualReturnParams,
         GetAttendanceParams,
+        GetBooksExportParams,
         GetBudgetParams,
         GetCashFlowParams,
         GetCashForecastParams,
@@ -5531,7 +5532,7 @@ class SatReviewsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
-    ) -> str:
+    ) -> bytes:
         """Descargar la respuesta
 
         El ZIP de la última respuesta armada, cuando answer.status es completed (si no, answer_not_ready). Se guarda 30 días.
@@ -5539,8 +5540,8 @@ class SatReviewsResource:
         GET /v1/sat_reviews/{id}/answer
         https://fiscalisto.com/docs/api/referencia/cumplimiento-sat/download-sat-review-answer
         """
-        result: str = self._client.request(
-            "GET", f"/v1/sat_reviews/{_path(id)}/answer", result="text", timeout=timeout, max_retries=max_retries
+        result: bytes = self._client.request(
+            "GET", f"/v1/sat_reviews/{_path(id)}/answer", result="bytes", timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -6352,7 +6353,7 @@ class ExportsResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
-    ) -> str:
+    ) -> bytes:
         """Descargar una exportación
 
         El ZIP o el Excel, cuando status es completed. Antes, 409 export_not_ready; pasados 30 días, 410 export_expired.
@@ -6360,8 +6361,8 @@ class ExportsResource:
         GET /v1/exports/{id}/download
         https://fiscalisto.com/docs/api/referencia/exportaciones/download-export
         """
-        result: str = self._client.request(
-            "GET", f"/v1/exports/{_path(id)}/download", result="text", timeout=timeout, max_retries=max_retries
+        result: bytes = self._client.request(
+            "GET", f"/v1/exports/{_path(id)}/download", result="bytes", timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -7582,7 +7583,7 @@ class AccountingResource:
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
-    ) -> str:
+    ) -> bytes:
         """Descargar la contabilidad electrónica
 
         El ZIP del mes para el Buzón Tributario: el catálogo (CT) y la balanza (BN, o BC si es complementaria), cada uno en su ZIP con el nombre que espera el SAT, en el formato 1.3 del Anexo 24. Con journal_request, también las pólizas (PL), que se entregan cuando el SAT las pide. Con month AAAA-13, la balanza de comprobación ajustada al cierre del ejercicio (regla 2.8.1.6 RMF): solo la balanza, con los saldos finales de diciembre como saldos iniciales y, con closing_entry, la póliza de cierre.
@@ -7590,8 +7591,27 @@ class AccountingResource:
         GET /v1/accounting/electronic_accounting
         https://fiscalisto.com/docs/api/referencia/contabilidad/get-electronic-accounting
         """
-        result: str = self._client.request(
-            "GET", "/v1/accounting/electronic_accounting", query=params, result="text", timeout=timeout, max_retries=max_retries
+        result: bytes = self._client.request(
+            "GET", "/v1/accounting/electronic_accounting", query=params, result="bytes", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def books_export(
+        self,
+        params: GetBooksExportParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> bytes:
+        """Descargar toda la contabilidad de un periodo
+
+        Un ZIP para llevar los libros a otro sistema, de from_month a to_month (hasta 24 meses): el catálogo (1-catalogo, Excel con número, nombre, nivel, código agrupador y naturaleza), los saldos iniciales al primer día de from_month en deudor y acreedor (2-saldos-iniciales), las pólizas de todo el periodo para CONTPAQi Contabilidad (un TXT) y para Aspel COI (un Excel por mes), la balanza de comprobación de cada mes (una hoja por mes) y, en contabilidad-electronica, el catálogo (CT) y la balanza de cada mes (BN) en XML 1.3 del Anexo 24. LEEME.txt dice el orden en que se importa. Son los mismos libros de financial_statements y electronic_accounting.
+
+        GET /v1/accounting/books_export
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-books-export
+        """
+        result: bytes = self._client.request(
+            "GET", "/v1/accounting/books_export", query=params, result="bytes", timeout=timeout, max_retries=max_retries
         )
         return result
 
