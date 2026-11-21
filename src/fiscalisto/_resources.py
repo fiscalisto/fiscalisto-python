@@ -29,6 +29,7 @@ if TYPE_CHECKING:
         ApproveAttendanceOvertimeParams,
         ApproveExpenseReportParams,
         ApproveVacationRequestParams,
+        AssignPayrollOrgChartParams,
         AttendanceMark,
         AttendanceOvertime,
         AttendanceReport,
@@ -106,6 +107,7 @@ if TYPE_CHECKING:
         CreatePayrollBatchParams,
         CreatePayrollProvisionParams,
         CreatePayrollReceiptParams,
+        CreatePayrollVacancyParams,
         CreatePriceListParams,
         CreateProductParams,
         CreateProductionOrderParams,
@@ -207,6 +209,7 @@ if TYPE_CHECKING:
         GetPayrollAccumulatedParams,
         GetPayrollCalendarParams,
         GetPayrollCostParams,
+        GetPayrollOrgChartParams,
         GetPayrollProvisionParams,
         GetPayrollTaxParams,
         GetRetentionParams,
@@ -341,6 +344,7 @@ if TYPE_CHECKING:
         PayrollCalendar,
         PayrollCalendarEvent,
         PayrollCost,
+        PayrollOrgChart,
         PayrollProvision,
         PayrollReceiptPreview,
         PayrollTax,
@@ -362,6 +366,7 @@ if TYPE_CHECKING:
         RefreshSatDeclarationsParams,
         RejectQuoteParams,
         RejectVacationRequestParams,
+        RemovePayrollDepartmentParams,
         RenumberAccountsParams,
         ReportImssMovementsParams,
         RequestPurchaseReceiptInvoiceParams,
@@ -399,6 +404,7 @@ if TYPE_CHECKING:
         SaveBookDepreciationRateParams,
         SaveBudgetParams,
         SaveInflationAccountsParams,
+        SavePayrollDepartmentParams,
         ScheduleSupplierInvoiceParams,
         SelfInvoicing,
         SendInvoiceParams,
@@ -453,6 +459,7 @@ if TYPE_CHECKING:
         UpdateManualEntryParams,
         UpdateMemberParams,
         UpdatePayrollTaxSettingsParams,
+        UpdatePayrollVacancyParams,
         UpdatePriceListParams,
         UpdateProductParams,
         UpdatePurchaseReceiptParams,
@@ -3567,6 +3574,159 @@ class PayrollCalendarResource:
         """
         result: PayrollCalendarEvent = self._client.request(
             "POST", "/v1/payroll_calendar/mark", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class PayrollOrgChartResource:
+    """Nómina: fiscalisto.payroll_org_chart."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetPayrollOrgChartParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollOrgChart:
+        """Organigrama
+
+        Como «Nómina › Organigrama» de la app: los empleados de hoy del emisor con su jefe directo, departamento y sucursal, cuántas personas dependen de cada uno (directas y en toda su cadena), los departamentos con sus subdepartamentos, las vacantes y un resumen (jefes, tramo promedio, quién queda sin jefe o sin departamento). Quien no tiene jefe, o cuyo jefe ya se fue, queda arriba; un círculo que dejó una importación se rompe en el de número más bajo.
+
+        GET /v1/payroll_org_chart
+        https://fiscalisto.com/docs/api/referencia/nomina/get-payroll-org-chart
+        """
+        result: PayrollOrgChart = self._client.request(
+            "GET", "/v1/payroll_org_chart", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def assign(
+        self,
+        params: AssignPayrollOrgChartParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollOrgChart:
+        """Cambiar jefe, departamento o sucursal
+
+        Cambia el jefe directo, el departamento o la sucursal de uno o varios empleados (hasta 500); lo que no manda no cambia. Un jefe que, subiendo por su cadena, depende de alguno de ellos contesta parameter_invalid: quedarían en círculo. El departamento es el que llevan sus recibos (Departamento). Contesta el organigrama ya cambiado.
+
+        POST /v1/payroll_org_chart/assign
+        https://fiscalisto.com/docs/api/referencia/nomina/assign-payroll-org-chart
+        """
+        result: PayrollOrgChart = self._client.request(
+            "POST", "/v1/payroll_org_chart/assign", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def save_department(
+        self,
+        params: SavePayrollDepartmentParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollOrgChart:
+        """Crear o cambiar un departamento
+
+        Crea el departamento name o, si ya existe, lo cambia: new_name lo renombra (también en sus empleados y vacantes), parent lo pone dentro de otro y lead le pone responsable. Un parent que ya está dentro de él contesta parameter_invalid. Contesta el organigrama.
+
+        POST /v1/payroll_org_chart/departments
+        https://fiscalisto.com/docs/api/referencia/nomina/save-payroll-department
+        """
+        result: PayrollOrgChart = self._client.request(
+            "POST", "/v1/payroll_org_chart/departments", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def remove_department(
+        self,
+        params: RemovePayrollDepartmentParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollOrgChart:
+        """Quitar un departamento
+
+        Quita un departamento sin personas; los que estaban dentro de él suben un nivel. Con personas contesta parameter_invalid: cámbielas antes con POST /v1/payroll_org_chart/assign. Contesta el organigrama.
+
+        POST /v1/payroll_org_chart/departments/remove
+        https://fiscalisto.com/docs/api/referencia/nomina/remove-payroll-department
+        """
+        result: PayrollOrgChart = self._client.request(
+            "POST", "/v1/payroll_org_chart/departments/remove", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create_vacancy(
+        self,
+        params: CreatePayrollVacancyParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollOrgChart:
+        """Abrir una vacante
+
+        Un puesto sin persona todavía, bajo un jefe, en un departamento y una sucursal: sale en el organigrama, pero no cuenta como empleado. Contesta el organigrama.
+
+        POST /v1/payroll_org_chart/vacancies
+        https://fiscalisto.com/docs/api/referencia/nomina/create-payroll-vacancy
+        """
+        result: PayrollOrgChart = self._client.request(
+            "POST", "/v1/payroll_org_chart/vacancies", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_vacancy(
+        self,
+        id: str,
+        params: UpdatePayrollVacancyParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollOrgChart:
+        """Cambiar una vacante
+
+        Cambia el puesto, departamento, jefe o sucursal de una vacante (vac_…).
+
+        POST /v1/payroll_org_chart/vacancies/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/update-payroll-vacancy
+        """
+        result: PayrollOrgChart = self._client.request(
+            "POST", f"/v1/payroll_org_chart/vacancies/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete_vacancy(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollOrgChart:
+        """Cerrar una vacante
+
+        La quita del organigrama (se cubrió o ya no hace falta). Contesta el organigrama.
+
+        DELETE /v1/payroll_org_chart/vacancies/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/delete-payroll-vacancy
+        """
+        result: PayrollOrgChart = self._client.request(
+            "DELETE", f"/v1/payroll_org_chart/vacancies/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -10239,6 +10399,11 @@ class FiscalistoApi(Core):
     def payroll_calendar(self) -> PayrollCalendarResource:
         """Nómina."""
         return PayrollCalendarResource(self)
+
+    @cached_property
+    def payroll_org_chart(self) -> PayrollOrgChartResource:
+        """Nómina."""
+        return PayrollOrgChartResource(self)
 
     @cached_property
     def invoice_batches(self) -> InvoiceBatchesResource:

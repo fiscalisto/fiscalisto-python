@@ -63,6 +63,7 @@ __all__ = [
     "ApproveAttendanceOvertimeParams",
     "ApproveExpenseReportParams",
     "ApproveVacationRequestParams",
+    "AssignPayrollOrgChartParams",
     "AttendanceMark",
     "AttendanceOvertime",
     "AttendanceReport",
@@ -269,6 +270,7 @@ __all__ = [
     "CreatePayrollReceiptParamsIncidentsDisabilityPay",
     "CreatePayrollReceiptParamsIncidentsRetroactive",
     "CreatePayrollReceiptParamsPeriod",
+    "CreatePayrollVacancyParams",
     "CreatePriceListParams",
     "CreatePriceListParamsItemsItem",
     "CreateProductParams",
@@ -534,6 +536,7 @@ __all__ = [
     "GetPayrollAccumulatedParams",
     "GetPayrollCalendarParams",
     "GetPayrollCostParams",
+    "GetPayrollOrgChartParams",
     "GetPayrollProvisionParams",
     "GetPayrollTaxParams",
     "GetRetentionParams",
@@ -832,6 +835,11 @@ __all__ = [
     "PayrollCost",
     "PayrollCostMonthsItem",
     "PayrollCostTotals",
+    "PayrollOrgChart",
+    "PayrollOrgChartDepartmentsItem",
+    "PayrollOrgChartEmployeesItem",
+    "PayrollOrgChartSummary",
+    "PayrollOrgChartVacanciesItem",
     "PayrollProvision",
     "PayrollProvisionCalculated",
     "PayrollProvisionEmployeesItem",
@@ -921,6 +929,7 @@ __all__ = [
     "RefreshSatDeclarationsParams",
     "RejectQuoteParams",
     "RejectVacationRequestParams",
+    "RemovePayrollDepartmentParams",
     "RenumberAccountsParams",
     "RenumberAccountsParamsMappingItem",
     "ReportImssMovementsParams",
@@ -1052,6 +1061,7 @@ __all__ = [
     "SaveBudgetParamsLinesItem",
     "SaveInflationAccountsParams",
     "SaveInflationAccountsParamsAccountsItem",
+    "SavePayrollDepartmentParams",
     "ScheduleSupplierInvoiceParams",
     "SelfInvoicing",
     "SendInvoiceParams",
@@ -1149,6 +1159,7 @@ __all__ = [
     "UpdateManualEntryParamsLinesItem",
     "UpdateMemberParams",
     "UpdatePayrollTaxSettingsParams",
+    "UpdatePayrollVacancyParams",
     "UpdatePriceListParams",
     "UpdatePriceListParamsItemsItem",
     "UpdateProductParams",
@@ -4027,6 +4038,101 @@ class PayrollCalendar(TypedDict):
     """Hoy en la Ciudad de México (YYYY-MM-DD)."""
     events: list[PayrollCalendarEvent]
     """Eventos que quiere recibir, o ["*"] para todos (por omisión). La lista con cuándo llega cada uno: [Tipos de evento](https://fiscalisto.com/docs/api/webhooks#tipos-de-evento)."""
+
+
+class PayrollOrgChartSummary(TypedDict):
+    """Las cuentas del organigrama y lo que conviene revisar."""
+    employees: int
+    """Empleados de hoy."""
+    managers: int
+    """Cuántos tienen al menos una persona directamente a su cargo."""
+    average_span: float
+    """Personas directas por jefe, en promedio (un decimal)."""
+    departments: int
+    """Departamentos, con los que solo llevan los recibos."""
+    branches: int
+    """En cuántas sucursales (con la matriz) hay personas."""
+    vacancies: int
+    """Puestos sin persona."""
+    without_manager: list[str]
+    """Quienes quedan arriba sin ser la cabeza (todos los de arriba menos el del equipo más grande)."""
+    wide_span: list[str]
+    """Jefes con más de 10 personas directas."""
+    without_department: list[str]
+    """Sin departamento: sus recibos no llevan uno."""
+
+
+class PayrollOrgChartEmployeesItem(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    number: str
+    """Su número de empleado."""
+    name: str
+    """Nombre."""
+    position: str | None
+    """Su puesto."""
+    department: str | None
+    """Departamento (Departamento)."""
+    branch: str | None
+    """Su sucursal (brn_…); null es la matriz."""
+    manager: str | None
+    """Su jefe directo (emp_…); null si está arriba."""
+    direct_reports: int
+    """Personas directamente a su cargo."""
+    total_reports: int
+    """Todas las personas que dependen de él, en toda su cadena."""
+
+
+class PayrollOrgChartDepartmentsItem(TypedDict):
+    name: str
+    """Nombre."""
+    parent: str | None
+    """El departamento dentro del que está."""
+    lead: str | None
+    """Su responsable (emp_…)."""
+    employees: int
+    """Personas en él."""
+    total_employees: int
+    """Personas en él y en sus subdepartamentos."""
+    depth: int
+    """0 arriba, 1 dentro de uno, y así."""
+
+
+class PayrollOrgChartVacanciesItem(TypedDict):
+    id: str
+    """La vacante (vac_…)."""
+    title: str
+    """El puesto."""
+    department: str | None
+    """Departamento (Departamento)."""
+    manager: str | None
+    """Bajo qué jefe (emp_…)."""
+    branch: str | None
+    """Sucursal (brn_…) desde donde se factura: su código postal va en LugarExpedicion, su dirección en el PDF y, si las tiene, sus series. Sin ella, el domicilio fiscal del emisor (la Matriz)."""
+    opened_on: str
+    """Desde cuándo está abierta (YYYY-MM-DD)."""
+
+
+class PayrollOrgChart(TypedDict):
+    """El organigrama de los empleados del emisor: jefes, departamentos, sucursales y vacantes."""
+    object: Literal["payroll_org_chart"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    as_of: str
+    """El día del organigrama (YYYY-MM-DD): salen quienes trabajan ese día."""
+    summary: PayrollOrgChartSummary
+    """Las cuentas del organigrama y lo que conviene revisar."""
+    top: list[str]
+    """Los empleados arriba de todo (sin jefe), el del equipo más grande primero."""
+    employees: list[PayrollOrgChartEmployeesItem]
+    """Los empleados de hoy, cada uno con su jefe y su equipo."""
+    departments: list[PayrollOrgChartDepartmentsItem]
+    """Los departamentos, cada uno después del de arriba."""
+    vacancies: list[PayrollOrgChartVacanciesItem]
+    """Los puestos sin persona todavía."""
 
 
 class ImssFilesFilesItem(TypedDict):
@@ -15870,6 +15976,75 @@ class MarkPayrollCalendarEventParams(TypedDict):
     """Como lo da GET /v1/payroll_calendar: 2026-11, 2026-B6, 2026, 2026-11:CMX."""
     paid: bool
     """true lo marca pagado; false lo desmarca."""
+
+
+class GetPayrollOrgChartParams(TypedDict):
+    """Los parámetros de GET /v1/payroll_org_chart."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class AssignPayrollOrgChartParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    employees: list[str]
+    """A quiénes (emp_…)."""
+    manager: NotRequired[str | None]
+    """Su jefe directo (emp_…), o null para ponerlos arriba. Se omite si no cambia."""
+    department: NotRequired[str | None]
+    """Su departamento, como lo llevan sus recibos (Departamento), o null para ninguno. Se omite si no cambia."""
+    branch: NotRequired[str | None]
+    """Una sucursal del emisor (brn_…), o null para la matriz."""
+
+
+class SavePayrollDepartmentParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    name: str
+    """El departamento. Si no existe, se crea; si existe, se cambia."""
+    new_name: NotRequired[str]
+    """Su nuevo nombre: se cambia también en sus empleados y vacantes."""
+    parent: NotRequired[str | None]
+    """El departamento dentro del que está, o null para ponerlo arriba."""
+    lead: NotRequired[str | None]
+    """Su responsable (emp_…)."""
+
+
+class RemovePayrollDepartmentParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    name: str
+    """Nombre."""
+
+
+class CreatePayrollVacancyParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    title: str
+    """El puesto que falta cubrir."""
+    department: NotRequired[str | None]
+    """Departamento (Departamento)."""
+    manager: NotRequired[str | None]
+    """Bajo qué jefe (emp_…)."""
+    branch: NotRequired[str | None]
+    """Una sucursal del emisor (brn_…), o null para la matriz."""
+    opened_on: NotRequired[str]
+    """Desde cuándo está abierta (YYYY-MM-DD); por omisión hoy."""
+
+
+class UpdatePayrollVacancyParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    title: str
+    """El puesto que falta cubrir."""
+    department: NotRequired[str | None]
+    """Departamento (Departamento)."""
+    manager: NotRequired[str | None]
+    """Bajo qué jefe (emp_…)."""
+    branch: NotRequired[str | None]
+    """Una sucursal del emisor (brn_…), o null para la matriz."""
+    opened_on: NotRequired[str]
+    """Desde cuándo está abierta (YYYY-MM-DD); por omisión hoy."""
 
 
 class UpdatePayrollTaxSettingsParams(TypedDict):
