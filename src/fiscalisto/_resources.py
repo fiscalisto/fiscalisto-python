@@ -7308,7 +7308,7 @@ class PayoutsResource:
 
     def create(
         self,
-        params: CreatePayoutParams,
+        params: CreatePayoutParams | None = None,
         *,
         idempotency_key: str | None = None,
         timeout: float | None = None,

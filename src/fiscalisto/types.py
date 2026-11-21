@@ -258,6 +258,7 @@ __all__ = [
     "CreatePaymentParamsDocumentsItem",
     "CreatePayoutParams",
     "CreatePayoutParamsInvoicesItem",
+    "CreatePayoutParamsPaymentsItem",
     "CreatePayrollApprovalParams",
     "CreatePayrollApprovalParamsPeriod",
     "CreatePayrollApprovalParamsReceiptsItem",
@@ -814,8 +815,10 @@ __all__ = [
     "OrderRulesParams",
     "PausePayoutsParams",
     "PayableInvoice",
+    "PayableInvoiceEarlyPayment",
     "PayableInvoiceList",
     "PayableInvoicePaymentHold",
+    "PayableInvoiceWithheld",
     "PayeeAccount",
     "PayeeAccountList",
     "Payout",
@@ -1244,6 +1247,7 @@ __all__ = [
     "UpdateSelfInvoicingParamsPortalStyleTextsConceptsItemized",
     "UpdateSelfInvoicingParamsPortalStyleTextsConceptsSingle",
     "UpdateSelfInvoicingParamsPortalStyleTextsConceptsTitle",
+    "UpdateSelfInvoicingParamsPortalStyleTextsDetailLabel",
     "UpdateSelfInvoicingParamsPortalStyleTextsFindButton",
     "UpdateSelfInvoicingParamsPortalStyleTextsHowQuestion",
     "UpdateSelfInvoicingParamsPortalStyleTextsMessage",
@@ -4819,7 +4823,7 @@ class SatInvoice(TypedDict):
     paid_otherwise: SatInvoicePaidOtherwise | None
     """Solo recibidas, marcadas con mark_paid, en la app o por una regla: without_complement true en una PPD pagada sin complemento de pago (el SAT la sigue viendo sin pagar); false en una PUE, donde solo se anotó de dónde salió el dinero."""
     cash_confirmation: Literal["pending", "confirmed"] | None
-    """Solo en una PUE recibida pagada en efectivo cuando la empresa pide confirmar estos pagos (Ajustes › Pagos sin complemento): pending hasta que alguien anote de dónde salió el dinero (mark_paid con money_source), confirmed después. Null en las demás. Sus impuestos no cambian."""
+    """Solo en una PUE recibida pagada en efectivo cuando la empresa pide confirmar estos pagos (Ajustes › Pagos en efectivo): pending hasta que alguien anote de dónde salió el dinero (mark_paid con money_source), confirmed después. Null en las demás. Sus impuestos no cambian."""
     cost_center: str | None
     """Su centro de costo (ccn_…), o null. Póngalo o cámbielo con POST /v1/sat_invoices/{id}."""
     tags: list[SatInvoiceTagsItem]
@@ -6875,6 +6879,8 @@ class TicketLinesItem(TypedDict):
     """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
     local_taxes: list[TicketLinesItemLocalTaxesItem]
     """Sus impuestos locales (los de su producto o los que mandó), incluidos en su total."""
+    detail: str | None
+    """El detalle que mandó (noches, fechas, reservación): va después de la descripción en la factura según `invoice_concepts.line_detail` de la autofactura."""
     quantity: float
     """Cantidad (Cantidad). Por omisión 1."""
     total: float
@@ -7056,6 +7062,8 @@ class InvoiceConcepts(TypedDict):
     """Lo que ningún grupo toma: itemized, desglosado; group, en un concepto más llamado ungrouped_name."""
     ungrouped_name: str
     """El nombre del concepto para lo que ningún grupo toma."""
+    line_detail: Literal["customer", "always", "never"]
+    """Qué pasa con el detail de cada línea del ticket: customer, el comprador ve la casilla sin marcar y la marca si lo quiere; always, va siempre después de la descripción; never, no va nunca."""
 
 
 class SelfInvoicing(TypedDict):
@@ -10473,6 +10481,24 @@ class PayoutTransfer(TypedDict):
     """Cuándo llegó o se resolvió, o null."""
 
 
+class PayableInvoiceWithheld(TypedDict):
+    isr: float
+    """ISR retenido en toda la factura."""
+    vat: float
+    """IVA retenido en toda la factura."""
+
+
+class PayableInvoiceEarlyPayment(TypedDict):
+    status: Literal["requested", "accepted"]
+    """requested: el proveedor lo pidió en el portal y nadie lo ha decidido; accepted: se aceptó."""
+    pay_on: str
+    """El día en que se paga (AAAA-MM-DD)."""
+    discount: float
+    """El descuento por pagar antes."""
+    discount_pending: float
+    """Lo del descuento que su nota de crédito aún no cubre. Ya está fuera de amount_due."""
+
+
 class PayableInvoicePaymentHold(TypedDict):
     rule: str
     """La regla que lo retuvo, por su nombre."""
@@ -10510,6 +10536,10 @@ class PayableInvoice(TypedDict):
     """Lo que falta por pagar, en su moneda."""
     payment_method: str | None
     """PUE o PPD, o null."""
+    withheld: PayableInvoiceWithheld | None
+    """Las retenciones de la factura. total y amount_due ya vienen sin ellas: el pago manda el neto y la empresa las entera al SAT a más tardar el 17 del mes siguiente. null: no retiene."""
+    early_payment: PayableInvoiceEarlyPayment | None
+    """Pronto pago del portal de proveedores. Aceptado, amount_due ya es el total menos el descuento hasta que llega la nota de crédito del proveedor. null: no tiene."""
     in_payout: str | None
     """El pago abierto (pyo_…) en el que ya está, o null."""
     payment_hold: PayableInvoicePaymentHold | None
@@ -18361,6 +18391,19 @@ class CreatePayoutParamsInvoicesItem(TypedDict):
     """Por qué paga menos de lo que falta («Parcial», «Anticipo»…)."""
 
 
+class CreatePayoutParamsPaymentsItem(TypedDict):
+    tax_id: str
+    """El RFC de quien recibe (un proveedor o una persona), con una cuenta aprobada en Cuentas de proveedores."""
+    name: NotRequired[str | None]
+    """Su nombre, como se ve en el pago."""
+    amount: float
+    """Cuánto mandarle, en pesos."""
+    description: NotRequired[str | None]
+    """Qué se paga («Nómina 1.ª quincena de noviembre», «Anticipo»). Si Configurar pagos lo pide, es obligatorio."""
+    no_invoice_reason: NotRequired[str | None]
+    """Si nunca llevará factura (una nómina, cuyo CFDI es el recibo; un reembolso), por qué: no se le pide factura ni aparece en Pagos sin factura. Sin él, se le pide como a cualquier pago sin factura."""
+
+
 class CreatePayoutParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…). Por omisión, su único emisor."""
@@ -18372,8 +18415,10 @@ class CreatePayoutParams(TypedDict):
     """Una nota para quien lo revisa y lo firma."""
     exchange_rate: NotRequired[Literal["official", "fixed"]]
     """En un pago programado con facturas en otra moneda: official (el tipo de cambio oficial; si al salir se movió más de la tolerancia de Configurar pagos, se detiene hasta firmarlo de nuevo) o fixed (sale al tipo de cambio de hoy, se mueva o no). Por omisión, lo que diga Configurar pagos."""
-    invoices: list[CreatePayoutParamsInvoicesItem]
-    """Las facturas recibidas a pagar (de 1 a 500). Las de un mismo proveedor van en una sola transferencia a su cuenta aprobada."""
+    invoices: NotRequired[list[CreatePayoutParamsInvoicesItem]]
+    """Las facturas recibidas a pagar (hasta 500). Las de un mismo proveedor van en una sola transferencia a su cuenta aprobada. Mande invoices, payments o las dos."""
+    payments: NotRequired[list[CreatePayoutParamsPaymentsItem]]
+    """Pagos sin factura (hasta 500 entre los dos arreglos): una nómina, un anticipo, un reembolso. Los de un mismo RFC van en una sola transferencia."""
 
 
 class ListPayoutsParams(TypedDict):
@@ -18514,6 +18559,8 @@ class CreateTicketParamsLinesItem(TypedDict):
     """Tasa de IVA incluida en su total. Por omisión 0.16."""
     local_taxes: NotRequired[list[CreateTicketParamsLinesItemLocalTaxesItem]]
     """Impuestos locales incluidos en su total, como el ISH 3.5% de hospedaje, con `product_key` (un producto lleva los suyos). Cada uno se calcula sobre la base de este concepto y la factura los suma por nombre y tasa en el complemento de impuestos locales."""
+    detail: NotRequired[str]
+    """Lo que solo dice esta venta, como las noches, fechas y número de reservación de una estancia. Con él, la factura dice «Hospedaje · 6 noches, del 14 al 20 de noviembre»; cuándo va lo decide `invoice_concepts.line_detail` de la autofactura (por omisión, el cliente lo elige en el portal)."""
     quantity: NotRequired[float]
     """Unidades (noches, piezas). Por omisión 1."""
     total: float
@@ -18680,6 +18727,13 @@ class UpdateSelfInvoicingParamsPortalStyleTextsConceptsGrouped(TypedDict):
     """La opción de conceptos por categoría («Por categoría») en inglés."""
 
 
+class UpdateSelfInvoicingParamsPortalStyleTextsDetailLabel(TypedDict):
+    es: NotRequired[str]
+    """La casilla del detalle de los conceptos («Incluir el detalle en la descripción…»; ver `invoice_concepts.line_detail`) en español."""
+    en: NotRequired[str]
+    """La casilla del detalle de los conceptos («Incluir el detalle en la descripción…»; ver `invoice_concepts.line_detail`) en inglés."""
+
+
 class UpdateSelfInvoicingParamsPortalStyleTexts(TypedDict):
     """Los textos, cada uno con `es` y `en`, combinados por llave con lo guardado. El título, el mensaje y dónde viene el código en español son `portal_title`, `portal_message` y `code_hint`; aquí van en inglés."""
     title: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsTitle | None]
@@ -18712,6 +18766,8 @@ class UpdateSelfInvoicingParamsPortalStyleTexts(TypedDict):
     """La opción de un solo concepto («Un solo concepto»); `null` vuelve al de Fiscalisto."""
     concepts_grouped: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsConceptsGrouped | None]
     """La opción de conceptos por categoría («Por categoría»); `null` vuelve al de Fiscalisto."""
+    detail_label: NotRequired[UpdateSelfInvoicingParamsPortalStyleTextsDetailLabel | None]
+    """La casilla del detalle de los conceptos («Incluir el detalle en la descripción…»; ver `invoice_concepts.line_detail`); `null` vuelve al de Fiscalisto."""
 
 
 class UpdateSelfInvoicingParamsPortalStyleWays(TypedDict):
@@ -18808,6 +18864,8 @@ class UpdateSelfInvoicingParamsInvoiceConcepts(TypedDict):
     """Con `grouped`, los renglones que ningún grupo toma: `itemized` (por omisión) como vienen, o `group` en un concepto más llamado `ungrouped_name`."""
     ungrouped_name: NotRequired[str]
     """El nombre de ese concepto, por omisión «Otros»."""
+    line_detail: NotRequired[Literal["customer", "always", "never"]]
+    """Qué pasa con el `detail` de cada línea del ticket (las noches, fechas y reservación de una estancia): `customer` (por omisión), el comprador ve la casilla «Incluir el detalle en la descripción» sin marcar y la marca si lo quiere; `always`, va siempre después de la descripción, sin casilla; `never`, no va nunca, sin casilla."""
 
 
 class UpdateSelfInvoicingParams(TypedDict):
