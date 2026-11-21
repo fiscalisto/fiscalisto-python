@@ -16,6 +16,7 @@ if TYPE_CHECKING:
         AccountRenumbering,
         AccountingBankMovement,
         AccountingBankMovementList,
+        AccountingSettings,
         AdjustCashForecastParams,
         AdvanceList,
         AdvanceTestClockParams,
@@ -177,6 +178,7 @@ if TYPE_CHECKING:
         FixedAssetList,
         FxRevaluation,
         GeneralLedger,
+        GetAccountingSettingsParams,
         GetAnnualAdjustmentParams,
         GetAnnualReturnParams,
         GetAttendanceParams,
@@ -452,6 +454,7 @@ if TYPE_CHECKING:
         Ticket,
         TrialBalance,
         UpdateAccountParams,
+        UpdateAccountingSettingsParams,
         UpdateAnnualAdjustmentParams,
         UpdateAutomaticEntryParams,
         UpdateBranchParams,
@@ -8587,6 +8590,54 @@ class FixedAssetsResource:
         return result
 
 
+class AccountingSettingsResource:
+    """Contabilidad: fiscalisto.accounting_settings."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetAccountingSettingsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AccountingSettings:
+        """Ver cómo se lleva la contabilidad
+
+        Si cada cliente y cada proveedor tiene su propia subcuenta (party_subaccounts), como Catálogo de cuentas › Subcuentas por cliente y proveedor en la app.
+
+        GET /v1/accounting/settings
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-accounting-settings
+        """
+        result: AccountingSettings = self._client.request(
+            "GET", "/v1/accounting/settings", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        params: UpdateAccountingSettingsParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AccountingSettings:
+        """Cambiar cómo se lleva la contabilidad
+
+        Con party_subaccounts en true, lo que debe cada cliente va a su subcuenta de Clientes (105-01-0001, 105-01-0002…) y lo que se le debe a cada proveedor a la suya de Proveedores (201-01-0001…), numeradas una vez en el orden en que aparecen sus CFDI y con su nombre; la balanza, los auxiliares, las pólizas y la contabilidad electrónica las usan. En false, sus saldos vuelven a Clientes y Proveedores; los números se conservan si se vuelve a activar. Aplica a toda la empresa del emisor y va a la bitácora.
+
+        POST /v1/accounting/settings
+        https://fiscalisto.com/docs/api/referencia/contabilidad/update-accounting-settings
+        """
+        result: AccountingSettings = self._client.request(
+            "POST", "/v1/accounting/settings", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class ClosedPeriodResource:
     """Contabilidad: fiscalisto.closed_period."""
 
@@ -11152,6 +11203,11 @@ class FiscalistoApi(Core):
     def fixed_assets(self) -> FixedAssetsResource:
         """Contabilidad."""
         return FixedAssetsResource(self)
+
+    @cached_property
+    def accounting_settings(self) -> AccountingSettingsResource:
+        """Contabilidad."""
+        return AccountingSettingsResource(self)
 
     @cached_property
     def closed_period(self) -> ClosedPeriodResource:

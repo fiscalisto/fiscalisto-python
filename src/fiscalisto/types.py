@@ -19,6 +19,7 @@ __all__ = [
     "AccountRenumberingAccountsItem",
     "AccountingBankMovement",
     "AccountingBankMovementList",
+    "AccountingSettings",
     "AdjustCashForecastParams",
     "Advance",
     "AdvanceCustomer",
@@ -514,6 +515,7 @@ __all__ = [
     "GeneralLedger",
     "GeneralLedgerAccountsItem",
     "GeneralLedgerAccountsItemMovementsItem",
+    "GetAccountingSettingsParams",
     "GetAnnualAdjustmentParams",
     "GetAnnualReturnParams",
     "GetAttendanceParams",
@@ -1166,6 +1168,7 @@ __all__ = [
     "TrialBalanceAccountsItem",
     "TrialBalanceTotals",
     "UpdateAccountParams",
+    "UpdateAccountingSettingsParams",
     "UpdateAnnualAdjustmentParams",
     "UpdateAutomaticEntryParams",
     "UpdateAutomaticEntryParamsLinesItem",
@@ -7508,6 +7511,18 @@ class ClosedPeriod(TypedDict):
     """El último mes cerrado (AAAA-MM), con todos los anteriores; null si ninguno está cerrado."""
     closed_at: str | None
     """Cuándo se cerró, o null."""
+
+
+class AccountingSettings(TypedDict):
+    """Cómo se lleva la contabilidad de la empresa del emisor: si cada cliente y cada proveedor tiene su propia subcuenta de Clientes o Proveedores."""
+    object: Literal["accounting_settings"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    party_subaccounts: bool
+    """true si cada cliente y cada proveedor tiene su subcuenta (105-01-0001…, 201-01-0001…); false si todos van a Clientes y Proveedores."""
 
 
 class FxRevaluationCurrenciesItem(TypedDict):
@@ -19470,6 +19485,19 @@ class DisposeFixedAssetParams(TypedDict):
     """sale (venta) o write_off (robo, pérdida, desecho)."""
     note: NotRequired[str | None]
     """Una nota."""
+
+
+class GetAccountingSettingsParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/settings."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateAccountingSettingsParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    party_subaccounts: bool
+    """true: cada cliente con su subcuenta de Clientes (105-01-0001…) y cada proveedor con la suya de Proveedores (201-01-0001…); false: todos en Clientes y Proveedores."""
 
 
 class GetClosedPeriodParams(TypedDict):
