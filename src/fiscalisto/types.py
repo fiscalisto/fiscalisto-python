@@ -815,6 +815,7 @@ __all__ = [
     "PausePayoutsParams",
     "PayableInvoice",
     "PayableInvoiceList",
+    "PayableInvoicePaymentHold",
     "PayeeAccount",
     "PayeeAccountList",
     "Payout",
@@ -5402,7 +5403,7 @@ class RuleConditions(TypedDict):
 
 
 class RuleActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "category", "stage", "close", "ask_approval", "notify", "lote"]
+    type: Literal["tag", "cost_center", "category", "stage", "close", "ask_approval", "notify", "lote", "hold_payment", "email_supplier", "review_findings"]
     """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
     tag: NotRequired[str]
     """tag: la etiqueta (tag_…, GET /v1/tags)."""
@@ -5417,7 +5418,15 @@ class RuleActionsItem(TypedDict):
     members: NotRequired[list[str]]
     """notify: a quién (mem_…)."""
     note: NotRequired[str | None]
-    """notify: lo que dice el aviso."""
+    """notify: lo que dice el aviso. hold_payment: por qué se retiene."""
+    topic: NotRequired[Literal["ordenes", "pagos", "facturas", "complementos", "documentos", "precios"]]
+    """email_supplier: el tema de los correos del proveedor a los que va."""
+    subject: NotRequired[str]
+    """email_supplier: el asunto."""
+    message: NotRequired[str]
+    """email_supplier: el mensaje."""
+    findings: NotRequired[list[str]]
+    """review_findings: los hallazgos que da por revisados (sus códigos)."""
     lote_name: NotRequired[str | None]
     """lote: el nombre del lote; null: «Lote del jueves 27 nov»."""
     pay_on: NotRequired[Literal["monday", "tuesday", "wednesday", "thursday", "friday", "in_days", "due"]]
@@ -5438,7 +5447,7 @@ class Rule(TypedDict):
     """El emisor (iss_…)."""
     name: str
     """Nombre."""
-    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "invoice.approved", "invoice.rejected", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
+    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "invoice.approved", "invoice.rejected", "finding.created", "payout.submitted", "payout.paid", "payout.failed", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
     """Cuándo corre."""
     conditions: RuleConditions
     """Si: lo que tiene que cumplir la factura u orden. Sin condiciones, corre siempre."""
@@ -5495,7 +5504,7 @@ class RuleRun(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     rule: str
     """La regla (rul_…)."""
-    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "invoice.approved", "invoice.rejected", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
+    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "invoice.approved", "invoice.rejected", "finding.created", "payout.submitted", "payout.paid", "payout.failed", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
     """Cuándo corre."""
     record: str
     """La factura u orden, en palabras."""
@@ -10460,6 +10469,14 @@ class PayoutTransfer(TypedDict):
     """Cuándo llegó o se resolvió, o null."""
 
 
+class PayableInvoicePaymentHold(TypedDict):
+    rule: str
+    """La regla que lo retuvo, por su nombre."""
+    note: str | None
+    """Por qué, como lo dice la regla."""
+    held_at: str
+
+
 class PayableInvoice(TypedDict):
     """Una factura recibida con lo que falta por pagar, como la muestra Pagos › Por pagar: lo pagado cuenta complementos, notas de crédito, pagos de Fiscalisto y pagos registrados a mano."""
     object: Literal["payable_invoice"]
@@ -10490,6 +10507,8 @@ class PayableInvoice(TypedDict):
     """PUE o PPD, o null."""
     in_payout: str | None
     """El pago abierto (pyo_…) en el que ya está, o null."""
+    payment_hold: PayableInvoicePaymentHold | None
+    """Si una regla de Ajustes › Reglas retuvo su pago: no se paga hasta que alguien con permiso lo suelte en la app («Soltar el pago»). null: no está retenido."""
     warnings: list[str]
     """Lo que las Reglas antes de pagar encontraron (por ejemplo cancelada en el SAT, o proveedor en la lista 69-B)."""
     app_url: str
@@ -16753,8 +16772,8 @@ class CreateRuleParamsConditions(TypedDict):
 
 
 class CreateRuleParamsActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "lote"]
-    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla."""
+    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "lote", "hold_payment", "email_supplier", "review_findings"]
+    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura."""
     tag: NotRequired[str | int]
     """tag: la etiqueta (tag_…, GET /v1/tags). Un número, el id de antes, también se acepta."""
     category: NotRequired[Literal["Renta y arrendamiento", "Servicios profesionales", "Nómina y personal", "Transporte y fletes", "Combustible", "Viáticos y viajes", "Alimentos y representación", "Telecomunicaciones e internet", "Energía y agua", "Software y suscripciones", "Equipo de cómputo", "Papelería y oficina", "Mantenimiento y reparaciones", "Publicidad y marketing", "Seguros y fianzas", "Comisiones bancarias y financieras", "Impuestos y derechos", "Compras de mercancía e inventario", "Materias primas y producción", "Activo fijo y mobiliario", "Vehículos", "Capacitación", "Donativos", "Otros gastos"]]
@@ -16774,7 +16793,15 @@ class CreateRuleParamsActionsItem(TypedDict):
     members: NotRequired[list[str]]
     """notify: a quién (mem_…, GET /v1/members)."""
     note: NotRequired[str | None]
-    """notify: lo que dice el aviso."""
+    """notify: lo que dice el aviso. hold_payment: por qué se retiene (hasta 200)."""
+    topic: NotRequired[Literal["ordenes", "pagos", "facturas", "complementos", "documentos", "precios"]]
+    """email_supplier: el tema de los correos del proveedor a los que va (ordenes, pagos, facturas, complementos, documentos, precios; Ajustes › Correos a proveedores). Sin correos de ese tema, va a sus correos generales. Por omisión, facturas."""
+    subject: NotRequired[str]
+    """email_supplier: el asunto. Puede llevar {folio}, {total}, {fecha} y {empresa}."""
+    message: NotRequired[str]
+    """email_supplier: el mensaje. Puede llevar {folio}, {total}, {fecha} y {empresa}."""
+    findings: NotRequired[list[str]]
+    """review_findings: los hallazgos que da por revisados (sus códigos, `code` en GET /v1/sat_findings). No los que cambian impuestos o la lista negra: cancelado, efos_definitivo, efos_presunto, lista_69b_bis, lista_69."""
 
 
 class CreateRuleParams(TypedDict):
@@ -16782,8 +16809,8 @@ class CreateRuleParams(TypedDict):
     """El emisor (iss_…). Por omisión, su único emisor."""
     name: NotRequired[str]
     """Cómo se llama en Ajustes › Reglas. Sin él, se nombra por lo que hace."""
-    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "invoice.approved", "invoice.rejected", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
-    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), invoice.paid (una factura PPD queda pagada), invoice.cancelled (el SAT la cancela), invoice.approved (se aprueba en el Portal de proveedores), invoice.rejected (se rechaza en el portal), purchase_order.saved, .approved, .rejected, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered."""
+    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "invoice.approved", "invoice.rejected", "finding.created", "payout.submitted", "payout.paid", "payout.failed", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
+    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), invoice.paid (una factura PPD queda pagada), invoice.cancelled (el SAT la cancela), invoice.approved (se aprueba en el Portal de proveedores), invoice.rejected (se rechaza en el portal), payout.submitted (se manda a firmar un pago que la incluye), payout.paid (se le paga una factura a un proveedor), payout.failed (falla o se devuelve su pago), finding.created (aparece un hallazgo en una factura de los últimos 45 días), purchase_order.saved, .approved, .rejected, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered."""
     conditions: NotRequired[CreateRuleParamsConditions]
     """Si: lo que tiene que cumplir. Sin condiciones, corre siempre."""
     actions: list[CreateRuleParamsActionsItem]
@@ -16863,8 +16890,8 @@ class UpdateRuleParamsConditions(TypedDict):
 
 
 class UpdateRuleParamsActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "lote"]
-    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla."""
+    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "lote", "hold_payment", "email_supplier", "review_findings"]
+    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura."""
     tag: NotRequired[str | int]
     """tag: la etiqueta (tag_…, GET /v1/tags). Un número, el id de antes, también se acepta."""
     category: NotRequired[Literal["Renta y arrendamiento", "Servicios profesionales", "Nómina y personal", "Transporte y fletes", "Combustible", "Viáticos y viajes", "Alimentos y representación", "Telecomunicaciones e internet", "Energía y agua", "Software y suscripciones", "Equipo de cómputo", "Papelería y oficina", "Mantenimiento y reparaciones", "Publicidad y marketing", "Seguros y fianzas", "Comisiones bancarias y financieras", "Impuestos y derechos", "Compras de mercancía e inventario", "Materias primas y producción", "Activo fijo y mobiliario", "Vehículos", "Capacitación", "Donativos", "Otros gastos"]]
@@ -16884,14 +16911,22 @@ class UpdateRuleParamsActionsItem(TypedDict):
     members: NotRequired[list[str]]
     """notify: a quién (mem_…, GET /v1/members)."""
     note: NotRequired[str | None]
-    """notify: lo que dice el aviso."""
+    """notify: lo que dice el aviso. hold_payment: por qué se retiene (hasta 200)."""
+    topic: NotRequired[Literal["ordenes", "pagos", "facturas", "complementos", "documentos", "precios"]]
+    """email_supplier: el tema de los correos del proveedor a los que va (ordenes, pagos, facturas, complementos, documentos, precios; Ajustes › Correos a proveedores). Sin correos de ese tema, va a sus correos generales. Por omisión, facturas."""
+    subject: NotRequired[str]
+    """email_supplier: el asunto. Puede llevar {folio}, {total}, {fecha} y {empresa}."""
+    message: NotRequired[str]
+    """email_supplier: el mensaje. Puede llevar {folio}, {total}, {fecha} y {empresa}."""
+    findings: NotRequired[list[str]]
+    """review_findings: los hallazgos que da por revisados (sus códigos, `code` en GET /v1/sat_findings). No los que cambian impuestos o la lista negra: cancelado, efos_definitivo, efos_presunto, lista_69b_bis, lista_69."""
 
 
 class UpdateRuleParams(TypedDict):
     name: NotRequired[str]
     """Cómo se llama en Ajustes › Reglas. Sin él, se nombra por lo que hace."""
-    trigger: NotRequired[Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "invoice.approved", "invoice.rejected", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]]
-    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), invoice.paid (una factura PPD queda pagada), invoice.cancelled (el SAT la cancela), invoice.approved (se aprueba en el Portal de proveedores), invoice.rejected (se rechaza en el portal), purchase_order.saved, .approved, .rejected, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered."""
+    trigger: NotRequired[Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "invoice.approved", "invoice.rejected", "finding.created", "payout.submitted", "payout.paid", "payout.failed", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]]
+    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), invoice.paid (una factura PPD queda pagada), invoice.cancelled (el SAT la cancela), invoice.approved (se aprueba en el Portal de proveedores), invoice.rejected (se rechaza en el portal), payout.submitted (se manda a firmar un pago que la incluye), payout.paid (se le paga una factura a un proveedor), payout.failed (falla o se devuelve su pago), finding.created (aparece un hallazgo en una factura de los últimos 45 días), purchase_order.saved, .approved, .rejected, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered."""
     conditions: NotRequired[UpdateRuleParamsConditions]
     """Si: lo que tiene que cumplir. Sin condiciones, corre siempre."""
     actions: NotRequired[list[UpdateRuleParamsActionsItem]]
