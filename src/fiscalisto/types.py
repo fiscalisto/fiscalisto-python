@@ -272,6 +272,7 @@ __all__ = [
     "CreatePayrollBatchParamsPeriod",
     "CreatePayrollBatchParamsReceiptsItem",
     "CreatePayrollBatchParamsReceiptsItemPeriod",
+    "CreatePayrollPayoutParams",
     "CreatePayrollProvisionParams",
     "CreatePayrollReceiptParams",
     "CreatePayrollReceiptParamsIncidents",
@@ -868,6 +869,8 @@ __all__ = [
     "PayrollOrgChartVacanciesItemMonthlyCost",
     "PayrollOrgChartVacanciesItemMonthlyCostMax",
     "PayrollOrgChartVacanciesItemMonthlyCostMin",
+    "PayrollPayout",
+    "PayrollPayoutExcludedItem",
     "PayrollProvision",
     "PayrollProvisionCalculated",
     "PayrollProvisionEmployeesItem",
@@ -10598,6 +10601,37 @@ class PayeeAccount(TypedDict):
     """Cuándo se agregó."""
 
 
+class PayrollPayoutExcludedItem(TypedDict):
+    employee: str | None
+    """El empleado (emp_…); null si el recibo lo timbró otro sistema y no hay empleado con ese RFC."""
+    name: str
+    """Nombre."""
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    amount: float
+    """Su neto: la suma de sus recibos con esa fecha de pago, menos vales."""
+    status: Literal["ready", "add", "waiting", "blocked", "no_clabe", "zero", "in_payout"]
+    """add: su CLABE aún no está registrada en Pagos (se registra en la app); waiting: su cuenta está en verificación o en su espera; blocked: su cuenta tiene un problema; no_clabe: no tiene CLABE en su ficha; zero: su neto es cero; in_payout: ya va en otro pago de esta nómina; ready: no cupo (un pago lleva hasta 500)."""
+    reason: str
+    """Por qué no va en este pago."""
+
+
+class PayrollPayout(TypedDict):
+    """El pago de una nómina en Pagos: el neto de cada empleado a su CLABE aprobada, en un pago en borrador que alguien del equipo firma en la app."""
+    object: Literal["payroll_payout"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…) que paga."""
+    payment_date: str
+    """La fecha de pago de los recibos que paga."""
+    payout: Payout
+    """El pago en borrador (pyo_…), con una línea por empleado: se firma en la app, en su app_url."""
+    excluded: list[PayrollPayoutExcludedItem]
+    """Quién no va en este pago y por qué: su CLABE no está registrada o aún no se puede pagar, no tiene CLABE, su neto es cero o ya va en otro pago de esta nómina."""
+
+
 class PayoutsPause(TypedDict):
     """«Pausar todos los pagos» de la empresa: mientras está en pausa no sale ninguna transferencia (ni firmadas, ni reintentos, ni recurrentes). Se reanuda solo en la app, con las firmas de Quién firma."""
     object: Literal["payouts_pause"]
@@ -16150,6 +16184,15 @@ class CreatePayrollBankFileParams(TypedDict):
     """Banamex: su número de cliente de BancaNet (12 dígitos)."""
     issuer_number: NotRequired[str]
     """Banorte: su número de emisora (5 dígitos)."""
+
+
+class CreatePayrollPayoutParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    payment_date: str
+    """La fecha de pago (FechaPago) de los recibos de nómina timbrados que paga (AAAA-MM-DD)."""
+    pay_on: NotRequired[str]
+    """El día en que sale (AAAA-MM-DD, hoy o después). Por omisión, hoy: sale en cuanto lo firmen."""
 
 
 class CreateImssMovementParams(TypedDict):
