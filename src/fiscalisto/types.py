@@ -4326,7 +4326,7 @@ class CandidateAnswersItem(TypedDict):
     type: str
     """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
     value: str | list[str] | None
-    """Valor de la mercancía (ValorMercancia); obligatorio en transporte aéreo."""
+    """Lo que respondió: un texto, o una lista en una pregunta de varias opciones; null si no respondió."""
     file: CandidateAnswersItemFile | None
     """El archivo que subió, en una pregunta de tipo file."""
 
@@ -6021,7 +6021,7 @@ class ProductionOrderComponentsItem(TypedDict):
     tracks_stock: bool
     """true si lleva existencias; false es un servicio, que solo suma su costo."""
     value: float | None
-    """Valor de la mercancía (ValorMercancia); obligatorio en transporte aéreo."""
+    """Lo que vale el componente usado (cantidad por costo), o null si no tiene costo."""
 
 
 class ProductionOrderOtherCostsItem(TypedDict):
@@ -10220,7 +10220,7 @@ class PortalSupplierScorePartsItem(TypedDict):
 class PortalSupplierScore(TypedDict):
     """Su calificación de 0 a 100 de los últimos 12 meses (value, null sin datos; level excellent, good, fair o poor) y cada parte: invoices (facturas a la primera), deliveries (entregas a tiempo), prices (precio y cantidad de la orden), documents (documentos al día) y complements (complementos de pago), con good de total casos."""
     value: int | None
-    """Valor de la mercancía (ValorMercancia); obligatorio en transporte aéreo."""
+    """La calificación del proveedor, de 0 a 100, o null si aún no hay con qué calcularla."""
     level: Literal["excellent", "good", "fair", "poor"] | None
     """Nivel educativo (nivelEducativo)."""
     parts: list[PortalSupplierScorePartsItem]
@@ -10356,6 +10356,8 @@ class Payout(TypedDict):
     """draft (borrador: falta que alguien lo firme en la app), pending_approval (faltan firmas), approved (firmado: sale en su día), sending, paid (llegaron todas), partially_paid (llegaron algunas), failed (no llegó ninguna) o canceled."""
     pay_on: str
     """El día en que sale (AAAA-MM-DD, hora de la Ciudad de México)."""
+    exchange_rate: Literal["official", "fixed"] | None
+    """En un pago programado con facturas en otra moneda, cómo toma el tipo de cambio: official (el oficial; si al salir se movió más de la tolerancia de Configurar pagos, se detiene hasta firmarlo de nuevo) o fixed (sale al tipo de cambio con que se firmó). null en pesos o si sale hoy."""
     total: float
     """La suma de sus transferencias, en pesos."""
     currency: Literal["MXN"]
@@ -10507,6 +10509,10 @@ class PayeeAccount(TypedDict):
     """El nombre del titular que confirmó el banco, o null."""
     third_party: bool
     """true si es de un tercero que la empresa autorizó."""
+    verification: Literal["bank", "by_hand", "third_party"] | None
+    """Cómo se confió en la cuenta: bank (el banco confirmó el RFC del proveedor), by_hand (alguien la verificó a mano porque el RFC del banco solo cambiaba la homoclave o no venía), third_party (se autorizó como de un tercero), o null si aún no está aprobada."""
+    verified_by_hand_reason: str | None
+    """Cómo la verificó a mano quien la aprobó, o null."""
     status: Literal["verifying", "pending_approval", "holder_mismatch", "failed", "approved", "rejected", "replaced"]
     """verifying (verificando con el banco), pending_approval (verificada, por aprobar), holder_mismatch (es de otra persona), failed (no existe o no recibe), approved, rejected o replaced (la sustituyó otra)."""
     usable: bool
@@ -18264,6 +18270,8 @@ class CreatePayoutParams(TypedDict):
     """El día en que sale (AAAA-MM-DD, hoy o después). Por omisión, hoy: sale en cuanto lo firmen."""
     note: NotRequired[str | None]
     """Una nota para quien lo revisa y lo firma."""
+    exchange_rate: NotRequired[Literal["official", "fixed"]]
+    """En un pago programado con facturas en otra moneda: official (el tipo de cambio oficial; si al salir se movió más de la tolerancia de Configurar pagos, se detiene hasta firmarlo de nuevo) o fixed (sale al tipo de cambio de hoy, se mueva o no). Por omisión, lo que diga Configurar pagos."""
     invoices: list[CreatePayoutParamsInvoicesItem]
     """Las facturas recibidas a pagar (de 1 a 500). Las de un mismo proveedor van en una sola transferencia a su cuenta aprobada."""
 
