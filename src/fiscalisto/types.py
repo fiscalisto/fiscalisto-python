@@ -5211,10 +5211,12 @@ class RuleConditions(TypedDict):
 
 
 class RuleActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "stage", "close", "notify"]
+    type: Literal["tag", "cost_center", "category", "stage", "close", "notify"]
     """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
     tag: NotRequired[str]
     """tag: la etiqueta (tag_…, GET /v1/tags)."""
+    category: NotRequired[str]
+    """category: la categoría de gasto (facturas recibidas)."""
     remove_when_unmet: NotRequired[bool]
     """tag: se quita si la orden deja de cumplir."""
     cost_center: NotRequired[str]
@@ -5239,7 +5241,7 @@ class Rule(TypedDict):
     """El emisor (iss_…)."""
     name: str
     """Nombre."""
-    trigger: Literal["invoice.received", "invoice.issued", "purchase_order.saved", "purchase_order.approved", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
+    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "purchase_order.saved", "purchase_order.approved", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
     """Cuándo corre."""
     conditions: RuleConditions
     """Si: lo que tiene que cumplir la factura u orden. Sin condiciones, corre siempre."""
@@ -5296,7 +5298,7 @@ class RuleRun(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     rule: str
     """La regla (rul_…)."""
-    trigger: Literal["invoice.received", "invoice.issued", "purchase_order.saved", "purchase_order.approved", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
+    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "purchase_order.saved", "purchase_order.approved", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
     """Cuándo corre."""
     record: str
     """La factura u orden, en palabras."""
@@ -16280,7 +16282,7 @@ class UploadBranchLogoParams(TypedDict):
 
 class CreateRuleParamsConditionsConditionsItem(TypedDict):
     field: str
-    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, total, subtotal, tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note."""
+    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note."""
     operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
     """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
     values: NotRequired[list[str]]
@@ -16295,7 +16297,7 @@ class CreateRuleParamsConditionsConditionsItem(TypedDict):
 
 class CreateRuleParamsConditionsGroupsItemConditionsItem(TypedDict):
     field: str
-    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, total, subtotal, tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note."""
+    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note."""
     operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
     """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
     values: NotRequired[list[str]]
@@ -16326,10 +16328,12 @@ class CreateRuleParamsConditions(TypedDict):
 
 
 class CreateRuleParamsActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "stage", "close", "notify"]
-    """tag (órdenes): poner la etiqueta `tag`; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; notify: avisar a `members` (mem_…)."""
+    type: Literal["tag", "cost_center", "stage", "close", "notify", "category"]
+    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; notify: avisar a `members` (mem_…)."""
     tag: NotRequired[str | int]
     """tag: la etiqueta (tag_…, GET /v1/tags). Un número, el id de antes, también se acepta."""
+    category: NotRequired[Literal["Renta y arrendamiento", "Servicios profesionales", "Nómina y personal", "Transporte y fletes", "Combustible", "Viáticos y viajes", "Alimentos y representación", "Telecomunicaciones e internet", "Energía y agua", "Software y suscripciones", "Equipo de cómputo", "Papelería y oficina", "Mantenimiento y reparaciones", "Publicidad y marketing", "Seguros y fianzas", "Comisiones bancarias y financieras", "Impuestos y derechos", "Compras de mercancía e inventario", "Materias primas y producción", "Activo fijo y mobiliario", "Vehículos", "Capacitación", "Donativos", "Otros gastos"]]
+    """category: la categoría de gasto, como la app la nombra («Combustible»)."""
     remove_when_unmet: NotRequired[bool]
     """tag: quitarla si la orden deja de cumplir."""
     cost_center: NotRequired[str]
@@ -16347,8 +16351,8 @@ class CreateRuleParams(TypedDict):
     """El emisor (iss_…). Por omisión, su único emisor."""
     name: NotRequired[str]
     """Cómo se llama en Ajustes › Reglas. Sin él, se nombra por lo que hace."""
-    trigger: Literal["invoice.received", "invoice.issued", "purchase_order.saved", "purchase_order.approved", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
-    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), purchase_order.saved, .approved, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered."""
+    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "purchase_order.saved", "purchase_order.approved", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]
+    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), invoice.paid (una factura PPD queda pagada), invoice.cancelled (el SAT la cancela), purchase_order.saved, .approved, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered."""
     conditions: NotRequired[CreateRuleParamsConditions]
     """Si: lo que tiene que cumplir. Sin condiciones, corre siempre."""
     actions: list[CreateRuleParamsActionsItem]
@@ -16382,7 +16386,7 @@ class OrderRulesParams(TypedDict):
 
 class UpdateRuleParamsConditionsConditionsItem(TypedDict):
     field: str
-    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, total, subtotal, tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note."""
+    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note."""
     operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
     """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
     values: NotRequired[list[str]]
@@ -16397,7 +16401,7 @@ class UpdateRuleParamsConditionsConditionsItem(TypedDict):
 
 class UpdateRuleParamsConditionsGroupsItemConditionsItem(TypedDict):
     field: str
-    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, total, subtotal, tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note."""
+    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note."""
     operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
     """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
     values: NotRequired[list[str]]
@@ -16428,10 +16432,12 @@ class UpdateRuleParamsConditions(TypedDict):
 
 
 class UpdateRuleParamsActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "stage", "close", "notify"]
-    """tag (órdenes): poner la etiqueta `tag`; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; notify: avisar a `members` (mem_…)."""
+    type: Literal["tag", "cost_center", "stage", "close", "notify", "category"]
+    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; notify: avisar a `members` (mem_…)."""
     tag: NotRequired[str | int]
     """tag: la etiqueta (tag_…, GET /v1/tags). Un número, el id de antes, también se acepta."""
+    category: NotRequired[Literal["Renta y arrendamiento", "Servicios profesionales", "Nómina y personal", "Transporte y fletes", "Combustible", "Viáticos y viajes", "Alimentos y representación", "Telecomunicaciones e internet", "Energía y agua", "Software y suscripciones", "Equipo de cómputo", "Papelería y oficina", "Mantenimiento y reparaciones", "Publicidad y marketing", "Seguros y fianzas", "Comisiones bancarias y financieras", "Impuestos y derechos", "Compras de mercancía e inventario", "Materias primas y producción", "Activo fijo y mobiliario", "Vehículos", "Capacitación", "Donativos", "Otros gastos"]]
+    """category: la categoría de gasto, como la app la nombra («Combustible»)."""
     remove_when_unmet: NotRequired[bool]
     """tag: quitarla si la orden deja de cumplir."""
     cost_center: NotRequired[str]
@@ -16447,8 +16453,8 @@ class UpdateRuleParamsActionsItem(TypedDict):
 class UpdateRuleParams(TypedDict):
     name: NotRequired[str]
     """Cómo se llama en Ajustes › Reglas. Sin él, se nombra por lo que hace."""
-    trigger: NotRequired[Literal["invoice.received", "invoice.issued", "purchase_order.saved", "purchase_order.approved", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]]
-    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), purchase_order.saved, .approved, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered."""
+    trigger: NotRequired[Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "purchase_order.saved", "purchase_order.approved", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered"]]
+    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), invoice.paid (una factura PPD queda pagada), invoice.cancelled (el SAT la cancela), purchase_order.saved, .approved, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered."""
     conditions: NotRequired[UpdateRuleParamsConditions]
     """Si: lo que tiene que cumplir. Sin condiciones, corre siempre."""
     actions: NotRequired[list[UpdateRuleParamsActionsItem]]
