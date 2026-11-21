@@ -102,6 +102,10 @@ __all__ = [
     "CancelSalesOrderDeliveryParams",
     "CancelSalesOrderParams",
     "CancelSatRetentionParams",
+    "Candidate",
+    "CandidateAnswersItem",
+    "CandidateAnswersItemFile",
+    "CandidateList",
     "CarryForwardAnnualReturnParams",
     "CashFlow",
     "CashFlowFinancing",
@@ -243,6 +247,10 @@ __all__ = [
     "CreateIssuerOnboardingLinkParams",
     "CreateIssuerParams",
     "CreateIssuerParamsDonationAuthorization",
+    "CreateJobFormParams",
+    "CreateJobFormParamsQuestionsItem",
+    "CreateJobFormParamsQuestionsItemRequirement",
+    "CreateJobFormParamsQuestionsItemRules",
     "CreateLedgerAccountParams",
     "CreateManualEntryParams",
     "CreateManualEntryParamsLinesItem",
@@ -528,6 +536,7 @@ __all__ = [
     "GetFinancialStatementsParams",
     "GetFxRevaluationParams",
     "GetGeneralLedgerParams",
+    "GetHiringParams",
     "GetInflationAdjustmentParams",
     "GetInvoiceCancellationReceiptParams",
     "GetInvoiceParams",
@@ -552,6 +561,10 @@ __all__ = [
     "GetTrialBalanceParams",
     "GetVariableSalaryParams",
     "GetVatRefundParams",
+    "HireCandidateParams",
+    "Hiring",
+    "HiringVacanciesItem",
+    "HiringVacanciesItemCandidatesItem",
     "ImportManualEntriesParams",
     "ImportManualEntriesParamsEntriesItem",
     "ImportManualEntriesParamsEntriesItemLinesItem",
@@ -690,6 +703,9 @@ __all__ = [
     "IssuerReadyEvent",
     "IssuerSatDownloads",
     "IssuerTestClock",
+    "JobForm",
+    "JobFormQuestionsItem",
+    "JobFormQuestionsItemRequirement",
     "JournalEntry",
     "JournalEntryLinesItem",
     "JournalEntryList",
@@ -702,6 +718,7 @@ __all__ = [
     "ListBankTransactionsParams",
     "ListBooksLogParams",
     "ListBranchesParams",
+    "ListCandidatesParams",
     "ListChartTemplatesParams",
     "ListConsolidationEliminationsParams",
     "ListCostCentersParams",
@@ -904,6 +921,7 @@ __all__ = [
     "ProductionOrderComponentsItem",
     "ProductionOrderList",
     "ProductionOrderOtherCostsItem",
+    "PublishPayrollVacancyParams",
     "PurchaseReceipt",
     "PurchaseReceiptFieldsItem",
     "PurchaseReceiptList",
@@ -1133,6 +1151,7 @@ __all__ = [
     "UpdateBranchParams",
     "UpdateBranchParamsAddress",
     "UpdateBranchParamsSeries",
+    "UpdateCandidateParams",
     "UpdateCashForecastItemParams",
     "UpdateCashForecastParams",
     "UpdateCashForecastParamsStartingBalance",
@@ -1153,11 +1172,16 @@ __all__ = [
     "UpdateExpensePolicyParams",
     "UpdateExpensePolicyParamsLimitsValue",
     "UpdateExpenseReportParams",
+    "UpdateHiringSettingsParams",
     "UpdateImssMovementParams",
     "UpdateInvoiceParams",
     "UpdateIssuerBrandingParams",
     "UpdateIssuerParams",
     "UpdateIssuerParamsDonationAuthorization",
+    "UpdateJobFormParams",
+    "UpdateJobFormParamsQuestionsItem",
+    "UpdateJobFormParamsQuestionsItemRequirement",
+    "UpdateJobFormParamsQuestionsItemRules",
     "UpdateLedgerBankAccountParams",
     "UpdateManualEntryParams",
     "UpdateManualEntryParamsLinesItem",
@@ -4177,6 +4201,170 @@ class PayrollOrgChart(TypedDict):
     """Los departamentos, cada uno después del de arriba."""
     vacancies: list[PayrollOrgChartVacanciesItem]
     """Los puestos sin persona todavía."""
+
+
+class HiringVacanciesItemCandidatesItem(TypedDict):
+    stage: str
+    """La etapa."""
+    count: int
+    """Cuántos hay en ella."""
+
+
+class HiringVacanciesItem(TypedDict):
+    id: str
+    """La vacante (vac_…)."""
+    title: str
+    """El puesto."""
+    department: str | None
+    """Departamento (Departamento)."""
+    status: Literal["pending_approval", "approved", "rejected", "filled"]
+    """Estado del objeto."""
+    published: bool
+    """Si está en la página de empleos."""
+    url: str | None
+    """Su página, si está publicada."""
+    description: str | None
+    """Descripción."""
+    requirements: list[str]
+    """Lo que pide."""
+    employment_type: Literal["full_time", "part_time", "fixed_term", "project", "internship"] | None
+    """El tipo de contrato."""
+    workplace: Literal["on_site", "hybrid", "remote"] | None
+    """Dónde se trabaja."""
+    show_salary: bool
+    """Si la página muestra el sueldo."""
+    closes_on: str | None
+    """Hasta cuándo recibe solicitudes (YYYY-MM-DD)."""
+    form: str | None
+    """Forma farmacéutica (FormaFarmaceutica), c_FormaFarmaceutica."""
+    candidates: list[HiringVacanciesItemCandidatesItem]
+    """Cuántos candidatos hay en cada etapa."""
+
+
+class Hiring(TypedDict):
+    """La página de empleos de un emisor: su configuración, sus formularios y sus vacantes."""
+    object: Literal["hiring"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    careers_url: str
+    """La página de empleos del emisor."""
+    enabled: bool
+    """Si la página se ve."""
+    intro: str | None
+    """El texto de arriba de la página."""
+    contact_email: str | None
+    """El correo para dudas y derechos ARCO de los candidatos; null usa el de Datos fiscales."""
+    stages: list[str]
+    """Las etapas de sus candidatos, en orden."""
+    unmet_requirements: Literal["flag", "warn"]
+    """Quien no cumple un requisito: flag, su solicitud llega marcada; warn, además se le dice antes de enviar."""
+    default_form: str | None
+    """El formulario (jbf_…) de las vacantes que no eligen uno; null el básico."""
+    forms: list[JobForm]
+    """Sus formularios de solicitud."""
+    vacancies: list[HiringVacanciesItem]
+    """Las vacantes abiertas, y las cubiertas que aún tienen candidatos."""
+
+
+class JobFormQuestionsItemRequirement(TypedDict):
+    answers: list[str]
+    """Las respuestas que lo cumplen."""
+    min: float | None
+    """En una number, el mínimo que lo cumple."""
+
+
+class JobFormQuestionsItem(TypedDict):
+    id: str
+    """Su clave: las respuestas van por ella."""
+    label: str
+    """La pregunta, como la lee quien se postula."""
+    help: str | None
+    """La ayuda bajo la caja."""
+    type: Literal["text", "longtext", "number", "date", "select", "multiselect", "yesno", "email", "phone", "url", "file"]
+    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    required: bool
+    """Si no se puede dejar en blanco."""
+    options: list[str]
+    """Las de select y multiselect."""
+    files: list[Literal["pdf", "image", "doc"]]
+    """Los archivos que toma una de tipo file."""
+    rules: dict[str, Any] | None
+    """Lo que se revisa de la respuesta (min_length, max, dates…)."""
+    requirement: JobFormQuestionsItemRequirement | None
+    """Si es un requisito, las respuestas o el mínimo que lo cumplen."""
+
+
+class JobForm(TypedDict):
+    """Un formulario de solicitud: las preguntas que llena quien se postula."""
+    id: str
+    """El formulario (jbf_…)."""
+    object: Literal["job_form"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    name: str
+    """Nombre."""
+    questions: list[JobFormQuestionsItem]
+    """Sus preguntas, en orden."""
+
+
+class CandidateAnswersItemFile(TypedDict):
+    name: str
+    """Nombre."""
+    size: int
+    """Su tamaño en bytes."""
+    url: str
+    """Dónde descargarlo en la API."""
+
+
+class CandidateAnswersItem(TypedDict):
+    question: str
+    """La clave de la pregunta."""
+    label: str
+    """La pregunta, como la leyó."""
+    type: str
+    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    value: str | list[str] | None
+    """Valor de la mercancía (ValorMercancia); obligatorio en transporte aéreo."""
+    file: CandidateAnswersItemFile | None
+    """El archivo que subió, en una pregunta de tipo file."""
+
+
+class Candidate(TypedDict):
+    """Una solicitud que llegó por la página de empleos."""
+    id: str
+    """La solicitud (cnd_…)."""
+    object: Literal["candidate"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    vacancy: str
+    """La vacante a la que se postuló (vac_…)."""
+    name: str
+    """Nombre."""
+    email: str
+    """Correo a donde se envía (varios separados por comas). Solo se usa si se pide enviarlo."""
+    phone: str | None
+    """Su teléfono, si lo dio."""
+    stage: str
+    """Su etapa, una de stages de hiring."""
+    rating: int | None
+    """De 1 a 5."""
+    note: str | None
+    """La nota de su equipo."""
+    meets_requirements: bool
+    """Si cumple todas las preguntas que son requisito."""
+    unmet_requirements: list[str]
+    """Las preguntas requisito que no cumple."""
+    answers: list[CandidateAnswersItem]
+    """Sus respuestas, en el orden de las preguntas que contestó."""
+    employee: str | None
+    """El empleado (emp_…) si se le contrató."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
 
 
 class ImssFilesFilesItem(TypedDict):
@@ -12323,6 +12511,17 @@ class EmployeeDeductionList(TypedDict):
     """La ruta de esta lista."""
 
 
+class CandidateList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[Candidate]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class InvoiceBatchList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -16112,6 +16311,188 @@ class UpdatePayrollVacancyParams(TypedDict):
 class FillPayrollVacancyParams(TypedDict):
     employee: str
     """Quien la ocupa (emp_…), ya dado de alta con POST /v1/employees: queda con el jefe, el departamento y la sucursal de la vacante."""
+
+
+class PublishPayrollVacancyParams(TypedDict):
+    published: bool
+    """true la pone en la página; false la quita."""
+    description: NotRequired[str | None]
+    """Qué hará la persona; los párrafos van separados por una línea en blanco."""
+    requirements: NotRequired[list[str]]
+    """Lo que pide, uno por renglón (escolaridad, experiencia…)."""
+    employment_type: NotRequired[Literal["full_time", "part_time", "fixed_term", "project", "internship"] | None]
+    """full_time, part_time, fixed_term (por tiempo determinado), project (por obra determinada) o internship (prácticas)."""
+    workplace: NotRequired[Literal["on_site", "hybrid", "remote"] | None]
+    """Dónde se trabaja: on_site (presencial), hybrid (híbrido) o remote."""
+    show_salary: NotRequired[bool]
+    """Si la página muestra el sueldo de la vacante (salary_min y salary_max)."""
+    closes_on: NotRequired[str | None]
+    """Hasta cuándo recibe solicitudes (YYYY-MM-DD)."""
+    form: NotRequired[str | None]
+    """El formulario que llenan (jbf_…); null el predeterminado."""
+
+
+class GetHiringParams(TypedDict):
+    """Los parámetros de GET /v1/hiring."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateHiringSettingsParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    enabled: NotRequired[bool]
+    """Si la página de empleos se ve."""
+    intro: NotRequired[str | None]
+    """El texto de arriba de la página: quiénes son y por qué trabajar ahí."""
+    contact_email: NotRequired[str | None]
+    """El correo para dudas de quien se postula y para sus derechos ARCO (aviso de privacidad). Sin él se usa el de Datos fiscales; sin ninguno, las vacantes no reciben solicitudes."""
+    stages: NotRequired[list[str]]
+    """Las etapas de sus candidatos, en orden. La primera es donde llegan."""
+    unmet_requirements: NotRequired[Literal["flag", "warn"]]
+    """Qué hacer con quien no cumple un requisito: flag la recibe marcada; warn le dice qué no cumple antes de enviar (puede enviarla igual) y también la marca."""
+    default_form: NotRequired[str | None]
+    """El formulario (jbf_…) de las vacantes que no eligen uno; null el básico."""
+
+
+# Lo que se revisa de la respuesta: largo y formato (any, digits, alnum) de un texto, mínimo, máximo y enteros de un número, qué fechas, y el ejemplo dentro de la caja vacía.
+CreateJobFormParamsQuestionsItemRules = TypedDict(
+    "CreateJobFormParamsQuestionsItemRules",
+    {
+        "min_length": "NotRequired[int | None]",
+        "max_length": "NotRequired[int | None]",
+        "format": "NotRequired[Literal[\"any\", \"digits\", \"alnum\"] | None]",
+        "min": "NotRequired[float | None]",
+        "max": "NotRequired[float | None]",
+        "integer": "NotRequired[bool | None]",
+        "dates": "NotRequired[Literal[\"any\", \"past\", \"future\", \"between\"] | None]",
+        "days": "NotRequired[int | None]",
+        "from": "NotRequired[str | None]",
+        "to": "NotRequired[str | None]",
+        "example": "NotRequired[str | None]",
+    },
+)
+
+
+class CreateJobFormParamsQuestionsItemRequirement(TypedDict):
+    answers: NotRequired[list[str]]
+    """Las respuestas que cumplen: ["si"] o ["no"] en una yesno, opciones en select y multiselect."""
+    min: NotRequired[float | None]
+    """En una number, el mínimo que cumple (años de experiencia…)."""
+
+
+class CreateJobFormParamsQuestionsItem(TypedDict):
+    id: NotRequired[str]
+    """Su clave en el formulario y en las respuestas; por omisión sale de label. Las de siempre: nombre, correo, telefono y cv."""
+    label: str
+    """La pregunta, como la lee quien se postula."""
+    help: NotRequired[str | None]
+    """Una ayuda bajo la caja."""
+    type: Literal["text", "longtext", "number", "date", "select", "multiselect", "yesno", "email", "phone", "url", "file"]
+    """text, longtext (párrafo), number, date, select (una de la lista), multiselect (varias), yesno, email, phone, url o file (un archivo)."""
+    required: bool
+    """Si no se puede dejar en blanco."""
+    options: NotRequired[list[str]]
+    """Las opciones de select y multiselect."""
+    files: NotRequired[list[Literal["pdf", "image", "doc"]]]
+    """Qué archivos toma una de tipo file: pdf, image (JPG, PNG), doc (.docx). Hasta 10 MB."""
+    rules: NotRequired[CreateJobFormParamsQuestionsItemRules | None]
+    """Lo que se revisa de la respuesta (largo, formato, mínimo, máximo, fechas, ejemplo)."""
+    requirement: NotRequired[CreateJobFormParamsQuestionsItemRequirement | None]
+    """Si es un requisito: quien no lo cumple queda marcado o se le avisa antes de enviar, como diga unmet_requirements."""
+
+
+class CreateJobFormParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    name: str
+    """Cómo lo llama su equipo."""
+    questions: list[CreateJobFormParamsQuestionsItem]
+    """Sus preguntas, en orden. nombre y correo van siempre (si no las manda, se agregan al principio)."""
+
+
+# Lo que se revisa de la respuesta: largo y formato (any, digits, alnum) de un texto, mínimo, máximo y enteros de un número, qué fechas, y el ejemplo dentro de la caja vacía.
+UpdateJobFormParamsQuestionsItemRules = TypedDict(
+    "UpdateJobFormParamsQuestionsItemRules",
+    {
+        "min_length": "NotRequired[int | None]",
+        "max_length": "NotRequired[int | None]",
+        "format": "NotRequired[Literal[\"any\", \"digits\", \"alnum\"] | None]",
+        "min": "NotRequired[float | None]",
+        "max": "NotRequired[float | None]",
+        "integer": "NotRequired[bool | None]",
+        "dates": "NotRequired[Literal[\"any\", \"past\", \"future\", \"between\"] | None]",
+        "days": "NotRequired[int | None]",
+        "from": "NotRequired[str | None]",
+        "to": "NotRequired[str | None]",
+        "example": "NotRequired[str | None]",
+    },
+)
+
+
+class UpdateJobFormParamsQuestionsItemRequirement(TypedDict):
+    answers: NotRequired[list[str]]
+    """Las respuestas que cumplen: ["si"] o ["no"] en una yesno, opciones en select y multiselect."""
+    min: NotRequired[float | None]
+    """En una number, el mínimo que cumple (años de experiencia…)."""
+
+
+class UpdateJobFormParamsQuestionsItem(TypedDict):
+    id: NotRequired[str]
+    """Su clave en el formulario y en las respuestas; por omisión sale de label. Las de siempre: nombre, correo, telefono y cv."""
+    label: str
+    """La pregunta, como la lee quien se postula."""
+    help: NotRequired[str | None]
+    """Una ayuda bajo la caja."""
+    type: Literal["text", "longtext", "number", "date", "select", "multiselect", "yesno", "email", "phone", "url", "file"]
+    """text, longtext (párrafo), number, date, select (una de la lista), multiselect (varias), yesno, email, phone, url o file (un archivo)."""
+    required: bool
+    """Si no se puede dejar en blanco."""
+    options: NotRequired[list[str]]
+    """Las opciones de select y multiselect."""
+    files: NotRequired[list[Literal["pdf", "image", "doc"]]]
+    """Qué archivos toma una de tipo file: pdf, image (JPG, PNG), doc (.docx). Hasta 10 MB."""
+    rules: NotRequired[UpdateJobFormParamsQuestionsItemRules | None]
+    """Lo que se revisa de la respuesta (largo, formato, mínimo, máximo, fechas, ejemplo)."""
+    requirement: NotRequired[UpdateJobFormParamsQuestionsItemRequirement | None]
+    """Si es un requisito: quien no lo cumple queda marcado o se le avisa antes de enviar, como diga unmet_requirements."""
+
+
+class UpdateJobFormParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    name: str
+    """Cómo lo llama su equipo."""
+    questions: list[UpdateJobFormParamsQuestionsItem]
+    """Sus preguntas, en orden. nombre y correo van siempre (si no las manda, se agregan al principio)."""
+
+
+class ListCandidatesParams(TypedDict):
+    """Los parámetros de GET /v1/candidates."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    vacancy: NotRequired[str]
+    """Solo las de una vacante (vac_…)."""
+    stage: NotRequired[str]
+    """Solo las de una etapa, como en stages de hiring."""
+
+
+class UpdateCandidateParams(TypedDict):
+    stage: NotRequired[str]
+    """Una de las etapas (stages)."""
+    rating: NotRequired[int | None]
+    """Su calificación, de 1 a 5; null se la quita."""
+    note: NotRequired[str | None]
+    """La nota de su equipo; no la ve el candidato."""
+
+
+class HireCandidateParams(TypedDict):
+    employee: str
+    """El empleado (emp_…) que ya dio de alta con POST /v1/employees: cubre la vacante con él."""
 
 
 class UpdatePayrollTaxSettingsParams(TypedDict):

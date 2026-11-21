@@ -46,6 +46,7 @@ if TYPE_CHECKING:
         CancelSalesOrderDeliveryParams,
         CancelSalesOrderParams,
         CancelSatRetentionParams,
+        Candidate,
         CarryForwardAnnualReturnParams,
         CashFlow,
         CashForecast,
@@ -98,6 +99,7 @@ if TYPE_CHECKING:
         CreateInvoiceBatchParams,
         CreateIssuerOnboardingLinkParams,
         CreateIssuerParams,
+        CreateJobFormParams,
         CreateLedgerAccountParams,
         CreateManualEntryParams,
         CreatePaymentParams,
@@ -201,6 +203,7 @@ if TYPE_CHECKING:
         GetFinancialStatementsParams,
         GetFxRevaluationParams,
         GetGeneralLedgerParams,
+        GetHiringParams,
         GetInflationAdjustmentParams,
         GetInvoiceCancellationReceiptParams,
         GetInvoiceParams,
@@ -225,6 +228,8 @@ if TYPE_CHECKING:
         GetTrialBalanceParams,
         GetVariableSalaryParams,
         GetVatRefundParams,
+        HireCandidateParams,
+        Hiring,
         ImportManualEntriesParams,
         ImportStoreOrdersParams,
         ImssFiles,
@@ -242,6 +247,7 @@ if TYPE_CHECKING:
         Issuer,
         IssuerBranding,
         IssuerOnboardingLink,
+        JobForm,
         JournalEntry,
         LedgerAccount,
         LedgerAccountList,
@@ -252,6 +258,7 @@ if TYPE_CHECKING:
         ListBankTransactionsParams,
         ListBooksLogParams,
         ListBranchesParams,
+        ListCandidatesParams,
         ListChartTemplatesParams,
         ListConsolidationEliminationsParams,
         ListCostCentersParams,
@@ -359,6 +366,7 @@ if TYPE_CHECKING:
         PriceQuote,
         Product,
         ProductionOrder,
+        PublishPayrollVacancyParams,
         PurchaseReceipt,
         Quote,
         QuotePricesParams,
@@ -437,6 +445,7 @@ if TYPE_CHECKING:
         UpdateAccountParams,
         UpdateAnnualAdjustmentParams,
         UpdateBranchParams,
+        UpdateCandidateParams,
         UpdateCashForecastItemParams,
         UpdateCashForecastParams,
         UpdateConsolidationEliminationParams,
@@ -452,10 +461,12 @@ if TYPE_CHECKING:
         UpdateExpensePersonParams,
         UpdateExpensePolicyParams,
         UpdateExpenseReportParams,
+        UpdateHiringSettingsParams,
         UpdateImssMovementParams,
         UpdateInvoiceParams,
         UpdateIssuerBrandingParams,
         UpdateIssuerParams,
+        UpdateJobFormParams,
         UpdateLedgerBankAccountParams,
         UpdateManualEntryParams,
         UpdateMemberParams,
@@ -3750,6 +3761,267 @@ class PayrollOrgChartResource:
         """
         result: PayrollOrgChart = self._client.request(
             "POST", f"/v1/payroll_org_chart/vacancies/{_path(id)}/fill", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def publish_vacancy(
+        self,
+        id: str,
+        params: PublishPayrollVacancyParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Hiring:
+        """Publicar una vacante
+
+        La pone en la página de empleos del emisor (published true) o la quita (false), con su descripción, requisitos, tipo de contrato, lugar, sueldo visible, fecha de cierre y el formulario (jbf_…) que llenan quienes se postulan. Solo una approved se publica; publicarla enciende la página si estaba apagada. Google la puede mostrar en sus resultados de empleos (JobPosting). Contesta hiring.
+
+        POST /v1/payroll_org_chart/vacancies/{id}/publish
+        https://fiscalisto.com/docs/api/referencia/nomina/publish-payroll-vacancy
+        """
+        result: Hiring = self._client.request(
+            "POST", f"/v1/payroll_org_chart/vacancies/{_path(id)}/publish", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class HiringResource:
+    """Nómina: fiscalisto.hiring."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetHiringParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Hiring:
+        """Página de empleos
+
+        Como «Nómina › Empleos» de la app: la página de empleos del emisor (careers_url, si se ve, su texto, el correo de contacto), las etapas de sus candidatos, qué hacer con quien no cumple un requisito, sus formularios (jbf_…) y sus vacantes con lo que publican y cuántos candidatos hay en cada etapa.
+
+        GET /v1/hiring
+        https://fiscalisto.com/docs/api/referencia/nomina/get-hiring
+        """
+        result: Hiring = self._client.request(
+            "GET", "/v1/hiring", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_settings(
+        self,
+        params: UpdateHiringSettingsParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Hiring:
+        """Configurar la página de empleos
+
+        Enciende o apaga la página, cambia su texto y correo de contacto, las etapas de los candidatos (al menos dos; la primera es donde llegan), unmet_requirements y el formulario predeterminado. Lo que no manda no cambia. Contesta hiring.
+
+        POST /v1/hiring/settings
+        https://fiscalisto.com/docs/api/referencia/nomina/update-hiring-settings
+        """
+        result: Hiring = self._client.request(
+            "POST", "/v1/hiring/settings", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def create_form(
+        self,
+        params: CreateJobFormParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> JobForm:
+        """Crear un formulario de solicitud
+
+        Las preguntas que llena quien se postula, del tipo que sea (texto, párrafo, número, fecha, lista, varias opciones, sí o no, correo, teléfono, enlace o archivo), obligatorias u opcionales, con sus reglas y las que son requisito. nombre y correo van siempre. Una pregunta que la Ley Federal del Trabajo no deja pedir (art. 133: edad, género, estado civil, embarazo…) se guarda, pero la app la señala.
+
+        POST /v1/hiring/forms
+        https://fiscalisto.com/docs/api/referencia/nomina/create-job-form
+        """
+        result: JobForm = self._client.request(
+            "POST", "/v1/hiring/forms", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_form(
+        self,
+        id: str,
+        params: UpdateJobFormParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> JobForm:
+        """Cambiar un formulario de solicitud
+
+        Cambia su nombre y sus preguntas. Las solicitudes que ya llegaron conservan las preguntas que contestaron.
+
+        POST /v1/hiring/forms/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/update-job-form
+        """
+        result: JobForm = self._client.request(
+            "POST", f"/v1/hiring/forms/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete_form(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Archivar un formulario de solicitud
+
+        Deja de usarse: sus vacantes piden el predeterminado desde ahora. Las solicitudes que ya llegaron no cambian.
+
+        DELETE /v1/hiring/forms/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/delete-job-form
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/hiring/forms/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class CandidatesResource:
+    """Nómina: fiscalisto.candidates."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListCandidatesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[Candidate]:
+        """Listar candidatos
+
+        Las solicitudes que llegaron por la página de empleos, las más recientes primero, con sus respuestas, su etapa y los requisitos que no cumple.
+
+        GET /v1/candidates
+        https://fiscalisto.com/docs/api/referencia/nomina/list-candidates
+        """
+        return self._client.list("/v1/candidates", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Candidate:
+        """Ver un candidato
+
+        Una solicitud (cnd_…), con las preguntas que contestó y sus archivos.
+
+        GET /v1/candidates/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/get-candidate
+        """
+        result: Candidate = self._client.request(
+            "GET", f"/v1/candidates/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateCandidateParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Candidate:
+        """Cambiar un candidato
+
+        Lo pasa a otra etapa, lo califica (1 a 5) o le pone una nota de su equipo. Lo que no manda no cambia.
+
+        POST /v1/candidates/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/update-candidate
+        """
+        result: Candidate = self._client.request(
+            "POST", f"/v1/candidates/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar un candidato
+
+        Borra la solicitud y sus archivos, por ejemplo cuando el candidato lo pide (derechos ARCO). No se puede deshacer.
+
+        DELETE /v1/candidates/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/delete-candidate
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/candidates/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def hire(
+        self,
+        id: str,
+        params: HireCandidateParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Candidate:
+        """Contratar a un candidato
+
+        Con el empleado ya dado de alta (POST /v1/employees), cubre la vacante de la solicitud (como POST /v1/payroll_org_chart/vacancies/{id}/fill), pasa al candidato a la etapa de contratados y quita la vacante de la página. Falta su alta en el IMSS.
+
+        POST /v1/candidates/{id}/hire
+        https://fiscalisto.com/docs/api/referencia/nomina/hire-candidate
+        """
+        result: Candidate = self._client.request(
+            "POST", f"/v1/candidates/{_path(id)}/hire", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def file(
+        self,
+        id: str,
+        question: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> str:
+        """Descargar un archivo de un candidato
+
+        El archivo que subió a una pregunta de tipo file (su CV, por ejemplo), tal como lo subió: PDF, JPG, PNG o Word. answers[].file.url de candidate lleva esta ruta.
+
+        GET /v1/candidates/{id}/files/{question}
+        https://fiscalisto.com/docs/api/referencia/nomina/get-candidate-file
+        """
+        result: str = self._client.request(
+            "GET", f"/v1/candidates/{_path(id)}/files/{_path(question)}", result="text", timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -10427,6 +10699,16 @@ class FiscalistoApi(Core):
     def payroll_org_chart(self) -> PayrollOrgChartResource:
         """Nómina."""
         return PayrollOrgChartResource(self)
+
+    @cached_property
+    def hiring(self) -> HiringResource:
+        """Nómina."""
+        return HiringResource(self)
+
+    @cached_property
+    def candidates(self) -> CandidatesResource:
+        """Nómina."""
+        return CandidatesResource(self)
 
     @cached_property
     def invoice_batches(self) -> InvoiceBatchesResource:
