@@ -166,6 +166,7 @@ if TYPE_CHECKING:
         ExternalPayrollReceiptCreate,
         ExternalPayrollReceiptPreview,
         ExtraordinaryPayrollReceiptPreview,
+        FillPayrollVacancyParams,
         FinancialRatios,
         FinancialStatements,
         FixedAsset,
@@ -3678,7 +3679,7 @@ class PayrollOrgChartResource:
     ) -> PayrollOrgChart:
         """Abrir una vacante
 
-        Un puesto sin persona todavía, bajo un jefe, en un departamento y una sucursal: sale en el organigrama, pero no cuenta como empleado. Contesta el organigrama.
+        Un puesto sin persona todavía, bajo un jefe, en un departamento y una sucursal, con el sueldo mensual que ofrece: sale en el organigrama, pero no cuenta como empleado. Queda en pending_approval hasta que alguien con el permiso «Aprobar la prenómina» la aprueba en la app (le llega un aviso); entonces se cubre con POST /v1/payroll_org_chart/vacancies/{id}/fill. Contesta el organigrama, con lo que costaría al mes (monthly_cost).
 
         POST /v1/payroll_org_chart/vacancies
         https://fiscalisto.com/docs/api/referencia/nomina/create-payroll-vacancy
@@ -3700,7 +3701,7 @@ class PayrollOrgChartResource:
     ) -> PayrollOrgChart:
         """Cambiar una vacante
 
-        Cambia el puesto, departamento, jefe o sucursal de una vacante (vac_…).
+        Cambia el puesto, departamento, jefe, sucursal o sueldo de una vacante (vac_…); lo que no manda queda vacío. Cambiada, vuelve a pending_approval. Una ya cubierta contesta parameter_invalid.
 
         POST /v1/payroll_org_chart/vacancies/{id}
         https://fiscalisto.com/docs/api/referencia/nomina/update-payroll-vacancy
@@ -3727,6 +3728,28 @@ class PayrollOrgChartResource:
         """
         result: PayrollOrgChart = self._client.request(
             "DELETE", f"/v1/payroll_org_chart/vacancies/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def fill_vacancy(
+        self,
+        id: str,
+        params: FillPayrollVacancyParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PayrollOrgChart:
+        """Cubrir una vacante
+
+        La cubre con un empleado ya dado de alta (POST /v1/employees): queda con el jefe, el departamento y la sucursal de la vacante, y la vacante sale del organigrama (status filled). Una que espera aprobación o se rechazó contesta parameter_invalid. Falta su alta en el IMSS (GET /v1/imss_movements la propone).
+
+        POST /v1/payroll_org_chart/vacancies/{id}/fill
+        https://fiscalisto.com/docs/api/referencia/nomina/fill-payroll-vacancy
+        """
+        result: PayrollOrgChart = self._client.request(
+            "POST", f"/v1/payroll_org_chart/vacancies/{_path(id)}/fill", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 

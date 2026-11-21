@@ -466,6 +466,7 @@ __all__ = [
     "ExtraordinaryPayrollReceiptPreviewPeriod",
     "ExtraordinaryPayrollReceiptPreviewSeparation",
     "ExtraordinaryPayrollReceiptPreviewTotals",
+    "FillPayrollVacancyParams",
     "FinancialRatios",
     "FinancialRatiosInputs",
     "FinancialRatiosRatiosItem",
@@ -840,6 +841,9 @@ __all__ = [
     "PayrollOrgChartEmployeesItem",
     "PayrollOrgChartSummary",
     "PayrollOrgChartVacanciesItem",
+    "PayrollOrgChartVacanciesItemMonthlyCost",
+    "PayrollOrgChartVacanciesItemMonthlyCostMax",
+    "PayrollOrgChartVacanciesItemMonthlyCostMin",
     "PayrollProvision",
     "PayrollProvisionCalculated",
     "PayrollProvisionEmployeesItem",
@@ -4098,6 +4102,36 @@ class PayrollOrgChartDepartmentsItem(TypedDict):
     """0 arriba, 1 dentro de uno, y así."""
 
 
+class PayrollOrgChartVacanciesItemMonthlyCostMin(TypedDict):
+    salary: float
+    """El sueldo del mes."""
+    employer_contributions: float
+    """Lo que paga el patrón al IMSS, SAR e Infonavit al mes (cuotas obrero-patronales)."""
+    payroll_tax: float
+    """El impuesto sobre nómina del estado al mes."""
+    total: float
+    """Lo que cuesta a la empresa al mes."""
+
+
+class PayrollOrgChartVacanciesItemMonthlyCostMax(TypedDict):
+    salary: float
+    """El sueldo del mes."""
+    employer_contributions: float
+    """Lo que paga el patrón al IMSS, SAR e Infonavit al mes (cuotas obrero-patronales)."""
+    payroll_tax: float
+    """El impuesto sobre nómina del estado al mes."""
+    total: float
+    """Lo que cuesta a la empresa al mes."""
+
+
+class PayrollOrgChartVacanciesItemMonthlyCost(TypedDict):
+    """Lo que costaría a la empresa al mes: el sueldo, las cuotas patronales (primer año, prestaciones de ley, la prima de riesgo del emisor) y el impuesto sobre nómina de su estado. null sin sueldo."""
+    min: PayrollOrgChartVacanciesItemMonthlyCostMin | None
+    """Con salary_min."""
+    max: PayrollOrgChartVacanciesItemMonthlyCostMax | None
+    """Con salary_max."""
+
+
 class PayrollOrgChartVacanciesItem(TypedDict):
     id: str
     """La vacante (vac_…)."""
@@ -4111,6 +4145,16 @@ class PayrollOrgChartVacanciesItem(TypedDict):
     """Sucursal (brn_…) desde donde se factura: su código postal va en LugarExpedicion, su dirección en el PDF y, si las tiene, sus series. Sin ella, el domicilio fiscal del emisor (la Matriz)."""
     opened_on: str
     """Desde cuándo está abierta (YYYY-MM-DD)."""
+    status: Literal["pending_approval", "approved", "rejected", "filled"]
+    """pending_approval espera el visto bueno de alguien con el permiso «Aprobar la prenómina» (las que abre una llave de API, y las que abre o cambia quien no lo tiene); approved ya se puede cubrir. En el organigrama salen solo estas dos."""
+    salary_min: float | None
+    """Sueldo mensual bruto que ofrece, desde."""
+    salary_max: float | None
+    """Sueldo mensual bruto que ofrece, hasta."""
+    state: str | None
+    """Estado donde trabajará (c_Estado), si se dijo."""
+    monthly_cost: PayrollOrgChartVacanciesItemMonthlyCost
+    """Lo que costaría a la empresa al mes: el sueldo, las cuotas patronales (primer año, prestaciones de ley, la prima de riesgo del emisor) y el impuesto sobre nómina de su estado. null sin sueldo."""
 
 
 class PayrollOrgChart(TypedDict):
@@ -15982,6 +16026,8 @@ class GetPayrollOrgChartParams(TypedDict):
     """Los parámetros de GET /v1/payroll_org_chart."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    as_of: NotRequired[str]
+    """Un día pasado (YYYY-MM-DD): el organigrama como estaba al cierre de ese día, con los jefes, departamentos y sucursales que tenían (se guardan desde el 21 de noviembre de 2026)."""
 
 
 class AssignPayrollOrgChartParams(TypedDict):
@@ -16030,6 +16076,12 @@ class CreatePayrollVacancyParams(TypedDict):
     """Una sucursal del emisor (brn_…), o null para la matriz."""
     opened_on: NotRequired[str]
     """Desde cuándo está abierta (YYYY-MM-DD); por omisión hoy."""
+    salary_min: NotRequired[float | None]
+    """Sueldo mensual bruto que ofrece, desde (pesos); null si no lo dice."""
+    salary_max: NotRequired[float | None]
+    """Sueldo mensual bruto que ofrece, hasta (pesos); null si no lo dice."""
+    state: NotRequired[str | None]
+    """Estado donde trabajará, como c_Estado (NLE, CMX…), para su impuesto sobre nómina; null para el de su jefe o el de la mayoría."""
 
 
 class UpdatePayrollVacancyParams(TypedDict):
@@ -16045,6 +16097,17 @@ class UpdatePayrollVacancyParams(TypedDict):
     """Una sucursal del emisor (brn_…), o null para la matriz."""
     opened_on: NotRequired[str]
     """Desde cuándo está abierta (YYYY-MM-DD); por omisión hoy."""
+    salary_min: NotRequired[float | None]
+    """Sueldo mensual bruto que ofrece, desde (pesos); null si no lo dice."""
+    salary_max: NotRequired[float | None]
+    """Sueldo mensual bruto que ofrece, hasta (pesos); null si no lo dice."""
+    state: NotRequired[str | None]
+    """Estado donde trabajará, como c_Estado (NLE, CMX…), para su impuesto sobre nómina; null para el de su jefe o el de la mayoría."""
+
+
+class FillPayrollVacancyParams(TypedDict):
+    employee: str
+    """Quien la ocupa (emp_…), ya dado de alta con POST /v1/employees: queda con el jefe, el departamento y la sucursal de la vacante."""
 
 
 class UpdatePayrollTaxSettingsParams(TypedDict):
