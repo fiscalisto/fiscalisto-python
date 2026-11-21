@@ -4626,6 +4626,8 @@ class SatInvoice(TypedDict):
     """Su estado en el SAT cuando se revisó: active (vigente) o canceled. null si aún no se revisa."""
     paid_otherwise: SatInvoicePaidOtherwise | None
     """Solo recibidas, marcadas con mark_paid, en la app o por una regla: without_complement true en una PPD pagada sin complemento de pago (el SAT la sigue viendo sin pagar); false en una PUE, donde solo se anotó de dónde salió el dinero."""
+    cash_confirmation: Literal["pending", "confirmed"] | None
+    """Solo en una PUE recibida pagada en efectivo cuando la empresa pide confirmar estos pagos (Ajustes › Pagos sin complemento): pending hasta que alguien anote de dónde salió el dinero (mark_paid con money_source), confirmed después. Null en las demás. Sus impuestos no cambian."""
     cost_center: str | None
     """Su centro de costo (ccn_…), o null. Póngalo o cámbielo con POST /v1/sat_invoices/{id}."""
     tags: list[SatInvoiceTagsItem]
@@ -17754,6 +17756,8 @@ class ListSatInvoicesParams(TypedDict):
     """Solo las de este centro de costo (ccn_…), o none para las que no tienen."""
     tag: NotRequired[str]
     """Solo las que llevan esta etiqueta (tag_…)."""
+    cash_confirmation: NotRequired[Literal["pending", "confirmed"]]
+    """Solo las PUE recibidas en efectivo que la empresa pide confirmar: pending (nadie ha anotado de dónde salió el dinero) o confirmed."""
 
 
 class UpdateSatInvoiceParams(TypedDict):
