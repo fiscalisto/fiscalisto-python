@@ -62,6 +62,7 @@ if TYPE_CHECKING:
         ClosedPeriod,
         CompanyReport,
         ComparativeStatements,
+        CompareSuaCedulaParams,
         CompleteProductionOrderParams,
         ComplianceOpinion,
         ConsolidatedStatements,
@@ -129,6 +130,7 @@ if TYPE_CHECKING:
         CreateSatReviewParams,
         CreateStockAdjustmentParams,
         CreateStoreConnectionParams,
+        CreateSupplierGroupParams,
         CreateTagParams,
         CreateTaxDeterminationParams,
         CreateTestClockParams,
@@ -332,6 +334,7 @@ if TYPE_CHECKING:
         ListStockAdjustmentsParams,
         ListStockMovementsParams,
         ListStoreConnectionsParams,
+        ListSupplierGroupsParams,
         ListSupplierInvoicesParams,
         ListTagsParams,
         ListTicketsParams,
@@ -456,6 +459,8 @@ if TYPE_CHECKING:
         StockMovement,
         StoreConnection,
         StoreImport,
+        SuaComparison,
+        SupplierGroup,
         SupplierInvoice,
         Tag,
         TaxDetermination,
@@ -518,6 +523,7 @@ if TYPE_CHECKING:
         UpdateSatReviewParams,
         UpdateSelfInvoicingParams,
         UpdateStoreConnectionParams,
+        UpdateSupplierGroupParams,
         UpdateTagParams,
         UpdateTrainingCourseParams,
         UpdateTrainingSettingsParams,
@@ -4872,6 +4878,113 @@ class RulesResource:
         https://fiscalisto.com/docs/api/referencia/reglas/list-rule-runs
         """
         return self._client.list(f"/v1/rules/{_path(id)}/runs", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+
+class SupplierGroupsResource:
+    """Reglas: fiscalisto.supplier_groups."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateSupplierGroupParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SupplierGroup:
+        """Crear un grupo de proveedores
+
+        Un grupo de proveedores (fletes, materia prima…), como Proveedores › Grupos en la app. Cada proveedor está en un solo grupo: los de suppliers salen del que tenían. Una regla vale para todo el grupo con la condición supplierGroup.
+
+        POST /v1/supplier_groups
+        https://fiscalisto.com/docs/api/referencia/reglas/create-supplier-group
+        """
+        result: SupplierGroup = self._client.request(
+            "POST", "/v1/supplier_groups", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListSupplierGroupsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[SupplierGroup]:
+        """Listar grupos de proveedores
+
+        Los grupos de proveedores, con cuántos proveedores tiene cada uno.
+
+        GET /v1/supplier_groups
+        https://fiscalisto.com/docs/api/referencia/reglas/list-supplier-groups
+        """
+        return self._client.list("/v1/supplier_groups", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SupplierGroup:
+        """Ver un grupo de proveedores
+
+        Un grupo de proveedores.
+
+        GET /v1/supplier_groups/{id}
+        https://fiscalisto.com/docs/api/referencia/reglas/get-supplier-group
+        """
+        result: SupplierGroup = self._client.request(
+            "GET", f"/v1/supplier_groups/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateSupplierGroupParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SupplierGroup:
+        """Actualizar un grupo de proveedores
+
+        Cambia solo lo que manda: su nombre, su color, los proveedores que entran (add_suppliers) y los que salen (remove_suppliers).
+
+        POST /v1/supplier_groups/{id}
+        https://fiscalisto.com/docs/api/referencia/reglas/update-supplier-group
+        """
+        result: SupplierGroup = self._client.request(
+            "POST", f"/v1/supplier_groups/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Quitar un grupo de proveedores
+
+        Sus proveedores se quedan sin grupo, y las reglas que lo usan ya no aplican a nadie.
+
+        DELETE /v1/supplier_groups/{id}
+        https://fiscalisto.com/docs/api/referencia/reglas/delete-supplier-group
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/supplier_groups/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
 
 
 class FindingsResource:
@@ -9946,6 +10059,28 @@ class PayrollProvisionsResource:
         )
         return result
 
+    def compare_sua(
+        self,
+        month: str,
+        params: CompareSuaCedulaParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SuaComparison:
+        """Comparar las cuotas de un mes con el SUA
+
+        Lee la cédula de determinación de cuotas que imprimió el SUA para el mes (la mensual, del IMSS: cuota fija, excedente, prestaciones en dinero, gastos médicos de pensionados, riesgos de trabajo, invalidez y vida y guarderías) y la compara trabajador por trabajador, por su NSS, con lo que Fiscalisto calculó de los recibos timbrados: quién está solo en uno de los dos y en qué difieren los días, el salario base de cotización o las cuotas (hasta un peso es redondeo del SUA). Se calcula con la prima de riesgo de la cédula. No guarda nada: si el SUA tiene razón, mande sus importes a POST /v1/accounting/payroll_provisions/{month}. Como Cierre del mes › Cuotas patronales del mes › Comparar con el SUA en la app. Una cédula de otro mes contesta workers vacío y cedula_month con su mes.
+
+        POST /v1/accounting/payroll_provisions/{month}/sua_comparison
+        https://fiscalisto.com/docs/api/referencia/contabilidad/compare-sua-cedula
+        """
+        result: SuaComparison = self._client.request(
+            "POST", f"/v1/accounting/payroll_provisions/{_path(month)}/sua_comparison", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
 
 class TaxDeterminationsResource:
     """Contabilidad: fiscalisto.tax_determinations."""
@@ -11456,6 +11591,11 @@ class FiscalistoApi(Core):
     def rules(self) -> RulesResource:
         """Reglas."""
         return RulesResource(self)
+
+    @cached_property
+    def supplier_groups(self) -> SupplierGroupsResource:
+        """Reglas."""
+        return SupplierGroupsResource(self)
 
     @cached_property
     def findings(self) -> FindingsResource:

@@ -174,6 +174,7 @@ __all__ = [
     "ComparativeStatementsIncomeStatementYearToDateSectionsItem",
     "ComparativeStatementsIncomeStatementYearToDateSectionsItemLinesItem",
     "ComparativeStatementsIncomeStatementYearToDateSectionsItemTotal",
+    "CompareSuaCedulaParams",
     "CompleteProductionOrderParams",
     "CompleteProductionOrderParamsOtherCostsItem",
     "ComplianceOpinion",
@@ -360,6 +361,7 @@ __all__ = [
     "CreateStockAdjustmentParamsLinesItem",
     "CreateStoreConnectionParams",
     "CreateStoreConnectionParamsSettings",
+    "CreateSupplierGroupParams",
     "CreateTagParams",
     "CreateTaxDeterminationParams",
     "CreateTestClockParams",
@@ -804,6 +806,7 @@ __all__ = [
     "ListStockAdjustmentsParams",
     "ListStockMovementsParams",
     "ListStoreConnectionsParams",
+    "ListSupplierGroupsParams",
     "ListSupplierInvoicesParams",
     "ListTagsParams",
     "ListTicketsParams",
@@ -1161,6 +1164,13 @@ __all__ = [
     "StoreConnectionSettings",
     "StoreImport",
     "StoreImportSkippedItem",
+    "SuaComparison",
+    "SuaComparisonTotals",
+    "SuaComparisonWorkersItem",
+    "SuaComparisonWorkersItemCalculated",
+    "SuaComparisonWorkersItemSua",
+    "SupplierGroup",
+    "SupplierGroupList",
     "SupplierInvoice",
     "SupplierInvoiceApprovedEvent",
     "SupplierInvoiceList",
@@ -1327,6 +1337,7 @@ __all__ = [
     "UpdateSelfInvoicingParamsPortalStyleWays",
     "UpdateStoreConnectionParams",
     "UpdateStoreConnectionParamsSettings",
+    "UpdateSupplierGroupParams",
     "UpdateTagParams",
     "UpdateTrainingCourseParams",
     "UpdateTrainingSettingsParams",
@@ -6215,6 +6226,26 @@ class CustomerGroup(TypedDict):
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
 
 
+class SupplierGroup(TypedDict):
+    """Un grupo de proveedores (Proveedores › Grupos): cada proveedor está en uno a lo más, y una regla vale para todo el grupo con la condición supplierGroup."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["supplier_group"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (iss_…)."""
+    name: str
+    """Nombre."""
+    color: str
+    """Color de su etiqueta en la app: info, warning, positive, critical o muted."""
+    suppliers: int
+    """Cuántos proveedores hay en el grupo."""
+    created_at: str | None
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+
+
 class PriceQuoteItemsItemNextStep(TypedDict):
     min_quantity: float
     """Desde cuántas unidades (de su presentación) vale este precio: un escalón de mayoreo. 1 por omisión."""
@@ -8223,6 +8254,79 @@ class PayrollProvision(TypedDict):
     """El impuesto sobre nómina de cada estado."""
     manual_entry: str | None
     """La póliza de provisión (mje_…) si ya se registró, o null. Es una póliza a mano de tipo adjustment."""
+
+
+class SuaComparisonWorkersItemSua(TypedDict):
+    days_health: float
+    """Días en enfermedades y maternidad: los del mes menos las incapacidades."""
+    days_disability_life: float
+    """Días en invalidez y vida: menos incapacidades y ausentismos."""
+    sbc: float
+    """El salario base de cotización."""
+    disability_days: float
+    """Los días de incapacidad que trae el SUA."""
+    absences: float
+    """Los ausentismos que trae el SUA."""
+    amount: float | None
+    """Lo que paga el patrón del renglón (Patronal, más Obrera si gana el salario mínimo), o null si sus importes no se pudieron leer."""
+
+
+class SuaComparisonWorkersItemCalculated(TypedDict):
+    days_health: float
+    """Días en enfermedades y maternidad: los del mes menos las incapacidades."""
+    days_disability_life: float
+    """Días en invalidez y vida: menos incapacidades y ausentismos."""
+    sbc: float
+    """El salario base de cotización."""
+    amount: float
+    """Sus cuotas patronales al IMSS."""
+
+
+class SuaComparisonWorkersItem(TypedDict):
+    nss: str | None
+    """El NSS, 11 dígitos."""
+    name: str | None
+    """El nombre en Fiscalisto, o null si solo está en el SUA."""
+    sua: SuaComparisonWorkersItemSua | None
+    """Lo que dice el SUA, o null si no está en la cédula."""
+    calculated: SuaComparisonWorkersItemCalculated | None
+    """Lo que calculó Fiscalisto, o null si no tiene recibos timbrados del mes."""
+    differs: list[Literal["days", "sbc", "amount", "missing"]]
+    """En qué difieren: days, sbc, amount (más de un peso), o missing si está solo en uno de los dos. Vacío si coinciden."""
+
+
+class SuaComparisonTotals(TypedDict):
+    """Totales (Totales)."""
+    sua: float
+    """Las cuotas al IMSS del mes según el SUA; 0 si algún renglón no se pudo leer."""
+    calculated: float
+    """Las calculadas por Fiscalisto."""
+
+
+class SuaComparison(TypedDict):
+    """La cédula de determinación de cuotas del SUA comparada, trabajador por trabajador, con las cuotas patronales que Fiscalisto calculó de los recibos del mes."""
+    object: Literal["sua_comparison"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor."""
+    month: str
+    """El mes que se comparó (AAAA-MM)."""
+    cedula_month: str | None
+    """El mes que dice la cédula (AAAA-MM), o null si no lo dice."""
+    employer_registration: str | None
+    """El registro patronal de la cédula, sin guiones."""
+    other_employer_registration: bool
+    """true si la cédula es de otro registro patronal que el de sus datos fiscales."""
+    employer_risk_premium: float | None
+    """La prima de riesgo de trabajo de la cédula, como fracción; el cálculo se hizo con ella."""
+    unreadable: bool
+    """true si no se pudo leer el texto del PDF (dañado o escaneado): imprímalo de nuevo desde el SUA."""
+    workers: list[SuaComparisonWorkersItem]
+    """Cada trabajador: primero los que difieren, luego los que coinciden."""
+    totals: SuaComparisonTotals
+    """Totales (Totales)."""
 
 
 class BudgetLinesItem(TypedDict):
@@ -13443,6 +13547,17 @@ class RuleRunList(TypedDict):
     """La ruta de esta lista."""
 
 
+class SupplierGroupList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[SupplierGroup]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class FindingList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -17764,7 +17879,7 @@ class UploadBranchLogoParams(TypedDict):
 
 class CreateRuleParamsConditionsConditionsItem(TypedDict):
     field: str
-    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday."""
+    """Qué se revisa. Facturas: supplier, customer, supplierGroup (recibidas: el grupo del proveedor, sgr_…), customerGroup (emitidas: el grupo del cliente, cgr_…), partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, supplierGroup (sgr_…), ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday."""
     operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
     """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
     values: NotRequired[list[str]]
@@ -17779,7 +17894,7 @@ class CreateRuleParamsConditionsConditionsItem(TypedDict):
 
 class CreateRuleParamsConditionsGroupsItemConditionsItem(TypedDict):
     field: str
-    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday."""
+    """Qué se revisa. Facturas: supplier, customer, supplierGroup (recibidas: el grupo del proveedor, sgr_…), customerGroup (emitidas: el grupo del cliente, cgr_…), partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, supplierGroup (sgr_…), ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday."""
     operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
     """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
     values: NotRequired[list[str]]
@@ -17965,7 +18080,7 @@ class OrderRulesParams(TypedDict):
 
 class UpdateRuleParamsConditionsConditionsItem(TypedDict):
     field: str
-    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday."""
+    """Qué se revisa. Facturas: supplier, customer, supplierGroup (recibidas: el grupo del proveedor, sgr_…), customerGroup (emitidas: el grupo del cliente, cgr_…), partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, supplierGroup (sgr_…), ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday."""
     operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
     """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
     values: NotRequired[list[str]]
@@ -17980,7 +18095,7 @@ class UpdateRuleParamsConditionsConditionsItem(TypedDict):
 
 class UpdateRuleParamsConditionsGroupsItemConditionsItem(TypedDict):
     field: str
-    """Qué se revisa. Facturas: supplier, customer, partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday."""
+    """Qué se revisa. Facturas: supplier, customer, supplierGroup (recibidas: el grupo del proveedor, sgr_…), customerGroup (emitidas: el grupo del cliente, cgr_…), partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, supplierGroup (sgr_…), ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday."""
     operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
     """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
     values: NotRequired[list[str]]
@@ -18156,6 +18271,38 @@ class ListRuleRunsParams(TypedDict):
     """Cuántos por página, de 1 a 100. Por omisión 10."""
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
+
+
+class CreateSupplierGroupParams(TypedDict):
+    issuer: NotRequired[str]
+    """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    name: str
+    """Nombre."""
+    color: NotRequired[Literal["info", "warning", "positive", "critical", "muted"]]
+    """Color de su etiqueta en la app: info, warning, positive, critical o muted."""
+    suppliers: NotRequired[list[str]]
+    """RFC de los proveedores que entran al grupo (hasta 500); salen del que tenían."""
+
+
+class ListSupplierGroupsParams(TypedDict):
+    """Los parámetros de GET /v1/supplier_groups."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateSupplierGroupParams(TypedDict):
+    name: NotRequired[str]
+    """Nombre."""
+    color: NotRequired[Literal["info", "warning", "positive", "critical", "muted"]]
+    """Color de su etiqueta en la app: info, warning, positive, critical o muted."""
+    add_suppliers: NotRequired[list[str]]
+    """RFC de los proveedores que entran al grupo (hasta 500); salen del que tenían."""
+    remove_suppliers: NotRequired[list[str]]
+    """RFC de los proveedores que salen del grupo y quedan sin grupo (hasta 500)."""
 
 
 class ListFindingsParams(TypedDict):
@@ -20907,6 +21054,13 @@ class DeletePayrollProvisionParams(TypedDict):
     """Los parámetros de DELETE /v1/accounting/payroll_provisions/{month}."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CompareSuaCedulaParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    file: str
+    """La cédula de determinación de cuotas del mes (la mensual, del IMSS) en PDF como la imprimió el SUA, en base64; hasta 10 MB."""
 
 
 class GetTaxDeterminationParams(TypedDict):
