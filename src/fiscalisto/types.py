@@ -603,6 +603,8 @@ __all__ = [
     "GetFxRevaluationParams",
     "GetGeneralLedgerParams",
     "GetHiringParams",
+    "GetIepsCustomersFileParams",
+    "GetIepsCustomersParams",
     "GetInflationAdjustmentParams",
     "GetInvoiceCancellationReceiptParams",
     "GetInvoiceParams",
@@ -637,6 +639,9 @@ __all__ = [
     "Hiring",
     "HiringVacanciesItem",
     "HiringVacanciesItemCandidatesItem",
+    "IepsCustomers",
+    "IepsCustomersQuartersItem",
+    "IepsCustomersQuartersItemCustomersItem",
     "ImportManualEntriesParams",
     "ImportManualEntriesParamsEntriesItem",
     "ImportManualEntriesParamsEntriesItemLinesItem",
@@ -11645,6 +11650,42 @@ class Diot(TypedDict):
     """Una línea por proveedor y tipo de operación, con lo pagado en el mes."""
     warnings: list[str]
     """Lo que conviene revisar antes de presentarla."""
+
+
+class IepsCustomersQuartersItemCustomersItem(TypedDict):
+    tax_id: str
+    """El RFC del cliente."""
+    name: str | None
+    """Su nombre como viene en sus facturas."""
+    invoices: int
+    """Cuántas facturas del trimestre llevan ese IEPS."""
+    ieps: float
+    """El IEPS que se le trasladó en el trimestre, en pesos."""
+
+
+class IepsCustomersQuartersItem(TypedDict):
+    quarter: int
+    """El trimestre, 1 a 4."""
+    due_month: str
+    """El mes (AAAA-MM) en que se presenta en el MULTI-IEPS: el siguiente al trimestre."""
+    customers: list[IepsCustomersQuartersItemCustomersItem]
+    """Los clientes, el de más IEPS primero."""
+    total: float
+    """El IEPS de todos, en pesos."""
+
+
+class IepsCustomers(TypedDict):
+    """Los clientes a los que se les trasladó el IEPS por separado, por trimestre (artículo 19, fracción II de la Ley del IEPS)."""
+    object: Literal["ieps_customers"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """false en modo de prueba."""
+    issuer: str
+    """El emisor (iss_…)."""
+    year: int
+    """El año."""
+    quarters: list[IepsCustomersQuartersItem]
+    """Cada trimestre pedido, también los que no tienen clientes."""
 
 
 class VatRefundBalancesItemCreditedInItem(TypedDict):
@@ -23019,6 +23060,26 @@ class GetDiotFileParams(TypedDict):
     """El mes (AAAA-MM)."""
     group_small_suppliers: NotRequired[bool]
     """true para agrupar proveedores de hasta $50,000 en el mes (regla 4.5.2)."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetIepsCustomersParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/ieps_customers."""
+    year: str
+    """El año (AAAA), de 2015 al actual."""
+    quarter: NotRequired[Literal["1", "2", "3", "4"]]
+    """Solo ese trimestre (1 a 4); por omisión, los cuatro."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class GetIepsCustomersFileParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/ieps_customers/file."""
+    year: str
+    """El año (AAAA), de 2015 al actual."""
+    quarter: Literal["1", "2", "3", "4"]
+    """El trimestre (1 a 4)."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 

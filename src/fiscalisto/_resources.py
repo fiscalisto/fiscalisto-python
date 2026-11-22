@@ -233,6 +233,8 @@ if TYPE_CHECKING:
         GetFxRevaluationParams,
         GetGeneralLedgerParams,
         GetHiringParams,
+        GetIepsCustomersFileParams,
+        GetIepsCustomersParams,
         GetInflationAdjustmentParams,
         GetInvoiceCancellationReceiptParams,
         GetInvoiceParams,
@@ -265,6 +267,7 @@ if TYPE_CHECKING:
         GetVatRefundParams,
         HireCandidateParams,
         Hiring,
+        IepsCustomers,
         ImportManualEntriesParams,
         ImportStoreOrdersParams,
         ImssFiles,
@@ -9828,6 +9831,45 @@ class AccountingResource:
         """
         result: str = self._client.request(
             "GET", "/v1/accounting/diot/file", query=params, result="text", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+    def ieps_customers(
+        self,
+        params: GetIepsCustomersParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> IepsCustomers:
+        """Ver los clientes con IEPS desglosado
+
+        La relación trimestral de los clientes a los que el emisor les trasladó el IEPS por separado (artículo 19, fracción II, tercer párrafo de la Ley del IEPS): bebidas alcohólicas, bebidas energetizantes, bebidas saborizadas y alimentos de alta densidad calórica, de sus facturas de ingreso no canceladas. Público en general y extranjeros no van. Se presenta cada trimestre en el MULTI-IEPS, Anexo 1 (regla 5.2.2 de la RMF 2026), en el mes siguiente al trimestre.
+
+        GET /v1/accounting/ieps_customers
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-ieps-customers
+        """
+        result: IepsCustomers = self._client.request(
+            "GET", "/v1/accounting/ieps_customers", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def ieps_customers_file(
+        self,
+        params: GetIepsCustomersFileParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> str:
+        """Descargar los clientes con IEPS desglosado
+
+        La relación de un trimestre en CSV (UTF-8): RFC, nombre, facturas e IEPS trasladado de cada cliente, y el total; la misma que descarga la app en Impuestos.
+
+        GET /v1/accounting/ieps_customers/file
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-ieps-customers-file
+        """
+        result: str = self._client.request(
+            "GET", "/v1/accounting/ieps_customers/file", query=params, result="text", timeout=timeout, max_retries=max_retries
         )
         return result
 
