@@ -368,6 +368,7 @@ __all__ = [
     "CreateTicketParamsLinesItem",
     "CreateTicketParamsLinesItemLocalTaxesItem",
     "CreateTicketParamsLocalTaxesItem",
+    "CreateTrainingCourseParams",
     "CreateWebhookEndpointParams",
     "CrossCheckCfdi",
     "CrossCheckCfdiCfdiItem",
@@ -406,6 +407,7 @@ __all__ = [
     "DeleteRoleParams",
     "DeleteTaxDeterminationParams",
     "Deleted",
+    "DeliverTrainingCertificatesParams",
     "DepreciationReconciliation",
     "DepreciationReconciliationItemsItem",
     "Diot",
@@ -421,6 +423,8 @@ __all__ = [
     "EmployeePortalSignedReceiptsItem",
     "EmployeeRaise",
     "EmployeeRaiseEmployeesItem",
+    "EmployeeTraining",
+    "EmployeeTrainingCoursesItem",
     "EmployeeVacations",
     "EmployeeVacationsCurrentYear",
     "EmployeeVacationsOpening",
@@ -573,6 +577,8 @@ __all__ = [
     "GetSatRiskCheckParams",
     "GetTaxDeterminationParams",
     "GetTaxDiscrepancyParams",
+    "GetTrainingCertificatesPdfParams",
+    "GetTrainingParams",
     "GetTrialBalanceParams",
     "GetVariableSalaryParams",
     "GetVatRefundParams",
@@ -710,6 +716,7 @@ __all__ = [
     "InvoiceSubstitutes",
     "InvoiceSubstitutesCancellation",
     "InvoiceTaxes",
+    "IssueTrainingCertificatesParams",
     "Issuer",
     "IssuerBranding",
     "IssuerCertificate",
@@ -796,6 +803,8 @@ __all__ = [
     "ListSupplierInvoicesParams",
     "ListTagsParams",
     "ListTicketsParams",
+    "ListTrainingCertificatesParams",
+    "ListTrainingCoursesParams",
     "ListVacationRequestsParams",
     "ListWarehouseStockParams",
     "ListWarehousesParams",
@@ -1127,6 +1136,9 @@ __all__ = [
     "SetClosedPeriodParams",
     "SetOpeningBalancesParams",
     "SetOpeningBalancesParamsLinesItem",
+    "SetTrainingParticipantsParams",
+    "SetTrainingResultsParams",
+    "SetTrainingResultsParamsResultsItem",
     "SignEfirmaParams",
     "StartProductionOrderParams",
     "StartProductionOrderParamsComponentsItem",
@@ -1177,6 +1189,19 @@ __all__ = [
     "TicketLinesItem",
     "TicketLinesItemLocalTaxesItem",
     "TicketList",
+    "Training",
+    "TrainingCertificate",
+    "TrainingCertificateList",
+    "TrainingCourse",
+    "TrainingCourseCounts",
+    "TrainingCourseDeleted",
+    "TrainingCourseList",
+    "TrainingParticipant",
+    "TrainingPlanYearsItem",
+    "TrainingRenewalsItem",
+    "TrainingSettings",
+    "TrainingSettingsCommissionItem",
+    "TrainingTotals",
     "TrialBalance",
     "TrialBalanceAccountsItem",
     "TrialBalanceTotals",
@@ -1201,6 +1226,7 @@ __all__ = [
     "UpdateEmployeeDeductionParams",
     "UpdateEmployeeParams",
     "UpdateEmployeePortalParams",
+    "UpdateEmployeeTrainingParams",
     "UpdateEmployeeVacationsParams",
     "UpdateEntryTemplateParams",
     "UpdateEntryTemplateParamsLinesItem",
@@ -1296,6 +1322,9 @@ __all__ = [
     "UpdateStoreConnectionParams",
     "UpdateStoreConnectionParamsSettings",
     "UpdateTagParams",
+    "UpdateTrainingCourseParams",
+    "UpdateTrainingSettingsParams",
+    "UpdateTrainingSettingsParamsCommissionItem",
     "UpdateWebhookEndpointParams",
     "UploadBranchLogoParams",
     "UploadCertificateParams",
@@ -4452,6 +4481,293 @@ class Candidate(TypedDict):
     """El empleado (emp_…) si se le contrató."""
     created_at: str
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+
+
+class TrainingSettingsCommissionItem(TypedDict):
+    name: str
+    """Nombre."""
+    side: str
+    """patron o trabajadores."""
+    role: str | None
+    """Su cargo en la comisión (presidente, secretario…)."""
+
+
+class TrainingSettings(TypedDict):
+    """Lo que se configura en POST /v1/training/settings."""
+    company_name: str | None
+    """El nombre en la constancia; null usa la razón social."""
+    legal_rep: str | None
+    """Quien firma con hasta 50 trabajadores."""
+    commission_employer_rep: str | None
+    """El representante del patrón ante la comisión mixta."""
+    workers_rep: str | None
+    """El representante de los trabajadores ante la comisión mixta."""
+    commission: list[TrainingSettingsCommissionItem]
+    """Los integrantes de la comisión mixta de capacitación (artículo 153-E LFT)."""
+    commission_constituted_on: str | None
+    """El día en que se constituyó la comisión mixta."""
+    workers_count: int | None
+    """Los trabajadores contados a mano; null cuenta Nómina."""
+    plan_start: str | None
+    """Cuándo empieza el plan de capacitación vigente."""
+    plan_end: str | None
+    """Cuándo termina el plan de capacitación vigente."""
+    occupations: dict[str, str]
+    """La ocupación de cada puesto."""
+
+
+TrainingPlanYearsItem = TypedDict(
+    "TrainingPlanYearsItem",
+    {
+        "from": "str",
+        "to": "str",
+        "list_by": "str",
+    },
+)
+
+
+class TrainingRenewalsItem(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    name: str
+    """Nombre."""
+    course: str
+    """El nombre del curso."""
+    thematic_area: str
+    """La clave del área temática."""
+    until: str
+    """Hasta cuándo está vigente."""
+    expired: bool
+    """Si ya venció."""
+
+
+class TrainingTotals(TypedDict):
+    """Totales (Totales)."""
+    due: int
+    """Constancias por entregar."""
+    late: int
+    """De ellas, fuera de plazo."""
+    missing_occupation: int
+    """Empleados activos sin ocupación del catálogo."""
+
+
+class Training(TypedDict):
+    """La capacitación de un emisor (Nómina › Capacitación)."""
+    object: Literal["training"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    settings: TrainingSettings
+    """Lo que se configura en POST /v1/training/settings."""
+    workers: int
+    """Los trabajadores que cuenta."""
+    workers_from_payroll: bool
+    """Si los cuenta de Nómina (true) o a mano (false)."""
+    mixed_commission: bool
+    """Si son más de 50 y firman los representantes de la comisión mixta (artículo 24, fracción II)."""
+    plan_years: list[TrainingPlanYearsItem]
+    """Los años del plan de capacitación."""
+    renewals: list[TrainingRenewalsItem]
+    """Constancias que vencen en 60 días o ya vencieron."""
+    totals: TrainingTotals
+    """Totales (Totales)."""
+
+
+class TrainingParticipant(TypedDict):
+    """Quien tomó un curso y su constancia DC-3."""
+    id: str
+    """Quien tomó el curso (trp_…)."""
+    object: Literal["training_participant"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    employee: str
+    """El empleado (emp_…)."""
+    name: str
+    """Nombre."""
+    occupation: str | None
+    """Su clave del Catálogo Nacional de Ocupaciones."""
+    result: str
+    """pending, passed, failed o sufficiency."""
+    score: float | None
+    """Su calificación de 0 a 100."""
+    note: str | None
+    """Una nota sobre su resultado."""
+    folio: int | None
+    """El folio de su constancia DC-3, consecutivo por emisor."""
+    issued_at: str | None
+    """Cuándo se emitió."""
+    delivered_at: str | None
+    """Cuándo se entregó."""
+    delivered_via: str | None
+    """paper, email o portal."""
+    status: str
+    """none (sin constancia), waiting (el curso no termina), due (por entregar), late (pasó el plazo), issued (emitida, sin entregar) o delivered."""
+    deliver_by: str | None
+    """El día límite para entregarla (20 días hábiles desde el fin del curso)."""
+    expires_on: str | None
+    """Hasta cuándo está vigente, si el curso tiene vigencia."""
+    blocker: str | None
+    """Por qué todavía no se puede emitir su constancia."""
+
+
+class TrainingCourseCounts(TypedDict):
+    """Los totales (en la lista)."""
+    participants: int
+    """Quienes lo tomaron."""
+    passed: int
+    """Quienes aprobaron (o el examen de suficiencia)."""
+    pending: int
+    """Quienes faltan por calificar."""
+    issued: int
+    """Constancias emitidas."""
+    delivered: int
+    """Constancias entregadas."""
+    due: int
+    """Constancias que se deben (aprobaron) y no se han entregado."""
+    late: int
+    """De due, las que pasaron los 20 días hábiles (artículo 24, fracción III)."""
+
+
+class TrainingCourse(TypedDict):
+    """Un curso de capacitación (Nómina › Capacitación)."""
+    id: str
+    """El curso (trc_…)."""
+    object: Literal["training_course"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    name: str
+    """El nombre del curso."""
+    thematic_area: str
+    """La clave del área temática del catálogo de la STPS (1000 a 9000)."""
+    hours: float
+    """La duración en horas."""
+    modality: str
+    """presencial, en_linea o mixta."""
+    trainer_kind: str
+    """internal, external, supplier, foreign o stps."""
+    trainer_name: str | None
+    """El agente capacitador."""
+    start_date: str
+    """Fecha de inicio de la relación laboral (FechaInicioRelLaboral), AAAA-MM-DD."""
+    end_date: str
+    """Último día trabajado si ya no trabaja ahí, AAAA-MM-DD."""
+    cancelled: bool
+    """Si se canceló teniendo constancias emitidas (se conservan)."""
+    trainer_registration: NotRequired[str | None]
+    """El registro del agente externo ante la STPS."""
+    instructor_name: NotRequired[str | None]
+    """Quien firma como instructor o tutor."""
+    validity_months: NotRequired[int | None]
+    """Cada cuántos meses se renueva."""
+    passing_score: NotRequired[float | None]
+    """La calificación mínima."""
+    place: NotRequired[str | None]
+    """Dónde se imparte."""
+    objective: NotRequired[str | None]
+    """El objetivo del curso."""
+    signers_problem: NotRequired[str | None]
+    """Qué falta de quién firma las constancias."""
+    participants: NotRequired[list[TrainingParticipant]]
+    """Quienes lo tomaron (al ver un curso; no en la lista)."""
+    counts: NotRequired[TrainingCourseCounts]
+    """Los totales (en la lista)."""
+
+
+class TrainingCourseDeleted(TypedDict):
+    """Un curso borrado o cancelado."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["training_course"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    deleted: bool
+    """true si se borró."""
+    cancelled: bool
+    """true si se canceló porque tenía constancias emitidas."""
+
+
+class TrainingCertificate(TypedDict):
+    """Una constancia DC-3 emitida, con lo que pide el aviso a la STPS."""
+    object: Literal["training_certificate"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    folio: int
+    """Folio (Folio). Fiscalisto asigna el siguiente de la serie; mande uno solo si debe ser ese."""
+    name: str
+    """Apellido paterno, materno y nombre(s)."""
+    curp: str
+    """CURP, 18 caracteres."""
+    occupation: str
+    """Su ocupación del Catálogo Nacional de Ocupaciones, clave y nombre («06 Transporte»)."""
+    position: str | None
+    """Puesto (Puesto)."""
+    education: str | None
+    """Su grado de estudios terminados."""
+    course: str
+    """El nombre del curso."""
+    thematic_area: str
+    """El área temática, clave y nombre («6000 Seguridad»)."""
+    hours: float
+    """La duración en horas."""
+    start_date: str
+    """Fecha de inicio de la relación laboral (FechaInicioRelLaboral), AAAA-MM-DD."""
+    end_date: str
+    """Último día trabajado si ya no trabaja ahí, AAAA-MM-DD."""
+    trainer: str
+    """El agente capacitador como va en la constancia."""
+    trainer_registration: str | None
+    """El registro del agente externo ante la STPS."""
+    delivered_at: str | None
+    """Cuándo se entregó."""
+
+
+class EmployeeTrainingCoursesItem(TypedDict):
+    course: str
+    """El curso (trc_…)."""
+    participant: str
+    """Su lugar en el curso (trp_…)."""
+    name: str
+    """Nombre."""
+    thematic_area: str
+    """El área temática, clave y nombre."""
+    hours: float
+    """La duración en horas."""
+    start_date: str
+    """Fecha de inicio de la relación laboral (FechaInicioRelLaboral), AAAA-MM-DD."""
+    end_date: str
+    """Último día trabajado si ya no trabaja ahí, AAAA-MM-DD."""
+    result: str
+    """pending, passed, failed o sufficiency."""
+    folio: int | None
+    """Folio (Folio). Fiscalisto asigna el siguiente de la serie; mande uno solo si debe ser ese."""
+    issued_at: str | None
+    """Cuándo se emitió su constancia."""
+    delivered_at: str | None
+    """Cuándo se le entregó."""
+    expires_on: str | None
+    """Hasta cuándo está vigente, si el curso tiene vigencia."""
+
+
+class EmployeeTraining(TypedDict):
+    """La capacitación de un empleado."""
+    object: Literal["employee_training"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    employee: str
+    """El empleado (emp_…)."""
+    occupation: str | None
+    """Su ocupación: la suya o la de su puesto."""
+    own_occupation: str | None
+    """La suya, cuando no es la de su puesto."""
+    education: str | None
+    """Su grado de estudios terminados."""
+    courses: list[EmployeeTrainingCoursesItem]
+    """Los cursos que tomó, del más reciente al más antiguo."""
 
 
 class ImssFilesFilesItem(TypedDict):
@@ -12992,6 +13308,28 @@ class CandidateList(TypedDict):
     """La ruta de esta lista."""
 
 
+class TrainingCertificateList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[TrainingCertificate]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class TrainingCourseList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[TrainingCourse]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class InvoiceBatchList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -16983,6 +17321,185 @@ class UpdateCandidateParams(TypedDict):
 class HireCandidateParams(TypedDict):
     employee: str
     """El empleado (emp_…) que ya dio de alta con POST /v1/employees: cubre la vacante con él."""
+
+
+class GetTrainingParams(TypedDict):
+    """Los parámetros de GET /v1/training."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateTrainingSettingsParamsCommissionItem(TypedDict):
+    name: str
+    """Su nombre."""
+    side: Literal["patron", "trabajadores"]
+    """A quién representa: patron o trabajadores."""
+    role: NotRequired[str | None]
+    """Su cargo en la comisión (opcional)."""
+
+
+class UpdateTrainingSettingsParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    company_name: NotRequired[str | None]
+    """El nombre de la empresa en la constancia; null usa la razón social. Persona física: apellido paterno, materno y nombre(s)."""
+    legal_rep: NotRequired[str | None]
+    """Quien firma como patrón o representante legal cuando hay hasta 50 trabajadores (art. 24, fr. II)."""
+    commission_employer_rep: NotRequired[str | None]
+    """Con más de 50 trabajadores: el representante del patrón ante la comisión mixta de capacitación, que firma la constancia."""
+    workers_rep: NotRequired[str | None]
+    """Con más de 50 trabajadores: el representante de los trabajadores ante la comisión mixta, que también firma."""
+    commission: NotRequired[list[UpdateTrainingSettingsParamsCommissionItem]]
+    """Los integrantes de la comisión mixta de capacitación (LFT 153-E: igual número por cada parte)."""
+    commission_constituted_on: NotRequired[str | None]
+    """El día en que se constituyó la comisión mixta."""
+    workers_count: NotRequired[int | None]
+    """Los trabajadores de la empresa, si no todos están en Nómina; null cuenta los empleados activos."""
+    plan_start: NotRequired[str | None]
+    """El día en que empieza el plan de capacitación (dos años como máximo, LFT 153-H)."""
+    plan_end: NotRequired[str | None]
+    """El día en que termina el plan."""
+    occupations: NotRequired[dict[str, str]]
+    """La ocupación del Catálogo Nacional de Ocupaciones de cada puesto: {"Operador de montacargas": "06.2"}. Reemplaza las de antes."""
+
+
+# Los parámetros de GET /v1/training/certificates.
+ListTrainingCertificatesParams = TypedDict(
+    "ListTrainingCertificatesParams",
+    {
+        "issuer": "NotRequired[str]",
+        "from": "str",
+        "to": "str",
+    },
+)
+
+
+class ListTrainingCoursesParams(TypedDict):
+    """Los parámetros de GET /v1/training_courses."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateTrainingCourseParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    name: str
+    """El nombre del curso, como va en la constancia."""
+    thematic_area: str
+    """La clave del área temática del catálogo de la STPS (1000 Producción general … 9000 Participación social)."""
+    hours: float
+    """La duración en horas."""
+    modality: NotRequired[Literal["presencial", "en_linea", "mixta"]]
+    """presencial (por omisión), en_linea o mixta."""
+    start_date: str
+    """El día en que empezó."""
+    end_date: str
+    """El día en que terminó; de ahí corren los 20 días hábiles para entregar las constancias."""
+    trainer_kind: NotRequired[Literal["internal", "external", "supplier", "foreign", "stps"]]
+    """Quién lo imparte: internal (instructor interno, por omisión: la constancia dice el nombre de la empresa como agente), external (agente capacitador externo, con su registro), supplier (proveedor de un bien o servicio), foreign (capacitador extranjero) o stps."""
+    trainer_name: NotRequired[str | None]
+    """El nombre del agente capacitador, salvo internal y stps."""
+    trainer_registration: NotRequired[str | None]
+    """El registro del agente externo ante la STPS."""
+    instructor_name: NotRequired[str | None]
+    """Quien firma la constancia como instructor o tutor."""
+    validity_months: NotRequired[int | None]
+    """Cada cuántos meses se renueva (para avisar); null, sin vigencia."""
+    passing_score: NotRequired[float | None]
+    """La calificación mínima para aprobar (opcional)."""
+    place: NotRequired[str | None]
+    """Dónde se impartió."""
+    objective: NotRequired[str | None]
+    """Su objetivo."""
+    employees: NotRequired[list[str]]
+    """Quiénes lo tomaron (emp_…); en una actualización reemplaza la lista."""
+
+
+class UpdateTrainingCourseParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    name: str
+    """El nombre del curso, como va en la constancia."""
+    thematic_area: str
+    """La clave del área temática del catálogo de la STPS (1000 Producción general … 9000 Participación social)."""
+    hours: float
+    """La duración en horas."""
+    modality: NotRequired[Literal["presencial", "en_linea", "mixta"]]
+    """presencial (por omisión), en_linea o mixta."""
+    start_date: str
+    """El día en que empezó."""
+    end_date: str
+    """El día en que terminó; de ahí corren los 20 días hábiles para entregar las constancias."""
+    trainer_kind: NotRequired[Literal["internal", "external", "supplier", "foreign", "stps"]]
+    """Quién lo imparte: internal (instructor interno, por omisión: la constancia dice el nombre de la empresa como agente), external (agente capacitador externo, con su registro), supplier (proveedor de un bien o servicio), foreign (capacitador extranjero) o stps."""
+    trainer_name: NotRequired[str | None]
+    """El nombre del agente capacitador, salvo internal y stps."""
+    trainer_registration: NotRequired[str | None]
+    """El registro del agente externo ante la STPS."""
+    instructor_name: NotRequired[str | None]
+    """Quien firma la constancia como instructor o tutor."""
+    validity_months: NotRequired[int | None]
+    """Cada cuántos meses se renueva (para avisar); null, sin vigencia."""
+    passing_score: NotRequired[float | None]
+    """La calificación mínima para aprobar (opcional)."""
+    place: NotRequired[str | None]
+    """Dónde se impartió."""
+    objective: NotRequired[str | None]
+    """Su objetivo."""
+    employees: NotRequired[list[str]]
+    """Quiénes lo tomaron (emp_…); en una actualización reemplaza la lista."""
+
+
+class SetTrainingParticipantsParams(TypedDict):
+    employees: list[str]
+    """Los empleados (emp_…)."""
+
+
+class SetTrainingResultsParamsResultsItem(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    result: Literal["pending", "passed", "failed", "sufficiency"]
+    """pending (por calificar), passed (aprobó), failed (no aprobó) o sufficiency (aprobó el examen de suficiencia, art. 24, fr. III, inciso b)."""
+    score: NotRequired[float | None]
+    """Su calificación de 0 a 100."""
+    note: NotRequired[str | None]
+    """Una nota."""
+
+
+class SetTrainingResultsParams(TypedDict):
+    results: list[SetTrainingResultsParamsResultsItem]
+    """La calificación de cada empleado, hasta 1,000 a la vez."""
+
+
+class IssueTrainingCertificatesParams(TypedDict):
+    employees: NotRequired[list[str]]
+    """A quiénes; por omisión a todos los que aprobaron y no la tienen."""
+
+
+class DeliverTrainingCertificatesParams(TypedDict):
+    employees: NotRequired[list[str]]
+    """A quiénes se entregó; por omisión todas las emitidas sin entregar."""
+    delivered_on: NotRequired[str]
+    """El día de la entrega; por omisión hoy."""
+    via: NotRequired[Literal["paper", "email", "portal"]]
+    """Cómo: paper (en papel, por omisión), email o portal."""
+
+
+class GetTrainingCertificatesPdfParams(TypedDict):
+    """Los parámetros de GET /v1/training_courses/{id}/pdf."""
+    employees: NotRequired[str]
+    """Solo las de estos empleados (emp_…, separados por comas)."""
+
+
+class UpdateEmployeeTrainingParams(TypedDict):
+    occupation: NotRequired[str | None]
+    """Su clave del Catálogo Nacional de Ocupaciones cuando no es la de su puesto; null usa la de su puesto."""
+    education: NotRequired[Literal["primaria", "secundaria", "bachillerato", "tecnico", "licenciatura", "especialidad", "maestria", "doctorado"] | None]
+    """Su grado de estudios terminados, que pide el aviso a la STPS: primaria, secundaria, bachillerato, tecnico, licenciatura, especialidad, maestria o doctorado."""
 
 
 class UpdatePayrollTaxSettingsParams(TypedDict):

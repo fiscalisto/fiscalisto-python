@@ -133,6 +133,7 @@ if TYPE_CHECKING:
         CreateTaxDeterminationParams,
         CreateTestClockParams,
         CreateTicketParams,
+        CreateTrainingCourseParams,
         CreateWebhookEndpointParams,
         CrossCheckCfdi,
         CrossChecks,
@@ -148,6 +149,7 @@ if TYPE_CHECKING:
         DeleteRoleParams,
         DeleteTaxDeterminationParams,
         Deleted,
+        DeliverTrainingCertificatesParams,
         DepreciationReconciliation,
         Diot,
         DisposeFixedAssetParams,
@@ -156,6 +158,7 @@ if TYPE_CHECKING:
         EmployeeDeductionList,
         EmployeePortal,
         EmployeeRaise,
+        EmployeeTraining,
         EmployeeVacations,
         EntryTemplate,
         EntryTemplateLines,
@@ -232,6 +235,8 @@ if TYPE_CHECKING:
         GetSatRiskCheckParams,
         GetTaxDeterminationParams,
         GetTaxDiscrepancyParams,
+        GetTrainingCertificatesPdfParams,
+        GetTrainingParams,
         GetTrialBalanceParams,
         GetVariableSalaryParams,
         GetVatRefundParams,
@@ -251,6 +256,7 @@ if TYPE_CHECKING:
         InvoiceCreate,
         InvoicePreview,
         InvoiceSalesOrderParams,
+        IssueTrainingCertificatesParams,
         Issuer,
         IssuerBranding,
         IssuerOnboardingLink,
@@ -327,6 +333,8 @@ if TYPE_CHECKING:
         ListSupplierInvoicesParams,
         ListTagsParams,
         ListTicketsParams,
+        ListTrainingCertificatesParams,
+        ListTrainingCoursesParams,
         ListVacationRequestsParams,
         ListWarehouseStockParams,
         ListWarehousesParams,
@@ -436,6 +444,8 @@ if TYPE_CHECKING:
         SendSalesOrderParams,
         SetClosedPeriodParams,
         SetOpeningBalancesParams,
+        SetTrainingParticipantsParams,
+        SetTrainingResultsParams,
         SignEfirmaParams,
         StartProductionOrderParams,
         StockAdjustment,
@@ -455,6 +465,10 @@ if TYPE_CHECKING:
         TestRuleParams,
         TestWebhookEndpointParams,
         Ticket,
+        Training,
+        TrainingCertificateList,
+        TrainingCourse,
+        TrainingCourseDeleted,
         TrialBalance,
         UpdateAccountParams,
         UpdateAccountingSettingsParams,
@@ -471,6 +485,7 @@ if TYPE_CHECKING:
         UpdateEmployeeDeductionParams,
         UpdateEmployeeParams,
         UpdateEmployeePortalParams,
+        UpdateEmployeeTrainingParams,
         UpdateEmployeeVacationsParams,
         UpdateEntryTemplateParams,
         UpdateExpenseItemParams,
@@ -501,6 +516,8 @@ if TYPE_CHECKING:
         UpdateSelfInvoicingParams,
         UpdateStoreConnectionParams,
         UpdateTagParams,
+        UpdateTrainingCourseParams,
+        UpdateTrainingSettingsParams,
         UpdateWebhookEndpointParams,
         UploadBranchLogoParams,
         UploadCertificateParams,
@@ -2677,6 +2694,48 @@ class EmployeesResource:
         )
         return result
 
+    def training(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EmployeeTraining:
+        """Capacitación de un empleado
+
+        Su ocupación del Catálogo Nacional de Ocupaciones (la suya o la de su puesto), su grado de estudios y los cursos que tomó con su constancia.
+
+        GET /v1/employees/{id}/training
+        https://fiscalisto.com/docs/api/referencia/nomina/get-employee-training
+        """
+        result: EmployeeTraining = self._client.request(
+            "GET", f"/v1/employees/{_path(id)}/training", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_training(
+        self,
+        id: str,
+        params: UpdateEmployeeTrainingParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EmployeeTraining:
+        """Ocupación y estudios de un empleado
+
+        Su ocupación cuando no es la de su puesto (null usa la del puesto) y su grado de estudios terminados, que pide el aviso a la STPS.
+
+        POST /v1/employees/{id}/training
+        https://fiscalisto.com/docs/api/referencia/nomina/update-employee-training
+        """
+        result: EmployeeTraining = self._client.request(
+            "POST", f"/v1/employees/{_path(id)}/training", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
 
 class VacationRequestsResource:
     """Nómina: fiscalisto.vacation_requests."""
@@ -4067,6 +4126,289 @@ class CandidatesResource:
         """
         result: str = self._client.request(
             "GET", f"/v1/candidates/{_path(id)}/files/{_path(question)}", result="text", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
+class TrainingResource:
+    """Nómina: fiscalisto.training."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetTrainingParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Training:
+        """Capacitación
+
+        Como «Nómina › Capacitación» de la app: quién firma las constancias DC-3 (con hasta 50 trabajadores el patrón o su representante legal; con más, el representante del patrón y el de los trabajadores ante la comisión mixta: Acuerdo de la STPS del 14 de junio de 2013, artículo 24, fracción II), cuántos trabajadores cuenta, los años del plan de capacitación con el día límite del aviso a la STPS de cada uno (60 días hábiles, artículo 26, fracción I), las constancias por renovar y cuántas faltan por entregar.
+
+        GET /v1/training
+        https://fiscalisto.com/docs/api/referencia/nomina/get-training
+        """
+        result: Training = self._client.request(
+            "GET", "/v1/training", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_settings(
+        self,
+        params: UpdateTrainingSettingsParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Training:
+        """Configurar la capacitación
+
+        Quién firma las constancias, la comisión mixta (LFT 153-E: igual número por cada parte), cuántos trabajadores contar si no todos están en Nómina, las fechas del plan (dos años como máximo, LFT 153-H) y la ocupación del Catálogo Nacional de Ocupaciones de cada puesto. Lo que no manda no cambia. Contesta training.
+
+        POST /v1/training/settings
+        https://fiscalisto.com/docs/api/referencia/nomina/update-training-settings
+        """
+        result: Training = self._client.request(
+            "POST", "/v1/training/settings", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def certificates(
+        self,
+        params: ListTrainingCertificatesParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TrainingCertificateList:
+        """Constancias para el aviso a la STPS
+
+        Las constancias DC-3 emitidas de los cursos que terminaron entre from y to, con lo que pide el aviso a la STPS (artículo 26, fracción I: nombre, CURP, ocupación, puesto, estudios, curso, área temática, horas, fechas y agente capacitador), ordenadas por folio. El día límite para presentarlo de cada año del plan viene en plan_years de GET /v1/training. El aviso se presenta en el sistema de la STPS, que no tiene API.
+
+        GET /v1/training/certificates
+        https://fiscalisto.com/docs/api/referencia/nomina/list-training-certificates
+        """
+        result: TrainingCertificateList = self._client.request(
+            "GET", "/v1/training/certificates", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class TrainingCoursesResource:
+    """Nómina: fiscalisto.training_courses."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListTrainingCoursesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[TrainingCourse]:
+        """Listar cursos de capacitación
+
+        Los cursos del emisor (trc_…), los más recientes primero, con cuántos lo tomaron, aprobaron, tienen su constancia y faltan por entregar (due) o ya pasaron los 20 días hábiles (late).
+
+        GET /v1/training_courses
+        https://fiscalisto.com/docs/api/referencia/nomina/list-training-courses
+        """
+        return self._client.list("/v1/training_courses", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def create(
+        self,
+        params: CreateTrainingCourseParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TrainingCourse:
+        """Registrar un curso de capacitación
+
+        Lo que pide la constancia DC-3 (artículo 24, fracción IV): nombre, área temática del catálogo de la STPS, horas, periodo y quién lo imparte (con un instructor interno la constancia dice el nombre de la empresa como agente capacitador), con quiénes lo tomaron (employees).
+
+        POST /v1/training_courses
+        https://fiscalisto.com/docs/api/referencia/nomina/create-training-course
+        """
+        result: TrainingCourse = self._client.request(
+            "POST", "/v1/training_courses", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TrainingCourse:
+        """Ver un curso de capacitación
+
+        Un curso (trc_…) con quienes lo tomaron (trp_…): su resultado, el folio de su constancia, el día límite para entregarla (20 días hábiles desde el fin del curso, artículo 24, fracción III), si ya se entregó y, cuando todavía no se puede emitir, por qué (blocker).
+
+        GET /v1/training_courses/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/get-training-course
+        """
+        result: TrainingCourse = self._client.request(
+            "GET", f"/v1/training_courses/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateTrainingCourseParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TrainingCourse:
+        """Cambiar un curso de capacitación
+
+        Cambia sus datos; employees reemplaza la lista (quien ya tiene su constancia se queda). Las constancias ya emitidas guardan lo que decían.
+
+        POST /v1/training_courses/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/update-training-course
+        """
+        result: TrainingCourse = self._client.request(
+            "POST", f"/v1/training_courses/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TrainingCourseDeleted:
+        """Borrar un curso de capacitación
+
+        Lo borra si nadie tiene su constancia; si alguien la tiene, lo cancela (cancelled true), porque las copias se conservan a disposición de la STPS (artículo 26, fracción III).
+
+        DELETE /v1/training_courses/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/delete-training-course
+        """
+        result: TrainingCourseDeleted = self._client.request(
+            "DELETE", f"/v1/training_courses/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def set_participants(
+        self,
+        id: str,
+        params: SetTrainingParticipantsParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TrainingCourse:
+        """Quién tomó un curso
+
+        Reemplaza la lista de quienes lo tomaron (emp_…). Quien ya tiene su constancia se queda.
+
+        POST /v1/training_courses/{id}/participants
+        https://fiscalisto.com/docs/api/referencia/nomina/set-training-participants
+        """
+        result: TrainingCourse = self._client.request(
+            "POST", f"/v1/training_courses/{_path(id)}/participants", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def set_results(
+        self,
+        id: str,
+        params: SetTrainingResultsParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TrainingCourse:
+        """Calificar un curso
+
+        El resultado de cada quien: pending, passed, failed o sufficiency (aprobó el examen de suficiencia, artículo 24, fracción III, inciso b), con su calificación. A quien ya tiene su constancia no se le puede poner failed.
+
+        POST /v1/training_courses/{id}/results
+        https://fiscalisto.com/docs/api/referencia/nomina/set-training-results
+        """
+        result: TrainingCourse = self._client.request(
+            "POST", f"/v1/training_courses/{_path(id)}/results", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def issue(
+        self,
+        id: str,
+        params: IssueTrainingCertificatesParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TrainingCourse:
+        """Emitir constancias DC-3
+
+        Emite la constancia de quienes aprobaron (o de los que mande en employees), cada una con el folio siguiente del emisor. Pide que el curso haya terminado (salvo el examen de suficiencia), el CURP y la ocupación de cada quien y quién firma; lo que falte se lee en blocker de cada participante.
+
+        POST /v1/training_courses/{id}/issue
+        https://fiscalisto.com/docs/api/referencia/nomina/issue-training-certificates
+        """
+        result: TrainingCourse = self._client.request(
+            "POST", f"/v1/training_courses/{_path(id)}/issue", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def deliver(
+        self,
+        id: str,
+        params: DeliverTrainingCertificatesParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> TrainingCourse:
+        """Marcar constancias como entregadas
+
+        Anota que se entregaron (en papel, por correo o en el portal del empleado) y el día. Por omisión todas las emitidas sin entregar.
+
+        POST /v1/training_courses/{id}/deliver
+        https://fiscalisto.com/docs/api/referencia/nomina/deliver-training-certificates
+        """
+        result: TrainingCourse = self._client.request(
+            "POST", f"/v1/training_courses/{_path(id)}/deliver", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def pdf(
+        self,
+        id: str,
+        params: GetTrainingCertificatesPdfParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+    ) -> bytes:
+        """Descargar constancias DC-3
+
+        Las constancias emitidas del curso en el formato DC-3 de la STPS, una página cada una con su reverso de catálogos, listas para firmar. El logo de la empresa va si lo tiene (artículo 25: solo logotipos).
+
+        GET /v1/training_courses/{id}/pdf
+        https://fiscalisto.com/docs/api/referencia/nomina/get-training-certificates-pdf
+        """
+        result: bytes = self._client.request(
+            "GET", f"/v1/training_courses/{_path(id)}/pdf", query=params, result="bytes", timeout=timeout, max_retries=max_retries
         )
         return result
 
@@ -11028,6 +11370,16 @@ class FiscalistoApi(Core):
     def candidates(self) -> CandidatesResource:
         """Nómina."""
         return CandidatesResource(self)
+
+    @cached_property
+    def training(self) -> TrainingResource:
+        """Nómina."""
+        return TrainingResource(self)
+
+    @cached_property
+    def training_courses(self) -> TrainingCoursesResource:
+        """Nómina."""
+        return TrainingCoursesResource(self)
 
     @cached_property
     def invoice_batches(self) -> InvoiceBatchesResource:
