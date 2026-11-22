@@ -130,6 +130,7 @@ if TYPE_CHECKING:
         CreatePurchaseReceiptParams,
         CreateQuoteParams,
         CreateRecurringInvoiceParams,
+        CreateRepseContractParams,
         CreateRetentionParams,
         CreateRoleParams,
         CreateRuleParams,
@@ -241,6 +242,8 @@ if TYPE_CHECKING:
         GetPayrollOrgChartParams,
         GetPayrollProvisionParams,
         GetPayrollTaxParams,
+        GetRepseProfileParams,
+        GetRepseReturnParams,
         GetRetentionParams,
         GetRetentionPdfParams,
         GetRetentionXmlParams,
@@ -331,6 +334,7 @@ if TYPE_CHECKING:
         ListQuotesParams,
         ListReceivablesParams,
         ListRecurringInvoicesParams,
+        ListRepseContractsParams,
         ListRetentionsParams,
         ListRolesParams,
         ListRuleRunsParams,
@@ -418,6 +422,9 @@ if TYPE_CHECKING:
         RemovePayrollDepartmentParams,
         RenumberAccountsParams,
         ReportImssMovementsParams,
+        RepseContract,
+        RepseProfile,
+        RepseReturn,
         RequestPurchaseReceiptInvoiceParams,
         ResendEventParams,
         ResetTestDataParams,
@@ -536,6 +543,8 @@ if TYPE_CHECKING:
         UpdatePurchaseReceiptParams,
         UpdateQuoteParams,
         UpdateRecurringInvoiceParams,
+        UpdateRepseContractParams,
+        UpdateRepseProfileParams,
         UpdateRoleParams,
         UpdateRuleParams,
         UpdateSalesOrderParams,
@@ -3760,13 +3769,196 @@ class PayrollCalendarResource:
     ) -> PayrollCalendarEvent:
         """Marcar un pago de nómina como pagado
 
-        Marca (paid true) o desmarca (false) un pago del calendario de nómina: imss, rcv_infonavit, isn, aguinaldo, ptu, prima_riesgo o ajuste_anual, con su key como lo da GET /v1/payroll_calendar. Una nómina (pago) queda hecha al timbrar sus recibos.
+        Marca (paid true) o desmarca (false) un pago del calendario de nómina: imss, rcv_infonavit, isn, aguinaldo, ptu, prima_riesgo, ajuste_anual, icsoe o sisub, con su key como lo da GET /v1/payroll_calendar. Una nómina (pago) queda hecha al timbrar sus recibos.
 
         POST /v1/payroll_calendar/mark
         https://fiscalisto.com/docs/api/referencia/nomina/mark-payroll-calendar-event
         """
         result: PayrollCalendarEvent = self._client.request(
             "POST", "/v1/payroll_calendar/mark", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class RepseContractsResource:
+    """Nómina: fiscalisto.repse_contracts."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateRepseContractParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> RepseContract:
+        """Registrar un contrato de servicios especializados
+
+        Un contrato de servicios u obras especializadas (LFT art. 15 y 15-A) con su cliente, el centro de trabajo y quién trabaja en él y desde cuándo, como «Nómina › REPSE › + Contrato» en la app. Con él se arman los informes cuatrimestrales ICSOE del IMSS (LSS art. 15-A) y SISUB del Infonavit (Ley del Infonavit art. 29 Bis) de GET /v1/repse_returns/{period}, y aparecen sus fechas en el calendario de nómina. Un número de contrato que ya usó contesta parameter_invalid en number; un trabajador de otro emisor, en workers.
+
+        POST /v1/repse_contracts
+        https://fiscalisto.com/docs/api/referencia/nomina/create-repse-contract
+        """
+        result: RepseContract = self._client.request(
+            "POST", "/v1/repse_contracts", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListRepseContractsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[RepseContract]:
+        """Listar contratos de servicios especializados
+
+        Los contratos del emisor que no ha archivado, por fecha de inicio (el más antiguo primero) y número.
+
+        GET /v1/repse_contracts
+        https://fiscalisto.com/docs/api/referencia/nomina/list-repse-contracts
+        """
+        return self._client.list("/v1/repse_contracts", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> RepseContract:
+        """Ver un contrato de servicios especializados
+
+        Un contrato con su cliente, centro de trabajo y trabajadores.
+
+        GET /v1/repse_contracts/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/get-repse-contract
+        """
+        result: RepseContract = self._client.request(
+            "GET", f"/v1/repse_contracts/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateRepseContractParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> RepseContract:
+        """Cambiar un contrato de servicios especializados
+
+        Cambia lo que mande; lo demás queda. workers reemplaza la lista completa: para que alguien deje el contrato, póngale end_date en vez de quitarlo, así sigue en los informes de los meses que trabajó. Un contrato que terminó lleva su end_date.
+
+        POST /v1/repse_contracts/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/update-repse-contract
+        """
+        result: RepseContract = self._client.request(
+            "POST", f"/v1/repse_contracts/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Archivar un contrato de servicios especializados
+
+        Lo archiva: sale de la lista y de todos los informes, también de los pasados. Para un contrato que terminó, mejor póngale end_date con POST /v1/repse_contracts/{id}.
+
+        DELETE /v1/repse_contracts/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/delete-repse-contract
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/repse_contracts/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class RepseProfileResource:
+    """Nómina: fiscalisto.repse_profile."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetRepseProfileParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> RepseProfile:
+        """Ver los datos del sujeto obligado
+
+        Los datos del emisor que pide el SISUB del Infonavit y no están en Fiscalisto: folio del REPSE, correo, teléfono, domicilio, representante legal y, de una persona moral, su acta constitutiva y folio mercantil. Como «Datos del sujeto obligado» en «Nómina › REPSE».
+
+        GET /v1/repse_profile
+        https://fiscalisto.com/docs/api/referencia/nomina/get-repse-profile
+        """
+        result: RepseProfile = self._client.request(
+            "GET", "/v1/repse_profile", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        params: UpdateRepseProfileParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> RepseProfile:
+        """Guardar los datos del sujeto obligado
+
+        Cambia lo que mande; lo demás queda y "" lo vacía. El teléfono va con 10 dígitos y deed_date como AAAA-MM-DD; si no, contesta parameter_invalid en ese campo.
+
+        POST /v1/repse_profile
+        https://fiscalisto.com/docs/api/referencia/nomina/update-repse-profile
+        """
+        result: RepseProfile = self._client.request(
+            "POST", "/v1/repse_profile", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class RepseReturnsResource:
+    """Nómina: fiscalisto.repse_returns."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        period: str,
+        params: GetRepseReturnParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> RepseReturn:
+        """Informes ICSOE y SISUB de un cuatrimestre
+
+        Lo que se presenta del cuatrimestre (AAAA-1 enero a abril, AAAA-2 mayo a agosto, AAAA-3 septiembre a diciembre) a más tardar el día 17 del mes siguiente, o el siguiente día hábil: por contrato, sus trabajadores con NSS, CURP y último salario base de cotización (ICSOE, LSS art. 15-A), y por trabajador y bimestre las percepciones, el salario topado a 25 UMA, la aportación del 5% y la amortización de su crédito (SISUB, Ley del Infonavit art. 29 Bis), calculados de los recibos timbrados. files trae los archivos para subir: los tres del SISUB y uno del ICSOE por contrato. problems dice lo que falta para presentarlos.
+
+        GET /v1/repse_returns/{period}
+        https://fiscalisto.com/docs/api/referencia/nomina/get-repse-return
+        """
+        result: RepseReturn = self._client.request(
+            "GET", f"/v1/repse_returns/{_path(period)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -11960,6 +12152,21 @@ class FiscalistoApi(Core):
     def payroll_calendar(self) -> PayrollCalendarResource:
         """Nómina."""
         return PayrollCalendarResource(self)
+
+    @cached_property
+    def repse_contracts(self) -> RepseContractsResource:
+        """Nómina."""
+        return RepseContractsResource(self)
+
+    @cached_property
+    def repse_profile(self) -> RepseProfileResource:
+        """Nómina."""
+        return RepseProfileResource(self)
+
+    @cached_property
+    def repse_returns(self) -> RepseReturnsResource:
+        """Nómina."""
+        return RepseReturnsResource(self)
 
     @cached_property
     def payroll_org_chart(self) -> PayrollOrgChartResource:

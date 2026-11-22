@@ -336,6 +336,10 @@ __all__ = [
     "CreateRecurringInvoiceParams",
     "CreateRecurringInvoiceParamsInvoice",
     "CreateRecurringInvoiceParamsSchedule",
+    "CreateRepseContractParams",
+    "CreateRepseContractParamsClientAddress",
+    "CreateRepseContractParamsSiteAddress",
+    "CreateRepseContractParamsWorkersItem",
     "CreateRetentionParams",
     "CreateRetentionParamsDistributableRemainder",
     "CreateRetentionParamsDividends",
@@ -603,6 +607,8 @@ __all__ = [
     "GetPayrollOrgChartParams",
     "GetPayrollProvisionParams",
     "GetPayrollTaxParams",
+    "GetRepseProfileParams",
+    "GetRepseReturnParams",
     "GetRetentionParams",
     "GetRetentionPdfParams",
     "GetRetentionXmlParams",
@@ -822,6 +828,7 @@ __all__ = [
     "ListQuotesParams",
     "ListReceivablesParams",
     "ListRecurringInvoicesParams",
+    "ListRepseContractsParams",
     "ListRetentionsParams",
     "ListRolesParams",
     "ListRuleRunsParams",
@@ -909,6 +916,7 @@ __all__ = [
     "PayrollApprovalPeriod",
     "PayrollApprovalReceiptsItem",
     "PayrollApprovalReceiptsItemTotals",
+    "PayrollApprovalStep",
     "PayrollBankFile",
     "PayrollBankFileExcludedItem",
     "PayrollBankFilePaymentsItem",
@@ -1031,6 +1039,18 @@ __all__ = [
     "RenumberAccountsParamsMappingItem",
     "ReportImssMovementsParams",
     "ReportImssMovementsParamsRejectedItem",
+    "RepseContract",
+    "RepseContractClientAddress",
+    "RepseContractList",
+    "RepseContractSiteAddress",
+    "RepseContractWorkersItem",
+    "RepseProfile",
+    "RepseReturn",
+    "RepseReturnContractsItem",
+    "RepseReturnContractsItemWorkersItem",
+    "RepseReturnFilesItem",
+    "RepseReturnTotals",
+    "RepseReturnWorkersItem",
     "RequestPurchaseReceiptInvoiceParams",
     "ResendEventParams",
     "ResetTestDataParams",
@@ -1327,6 +1347,11 @@ __all__ = [
     "UpdateRecurringInvoiceParams",
     "UpdateRecurringInvoiceParamsInvoice",
     "UpdateRecurringInvoiceParamsSchedule",
+    "UpdateRepseContractParams",
+    "UpdateRepseContractParamsClientAddress",
+    "UpdateRepseContractParamsSiteAddress",
+    "UpdateRepseContractParamsWorkersItem",
+    "UpdateRepseProfileParams",
     "UpdateRoleParams",
     "UpdateRuleParams",
     "UpdateRuleParamsActionsItem",
@@ -4127,6 +4152,15 @@ class PayrollApprovalReceiptsItem(TypedDict):
     """Los importes aprobados: se timbra solo un recibo que los tenga."""
 
 
+class PayrollApprovalStep(TypedDict):
+    number: int
+    """El paso en que va, desde 1."""
+    of: int
+    """Cuántos pasos tiene."""
+    name: str
+    """El nombre del paso, como «Finanzas»."""
+
+
 class PayrollApproval(TypedDict):
     """Una prenómina pedida para aprobación: con ella aprobada se timbran sus recibos, con esos importes."""
     id: str
@@ -4152,7 +4186,9 @@ class PayrollApproval(TypedDict):
     decided_at: str | None
     """Cuándo se aprobó, rechazó o retiró, o null."""
     note: str | None
-    """Por qué se rechazó (o el comentario de quien la aprobó), o null."""
+    """Por qué se rechazó, el comentario de quien la aprobó, o el paso que la aprobó solo; o null."""
+    step: PayrollApprovalStep | None
+    """Mientras espera (pending): en qué paso de sus «Pasos de aprobación» va (Ajustes › Aprobaciones › Prenómina); null en otro estado."""
 
 
 class PayrollCostMonthsItem(TypedDict):
@@ -4253,8 +4289,8 @@ class PayrollCalendarEvent(TypedDict):
     """Una fecha del calendario de nómina."""
     object: Literal["payroll_calendar_event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
-    obligation: Literal["pago", "imss", "rcv_infonavit", "isn", "aguinaldo", "ptu", "prima_riesgo", "ajuste_anual"]
-    """pago (una nómina, en su fecha de pago), imss (cuotas del mes, LSS art. 39), rcv_infonavit (bimestrales), isn (impuesto sobre nómina de un estado), aguinaldo (LFT art. 87), ptu (LFT art. 122), prima_riesgo (determinación anual, RACERF art. 32) o ajuste_anual (LISR art. 97)."""
+    obligation: Literal["pago", "imss", "rcv_infonavit", "isn", "aguinaldo", "ptu", "prima_riesgo", "ajuste_anual", "icsoe", "sisub"]
+    """pago (una nómina, en su fecha de pago), imss (cuotas del mes, LSS art. 39), rcv_infonavit (bimestrales), isn (impuesto sobre nómina de un estado), aguinaldo (LFT art. 87), ptu (LFT art. 122), prima_riesgo (determinación anual, RACERF art. 32), ajuste_anual (LISR art. 97), icsoe (informativa cuatrimestral al IMSS de un contratista REPSE, LSS art. 15-A) o sisub (la del Infonavit, Ley del Infonavit art. 29 Bis)."""
     key: str
     """Lo identifica junto con obligation: 2026-11 (mes), 2026-B6 (bimestre), 2026 (año), 2026-11:CMX (ISN de un estado) o 2026-11-16/2026-11-30:04 (una nómina)."""
     title: str
@@ -8736,6 +8772,225 @@ class SuaComparison(TypedDict):
     """Cada trabajador: primero los que difieren, luego los que coinciden."""
     totals: SuaComparisonTotals
     """Totales (Totales)."""
+
+
+class RepseContractClientAddress(TypedDict):
+    """Domicilio fiscal del cliente."""
+    street: str
+    """Calle."""
+    exterior: str | None
+    """Número exterior."""
+    interior: str | None
+    """Número interior."""
+    neighborhood: str | None
+    """Colonia."""
+    zip: str
+    """Código postal."""
+    municipality: str
+    """Municipio o demarcación territorial."""
+    state: str
+    """Estado (c_Estado)."""
+
+
+class RepseContractSiteAddress(TypedDict):
+    """El centro de trabajo donde trabajan las personas que pone a disposición."""
+    street: str
+    """Calle."""
+    exterior: str | None
+    """Número exterior."""
+    interior: str | None
+    """Número interior."""
+    neighborhood: str | None
+    """Colonia."""
+    zip: str
+    """Código postal."""
+    municipality: str
+    """Municipio o demarcación territorial."""
+    state: str
+    """Estado (c_Estado)."""
+
+
+class RepseContractWorkersItem(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    name: str
+    """Su nombre."""
+    start_date: str
+    """Desde cuándo trabaja en el contrato (YYYY-MM-DD)."""
+    end_date: str | None
+    """Hasta cuándo, o null mientras siga."""
+
+
+class RepseContract(TypedDict):
+    """Un contrato de servicios u obras especializados (LFT art. 15) con un cliente, y quién del personal del emisor trabaja en él: lo que piden el ICSOE y el SISUB. Como Nómina › REPSE en la app."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["repse_contract"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (iss_…)."""
+    number: str
+    """Número de contrato (dígitos, hasta 20)."""
+    kind: str
+    """Tipo de contrato."""
+    contract_object: str
+    """Objeto del contrato."""
+    service: str
+    """El servicio u obra especializada registrado en el REPSE que cubre."""
+    amount: float
+    """Monto pactado, en pesos."""
+    start_date: str
+    """Inicio de su vigencia (YYYY-MM-DD)."""
+    end_date: str | None
+    """Fecha de término, o null si es por tiempo indefinido."""
+    estimated_workers: int
+    """Número estimado mensual de trabajadores que pone a disposición."""
+    client_tax_id: str
+    """RFC del cliente (el beneficiario)."""
+    client_name: str
+    """Razón social del cliente."""
+    client_employer_registration: str | None
+    """Registro patronal del cliente, o null si no tiene."""
+    client_address: RepseContractClientAddress
+    """Domicilio fiscal del cliente."""
+    site_address: RepseContractSiteAddress
+    """El centro de trabajo donde trabajan las personas que pone a disposición."""
+    workers: list[RepseContractWorkersItem]
+    """Quién trabaja en el contrato y desde cuándo."""
+    created_at: str | None
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+
+
+class RepseProfile(TypedDict):
+    """Lo que el SISUB pide del sujeto obligado (el contratista); la razón social y el registro patronal salen de sus datos fiscales."""
+    object: Literal["repse_profile"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    stps_folio: str | None
+    """Folio de su registro en el REPSE que dio la STPS."""
+    email: str | None
+    """Correo del sujeto obligado."""
+    phone: str | None
+    """Teléfono, 10 dígitos."""
+    address: str | None
+    """Domicilio fiscal en una línea."""
+    legal_representative: str | None
+    """Representante legal (persona moral)."""
+    sole_administrator: str | None
+    """Administrador único (persona moral)."""
+    deed_number: str | None
+    """Número de la escritura constitutiva."""
+    notary_name: str | None
+    """Nombre del notario público."""
+    notary_number: str | None
+    """Número de la notaría."""
+    deed_date: str | None
+    """Fecha de la escritura (YYYY-MM-DD)."""
+    commercial_folio: str | None
+    """Folio mercantil."""
+
+
+class RepseReturnContractsItemWorkersItem(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    name: str
+    """Su nombre."""
+    nss: str
+    """Su NSS, 11 dígitos."""
+    curp: str
+    """Su CURP."""
+    sbc: float
+    """Su último salario base de cotización del cuatrimestre, hasta 25 UMA."""
+
+
+class RepseReturnContractsItem(TypedDict):
+    contract: str
+    """El contrato (rpc_…)."""
+    number: str
+    """Su número de contrato."""
+    workers: list[RepseReturnContractsItemWorkersItem]
+    """Sus trabajadores en el cuatrimestre (el CSV del ICSOE)."""
+
+
+class RepseReturnWorkersItem(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    name: str
+    """Su nombre."""
+    nss: str
+    """Su NSS."""
+    bimester: int
+    """El bimestre del año (1 a 6)."""
+    contracts: list[str]
+    """Los números de los contratos en que trabajó ese bimestre."""
+    variable_perceptions: float
+    """Las percepciones variables del bimestre anterior que integraron su salario (LSS arts. 27 y 30)."""
+    fixed_perceptions: float
+    """Lo pagado en el bimestre de sueldos, aguinaldo y prima vacacional."""
+    disability_days: int
+    """Días de incapacidad del bimestre."""
+    non_integrable_perceptions: float
+    """Lo demás pagado en el bimestre que no integra el salario."""
+    capped_salary: float
+    """Su salario base al cierre del bimestre, hasta 25 UMA."""
+    infonavit_contribution: float
+    """Su aportación al Infonavit del bimestre (5% del salario base)."""
+    has_credit: bool
+    """true si tuvo descuento de crédito Infonavit en el bimestre."""
+    amortization: float
+    """Lo que se le descontó de amortización del crédito en el bimestre."""
+
+
+class RepseReturnTotals(TypedDict):
+    """Lo que el archivo del sujeto obligado del SISUB suma."""
+    contributions_without_credit: float
+    """Aportaciones de los trabajadores sin crédito."""
+    contributions_with_credit: float
+    """Aportaciones de los trabajadores con crédito."""
+    amortizations: float
+    """Amortizaciones descontadas."""
+
+
+class RepseReturnFilesItem(TypedDict):
+    name: str
+    """Nombre del archivo."""
+    system: Literal["sisub", "icsoe"]
+    """sisub (Infonavit) o icsoe (IMSS)."""
+    content: str
+    """El CSV, en texto."""
+
+
+class RepseReturn(TypedDict):
+    """El ICSOE (IMSS, LSS art. 15-A) y el SISUB (Infonavit, Ley del Infonavit art. 29 Bis) de un cuatrimestre, hechos de los contratos y los recibos timbrados. No hay forma de mandarlos por API: se suben, firmados con la e.firma, en cada portal."""
+    object: Literal["repse_return"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    period: str
+    """El cuatrimestre: AAAA-1 (enero a abril), AAAA-2 o AAAA-3."""
+    start_date: str
+    """Primer día del cuatrimestre."""
+    end_date: str
+    """Último día del cuatrimestre."""
+    due_date: str
+    """Último día para presentarlos: el 17 de enero, mayo o septiembre, o el siguiente día hábil (CFF art. 12)."""
+    contracts: list[RepseReturnContractsItem]
+    """Los contratos vigentes en el cuatrimestre."""
+    workers: list[RepseReturnWorkersItem]
+    """Cada trabajador por bimestre (el detalle de trabajadores del SISUB)."""
+    totals: RepseReturnTotals
+    """Lo que el archivo del sujeto obligado del SISUB suma."""
+    problems: list[str]
+    """Lo que falta o está mal antes de presentarlos; vacío si nada."""
+    files: list[RepseReturnFilesItem]
+    """Los 3 CSV del SISUB (sujeto obligado, contratos, trabajadores) y un CSV de trabajadores del ICSOE por contrato."""
 
 
 class BudgetLinesItem(TypedDict):
@@ -13868,6 +14123,17 @@ class EmployeeDeductionList(TypedDict):
     """La ruta de esta lista."""
 
 
+class RepseContractList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[RepseContract]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class CandidateList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -17703,12 +17969,215 @@ class GetPayrollCalendarParams(TypedDict):
 class MarkPayrollCalendarEventParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    obligation: Literal["imss", "rcv_infonavit", "isn", "aguinaldo", "ptu", "prima_riesgo", "ajuste_anual"]
-    """imss, rcv_infonavit, isn, aguinaldo, ptu, prima_riesgo o ajuste_anual."""
+    obligation: Literal["imss", "rcv_infonavit", "isn", "aguinaldo", "ptu", "prima_riesgo", "ajuste_anual", "icsoe", "sisub"]
+    """imss, rcv_infonavit, isn, aguinaldo, ptu, prima_riesgo, ajuste_anual, icsoe o sisub."""
     key: str
-    """Como lo da GET /v1/payroll_calendar: 2026-11, 2026-B6, 2026, 2026-11:CMX."""
+    """Como lo da GET /v1/payroll_calendar: 2026-11, 2026-B6, 2026-C3, 2026, 2026-11:CMX."""
     paid: bool
     """true lo marca pagado; false lo desmarca."""
+
+
+class CreateRepseContractParamsClientAddress(TypedDict):
+    """Domicilio fiscal del cliente."""
+    street: str
+    """Calle."""
+    exterior: NotRequired[str]
+    """Número exterior."""
+    interior: NotRequired[str]
+    """Número interior."""
+    neighborhood: NotRequired[str]
+    """Colonia."""
+    zip: str
+    """Código postal, 5 dígitos."""
+    municipality: str
+    """Municipio o demarcación territorial, sin abreviar."""
+    state: str
+    """Estado (c_Estado: NLE, CMX…)."""
+
+
+class CreateRepseContractParamsSiteAddress(TypedDict):
+    """El centro de trabajo donde trabajan las personas que pone a disposición."""
+    street: str
+    """Calle."""
+    exterior: NotRequired[str]
+    """Número exterior."""
+    interior: NotRequired[str]
+    """Número interior."""
+    neighborhood: NotRequired[str]
+    """Colonia."""
+    zip: str
+    """Código postal, 5 dígitos."""
+    municipality: str
+    """Municipio o demarcación territorial, sin abreviar."""
+    state: str
+    """Estado (c_Estado: NLE, CMX…)."""
+
+
+class CreateRepseContractParamsWorkersItem(TypedDict):
+    employee: str
+    """El empleado (emp_…) del mismo emisor."""
+    start_date: str
+    """Desde cuándo trabaja en el contrato (YYYY-MM-DD)."""
+    end_date: NotRequired[str | None]
+    """Hasta cuándo; null mientras siga."""
+
+
+class CreateRepseContractParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    number: str
+    """Número de contrato: dígitos, hasta 20 (así lo pide el SISUB)."""
+    kind: str
+    """Tipo de contrato, como lo dice el contrato."""
+    contract_object: str
+    """Objeto del contrato."""
+    service: str
+    """El servicio u obra especializada registrado en el REPSE que cubre."""
+    amount: float
+    """Monto pactado, en pesos."""
+    start_date: str
+    """Inicio de su vigencia (YYYY-MM-DD)."""
+    end_date: NotRequired[str | None]
+    """Fecha de término; null si es por tiempo indefinido."""
+    estimated_workers: int
+    """Número estimado mensual de trabajadores que pone a disposición."""
+    client_tax_id: str
+    """RFC del cliente (el beneficiario de los servicios)."""
+    client_name: str
+    """Razón social del cliente."""
+    client_employer_registration: NotRequired[str | None]
+    """Registro patronal del cliente ante el IMSS, si tiene."""
+    client_address: CreateRepseContractParamsClientAddress
+    """Domicilio fiscal del cliente."""
+    site_address: CreateRepseContractParamsSiteAddress
+    """El centro de trabajo donde trabajan las personas que pone a disposición."""
+    workers: list[CreateRepseContractParamsWorkersItem]
+    """Quién trabaja en el contrato y desde cuándo (hasta 2,000)."""
+
+
+class ListRepseContractsParams(TypedDict):
+    """Los parámetros de GET /v1/repse_contracts."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateRepseContractParamsClientAddress(TypedDict):
+    """Domicilio fiscal del cliente."""
+    street: str
+    """Calle."""
+    exterior: NotRequired[str]
+    """Número exterior."""
+    interior: NotRequired[str]
+    """Número interior."""
+    neighborhood: NotRequired[str]
+    """Colonia."""
+    zip: str
+    """Código postal, 5 dígitos."""
+    municipality: str
+    """Municipio o demarcación territorial, sin abreviar."""
+    state: str
+    """Estado (c_Estado: NLE, CMX…)."""
+
+
+class UpdateRepseContractParamsSiteAddress(TypedDict):
+    """El centro de trabajo donde trabajan las personas que pone a disposición."""
+    street: str
+    """Calle."""
+    exterior: NotRequired[str]
+    """Número exterior."""
+    interior: NotRequired[str]
+    """Número interior."""
+    neighborhood: NotRequired[str]
+    """Colonia."""
+    zip: str
+    """Código postal, 5 dígitos."""
+    municipality: str
+    """Municipio o demarcación territorial, sin abreviar."""
+    state: str
+    """Estado (c_Estado: NLE, CMX…)."""
+
+
+class UpdateRepseContractParamsWorkersItem(TypedDict):
+    employee: str
+    """El empleado (emp_…) del mismo emisor."""
+    start_date: str
+    """Desde cuándo trabaja en el contrato (YYYY-MM-DD)."""
+    end_date: NotRequired[str | None]
+    """Hasta cuándo; null mientras siga."""
+
+
+class UpdateRepseContractParams(TypedDict):
+    number: NotRequired[str]
+    """Número de contrato: dígitos, hasta 20 (así lo pide el SISUB)."""
+    kind: NotRequired[str]
+    """Tipo de contrato, como lo dice el contrato."""
+    contract_object: NotRequired[str]
+    """Objeto del contrato."""
+    service: NotRequired[str]
+    """El servicio u obra especializada registrado en el REPSE que cubre."""
+    amount: NotRequired[float]
+    """Monto pactado, en pesos."""
+    start_date: NotRequired[str]
+    """Inicio de su vigencia (YYYY-MM-DD)."""
+    end_date: NotRequired[str | None]
+    """Fecha de término; null si es por tiempo indefinido."""
+    estimated_workers: NotRequired[int]
+    """Número estimado mensual de trabajadores que pone a disposición."""
+    client_tax_id: NotRequired[str]
+    """RFC del cliente (el beneficiario de los servicios)."""
+    client_name: NotRequired[str]
+    """Razón social del cliente."""
+    client_employer_registration: NotRequired[str | None]
+    """Registro patronal del cliente ante el IMSS, si tiene."""
+    client_address: NotRequired[UpdateRepseContractParamsClientAddress]
+    """Domicilio fiscal del cliente."""
+    site_address: NotRequired[UpdateRepseContractParamsSiteAddress]
+    """El centro de trabajo donde trabajan las personas que pone a disposición."""
+    workers: NotRequired[list[UpdateRepseContractParamsWorkersItem]]
+    """Quién trabaja en el contrato y desde cuándo (hasta 2,000)."""
+
+
+class GetRepseProfileParams(TypedDict):
+    """Los parámetros de GET /v1/repse_profile."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateRepseProfileParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    stps_folio: NotRequired[str]
+    """Folio de su registro en el REPSE que dio la STPS (AR65000)."""
+    email: NotRequired[str]
+    """Correo del sujeto obligado."""
+    phone: NotRequired[str]
+    """Teléfono, 10 dígitos."""
+    address: NotRequired[str]
+    """Domicilio fiscal en una línea: calle, números, colonia, C.P., municipio y estado."""
+    legal_representative: NotRequired[str]
+    """Representante legal (persona moral)."""
+    sole_administrator: NotRequired[str]
+    """Administrador único, si tiene (persona moral)."""
+    deed_number: NotRequired[str]
+    """Número de la escritura constitutiva (persona moral)."""
+    notary_name: NotRequired[str]
+    """Nombre del notario público de la escritura."""
+    notary_number: NotRequired[str]
+    """Número de la notaría."""
+    deed_date: NotRequired[str | Literal[""]]
+    """Fecha de la escritura (YYYY-MM-DD)."""
+    commercial_folio: NotRequired[str]
+    """Folio mercantil (persona moral)."""
+
+
+class GetRepseReturnParams(TypedDict):
+    """Los parámetros de GET /v1/repse_returns/{period}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 
 
 class GetPayrollOrgChartParams(TypedDict):
