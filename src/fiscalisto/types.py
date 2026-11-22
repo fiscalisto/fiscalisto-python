@@ -1045,6 +1045,7 @@ __all__ = [
     "RepseContractSiteAddress",
     "RepseContractWorkersItem",
     "RepseProfile",
+    "RepseProfileRenewal",
     "RepseReturn",
     "RepseReturnContractsItem",
     "RepseReturnContractsItemWorkersItem",
@@ -4289,8 +4290,8 @@ class PayrollCalendarEvent(TypedDict):
     """Una fecha del calendario de nómina."""
     object: Literal["payroll_calendar_event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
-    obligation: Literal["pago", "imss", "rcv_infonavit", "isn", "aguinaldo", "ptu", "prima_riesgo", "ajuste_anual", "icsoe", "sisub"]
-    """pago (una nómina, en su fecha de pago), imss (cuotas del mes, LSS art. 39), rcv_infonavit (bimestrales), isn (impuesto sobre nómina de un estado), aguinaldo (LFT art. 87), ptu (LFT art. 122), prima_riesgo (determinación anual, RACERF art. 32), ajuste_anual (LISR art. 97), icsoe (informativa cuatrimestral al IMSS de un contratista REPSE, LSS art. 15-A) o sisub (la del Infonavit, Ley del Infonavit art. 29 Bis)."""
+    obligation: Literal["pago", "imss", "rcv_infonavit", "isn", "aguinaldo", "ptu", "prima_riesgo", "ajuste_anual", "icsoe", "sisub", "renovacion_repse"]
+    """pago (una nómina, en su fecha de pago), imss (cuotas del mes, LSS art. 39), rcv_infonavit (bimestrales), isn (impuesto sobre nómina de un estado), aguinaldo (LFT art. 87), ptu (LFT art. 122), prima_riesgo (determinación anual, RACERF art. 32), ajuste_anual (LISR art. 97), icsoe (informativa cuatrimestral al IMSS de un contratista REPSE, LSS art. 15-A), sisub (la del Infonavit, Ley del Infonavit art. 29 Bis) o renovacion_repse (la renovación del registro en el REPSE cada tres años, LFT art. 15)."""
     key: str
     """Lo identifica junto con obligation: 2026-11 (mes), 2026-B6 (bimestre), 2026 (año), 2026-11:CMX (ISN de un estado) o 2026-11-16/2026-11-30:04 (una nómina)."""
     title: str
@@ -8201,7 +8202,7 @@ class RecurringInvoiceSchedule(TypedDict):
     hour: int
     """La hora (0 a 23) en que se timbra, en time_zone."""
     time_zone: str
-    """La zona de esa hora (America/Mexico_City, America/Cancun…)."""
+    """La zona de esa hora (America/Mexico_City, America/Cancun…); sin ella, la de la empresa emisora."""
 
 
 class RecurringInvoiceLastError(TypedDict):
@@ -8867,6 +8868,13 @@ class RepseContract(TypedDict):
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
 
 
+class RepseProfileRenewal(TypedDict):
+    opens_on: str
+    """Primer día para pedir la renovación (tres meses antes del vencimiento)."""
+    last_day: str
+    """Último día de vigencia del registro: tres años desde que se otorgó (LFT art. 15)."""
+
+
 class RepseProfile(TypedDict):
     """Lo que el SISUB pide del sujeto obligado (el contratista); la razón social y el registro patronal salen de sus datos fiscales."""
     object: Literal["repse_profile"]
@@ -8877,6 +8885,10 @@ class RepseProfile(TypedDict):
     """El emisor (iss_…)."""
     stps_folio: str | None
     """Folio de su registro en el REPSE que dio la STPS."""
+    stps_registration_date: str | None
+    """Fecha en que la STPS otorgó el registro o su última renovación."""
+    renewal: RepseProfileRenewal | None
+    """Cuándo renovar el registro; null sin fecha de registro."""
     email: str | None
     """Correo del sujeto obligado."""
     phone: str | None
@@ -17973,8 +17985,8 @@ class GetPayrollCalendarParams(TypedDict):
 class MarkPayrollCalendarEventParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    obligation: Literal["imss", "rcv_infonavit", "isn", "aguinaldo", "ptu", "prima_riesgo", "ajuste_anual", "icsoe", "sisub"]
-    """imss, rcv_infonavit, isn, aguinaldo, ptu, prima_riesgo, ajuste_anual, icsoe o sisub."""
+    obligation: Literal["imss", "rcv_infonavit", "isn", "aguinaldo", "ptu", "prima_riesgo", "ajuste_anual", "icsoe", "sisub", "renovacion_repse"]
+    """imss, rcv_infonavit, isn, aguinaldo, ptu, prima_riesgo, ajuste_anual, icsoe, sisub o renovacion_repse."""
     key: str
     """Como lo da GET /v1/payroll_calendar: 2026-11, 2026-B6, 2026-C3, 2026, 2026-11:CMX."""
     paid: bool
@@ -18156,6 +18168,8 @@ class UpdateRepseProfileParams(TypedDict):
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
     stps_folio: NotRequired[str]
     """Folio de su registro en el REPSE que dio la STPS (AR65000)."""
+    stps_registration_date: NotRequired[str | Literal[""]]
+    """Fecha en que la STPS otorgó el registro o su última renovación (YYYY-MM-DD). Se renueva cada tres años (LFT art. 15)."""
     email: NotRequired[str]
     """Correo del sujeto obligado."""
     phone: NotRequired[str]
@@ -22403,7 +22417,7 @@ class CreateRecurringInvoiceParamsSchedule(TypedDict):
     hour: NotRequired[int]
     """La hora (0 a 23) en que se timbra, en time_zone. Por omisión 7."""
     time_zone: NotRequired[Literal["America/Mexico_City", "America/Cancun", "America/Mazatlan", "America/Hermosillo", "America/Tijuana", "America/Matamoros", "America/Ciudad_Juarez"]]
-    """La zona de esa hora. Por omisión America/Mexico_City."""
+    """La zona de esa hora. Por omisión, la de la empresa emisora (su «Zona horaria»)."""
 
 
 class CreateRecurringInvoiceParams(TypedDict):
@@ -22446,7 +22460,7 @@ class UpdateRecurringInvoiceParamsSchedule(TypedDict):
     hour: NotRequired[int]
     """La hora (0 a 23) en que se timbra, en time_zone. Por omisión 7."""
     time_zone: NotRequired[Literal["America/Mexico_City", "America/Cancun", "America/Mazatlan", "America/Hermosillo", "America/Tijuana", "America/Matamoros", "America/Ciudad_Juarez"]]
-    """La zona de esa hora. Por omisión America/Mexico_City."""
+    """La zona de esa hora. Por omisión, la de la empresa emisora (su «Zona horaria»)."""
 
 
 class UpdateRecurringInvoiceParams(TypedDict):
