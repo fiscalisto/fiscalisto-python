@@ -8315,6 +8315,10 @@ class TicketLinesItem(TypedDict):
     """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
     local_taxes: list[TicketLinesItemLocalTaxesItem]
     """Sus impuestos locales (los de su producto o los que mandó), incluidos en su total."""
+    ieps: float | None
+    """Su IEPS (el de su producto o el que mandó), incluido en su total: una tasa o, con `ieps_factor` `Cuota`, pesos por unidad. `null`: sin IEPS."""
+    ieps_factor: Literal["Tasa", "Cuota"] | None
+    """Tasa o Cuota (TipoFactor del IEPS)."""
     detail: str | None
     """El detalle que mandó (noches, fechas, reservación): va después de la descripción en la factura según `invoice_concepts.line_detail` de la autofactura."""
     quantity: float
@@ -21732,6 +21736,10 @@ class CreateTicketParamsLinesItem(TypedDict):
     """Tasa de IVA incluida en su total. Por omisión 0.16."""
     local_taxes: NotRequired[list[CreateTicketParamsLinesItemLocalTaxesItem]]
     """Impuestos locales incluidos en su total, como el ISH 3.5% de hospedaje, con `product_key` (un producto lleva los suyos). Cada uno se calcula sobre la base de este concepto y la factura los suma por nombre y tasa en el complemento de impuestos locales."""
+    ieps: NotRequired[float | None]
+    """IEPS incluido en su total, con `product_key` (un producto lleva el suyo): una tasa de c_TasaOCuota como 0.08 (botanas) o, con `ieps_factor` `Cuota`, pesos por unidad. La factura global lo desglosa aparte (RMF 2026 regla 2.7.1.21); la factura de un cliente que no paga IEPS lo lleva dentro del precio (LIEPS art. 19 fr. II)."""
+    ieps_factor: NotRequired[Literal["Tasa", "Cuota"]]
+    """`Tasa` (por omisión) o `Cuota` (pesos por unidad)."""
     detail: NotRequired[str]
     """Lo que solo dice esta venta, como las noches, fechas y número de reservación de una estancia. Con él, la factura dice «Hospedaje · 6 noches, del 14 al 20 de noviembre»; cuándo va lo decide `invoice_concepts.line_detail` de la autofactura (por omisión, el cliente lo elige en el portal)."""
     quantity: NotRequired[float]
@@ -21765,6 +21773,10 @@ class CreateTicketParams(TypedDict):
     """Tasa de IVA incluida en el total. Por omisión 0.16."""
     local_taxes: NotRequired[list[CreateTicketParamsLocalTaxesItem]]
     """Impuestos locales incluidos en su total, como el ISH 3.5% de hospedaje, con `product_key` (un producto lleva los suyos). Cada uno se calcula sobre la base de este concepto y la factura los suma por nombre y tasa en el complemento de impuestos locales."""
+    ieps: NotRequired[float | None]
+    """IEPS incluido en su total, con `product_key` (un producto lleva el suyo): una tasa de c_TasaOCuota como 0.08 (botanas) o, con `ieps_factor` `Cuota`, pesos por unidad. La factura global lo desglosa aparte (RMF 2026 regla 2.7.1.21); la factura de un cliente que no paga IEPS lo lleva dentro del precio (LIEPS art. 19 fr. II)."""
+    ieps_factor: NotRequired[Literal["Tasa", "Cuota"]]
+    """`Tasa` (por omisión) o `Cuota` (pesos por unidad)."""
     buyer: NotRequired[CreateTicketParamsBuyer]
     """Quién pagó, para reconocer la venta en Tickets. No es el receptor de la factura (eso lo escribe el comprador en el portal) y no se le manda nada."""
     branch: NotRequired[str]
