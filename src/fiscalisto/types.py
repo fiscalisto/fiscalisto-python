@@ -8037,6 +8037,8 @@ class Ticket(TypedDict):
     """La factura (inv_…) que hizo su comprador, o null."""
     global_invoice: str | None
     """La factura global (inv_…) en que entró, o null."""
+    invoiced_amount: float
+    """Lo que ya cubren las facturas de un ticket dividido en varias (la autofactura lo permite con `split_max`), con impuestos. 0 si no se ha dividido; un ticket `pending` con más de 0 tiene `total - invoiced_amount` por facturar con el mismo código, y un ticket `invoiced` dividido tiene `invoice` null."""
     customer: TicketCustomer | None
     """A quién se facturó, o null."""
     branch: str | None
@@ -8208,6 +8210,12 @@ class SelfInvoicing(TypedDict):
     """true: el portal le pide al comprador una nota para el PDF de su factura (hasta 500 caracteres). Solo sale en el PDF, nunca en el XML."""
     failure_email: bool
     """true: cuando un comprador no puede facturar por algo del emisor, se avisa por correo; false: solo queda en Alertas."""
+    split_max: int
+    """Cuántas facturas puede tener un ticket como máximo (dividir un ticket en varias facturas), contando la que toma todo lo que queda; 0: no se puede dividir."""
+    split_min: float
+    """Lo menos que puede ser cada factura de un ticket dividido, con impuestos; tampoco puede quedar menos por facturar, salvo la factura que toma todo lo que queda."""
+    split_same: bool
+    """true: un comprador puede hacerse varias facturas con los mismos datos de una vez (4 de 250 de un ticket de 1,000)."""
     global_concepts: Literal["ticket", "summary"]
     """ticket: la factura global lleva un concepto «Venta» por ticket, con su folio. summary: solo el monto total del periodo, uno por combinación de impuestos (NoIdentificacion «Resumen»), para una persona física en RESICO (regla 2.7.1.21 de la RMF 2026)."""
 
@@ -21477,6 +21485,12 @@ class UpdateSelfInvoicingParams(TypedDict):
     """`true`: el portal le pide al comprador una nota para el PDF de su factura (hasta 500 caracteres; Autofactura › Nota del cliente). Solo sale en el PDF, nunca en el XML. Por omisión `false`."""
     failure_email: NotRequired[bool]
     """`true` (por omisión): cuando un comprador no puede facturar por algo del emisor (su CSD, sus datos, el PAC), se avisa por correo a los dueños y administradores. `false`: solo queda en Alertas, sin correo. Un error en los datos del comprador nunca avisa: el portal le dice cómo corregirlo."""
+    split_max: NotRequired[int]
+    """Dividir un ticket en varias facturas (Autofactura › Reglas de los tickets): cuántas facturas puede tener un ticket como máximo, de 2 a 50, contando la que toma todo lo que queda. `0` (por omisión): el comprador no puede dividirlo. Cada factura usa un timbre."""
+    split_min: NotRequired[float]
+    """Lo menos que puede ser cada factura de un ticket dividido, con impuestos (por omisión 100). Tampoco puede quedar por facturar menos que esto, salvo la factura que toma todo lo que queda."""
+    split_same: NotRequired[bool]
+    """`true` (por omisión): un comprador puede hacerse varias facturas con los mismos datos de una vez (4 de 250 de un ticket de 1,000). `false`: una por persona."""
     invoice_concepts: NotRequired[UpdateSelfInvoicingParamsInvoiceConcepts | None]
     """Los conceptos de la factura que se hace el comprador (Autofactura › Conceptos de la factura): desglosados o en uno solo, y si el comprador puede elegir. Mande solo lo que cambia; `null` regresa a desglosados sin elección."""
     global_concepts: NotRequired[Literal["ticket", "summary"]]
