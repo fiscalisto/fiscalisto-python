@@ -251,6 +251,7 @@ if TYPE_CHECKING:
         GetSatCatalogParams,
         GetSatDeclarationCalendarParams,
         GetSatRiskCheckParams,
+        GetScheduleSettingsParams,
         GetTaxDeterminationParams,
         GetTaxDiscrepancyParams,
         GetTrainingCertificatesPdfParams,
@@ -463,6 +464,7 @@ if TYPE_CHECKING:
         SaveBudgetParams,
         SaveInflationAccountsParams,
         SavePayrollDepartmentParams,
+        ScheduleSettings,
         ScheduleSupplierInvoiceParams,
         SelfInvoicing,
         SendInvoiceParams,
@@ -550,6 +552,7 @@ if TYPE_CHECKING:
         UpdateSalesOrderParams,
         UpdateSatInvoiceParams,
         UpdateSatReviewParams,
+        UpdateScheduleSettingsParams,
         UpdateSelfInvoicingParams,
         UpdateStoreConnectionParams,
         UpdateSupplierGroupParams,
@@ -1316,6 +1319,54 @@ class IssuersResource:
         """
         result: SelfInvoicing = self._client.request(
             "POST", f"/v1/issuers/{_path(id)}/self_invoicing", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class ScheduleSettingsResource:
+    """Emisores: fiscalisto.schedule_settings."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetScheduleSettingsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ScheduleSettings:
+        """Ver los horarios
+
+        Los horarios de la empresa, como Ajustes › Horarios en la app: cuántos días vale una cotización nueva y a qué hora vence, y a qué hora corren las reglas «Cada mañana», la revisión diaria de hallazgos y el resumen semanal de los lunes, todo en su zona horaria (time_zone). Valen para toda la empresa: cualquiera de sus emisores lee los mismos.
+
+        GET /v1/schedule_settings
+        https://fiscalisto.com/docs/api/referencia/emisores/get-schedule-settings
+        """
+        result: ScheduleSettings = self._client.request(
+            "GET", "/v1/schedule_settings", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        params: UpdateScheduleSettingsParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ScheduleSettings:
+        """Cambiar los horarios
+
+        Cambia los horarios de la empresa (para todos sus emisores). Lo que no mande se queda como está. Un cliente o su grupo pueden tener su propia vigencia de cotizaciones (quote_valid_days), que gana a la de la empresa.
+
+        POST /v1/schedule_settings
+        https://fiscalisto.com/docs/api/referencia/emisores/update-schedule-settings
+        """
+        result: ScheduleSettings = self._client.request(
+            "POST", "/v1/schedule_settings", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -12022,6 +12073,11 @@ class FiscalistoApi(Core):
     def issuers(self) -> IssuersResource:
         """Emisores."""
         return IssuersResource(self)
+
+    @cached_property
+    def schedule_settings(self) -> ScheduleSettingsResource:
+        """Emisores."""
+        return ScheduleSettingsResource(self)
 
     @cached_property
     def invoices(self) -> InvoicesResource:

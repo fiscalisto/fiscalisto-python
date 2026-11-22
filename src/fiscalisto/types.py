@@ -616,6 +616,7 @@ __all__ = [
     "GetSatCatalogParams",
     "GetSatDeclarationCalendarParams",
     "GetSatRiskCheckParams",
+    "GetScheduleSettingsParams",
     "GetTaxDeterminationParams",
     "GetTaxDiscrepancyParams",
     "GetTrainingCertificatesPdfParams",
@@ -1190,6 +1191,7 @@ __all__ = [
     "SaveInflationAccountsParams",
     "SaveInflationAccountsParamsAccountsItem",
     "SavePayrollDepartmentParams",
+    "ScheduleSettings",
     "ScheduleSupplierInvoiceParams",
     "SelfInvoicing",
     "SendInvoiceParams",
@@ -1376,6 +1378,7 @@ __all__ = [
     "UpdateSatReviewParams",
     "UpdateSatReviewParamsNoticesItem",
     "UpdateSatReviewParamsRequestsItem",
+    "UpdateScheduleSettingsParams",
     "UpdateSelfInvoicingParams",
     "UpdateSelfInvoicingParamsInvoiceConcepts",
     "UpdateSelfInvoicingParamsInvoiceConceptsGroupsItem",
@@ -2525,6 +2528,8 @@ class Customer(TypedDict):
     """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
     credit_days: int | None
     """Días de crédito que se le dan, de 0 a 365, o null para no cambiar los del cliente."""
+    quote_valid_days: int | None
+    """Días que vale una cotización nueva (1 a 366). En un cliente o grupo, null usa los de su grupo o los de la empresa (Ajustes › Horarios)."""
     payment_terms: str | None
     """Condiciones de pago (CondicionesDePago), hasta 1,000 caracteres sin «|»: «Crédito a 30 días», «50 % anticipo». Van en el XML y en el PDF; solo en ingresos y egresos. No cambian cuándo vence (due_date usa los días de crédito del cliente)."""
     group: str | None
@@ -6672,6 +6677,8 @@ class CustomerGroup(TypedDict):
     """Porcentaje de descuento sobre el precio, de 0 a 100; en el CFDI va como Descuento de cada concepto."""
     credit_days: int | None
     """Días de crédito que se le dan, de 0 a 365, o null para no cambiar los del cliente."""
+    quote_valid_days: int | None
+    """Días que vale una cotización nueva (1 a 366). En un cliente o grupo, null usa los de su grupo o los de la empresa (Ajustes › Horarios)."""
     min_order: float | None
     """Pedido mínimo, sin IVA, para pedir desde el Portal del cliente, o null sin mínimo."""
     portal_ordering: bool
@@ -12769,6 +12776,28 @@ class IssuerBranding(TypedDict):
     """Dirección pública del logo; null si no tiene."""
 
 
+class ScheduleSettings(TypedDict):
+    """Los horarios de la empresa (Ajustes › Horarios): cuánto vale una cotización nueva y a qué hora vence, y a qué hora corren las reglas «Cada mañana», los hallazgos diarios y el resumen semanal, en su zona horaria."""
+    object: Literal["schedule_settings"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (iss_…) con que se leyeron; valen para toda la empresa."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    time_zone: str
+    """La zona horaria de la empresa (Ajustes › Datos fiscales), en la que van todas las horas."""
+    quote_valid_days: int
+    """Días que vale una cotización nueva cuando el cliente y su grupo no tienen los suyos."""
+    quote_expiry_hour: int | None
+    """A qué hora (0 a 23) vence una cotización su último día; null: al terminar ese día."""
+    rules_hour: int
+    """A qué hora (0 a 23) corren las reglas «Cada mañana»."""
+    findings_hour: int
+    """A qué hora (0 a 23) corre la revisión diaria de hallazgos."""
+    digest_hour: int
+    """A qué hora (0 a 23) del lunes sale el resumen semanal."""
+
+
 class WebhookDelivery(TypedDict):
     """Lo que pasó con un evento en un webhook: su último intento, cuántos lleva y cuándo va el siguiente."""
     object: Literal["webhook_delivery"]
@@ -16261,6 +16290,27 @@ class UpdateIssuerBrandingParams(TypedDict):
     """Color del PDF, como #2563EB. null: el de Fiscalisto (#5B48EE)."""
 
 
+class GetScheduleSettingsParams(TypedDict):
+    """Los parámetros de GET /v1/schedule_settings."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateScheduleSettingsParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    quote_valid_days: NotRequired[int]
+    """Días que vale una cotización nueva, de 1 a 366. Un cliente o su grupo pueden tener los suyos (quote_valid_days en /v1/customers y /v1/customer_groups)."""
+    quote_expiry_hour: NotRequired[int | None]
+    """A qué hora (0 a 23) vence una cotización su último día; null: al terminar ese día, a medianoche."""
+    rules_hour: NotRequired[int]
+    """A qué hora (0 a 23) corren las reglas «Cada mañana» (triggers invoice.daily y purchase_order.daily)."""
+    findings_hour: NotRequired[int]
+    """A qué hora (0 a 23) corre la revisión diaria de hallazgos."""
+    digest_hour: NotRequired[int]
+    """A qué hora (0 a 23) del lunes sale el resumen semanal por correo."""
+
+
 class UploadIssuerLogoParams(TypedDict):
     file: str
     """El logo, PNG o JPG de hasta 1 MB, en base64 (con o sin el prefijo data:image/png;base64,). Uno muy grande se reduce para el PDF."""
@@ -19659,6 +19709,8 @@ class CreateCustomerGroupParams(TypedDict):
     """Un descuento en cada concepto, como descuento del CFDI."""
     credit_days: NotRequired[int | None]
     """Días de crédito que se le dan, de 0 a 365, o null para no cambiar los del cliente."""
+    quote_valid_days: NotRequired[int | None]
+    """Días que vale una cotización nueva para sus clientes; null: los de la empresa (Ajustes › Horarios). Un cliente con los suyos los usa antes."""
     min_order: NotRequired[float | None]
     """El pedido mínimo antes de IVA desde el Portal del cliente."""
     portal_ordering: NotRequired[bool]
@@ -19694,6 +19746,8 @@ class UpdateCustomerGroupParams(TypedDict):
     """Un descuento en cada concepto, como descuento del CFDI."""
     credit_days: NotRequired[int | None]
     """Días de crédito que se le dan, de 0 a 365, o null para no cambiar los del cliente."""
+    quote_valid_days: NotRequired[int | None]
+    """Días que vale una cotización nueva para sus clientes; null: los de la empresa (Ajustes › Horarios). Un cliente con los suyos los usa antes."""
     min_order: NotRequired[float | None]
     """El pedido mínimo antes de IVA desde el Portal del cliente."""
     portal_ordering: NotRequired[bool]
@@ -20017,6 +20071,8 @@ class CreateCustomerParams(TypedDict):
     """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
     credit_days: NotRequired[int | None]
     """Sus días de crédito: sus facturas vencen estos días después de su fecha (due_date, cobranza); null: los de su grupo o los de la empresa."""
+    quote_valid_days: NotRequired[int | None]
+    """Días que vale una cotización nueva para este cliente (valid_until); null: los de su grupo o los de la empresa (Ajustes › Horarios)."""
     payment_terms: NotRequired[str | None]
     """Sus condiciones de pago («Crédito a 30 días»): las facturas nuevas en la app empiezan con ellas; null: las de la empresa. POST /v1/invoices no las pone solas: mándelas en payment_terms."""
 
@@ -20065,6 +20121,8 @@ class UpdateCustomerParams(TypedDict):
     """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
     credit_days: NotRequired[int | None]
     """Sus días de crédito: sus facturas vencen estos días después de su fecha (due_date, cobranza); null: los de su grupo o los de la empresa."""
+    quote_valid_days: NotRequired[int | None]
+    """Días que vale una cotización nueva para este cliente (valid_until); null: los de su grupo o los de la empresa (Ajustes › Horarios)."""
     payment_terms: NotRequired[str | None]
     """Sus condiciones de pago («Crédito a 30 días»): las facturas nuevas en la app empiezan con ellas; null: las de la empresa. POST /v1/invoices no las pone solas: mándelas en payment_terms."""
 
