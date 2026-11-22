@@ -1795,7 +1795,7 @@ class Issuer(TypedDict):
     object: Literal["issuer"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     source: Literal["api", "empresa"]
-    """api si lo creó con la API o en Desarrolladores; empresa si es una empresa de la app conectada a su cuenta (Desarrolladores › Emisores › Conectar una empresa): con ella solo se usa su Portal de proveedores, y status siempre es active."""
+    """api si lo creó con la API o en Desarrolladores; empresa si es una empresa de la app conectada a su cuenta (Desarrolladores › Emisores › Conectar una empresa): con ella solo se usan su Portal de proveedores y, si se encendieron, sus pagos a proveedores, y status siempre es active."""
     type: Literal["own", "connected", "portal"]
     """own: un RFC de la empresa de esta API (lo da de alta la empresa en la app; no se archiva por la API). connected: un emisor conectado, que su plataforma agregó con POST /v1/issuers. portal: otra empresa de Fiscalisto conectada por su Portal de proveedores."""
     tax_id: str
@@ -12055,8 +12055,8 @@ class PayeeAccount(TypedDict):
     """El nombre del titular que confirmó el banco, o null."""
     third_party: bool
     """true si es de un tercero que la empresa autorizó."""
-    verification: Literal["bank", "by_hand", "third_party"] | None
-    """Cómo se confió en la cuenta: bank (el banco confirmó el RFC del proveedor), by_hand (alguien la verificó a mano porque el RFC del banco solo cambiaba la homoclave o no venía), third_party (se autorizó como de un tercero), o null si aún no está aprobada."""
+    verification: Literal["bank", "by_name", "by_hand", "third_party"] | None
+    """Cómo se confió en la cuenta: bank (el banco confirmó el RFC del proveedor), by_name (el banco no dio el RFC y el nombre del titular es el del proveedor según el SAT, cuando la empresa lo permite), by_hand (alguien la verificó a mano porque el RFC del banco solo cambiaba la homoclave o no venía), third_party (se autorizó como de un tercero), o null si aún no está aprobada."""
     verified_by_hand_reason: str | None
     """Cómo la verificó a mano quien la aprobó, o null."""
     account_number: str | None

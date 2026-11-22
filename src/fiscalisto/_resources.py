@@ -8709,7 +8709,7 @@ class PayoutsResource:
     ) -> Payout:
         """Cancelar un pago a proveedores
 
-        Uno que preparó la API, mientras no ha salido nada (draft, pending_approval o approved): sus facturas vuelven a Por pagar y llega payout.canceled. Uno preparado en la app se cancela en la app (400 payout_not_from_api).
+        Uno que prepararon las llaves de esta cuenta, mientras no ha salido nada (draft, pending_approval o approved): sus facturas vuelven a Por pagar y llega payout.canceled. Uno preparado en la app, o por otra cuenta API conectada a la empresa, se cancela ahí (400 payout_not_from_api).
 
         POST /v1/payouts/{id}/cancel
         https://fiscalisto.com/docs/api/referencia/pagos-a-proveedores/cancel-payout
