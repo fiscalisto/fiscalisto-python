@@ -6893,10 +6893,10 @@ class RuleVersion(TypedDict):
 
 class FindingRecord(TypedDict):
     """En qué registro está."""
-    type: Literal["purchase_order", "payout", "supplier", "poliza", "account", "bank_movement", "expense_report", "expense_ticket"]
-    """purchase_order, payout, supplier, poliza (la contabilidad de un mes), account (una cuenta en un mes), bank_movement, expense_report (una comprobación de viáticos) o expense_ticket (un ticket de compra)."""
+    type: Literal["purchase_order", "payout", "supplier", "poliza", "account", "bank_movement", "expense_report", "expense_ticket", "product"]
+    """purchase_order, payout, supplier, poliza (la contabilidad de un mes), account (una cuenta en un mes), bank_movement, expense_report (una comprobación de viáticos), expense_ticket (un ticket de compra) o product (la existencia de un producto)."""
     id: str | None
-    """Su id en la API: el pago (pyo_…), la comprobación (exr_…), el ticket (rct_…) o el RFC del proveedor; null si no tiene."""
+    """Su id en la API: el pago (pyo_…), la comprobación (exr_…), el ticket (rct_…), el producto (prd_…) o el RFC del proveedor; null si no tiene."""
     reference: str
     """Cómo lo nombra Fiscalisto: el número de la orden, el RFC, «RFC:AAAA-MM» un mes de contabilidad, «RFC:AAAA-MM:cuenta» una cuenta."""
     description: str
@@ -6913,8 +6913,8 @@ class Finding(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     issuer: str
     """El emisor (iss_…)."""
-    area: Literal["purchase_orders", "payouts", "suppliers", "accounting", "bank", "expense_reports", "purchase_receipts"] | None
-    """purchase_orders (órdenes de compra), payouts (pagos a proveedores), suppliers (proveedores), accounting (contabilidad), bank (movimientos del banco), expense_reports (comprobaciones de viáticos) o purchase_receipts (tickets de compra)."""
+    area: Literal["purchase_orders", "payouts", "suppliers", "accounting", "bank", "expense_reports", "purchase_receipts", "inventory"] | None
+    """purchase_orders (órdenes de compra), payouts (pagos a proveedores), suppliers (proveedores), accounting (contabilidad), bank (movimientos del banco), expense_reports (comprobaciones de viáticos), purchase_receipts (tickets de compra) o inventory (inventario)."""
     record: FindingRecord
     """En qué registro está."""
     code: str
@@ -12413,7 +12413,7 @@ class PayableInvoice(TypedDict):
     early_payment: PayableInvoiceEarlyPayment | None
     """Pronto pago del portal de proveedores. Aceptado, amount_due ya es el total menos el descuento hasta que llega la nota de crédito del proveedor. null: no tiene."""
     in_payout: str | None
-    """El pago abierto (pyo_…) en el que ya está, o null."""
+    """El pago abierto (pyo_…) en el que ya está, o null. Si se dividió en varios pagos, el primero: un pago nuevo solo toma lo que esos no cubren."""
     payment_hold: PayableInvoicePaymentHold | None
     """Si una regla de Ajustes › Reglas retuvo su pago: no se paga hasta que alguien con permiso lo suelte en la app («Soltar el pago»). null: no está retenido."""
     warnings: list[str]
@@ -20188,8 +20188,8 @@ class ListFindingsParams(TypedDict):
     """Cuántos por página, de 1 a 100. Por omisión 10."""
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
-    area: NotRequired[Literal["purchase_orders", "payouts", "suppliers", "accounting", "bank", "expense_reports", "purchase_receipts"]]
-    """Solo los de un área: purchase_orders, payouts, suppliers, accounting, bank, expense_reports o purchase_receipts."""
+    area: NotRequired[Literal["purchase_orders", "payouts", "suppliers", "accounting", "bank", "expense_reports", "purchase_receipts", "inventory"]]
+    """Solo los de un área: purchase_orders, payouts, suppliers, accounting, bank, expense_reports, purchase_receipts o inventory."""
     status: NotRequired[Literal["open", "reviewed", "resolved", "all"]]
     """open (por omisión: sin revisar), reviewed (revisados), resolved (ya no aplican) o all."""
     severity: NotRequired[Literal["critical", "warning", "info"]]
