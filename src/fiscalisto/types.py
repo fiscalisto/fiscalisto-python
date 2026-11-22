@@ -338,6 +338,8 @@ __all__ = [
     "CreateRuleParamsConditionsConditionsItem",
     "CreateRuleParamsConditionsGroupsItem",
     "CreateRuleParamsConditionsGroupsItemConditionsItem",
+    "CreateRuleParamsElseActionsItem",
+    "CreateRuleParamsElseActionsItemColumns",
     "CreateSalesOrderDeliveryParams",
     "CreateSalesOrderDeliveryParamsItemsItem",
     "CreateSalesOrderParams",
@@ -1002,6 +1004,8 @@ __all__ = [
     "RuleConditionsConditionsItem",
     "RuleConditionsGroupsItem",
     "RuleConditionsGroupsItemConditionsItem",
+    "RuleElseActionsItem",
+    "RuleElseActionsItemColumns",
     "RuleList",
     "RuleRun",
     "RuleRunList",
@@ -1240,6 +1244,8 @@ __all__ = [
     "UpdateRuleParamsConditionsConditionsItem",
     "UpdateRuleParamsConditionsGroupsItem",
     "UpdateRuleParamsConditionsGroupsItemConditionsItem",
+    "UpdateRuleParamsElseActionsItem",
+    "UpdateRuleParamsElseActionsItemColumns",
     "UpdateSalesOrderParams",
     "UpdateSalesOrderParamsCustomer",
     "UpdateSalesOrderParamsCustomerForeign",
@@ -5491,6 +5497,60 @@ class RuleActionsItem(TypedDict):
     """lote con pay_on in_days: cuántos días."""
 
 
+class RuleElseActionsItemColumns(TypedDict):
+    tabla_facturas: NotRequired[list[str]]
+    """Columnas de {tabla_facturas}, en su orden."""
+    tabla_conceptos: NotRequired[list[str]]
+    """Columnas de {tabla_conceptos}, en su orden."""
+    tabla_productos: NotRequired[list[str]]
+    """Columnas de {tabla_productos}, en su orden."""
+
+
+class RuleElseActionsItem(TypedDict):
+    type: Literal["tag", "cost_center", "category", "stage", "close", "ask_approval", "notify", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature", "account"]
+    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    tag: NotRequired[str]
+    """tag: la etiqueta (tag_…, GET /v1/tags)."""
+    account: NotRequired[str]
+    """account: el número de cuenta del catálogo en que se registra la factura, en vez de la de su categoría (no cambia la que eligió una persona)."""
+    category: NotRequired[str]
+    """category: la categoría de gasto (facturas recibidas)."""
+    remove_when_unmet: NotRequired[bool]
+    """tag: se quita si la orden deja de cumplir."""
+    cost_center: NotRequired[str]
+    """Su centro de costo (ccn_…): la obra, proyecto, sucursal o área a la que pertenece, para ver ingresos y gastos por centro en Reportes. No cambia el CFDI. Sus notas de crédito lo toman solas."""
+    stage: NotRequired[int]
+    """stage: la etapa."""
+    members: NotRequired[list[str]]
+    """notify: a quién (mem_…)."""
+    note: NotRequired[str | None]
+    """notify: lo que dice el aviso. hold_payment: por qué se retiene."""
+    topic: NotRequired[Literal["ordenes", "pagos", "facturas", "complementos", "documentos", "precios"]]
+    """email_supplier: el tema de los correos del proveedor a los que va."""
+    subject: NotRequired[str]
+    """email_supplier: el asunto."""
+    message: NotRequired[str]
+    """email_supplier: el mensaje."""
+    per: NotRequired[Literal["payout", "invoice"]]
+    """email_supplier en los disparadores de pagos: payout, un correo por pago y proveedor; invoice, uno por factura."""
+    columns: NotRequired[RuleElseActionsItemColumns | None]
+    """email_supplier: las columnas de cada tabla del mensaje; null: las de siempre."""
+    cc: NotRequired[list[str]]
+    """email_supplier: personas del equipo con copia (mem_…)."""
+    findings: NotRequired[list[str]]
+    """review_findings: los hallazgos que da por revisados (sus códigos)."""
+    signatures: NotRequired[int]
+    """extra_signature: cuántas firmas más pide (1 a 3)."""
+    reason: NotRequired[str | None]
+    """extra_signature: por qué, para quien firma."""
+    lote_name: NotRequired[str | None]
+    """lote: el nombre del lote; null: «Lote del jueves 27 nov»."""
+    pay_on: NotRequired[Literal["monday", "tuesday", "wednesday", "thursday", "friday", "in_days", "due"]]
+    """lote: el día que paga (siguiente día de la semana, a los días, o el del contrarecibo)."""
+    days: NotRequired[int]
+    """lote con pay_on in_days: cuántos días."""
+
+
 class Rule(TypedDict):
     """Una regla de la empresa: cuando pasa algo (trigger), si se cumplen sus condiciones, hace sus acciones. Las mismas de Ajustes › Reglas en la app."""
     id: str
@@ -5509,6 +5569,8 @@ class Rule(TypedDict):
     """Si: lo que tiene que cumplir la factura u orden. Sin condiciones, corre siempre."""
     actions: list[RuleActionsItem]
     """Entonces: lo que hace, en este orden."""
+    else_actions: list[RuleElseActionsItem]
+    """Si no: lo que hace cuando sus condiciones no se cumplen ([]: nada)."""
     once_per_record: bool
     """true: corre una sola vez por factura u orden."""
     wait_days: int
@@ -17048,6 +17110,60 @@ class CreateRuleParamsActionsItem(TypedDict):
     """review_findings: los hallazgos que da por revisados (sus códigos, `code` en GET /v1/sat_findings). No los que cambian impuestos o la lista negra: cancelado, efos_definitivo, efos_presunto, lista_69b_bis, lista_69."""
 
 
+class CreateRuleParamsElseActionsItemColumns(TypedDict):
+    tabla_facturas: NotRequired[list[Literal["folio", "uuid", "fecha", "total", "retenido", "pagado"]]]
+    """Columnas de {tabla_facturas}, en su orden."""
+    tabla_conceptos: NotRequired[list[Literal["clave", "descripcion", "cantidad", "unidad", "precio", "importe"]]]
+    """Columnas de {tabla_conceptos}, en su orden."""
+    tabla_productos: NotRequired[list[Literal["producto", "codigo", "cantidad", "recibido", "pendiente", "precio", "importe"]]]
+    """Columnas de {tabla_productos}, en su orden."""
+
+
+class CreateRuleParamsElseActionsItem(TypedDict):
+    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "account", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature"]
+    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; account (facturas): registrar su ingreso o gasto en la cuenta `account` del catálogo en vez de la de su categoría, nunca sobre la que eligió una persona ni en un mes cerrado; en bank.movement, registrar el movimiento con su póliza de ingresos o egresos contra esa cuenta (otra cuenta de banco de la empresa es un traspaso), si no tiene una ni es un mes cerrado; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura; extra_signature (payout.submitted): el pago necesita `signatures` firmas más que las de Configurar pagos, con `reason` para quien firma (nunca las baja; no cambia un pago que ya salió)."""
+    tag: NotRequired[str | int]
+    """tag: la etiqueta (tag_…, GET /v1/tags). Un número, el id de antes, también se acepta."""
+    category: NotRequired[Literal["Renta y arrendamiento", "Servicios profesionales", "Nómina y personal", "Transporte y fletes", "Combustible", "Viáticos y viajes", "Alimentos y representación", "Telecomunicaciones e internet", "Energía y agua", "Software y suscripciones", "Equipo de cómputo", "Papelería y oficina", "Mantenimiento y reparaciones", "Publicidad y marketing", "Seguros y fianzas", "Comisiones bancarias y financieras", "Impuestos y derechos", "Compras de mercancía e inventario", "Materias primas y producción", "Activo fijo y mobiliario", "Vehículos", "Capacitación", "Donativos", "Otros gastos"]]
+    """category: la categoría de gasto, como la app la nombra («Combustible»)."""
+    account: NotRequired[str]
+    """account: el número de la cuenta del catálogo («601-84-002», GET /v1/accounting/accounts). No una de Caja o Bancos."""
+    remove_when_unmet: NotRequired[bool]
+    """tag: quitarla si la orden deja de cumplir."""
+    lote_name: NotRequired[str | None]
+    """lote: el nombre del lote («Fletes»); vacío o null: «Lote del jueves 27 nov»."""
+    pay_on: NotRequired[Literal["monday", "tuesday", "wednesday", "thursday", "friday", "in_days", "due"]]
+    """lote: el día que paga: el siguiente lunes … viernes (hoy incluido), a los `days` días, o `due`, la fecha de pago del contrarecibo del portal. Un día inhábil pasa al siguiente hábil. Por omisión, friday."""
+    days: NotRequired[int]
+    """lote con pay_on in_days: cuántos días después."""
+    cost_center: NotRequired[str]
+    """Su centro de costo (ccn_…): la obra, proyecto, sucursal o área a la que pertenece, para ver ingresos y gastos por centro en Reportes. No cambia el CFDI. Sus notas de crédito lo toman solas."""
+    stage: NotRequired[int]
+    """stage: la etapa."""
+    members: NotRequired[list[str]]
+    """notify: a quién (mem_…, GET /v1/members)."""
+    note: NotRequired[str | None]
+    """notify: lo que dice el aviso. hold_payment: por qué se retiene (hasta 200). Puede llevar las variables de `message`, menos las tablas."""
+    topic: NotRequired[Literal["ordenes", "pagos", "facturas", "complementos", "documentos", "precios"]]
+    """email_supplier: el tema de los correos del proveedor a los que va (ordenes, pagos, facturas, complementos, documentos, precios; Ajustes › Correos a proveedores). Sin correos de ese tema, va a sus correos generales. Por omisión, facturas."""
+    subject: NotRequired[str]
+    """email_supplier: el asunto. Lleva las variables de `message`, menos las tablas."""
+    message: NotRequired[str]
+    """email_supplier: el mensaje. Variables: {folio}, {total}, {fecha}, {empresa}, {rfc_empresa}, {proveedor}, {rfc_proveedor}, {subtotal}, {iva}, {retenciones} y {moneda}; de una factura también {uuid}, {metodo_pago}, {forma_pago}, {uso_cfdi}, {conceptos}, {categoria}, {saldo}, {orden}, {contrarecibo}, {fecha_promesa}, {hallazgos} y la tabla {tabla_conceptos}; de una orden {entrega}, {almacen}, {credito}, {comprador}, {nota}, {enlace} y la tabla {tabla_productos}; en invoice.rejected y purchase_order.rejected, {motivo_rechazo}; en los momentos de pagos {facturas}, la tabla {tabla_facturas}, {pagado}, {fecha_pago}, {pago}, {cuenta}, {banco} y {referencia}, en payout.paid {rastreo} y {cep}, en payout.failed {motivo}. Un correo por pago (per payout) no lleva las de una sola factura. Cada {tabla_…} se dibuja como tabla, con las columnas de `columns`; un dato que el registro no tiene queda en blanco."""
+    per: NotRequired[Literal["payout", "invoice"]]
+    """email_supplier en payout.submitted, payout.paid y payout.failed: payout manda un correo por pago y proveedor con todas sus facturas ({folio} es la lista de folios, {total} lo que se le paga y {fecha} la fecha del pago); invoice, uno por factura. Por omisión, payout."""
+    columns: NotRequired[CreateRuleParamsElseActionsItemColumns | None]
+    """email_supplier: las columnas de cada tabla del mensaje, en su orden. tabla_facturas: folio, uuid, fecha, total, retenido, pagado; tabla_conceptos: clave, descripcion, cantidad, unidad, precio, importe; tabla_productos: producto, codigo, cantidad, recibido, pendiente, precio, importe. Sin columnas, las de siempre."""
+    cc: NotRequired[list[str] | None]
+    """email_supplier: personas del equipo que reciben copia (mem_…, GET /v1/members)."""
+    signatures: NotRequired[int]
+    """extra_signature: cuántas firmas más pide (1 a 3). Por omisión, 1."""
+    reason: NotRequired[str | None]
+    """extra_signature: por qué, para quien firma («Proveedor nuevo»). Puede llevar las variables de `message`, menos las tablas."""
+    findings: NotRequired[list[str]]
+    """review_findings: los hallazgos que da por revisados (sus códigos, `code` en GET /v1/sat_findings). No los que cambian impuestos o la lista negra: cancelado, efos_definitivo, efos_presunto, lista_69b_bis, lista_69."""
+
+
 class CreateRuleParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…). Por omisión, su único emisor."""
@@ -17059,6 +17175,8 @@ class CreateRuleParams(TypedDict):
     """Si: lo que tiene que cumplir. Sin condiciones, corre siempre."""
     actions: list[CreateRuleParamsActionsItem]
     """Entonces: de 1 a 8, en este orden."""
+    else_actions: NotRequired[list[CreateRuleParamsElseActionsItem]]
+    """Si no: de 0 a 8 acciones, las mismas de actions, que hace cuando sus condiciones no se cumplen. Solo con condiciones; [] las quita."""
     once_per_record: NotRequired[bool]
     """true: corre una sola vez por factura, orden o movimiento. Por omisión true, salvo purchase_order.saved."""
     wait_days: NotRequired[int]
@@ -17189,6 +17307,60 @@ class UpdateRuleParamsActionsItem(TypedDict):
     """review_findings: los hallazgos que da por revisados (sus códigos, `code` en GET /v1/sat_findings). No los que cambian impuestos o la lista negra: cancelado, efos_definitivo, efos_presunto, lista_69b_bis, lista_69."""
 
 
+class UpdateRuleParamsElseActionsItemColumns(TypedDict):
+    tabla_facturas: NotRequired[list[Literal["folio", "uuid", "fecha", "total", "retenido", "pagado"]]]
+    """Columnas de {tabla_facturas}, en su orden."""
+    tabla_conceptos: NotRequired[list[Literal["clave", "descripcion", "cantidad", "unidad", "precio", "importe"]]]
+    """Columnas de {tabla_conceptos}, en su orden."""
+    tabla_productos: NotRequired[list[Literal["producto", "codigo", "cantidad", "recibido", "pendiente", "precio", "importe"]]]
+    """Columnas de {tabla_productos}, en su orden."""
+
+
+class UpdateRuleParamsElseActionsItem(TypedDict):
+    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "account", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature"]
+    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; account (facturas): registrar su ingreso o gasto en la cuenta `account` del catálogo en vez de la de su categoría, nunca sobre la que eligió una persona ni en un mes cerrado; en bank.movement, registrar el movimiento con su póliza de ingresos o egresos contra esa cuenta (otra cuenta de banco de la empresa es un traspaso), si no tiene una ni es un mes cerrado; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura; extra_signature (payout.submitted): el pago necesita `signatures` firmas más que las de Configurar pagos, con `reason` para quien firma (nunca las baja; no cambia un pago que ya salió)."""
+    tag: NotRequired[str | int]
+    """tag: la etiqueta (tag_…, GET /v1/tags). Un número, el id de antes, también se acepta."""
+    category: NotRequired[Literal["Renta y arrendamiento", "Servicios profesionales", "Nómina y personal", "Transporte y fletes", "Combustible", "Viáticos y viajes", "Alimentos y representación", "Telecomunicaciones e internet", "Energía y agua", "Software y suscripciones", "Equipo de cómputo", "Papelería y oficina", "Mantenimiento y reparaciones", "Publicidad y marketing", "Seguros y fianzas", "Comisiones bancarias y financieras", "Impuestos y derechos", "Compras de mercancía e inventario", "Materias primas y producción", "Activo fijo y mobiliario", "Vehículos", "Capacitación", "Donativos", "Otros gastos"]]
+    """category: la categoría de gasto, como la app la nombra («Combustible»)."""
+    account: NotRequired[str]
+    """account: el número de la cuenta del catálogo («601-84-002», GET /v1/accounting/accounts). No una de Caja o Bancos."""
+    remove_when_unmet: NotRequired[bool]
+    """tag: quitarla si la orden deja de cumplir."""
+    lote_name: NotRequired[str | None]
+    """lote: el nombre del lote («Fletes»); vacío o null: «Lote del jueves 27 nov»."""
+    pay_on: NotRequired[Literal["monday", "tuesday", "wednesday", "thursday", "friday", "in_days", "due"]]
+    """lote: el día que paga: el siguiente lunes … viernes (hoy incluido), a los `days` días, o `due`, la fecha de pago del contrarecibo del portal. Un día inhábil pasa al siguiente hábil. Por omisión, friday."""
+    days: NotRequired[int]
+    """lote con pay_on in_days: cuántos días después."""
+    cost_center: NotRequired[str]
+    """Su centro de costo (ccn_…): la obra, proyecto, sucursal o área a la que pertenece, para ver ingresos y gastos por centro en Reportes. No cambia el CFDI. Sus notas de crédito lo toman solas."""
+    stage: NotRequired[int]
+    """stage: la etapa."""
+    members: NotRequired[list[str]]
+    """notify: a quién (mem_…, GET /v1/members)."""
+    note: NotRequired[str | None]
+    """notify: lo que dice el aviso. hold_payment: por qué se retiene (hasta 200). Puede llevar las variables de `message`, menos las tablas."""
+    topic: NotRequired[Literal["ordenes", "pagos", "facturas", "complementos", "documentos", "precios"]]
+    """email_supplier: el tema de los correos del proveedor a los que va (ordenes, pagos, facturas, complementos, documentos, precios; Ajustes › Correos a proveedores). Sin correos de ese tema, va a sus correos generales. Por omisión, facturas."""
+    subject: NotRequired[str]
+    """email_supplier: el asunto. Lleva las variables de `message`, menos las tablas."""
+    message: NotRequired[str]
+    """email_supplier: el mensaje. Variables: {folio}, {total}, {fecha}, {empresa}, {rfc_empresa}, {proveedor}, {rfc_proveedor}, {subtotal}, {iva}, {retenciones} y {moneda}; de una factura también {uuid}, {metodo_pago}, {forma_pago}, {uso_cfdi}, {conceptos}, {categoria}, {saldo}, {orden}, {contrarecibo}, {fecha_promesa}, {hallazgos} y la tabla {tabla_conceptos}; de una orden {entrega}, {almacen}, {credito}, {comprador}, {nota}, {enlace} y la tabla {tabla_productos}; en invoice.rejected y purchase_order.rejected, {motivo_rechazo}; en los momentos de pagos {facturas}, la tabla {tabla_facturas}, {pagado}, {fecha_pago}, {pago}, {cuenta}, {banco} y {referencia}, en payout.paid {rastreo} y {cep}, en payout.failed {motivo}. Un correo por pago (per payout) no lleva las de una sola factura. Cada {tabla_…} se dibuja como tabla, con las columnas de `columns`; un dato que el registro no tiene queda en blanco."""
+    per: NotRequired[Literal["payout", "invoice"]]
+    """email_supplier en payout.submitted, payout.paid y payout.failed: payout manda un correo por pago y proveedor con todas sus facturas ({folio} es la lista de folios, {total} lo que se le paga y {fecha} la fecha del pago); invoice, uno por factura. Por omisión, payout."""
+    columns: NotRequired[UpdateRuleParamsElseActionsItemColumns | None]
+    """email_supplier: las columnas de cada tabla del mensaje, en su orden. tabla_facturas: folio, uuid, fecha, total, retenido, pagado; tabla_conceptos: clave, descripcion, cantidad, unidad, precio, importe; tabla_productos: producto, codigo, cantidad, recibido, pendiente, precio, importe. Sin columnas, las de siempre."""
+    cc: NotRequired[list[str] | None]
+    """email_supplier: personas del equipo que reciben copia (mem_…, GET /v1/members)."""
+    signatures: NotRequired[int]
+    """extra_signature: cuántas firmas más pide (1 a 3). Por omisión, 1."""
+    reason: NotRequired[str | None]
+    """extra_signature: por qué, para quien firma («Proveedor nuevo»). Puede llevar las variables de `message`, menos las tablas."""
+    findings: NotRequired[list[str]]
+    """review_findings: los hallazgos que da por revisados (sus códigos, `code` en GET /v1/sat_findings). No los que cambian impuestos o la lista negra: cancelado, efos_definitivo, efos_presunto, lista_69b_bis, lista_69."""
+
+
 class UpdateRuleParams(TypedDict):
     name: NotRequired[str]
     """Cómo se llama en Ajustes › Reglas. Sin él, se nombra por lo que hace."""
@@ -17198,6 +17370,8 @@ class UpdateRuleParams(TypedDict):
     """Si: lo que tiene que cumplir. Sin condiciones, corre siempre."""
     actions: NotRequired[list[UpdateRuleParamsActionsItem]]
     """Entonces: de 1 a 8, en este orden."""
+    else_actions: NotRequired[list[UpdateRuleParamsElseActionsItem]]
+    """Si no: de 0 a 8 acciones, las mismas de actions, que hace cuando sus condiciones no se cumplen. Solo con condiciones; [] las quita."""
     once_per_record: NotRequired[bool]
     """true: corre una sola vez por factura, orden o movimiento. Por omisión true, salvo purchase_order.saved."""
     wait_days: NotRequired[int]
