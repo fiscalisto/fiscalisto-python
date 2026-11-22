@@ -597,6 +597,7 @@ __all__ = [
     "ImssFilesFilesItem",
     "ImssFilesRefusedItem",
     "ImssMovement",
+    "ImssMovementImssRejection",
     "ImssMovementList",
     "InflationAccounts",
     "InflationAccountsAccountsItem",
@@ -992,6 +993,7 @@ __all__ = [
     "RenumberAccountsParams",
     "RenumberAccountsParamsMappingItem",
     "ReportImssMovementsParams",
+    "ReportImssMovementsParamsRejectedItem",
     "RequestPurchaseReceiptInvoiceParams",
     "ResendEventParams",
     "ResetTestDataParams",
@@ -3460,6 +3462,13 @@ class PayrollBankFile(TypedDict):
     """Quién no va en el archivo y por qué (sin CLABE, otro banco…)."""
 
 
+class ImssMovementImssRejection(TypedDict):
+    reason: str
+    """Lo que dijo el IMSS, como en su acuse."""
+    rejected_at: str
+    """Cuándo lo anotó (el acuse que se subió o la llamada que lo mandó en rejected)."""
+
+
 class ImssMovement(TypedDict):
     """Un movimiento afiliatorio del IMSS de un empleado: alta, modificación de salario, baja o reingreso."""
     id: str
@@ -3494,6 +3503,8 @@ class ImssMovement(TypedDict):
     """pending: falta presentarlo al IMSS; reported: ya se presentó (ya no cambia)."""
     reported_at: str | None
     """Cuándo se marcó como presentado, o null."""
+    imss_rejection: ImssMovementImssRejection | None
+    """El IMSS lo rechazó en el acuse del IDSE (sigue pending para corregirlo y enviarlo otra vez); null si no."""
     problems: list[str]
     """Lo que el IMSS rechazaría en su renglón (vacío: listo para el archivo)."""
 
@@ -5745,6 +5756,10 @@ class Branch(TypedDict):
     """Color de su PDF, como #2563EB; null: el del emisor."""
     pdf_style: Literal["clasico", "moderno", "compacto", "minimalista"] | None
     """Estilo de su PDF; null: el del emisor."""
+    time_zone: str
+    """La zona horaria (IANA) en que cuenta su día: la elegida o, si no eligió, la de su código postal (Ley de los Husos Horarios). La fecha de sus facturas siempre es la hora local de su código postal."""
+    time_zone_chosen: bool
+    """true: time_zone se eligió; false: sigue la de su código postal."""
     archived: bool
     """true si está archivada: ya no se factura desde ella."""
     created_at: str | None
@@ -16953,13 +16968,22 @@ class ListImssMovementsParams(TypedDict):
     """pending (por omisión) o reported."""
 
 
+class ReportImssMovementsParamsRejectedItem(TypedDict):
+    movement: str
+    """El movimiento (imv_…)."""
+    reason: str
+    """Lo que dice el IMSS, como en su acuse del IDSE."""
+
+
 class ReportImssMovementsParams(TypedDict):
     issuer: NotRequired[str]
     """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
-    movements: list[str]
+    movements: NotRequired[list[str]]
     """Los movimientos (imv_…) que el IMSS ya recibió, hasta 1,000."""
     reported: NotRequired[bool]
     """true (por omisión): marcarlos como presentados; false: devolverlos a pendientes (si los marcó por error)."""
+    rejected: NotRequired[list[ReportImssMovementsParamsRejectedItem]]
+    """Los que el IMSS rechazó en el acuse del IDSE, cada uno con su razón: vuelven a pendientes con imss_rejection, para corregirlos y enviarlos otra vez."""
 
 
 class UpdateImssMovementParams(TypedDict):
@@ -17662,6 +17686,8 @@ class CreateBranchParams(TypedDict):
     """Color del PDF de sus facturas, como #2563EB. null toma el del emisor."""
     pdf_style: NotRequired[Literal["clasico", "moderno", "compacto", "minimalista"] | None]
     """Estilo del PDF de sus facturas: clasico, moderno, compacto o minimalista. null toma el del emisor."""
+    time_zone: NotRequired[Literal["America/Mexico_City", "America/Cancun", "America/Mazatlan", "America/Hermosillo", "America/Tijuana", "America/Matamoros", "America/Ciudad_Juarez"] | None]
+    """Su zona horaria (IANA), cuando no es la de su código postal: cuándo empieza su día para «hoy», los límites por día y los avisos. null sigue la de su código postal. La fecha de sus facturas siempre es la hora local de su código postal (Anexo 20)."""
 
 
 class ListBranchesParams(TypedDict):
@@ -17725,6 +17751,8 @@ class UpdateBranchParams(TypedDict):
     """Color del PDF de sus facturas, como #2563EB. null toma el del emisor."""
     pdf_style: NotRequired[Literal["clasico", "moderno", "compacto", "minimalista"] | None]
     """Estilo del PDF de sus facturas: clasico, moderno, compacto o minimalista. null toma el del emisor."""
+    time_zone: NotRequired[Literal["America/Mexico_City", "America/Cancun", "America/Mazatlan", "America/Hermosillo", "America/Tijuana", "America/Matamoros", "America/Ciudad_Juarez"] | None]
+    """Su zona horaria (IANA), cuando no es la de su código postal: cuándo empieza su día para «hoy», los límites por día y los avisos. null sigue la de su código postal. La fecha de sus facturas siempre es la hora local de su código postal (Anexo 20)."""
     archived: NotRequired[bool]
     """true la archiva: ya no se puede facturar desde ella, y sus facturas la siguen nombrando. false la restaura."""
 

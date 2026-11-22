@@ -3286,7 +3286,7 @@ class ImssMovementsResource:
 
     def report(
         self,
-        params: ReportImssMovementsParams,
+        params: ReportImssMovementsParams | None = None,
         *,
         idempotency_key: str | None = None,
         timeout: float | None = None,
@@ -3295,7 +3295,7 @@ class ImssMovementsResource:
     ) -> ImssMovementList:
         """Marcar movimientos como presentados
 
-        Cuando el IMSS ya los recibió (el acuse de IDSE o la importación en SUA): pasan a reported y ya no cambian ni se borran. Con reported false vuelven a pendientes. Devuelve los movimientos como quedaron.
+        Cuando el IMSS ya los recibió (el acuse de IDSE o la importación en SUA): pasan a reported y ya no cambian ni se borran. Con reported false vuelven a pendientes. Los que el IMSS rechazó van en rejected con su razón: quedan pending con imss_rejection hasta que los corrija. Devuelve los movimientos como quedaron.
 
         POST /v1/imss_movements/report
         https://fiscalisto.com/docs/api/referencia/nomina/report-imss-movements
