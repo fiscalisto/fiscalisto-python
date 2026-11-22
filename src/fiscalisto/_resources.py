@@ -156,6 +156,7 @@ if TYPE_CHECKING:
         Employee,
         EmployeeDeduction,
         EmployeeDeductionList,
+        EmployeeNoticeSettings,
         EmployeePortal,
         EmployeeRaise,
         EmployeeTraining,
@@ -203,6 +204,7 @@ if TYPE_CHECKING:
         GetDiotFileParams,
         GetDiotParams,
         GetElectronicAccountingParams,
+        GetEmployeeNoticeSettingsParams,
         GetEmployeePayStatementParams,
         GetEmployeeVacationCertificateParams,
         GetEmployeeVacationsParams,
@@ -483,6 +485,7 @@ if TYPE_CHECKING:
         UpdateCustomerGroupParams,
         UpdateCustomerParams,
         UpdateEmployeeDeductionParams,
+        UpdateEmployeeNoticeSettingsParams,
         UpdateEmployeeParams,
         UpdateEmployeePortalParams,
         UpdateEmployeeTrainingParams,
@@ -2662,7 +2665,7 @@ class EmployeesResource:
     ) -> EmployeePortal:
         """Portal del empleado
 
-        El enlace personal del empleado (sin cuenta) para ver, descargar y firmar de recibido sus recibos de nómina, ver sus vacaciones y pedir días; los celulares ligados y los recibos que firmó.
+        El enlace personal del empleado (sin cuenta) para ver, descargar y firmar de recibido sus recibos de nómina, ver sus vacaciones y pedir días; los celulares ligados, los que tienen avisos, sus últimos avisos y los recibos que firmó.
 
         GET /v1/employees/{id}/portal
         https://fiscalisto.com/docs/api/referencia/nomina/get-employee-portal
@@ -2733,6 +2736,54 @@ class EmployeesResource:
         """
         result: EmployeeTraining = self._client.request(
             "POST", f"/v1/employees/{_path(id)}/training", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class EmployeeNoticeSettingsResource:
+    """Nómina: fiscalisto.employee_notice_settings."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetEmployeeNoticeSettingsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EmployeeNoticeSettings:
+        """Avisos a empleados
+
+        Qué avisos les llegan a los empleados del emisor en Mi nómina: recibo nuevo, recibo cancelado, la respuesta a sus vacaciones y el recordatorio de firmar. Llegan al celular de quien instaló Mi nómina y activó sus avisos; si no, a su correo (email_fallback).
+
+        GET /v1/employee_notice_settings
+        https://fiscalisto.com/docs/api/referencia/nomina/get-employee-notice-settings
+        """
+        result: EmployeeNoticeSettings = self._client.request(
+            "GET", "/v1/employee_notice_settings", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        params: UpdateEmployeeNoticeSettingsParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> EmployeeNoticeSettings:
+        """Cambiar los avisos a empleados
+
+        Lo que no mande se queda como estaba. Cada empleado puede, además, apagar los suyos desde su enlace.
+
+        POST /v1/employee_notice_settings
+        https://fiscalisto.com/docs/api/referencia/nomina/update-employee-notice-settings
+        """
+        result: EmployeeNoticeSettings = self._client.request(
+            "POST", "/v1/employee_notice_settings", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -11285,6 +11336,11 @@ class FiscalistoApi(Core):
     def employees(self) -> EmployeesResource:
         """Nómina."""
         return EmployeesResource(self)
+
+    @cached_property
+    def employee_notice_settings(self) -> EmployeeNoticeSettingsResource:
+        """Nómina."""
+        return EmployeeNoticeSettingsResource(self)
 
     @cached_property
     def vacation_requests(self) -> VacationRequestsResource:

@@ -419,7 +419,9 @@ __all__ = [
     "EmployeeDeduction",
     "EmployeeDeductionList",
     "EmployeeList",
+    "EmployeeNoticeSettings",
     "EmployeePortal",
+    "EmployeePortalNoticesItem",
     "EmployeePortalSignedReceiptsItem",
     "EmployeeRaise",
     "EmployeeRaiseEmployeesItem",
@@ -545,6 +547,7 @@ __all__ = [
     "GetDiotFileParams",
     "GetDiotParams",
     "GetElectronicAccountingParams",
+    "GetEmployeeNoticeSettingsParams",
     "GetEmployeePayStatementParams",
     "GetEmployeeVacationCertificateParams",
     "GetEmployeeVacationsParams",
@@ -1224,6 +1227,7 @@ __all__ = [
     "UpdateCustomerParams",
     "UpdateCustomerParamsForeign",
     "UpdateEmployeeDeductionParams",
+    "UpdateEmployeeNoticeSettingsParams",
     "UpdateEmployeeParams",
     "UpdateEmployeePortalParams",
     "UpdateEmployeeTrainingParams",
@@ -3788,6 +3792,17 @@ class EmployeeVacations(TypedDict):
     """Los días de vacaciones de sus recibos timbrados."""
 
 
+class EmployeePortalNoticesItem(TypedDict):
+    kind: Literal["receipt", "receipt_canceled", "vacation_approved", "vacation_rejected", "sign_reminder"]
+    """receipt: recibo nuevo; receipt_canceled: se canceló uno; vacation_approved / vacation_rejected: la respuesta a sus vacaciones; sign_reminder: tiene un recibo por firmar."""
+    channel: Literal["push", "email", "off", "none", "skipped", "stale"] | None
+    """Cómo le llegó: push (a su celular), email (a su correo), off (usted o el empleado apagó ese aviso), none (no tiene avisos ni correo), skipped (ya no aplicaba: lo firmó, se canceló o se lo mandamos con el recibo), stale (no salió en 7 días); null mientras está por salir (por ejemplo, de noche)."""
+    created_at: str
+    """Cuándo se generó."""
+    sent_at: str | None
+    """Cuándo salió."""
+
+
 class EmployeePortalSignedReceiptsItem(TypedDict):
     uuid: str
     """El folio fiscal del recibo."""
@@ -3796,7 +3811,7 @@ class EmployeePortalSignedReceiptsItem(TypedDict):
 
 
 class EmployeePortal(TypedDict):
-    """El portal del empleado: su enlace y los recibos que firmó de recibido."""
+    """El portal del empleado: su enlace, los avisos que le llegan y los recibos que firmó de recibido."""
     object: Literal["employee_portal"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     livemode: bool
@@ -3808,11 +3823,39 @@ class EmployeePortal(TypedDict):
     enabled_at: str | None
     """Cuándo se hizo el enlace."""
     phones: int
-    """Los celulares ligados: el primero que lo abre y los que lo abren en la hora siguiente, hasta 3."""
+    """Los celulares ligados: el primero que lo abre, los que lo abren en la hora siguiente (hasta 3) y la app Mi nómina que instala desde su enlace (hasta 6 en total)."""
     last_seen_at: str | None
     """La última vez que lo abrió."""
+    push_phones: int
+    """Los celulares en que instaló Mi nómina y activó los avisos (recibo nuevo, recibo cancelado, respuesta a sus vacaciones, recibo sin firmar)."""
+    notices: list[EmployeePortalNoticesItem]
+    """Sus últimos 10 avisos, los más recientes primero."""
     signed_receipts: list[EmployeePortalSignedReceiptsItem]
     """Los recibos que firmó de recibido desde su enlace (con el día, su celular y su IP guardados), los más recientes primero."""
+
+
+class EmployeeNoticeSettings(TypedDict):
+    """Qué avisos les llegan a los empleados del emisor en Mi nómina (al celular o a su correo). Cada empleado puede apagar los suyos."""
+    object: Literal["employee_notice_settings"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    receipt: bool
+    """Avisar cada recibo nuevo en cuanto se timbra."""
+    receipt_canceled: bool
+    """Avisar cuando un recibo suyo se cancela ante el SAT."""
+    vacation: bool
+    """Avisar la respuesta a sus vacaciones, con su nota."""
+    sign_reminder_days: int
+    """Los días después de timbrarse en que se le recuerda, una vez, firmar un recibo sin firmar; 0: nunca."""
+    email_fallback: bool
+    """A quien no activó los avisos en su celular le llega el mismo aviso a su correo."""
+    quiet_hours: bool
+    """Los avisos de entre las 21:00 y las 7:00 (hora del centro) llegan a las 7:00."""
+    updated_at: str | None
+    """Cuándo se cambiaron; null, nunca (son los de omisión)."""
 
 
 # Días de vacaciones que un empleado pidió desde su enlace.
@@ -16403,6 +16446,29 @@ class UpdateEmployeePortalParams(TypedDict):
     """enable: crea el enlace (o deja el que tiene); renew: uno nuevo (el anterior deja de funcionar y sus celulares se desligan); disable: lo apaga (lo firmado se queda)."""
     send_email: NotRequired[bool]
     """Con enable o renew, le manda el enlace al correo del empleado. Falla si el empleado no tiene correo."""
+
+
+class GetEmployeeNoticeSettingsParams(TypedDict):
+    """Los parámetros de GET /v1/employee_notice_settings."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateEmployeeNoticeSettingsParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…); por omisión, el único de la cuenta."""
+    receipt: NotRequired[bool]
+    """«Ya está su recibo de nómina» en cuanto se timbra."""
+    receipt_canceled: NotRequired[bool]
+    """Cuando un recibo suyo se cancela ante el SAT."""
+    vacation: NotRequired[bool]
+    """Al aprobar o rechazar los días que pidió, con su nota."""
+    sign_reminder_days: NotRequired[int]
+    """Si un recibo sigue sin firmar de recibido estos días después de timbrarse, se le recuerda una vez. 0: nunca."""
+    email_fallback: NotRequired[bool]
+    """A quien no activó los avisos en su celular le llega el mismo aviso a su correo."""
+    quiet_hours: NotRequired[bool]
+    """Los avisos de entre las 21:00 y las 7:00 (hora del centro) llegan a las 7:00."""
 
 
 class ListVacationRequestsParams(TypedDict):
