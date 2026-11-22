@@ -75,6 +75,7 @@ __all__ = [
     "AutomaticJournalEntry",
     "AutomaticJournalEntryLinesItem",
     "AutomaticJournalEntryOriginalLinesItem",
+    "BacktestRuleParams",
     "Balance",
     "BalanceAutoRecharge",
     "BalanceLowEvent",
@@ -1103,6 +1104,7 @@ __all__ = [
     "Rule",
     "RuleActionsItem",
     "RuleActionsItemColumns",
+    "RuleBacktest",
     "RuleConditions",
     "RuleConditionsConditionsItem",
     "RuleConditionsGroupsItem",
@@ -1119,6 +1121,8 @@ __all__ = [
     "RuleTest",
     "RuleTestConditionsItem",
     "RuleTestList",
+    "RuleVersion",
+    "RuleVersionList",
     "SalesOrder",
     "SalesOrderCanceledEvent",
     "SalesOrderConfirmedEvent",
@@ -6836,6 +6840,48 @@ class RuleRun(TypedDict):
     """Lo que hizo, en palabras."""
     error: str | None
     """Por qué no pudo, o null."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+
+
+class RuleBacktest(TypedDict):
+    """Lo que la regla habría hecho en los últimos días, contado (sin cambiar nada)."""
+    object: Literal["rule_backtest"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    rule: str
+    """La regla (rul_…)."""
+    days: int
+    """Cuántos días hacia atrás revisó."""
+    since: str
+    """Desde qué día (YYYY-MM-DD, hora de México)."""
+    records: int
+    """Cuántas facturas, órdenes, movimientos o avisos de su trigger revisó."""
+    matches: int
+    """En cuántos se habrían cumplido sus condiciones."""
+    amount: float | None
+    """Lo que suman los que cumplen, en pesos; null para los avisos del SAT o si ninguno cumple."""
+    capped: bool
+    """true: revisó los 2,000 más recientes y se detuvo ahí."""
+    would_do: list[str]
+    """Lo que habría hecho con cada uno que cumple, en palabras."""
+    else_would_do: list[str]
+    """Lo que habría hecho con los demás («Si no se cumple»), en palabras."""
+    wait_days: int
+    """Días que espera y vuelve a revisar antes de actuar (0: actúa en seguida)."""
+
+
+class RuleVersion(TypedDict):
+    """Un cambio a una regla, con la regla como quedó. Se guardan las últimas 50 de cada regla; las de una regla borrada, 90 días."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["rule_version"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    change: Literal["created", "edited", "paused", "resumed", "deleted", "restored"]
+    """Qué cambió: created, edited, paused (en pausa), resumed (activada), deleted o restored (regresó a una versión anterior)."""
+    changed_by: str | None
+    """El miembro (mem_…) que la cambió; null si fue la API o Fiscalisto."""
+    rule: Rule
+    """La regla como quedó después de este cambio."""
     created_at: str
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
 
@@ -14636,6 +14682,17 @@ class RuleRunList(TypedDict):
     """La ruta de esta lista."""
 
 
+class RuleVersionList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[RuleVersion]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class SupplierGroupList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -20039,6 +20096,11 @@ class ListRuleRunsParams(TypedDict):
     """Cuántos por página, de 1 a 100. Por omisión 10."""
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
+
+
+class BacktestRuleParams(TypedDict):
+    days: NotRequired[int]
+    """Cuántos días hacia atrás (90 por omisión, hasta 90)."""
 
 
 class CreateSupplierGroupParams(TypedDict):

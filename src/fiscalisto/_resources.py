@@ -35,6 +35,7 @@ if TYPE_CHECKING:
         AttendanceOvertime,
         AttendanceReport,
         AutomaticJournalEntry,
+        BacktestRuleParams,
         Balance,
         BankImport,
         BankTransaction,
@@ -446,9 +447,11 @@ if TYPE_CHECKING:
         RoleList,
         RollWebhookSecretParams,
         Rule,
+        RuleBacktest,
         RuleList,
         RuleRun,
         RuleTestList,
+        RuleVersionList,
         SalesOrder,
         Sandbox,
         SandboxList,
@@ -5854,6 +5857,70 @@ class RulesResource:
         https://fiscalisto.com/docs/api/referencia/reglas/list-rule-runs
         """
         return self._client.list(f"/v1/rules/{_path(id)}/runs", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def backtest(
+        self,
+        id: str,
+        params: BacktestRuleParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> RuleBacktest:
+        """Probar una regla en los últimos días
+
+        Con todos los registros de su trigger de los últimos days días (90 por omisión, hasta 2,000): en cuántos se cumple, cuánto suman y qué habría hecho. No cambia nada.
+
+        POST /v1/rules/{id}/backtest
+        https://fiscalisto.com/docs/api/referencia/reglas/backtest-rule
+        """
+        result: RuleBacktest = self._client.request(
+            "POST", f"/v1/rules/{_path(id)}/backtest", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list_versions(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> RuleVersionList:
+        """Cambios de una regla
+
+        Cada cambio, el más reciente primero, con quién lo hizo y la regla como quedó. También de una regla borrada (90 días).
+
+        GET /v1/rules/{id}/versions
+        https://fiscalisto.com/docs/api/referencia/reglas/list-rule-versions
+        """
+        result: RuleVersionList = self._client.request(
+            "GET", f"/v1/rules/{_path(id)}/versions", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def restore_version(
+        self,
+        id: str,
+        version: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Rule:
+        """Regresar una regla a una versión
+
+        La regla vuelve a como quedó en esa versión; una borrada vuelve a existir. Se revisa como cualquier cambio y queda como una versión más.
+
+        POST /v1/rules/{id}/versions/{version}/restore
+        https://fiscalisto.com/docs/api/referencia/reglas/restore-rule-version
+        """
+        result: Rule = self._client.request(
+            "POST", f"/v1/rules/{_path(id)}/versions/{_path(version)}/restore", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
 
 
 class SupplierGroupsResource:
