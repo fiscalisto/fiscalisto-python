@@ -58,6 +58,14 @@ if TYPE_CHECKING:
         ChartTemplateResult,
         CheckSatListsParams,
         ClassifyBankTransactionParams,
+        Climate,
+        ClimateAction,
+        ClimateActionDeleted,
+        ClimateComplaint,
+        ClimateSurvey,
+        ClimateSurveyDeleted,
+        ClimateTraumaticEvent,
+        ClimateTraumaticEventList,
         CloseSalesOrderParams,
         ClosedPeriod,
         CompanyReport,
@@ -76,6 +84,8 @@ if TYPE_CHECKING:
         CreateBankTransactionsParams,
         CreateBranchParams,
         CreateCashForecastItemParams,
+        CreateClimateActionParams,
+        CreateClimateSurveyParams,
         CreateConsolidationEliminationParams,
         CreateCostCenterParams,
         CreateCostOfSalesParams,
@@ -194,6 +204,7 @@ if TYPE_CHECKING:
         GetBudgetParams,
         GetCashFlowParams,
         GetCashForecastParams,
+        GetClimateParams,
         GetClosedPeriodParams,
         GetCompanyReportParams,
         GetComparativeStatementsParams,
@@ -277,6 +288,9 @@ if TYPE_CHECKING:
         ListBranchesParams,
         ListCandidatesParams,
         ListChartTemplatesParams,
+        ListClimateActionsParams,
+        ListClimateComplaintsParams,
+        ListClimateSurveysParams,
         ListConsolidationEliminationsParams,
         ListCostCentersParams,
         ListCustomerDataRequestsParams,
@@ -397,6 +411,7 @@ if TYPE_CHECKING:
         Receivable,
         RecoverWebhookEndpointParams,
         RecurringInvoice,
+        ReferClimateTraumaticEventParams,
         RefreshSatDeclarationsParams,
         RejectQuoteParams,
         RejectVacationRequestParams,
@@ -485,6 +500,11 @@ if TYPE_CHECKING:
         UpdateCandidateParams,
         UpdateCashForecastItemParams,
         UpdateCashForecastParams,
+        UpdateClimateActionParams,
+        UpdateClimateComplaintParams,
+        UpdateClimatePolicyParams,
+        UpdateClimateSurveyParams,
+        UpdateClimateSurveyReportParams,
         UpdateConsolidationEliminationParams,
         UpdateCostCenterParams,
         UpdateCustomerGroupParams,
@@ -4466,6 +4486,400 @@ class TrainingCoursesResource:
         """
         result: bytes = self._client.request(
             "GET", f"/v1/training_courses/{_path(id)}/pdf", query=params, result="bytes", timeout=timeout, max_retries=max_retries
+        )
+        return result
+
+
+class ClimateResource:
+    """Nómina: fiscalisto.climate."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: GetClimateParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Climate:
+        """Clima laboral
+
+        Como «Nómina › Clima laboral» de la app: la política de prevención de riesgos psicosociales y cuántos la leyeron (NOM-035-STPS-2018, numerales 5.1 y 5.7), cada centro de trabajo con la guía que le toca por cuántos trabajan ahí (numeral 7.1) y cuándo le toca la siguiente identificación (cada dos años como mínimo, numeral 7.9), cuántas acciones del Programa de intervención faltan y cuántas quejas del buzón esperan atención.
+
+        GET /v1/climate
+        https://fiscalisto.com/docs/api/referencia/nomina/get-climate
+        """
+        result: Climate = self._client.request(
+            "GET", "/v1/climate", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_policy(
+        self,
+        params: UpdateClimatePolicyParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Climate:
+        """Guardar la política de prevención
+
+        El texto de la política (numeral 5.1) y con quién más presentar una queja. Con publish true la publica en el portal de cada trabajador como una versión nueva (numeral 5.7) y se les pide leerla otra vez. Lo que no manda no cambia. Contesta climate.
+
+        POST /v1/climate/policy
+        https://fiscalisto.com/docs/api/referencia/nomina/update-climate-policy
+        """
+        result: Climate = self._client.request(
+            "POST", "/v1/climate/policy", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class ClimateSurveysResource:
+    """Nómina: fiscalisto.climate_surveys."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListClimateSurveysParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[ClimateSurvey]:
+        """Listar encuestas de clima laboral
+
+        Las encuestas NOM-035 y de clima del emisor (cls_…), las más recientes primero, con a cuántos se les pidió y cuántos contestaron.
+
+        GET /v1/climate_surveys
+        https://fiscalisto.com/docs/api/referencia/nomina/list-climate-surveys
+        """
+        return self._client.list("/v1/climate_surveys", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def create(
+        self,
+        params: CreateClimateSurveyParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClimateSurvey:
+        """Crear una encuesta de clima laboral
+
+        kind nom035 aplica la guía que le toca al centro de trabajo por cuántos trabajan ahí hoy: la Guía II de 16 a 50 y la Guía III con más de 50 (numeral 7.1), y la Guía I para identificar a quien vivió un acontecimiento traumático severo (numeral 5.5). Un centro tiene una sola encuesta NOM-035 abierta a la vez. kind clima es una encuesta propia con sus preguntas (scale, nps para el eNPS, choice o text). Queda en borrador salvo con open true. Las respuestas llegan solo desde el portal del empleado y nunca con nombre.
+
+        POST /v1/climate_surveys
+        https://fiscalisto.com/docs/api/referencia/nomina/create-climate-survey
+        """
+        result: ClimateSurvey = self._client.request(
+            "POST", "/v1/climate_surveys", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClimateSurvey:
+        """Ver una encuesta de clima laboral
+
+        La encuesta con sus resultados: con la NOM-035, la calificación final y la de cada categoría y dominio con su nivel de riesgo según las tablas de la norma, y si pide un Programa de intervención (de medio para arriba, numeral 8.3); con la de clima, cada pregunta y el eNPS. Los resultados se muestran desde 5 respuestas (hidden true antes), y los departamentos con menos se dejan fuera, para que no se distinga lo que contestó cada quien. invites dice a quién se le pidió y si ya contestó, no qué.
+
+        GET /v1/climate_surveys/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/get-climate-survey
+        """
+        result: ClimateSurvey = self._client.request(
+            "GET", f"/v1/climate_surveys/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateClimateSurveyParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClimateSurvey:
+        """Cambiar una encuesta de clima laboral
+
+        Cambia un borrador. Una encuesta abierta o cerrada ya no cambia, porque hay quien contestó esas preguntas: ciérrela y haga otra.
+
+        POST /v1/climate_surveys/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/update-climate-survey
+        """
+        result: ClimateSurvey = self._client.request(
+            "POST", f"/v1/climate_surveys/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClimateSurveyDeleted:
+        """Borrar una encuesta de clima laboral
+
+        La borra si nadie la ha contestado. Con respuestas se conserva: los resultados se guardan al menos un año (numeral 5.8).
+
+        DELETE /v1/climate_surveys/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/delete-climate-survey
+        """
+        result: ClimateSurveyDeleted = self._client.request(
+            "DELETE", f"/v1/climate_surveys/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def open(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClimateSurvey:
+        """Abrir una encuesta de clima laboral
+
+        Invita a quien trabaja hoy en el centro (o a la muestra, con sample) y la encuesta aparece en su portal. Con la NOM-035 no se abre si el centro ya tiene otra abierta.
+
+        POST /v1/climate_surveys/{id}/open
+        https://fiscalisto.com/docs/api/referencia/nomina/open-climate-survey
+        """
+        result: ClimateSurvey = self._client.request(
+            "POST", f"/v1/climate_surveys/{_path(id)}/open", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def close(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClimateSurvey:
+        """Cerrar una encuesta de clima laboral
+
+        Deja de recibir respuestas. Una NOM-035 cerrada cuenta como la identificación del centro de trabajo, y la siguiente toca dos años después (numeral 7.9).
+
+        POST /v1/climate_surveys/{id}/close
+        https://fiscalisto.com/docs/api/referencia/nomina/close-climate-survey
+        """
+        result: ClimateSurvey = self._client.request(
+            "POST", f"/v1/climate_surveys/{_path(id)}/close", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_report(
+        self,
+        id: str,
+        params: UpdateClimateSurveyReportParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClimateSurvey:
+        """Guardar el informe de una encuesta
+
+        Solo de la NOM-035: lo que pide el informe de resultados además de lo que calcula Fiscalisto (numeral 7.7): domicilio y actividad del centro, objetivo, actividades, conclusiones y el responsable de la evaluación. Lo que no manda no cambia.
+
+        POST /v1/climate_surveys/{id}/report
+        https://fiscalisto.com/docs/api/referencia/nomina/update-climate-survey-report
+        """
+        result: ClimateSurvey = self._client.request(
+            "POST", f"/v1/climate_surveys/{_path(id)}/report", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def traumatic_events(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClimateTraumaticEventList:
+        """Listar acontecimientos traumáticos
+
+        Quienes contestaron «Sí» en la Guía I, con su nombre, porque el patrón debe canalizar a quien lo requiera para su atención (numeral 5.5), y si requiere valoración clínica según la guía. Es lo único de una encuesta que lleva nombre.
+
+        GET /v1/climate_surveys/{id}/traumatic_events
+        https://fiscalisto.com/docs/api/referencia/nomina/list-climate-traumatic-events
+        """
+        result: ClimateTraumaticEventList = self._client.request(
+            "GET", f"/v1/climate_surveys/{_path(id)}/traumatic_events", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def refer(
+        self,
+        id: str,
+        params: ReferClimateTraumaticEventParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClimateTraumaticEvent:
+        """Anotar a dónde se canalizó a un trabajador
+
+        A dónde se canalizó a quien vivió un acontecimiento traumático severo (el IMSS, un médico, un psicólogo), cuándo y una nota. Lo que no manda se borra.
+
+        POST /v1/climate_surveys/{id}/referrals
+        https://fiscalisto.com/docs/api/referencia/nomina/refer-climate-traumatic-event
+        """
+        result: ClimateTraumaticEvent = self._client.request(
+            "POST", f"/v1/climate_surveys/{_path(id)}/referrals", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class ClimateActionsResource:
+    """Nómina: fiscalisto.climate_actions."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListClimateActionsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[ClimateAction]:
+        """Listar acciones del Programa de intervención
+
+        Las acciones del emisor (cla_…), las pendientes primero y por fecha, o solo las de una encuesta con survey.
+
+        GET /v1/climate_actions
+        https://fiscalisto.com/docs/api/referencia/nomina/list-climate-actions
+        """
+        return self._client.list("/v1/climate_actions", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def create(
+        self,
+        params: CreateClimateActionParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClimateAction:
+        """Agregar una acción del Programa de intervención
+
+        Lo que pide el programa (numeral 8.4): el área que atiende, la acción, su nivel (primer nivel la organización, segundo los grupos, tercero cada persona, numeral 8.5), el responsable y la fecha. Al marcarla done se anota el día, y evaluation dice cómo resultó.
+
+        POST /v1/climate_actions
+        https://fiscalisto.com/docs/api/referencia/nomina/create-climate-action
+        """
+        result: ClimateAction = self._client.request(
+            "POST", "/v1/climate_actions", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateClimateActionParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClimateAction:
+        """Cambiar una acción del Programa de intervención
+
+        Reemplaza la acción con lo que manda: lo que no manda queda vacío o con su valor por omisión.
+
+        POST /v1/climate_actions/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/update-climate-action
+        """
+        result: ClimateAction = self._client.request(
+            "POST", f"/v1/climate_actions/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClimateActionDeleted:
+        """Borrar una acción del Programa de intervención
+
+        La borra. No se puede deshacer.
+
+        DELETE /v1/climate_actions/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/delete-climate-action
+        """
+        result: ClimateActionDeleted = self._client.request(
+            "DELETE", f"/v1/climate_actions/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class ClimateComplaintsResource:
+    """Nómina: fiscalisto.climate_complaints."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListClimateComplaintsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[ClimateComplaint]:
+        """Listar quejas del buzón
+
+        Las quejas que mandaron los trabajadores desde su portal (numeral 8.1 b)): de violencia laboral, del entorno u otra. Llevan nombre solo si quien la mandó la firmó.
+
+        GET /v1/climate_complaints
+        https://fiscalisto.com/docs/api/referencia/nomina/list-climate-complaints
+        """
+        return self._client.list("/v1/climate_complaints", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def update(
+        self,
+        id: str,
+        params: UpdateClimateComplaintParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ClimateComplaint:
+        """Atender una queja del buzón
+
+        Su estado y qué se hizo. Al marcarla atendida se anota el día. Lo que no manda no cambia.
+
+        POST /v1/climate_complaints/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/update-climate-complaint
+        """
+        result: ClimateComplaint = self._client.request(
+            "POST", f"/v1/climate_complaints/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -11571,6 +11985,26 @@ class FiscalistoApi(Core):
     def training_courses(self) -> TrainingCoursesResource:
         """Nómina."""
         return TrainingCoursesResource(self)
+
+    @cached_property
+    def climate(self) -> ClimateResource:
+        """Nómina."""
+        return ClimateResource(self)
+
+    @cached_property
+    def climate_surveys(self) -> ClimateSurveysResource:
+        """Nómina."""
+        return ClimateSurveysResource(self)
+
+    @cached_property
+    def climate_actions(self) -> ClimateActionsResource:
+        """Nómina."""
+        return ClimateActionsResource(self)
+
+    @cached_property
+    def climate_complaints(self) -> ClimateComplaintsResource:
+        """Nómina."""
+        return ClimateComplaintsResource(self)
 
     @cached_property
     def invoice_batches(self) -> InvoiceBatchesResource:

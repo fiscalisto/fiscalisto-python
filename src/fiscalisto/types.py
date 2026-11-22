@@ -143,6 +143,32 @@ __all__ = [
     "ChartTemplateResultExistingItem",
     "CheckSatListsParams",
     "ClassifyBankTransactionParams",
+    "Climate",
+    "ClimateAction",
+    "ClimateActionDeleted",
+    "ClimateActionList",
+    "ClimateActions",
+    "ClimateCentrosItem",
+    "ClimateComplaint",
+    "ClimateComplaintList",
+    "ClimateComplaints",
+    "ClimateSettings",
+    "ClimateSurvey",
+    "ClimateSurveyDeleted",
+    "ClimateSurveyInvitesItem",
+    "ClimateSurveyList",
+    "ClimateSurveyQuestionsItem",
+    "ClimateSurveyReport",
+    "ClimateSurveyResults",
+    "ClimateSurveyResultsClimateItem",
+    "ClimateSurveyResultsNom035",
+    "ClimateSurveyResultsNom035CategoriesItem",
+    "ClimateSurveyResultsNom035DepartmentsItem",
+    "ClimateSurveyResultsNom035DomainsItem",
+    "ClimateSurveyResultsNom035Final",
+    "ClimateSurveyResultsTraumatic",
+    "ClimateTraumaticEvent",
+    "ClimateTraumaticEventList",
     "CloseSalesOrderParams",
     "ClosedPeriod",
     "CompanyReport",
@@ -221,6 +247,9 @@ __all__ = [
     "CreateBranchParamsAddress",
     "CreateBranchParamsSeries",
     "CreateCashForecastItemParams",
+    "CreateClimateActionParams",
+    "CreateClimateSurveyParams",
+    "CreateClimateSurveyParamsQuestionsItem",
     "CreateConsolidationEliminationParams",
     "CreateConsolidationEliminationParamsLinesItem",
     "CreateCostCenterParams",
@@ -537,6 +566,7 @@ __all__ = [
     "GetBudgetParams",
     "GetCashFlowParams",
     "GetCashForecastParams",
+    "GetClimateParams",
     "GetClosedPeriodParams",
     "GetCompanyReportParams",
     "GetComparativeStatementsParams",
@@ -749,6 +779,9 @@ __all__ = [
     "ListBranchesParams",
     "ListCandidatesParams",
     "ListChartTemplatesParams",
+    "ListClimateActionsParams",
+    "ListClimateComplaintsParams",
+    "ListClimateSurveysParams",
     "ListConsolidationEliminationsParams",
     "ListCostCentersParams",
     "ListCustomerDataRequestsParams",
@@ -989,6 +1022,7 @@ __all__ = [
     "RecurringInvoiceLastError",
     "RecurringInvoiceList",
     "RecurringInvoiceSchedule",
+    "ReferClimateTraumaticEventParams",
     "RefreshSatDeclarationsParams",
     "RejectQuoteParams",
     "RejectVacationRequestParams",
@@ -1232,6 +1266,12 @@ __all__ = [
     "UpdateCashForecastItemParams",
     "UpdateCashForecastParams",
     "UpdateCashForecastParamsStartingBalance",
+    "UpdateClimateActionParams",
+    "UpdateClimateComplaintParams",
+    "UpdateClimatePolicyParams",
+    "UpdateClimateSurveyParams",
+    "UpdateClimateSurveyParamsQuestionsItem",
+    "UpdateClimateSurveyReportParams",
     "UpdateConsolidationEliminationParams",
     "UpdateConsolidationEliminationParamsLinesItem",
     "UpdateCostCenterParams",
@@ -4833,6 +4873,375 @@ class EmployeeTraining(TypedDict):
     """Su grado de estudios terminados."""
     courses: list[EmployeeTrainingCoursesItem]
     """Los cursos que tomó, del más reciente al más antiguo."""
+
+
+class ClimateSettings(TypedDict):
+    """Lo que se configura en POST /v1/climate/policy."""
+    policy: str | None
+    """La política de prevención de riesgos psicosociales (numeral 5.1)."""
+    policy_version: int
+    """La versión publicada (0: ninguna)."""
+    policy_published_at: str | None
+    """Cuándo se publicó."""
+    complaints_contact: str | None
+    """Con quién más presentar una queja, además del buzón."""
+    policy_reads: int
+    """Quienes leyeron la versión publicada (numeral 5.7 a))."""
+    workers: int
+    """Quienes trabajan hoy en el emisor."""
+
+
+class ClimateCentrosItem(TypedDict):
+    branch: str | None
+    """Sucursal (brn_…) desde donde se factura: su código postal va en LugarExpedicion, su dirección en el PDF y, si las tiene, sus series. Sin ella, el domicilio fiscal del emisor (la Matriz)."""
+    name: str
+    """Nombre."""
+    workers: int
+    """Quienes trabajan ahí hoy."""
+    guide: str | None
+    """II, III o null (solo la Guía I)."""
+    last_on: str | None
+    """Cuándo se cerró la última identificación NOM-035 ahí."""
+    next_due: str | None
+    """Cuándo toca la siguiente: cada dos años como mínimo (numeral 7.9)."""
+    overdue: bool
+    """Si ya le tocaba (o nunca se ha hecho)."""
+
+
+class ClimateActions(TypedDict):
+    """Las acciones del Programa de intervención."""
+    total: int
+    """Total en la moneda del comprobante (Total)."""
+    pending: int
+    """Las que no se han terminado."""
+    late: int
+    """De ellas, las que pasaron su fecha."""
+
+
+class ClimateComplaints(TypedDict):
+    """Las quejas del buzón que esperan atención."""
+    new: int
+    """Quejas nuevas."""
+    in_progress: int
+    """Quejas en atención."""
+
+
+class Climate(TypedDict):
+    """El clima laboral de un emisor (Nómina › Clima laboral)."""
+    object: Literal["climate"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    settings: ClimateSettings
+    """Lo que se configura en POST /v1/climate/policy."""
+    centros: list[ClimateCentrosItem]
+    """Cada centro de trabajo con su guía y cuándo le toca."""
+    actions: ClimateActions
+    """Las acciones del Programa de intervención."""
+    complaints: ClimateComplaints
+    """Las quejas del buzón que esperan atención."""
+
+
+class ClimateSurveyQuestionsItem(TypedDict):
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    text: str
+    """Texto de la leyenda (textoLeyenda)."""
+    type: str
+    """scale, nps, choice o text."""
+    options: list[str] | None
+    """Con choice: sus opciones."""
+    required: bool
+    """Si es obligatoria."""
+
+
+class ClimateSurveyReport(TypedDict):
+    """Lo que dice el informe además de los resultados (numeral 7.7)."""
+    address: str | None
+    """El domicilio del centro de trabajo."""
+    activity: str | None
+    """Su actividad principal."""
+    objective: str | None
+    """El objetivo de la evaluación."""
+    activities: str | None
+    """Las principales actividades que se hacen ahí."""
+    conclusions: str | None
+    """Las conclusiones."""
+    responsible: str | None
+    """El responsable de la evaluación."""
+    license: str | None
+    """Su cédula profesional."""
+
+
+class ClimateSurveyResultsNom035Final(TypedDict):
+    """La calificación final y su nivel de riesgo."""
+    score: float
+    """La calificación final del cuestionario."""
+    level: str
+    """Nivel educativo (nivelEducativo)."""
+    levels: dict[str, int]
+    """Cuántos trabajadores quedaron en cada nivel (nulo, bajo, medio, alto, muy_alto)."""
+
+
+class ClimateSurveyResultsNom035CategoriesItem(TypedDict):
+    key: str
+    """Su clave (la que va en area de una acción)."""
+    name: str
+    """Nombre."""
+    score: float
+    """El promedio de las calificaciones de los trabajadores."""
+    level: str
+    """El nivel de riesgo de ese promedio según las tablas de la norma: nulo, bajo, medio, alto o muy_alto."""
+    levels: dict[str, int]
+    """Cuántos trabajadores quedaron en cada nivel (nulo, bajo, medio, alto, muy_alto)."""
+    needs_program: bool
+    """De medio para arriba pide un Programa de intervención (numeral 8.3)."""
+
+
+class ClimateSurveyResultsNom035DomainsItem(TypedDict):
+    key: str
+    """Su clave (la que va en area de una acción)."""
+    name: str
+    """Nombre."""
+    score: float
+    """El promedio de las calificaciones de los trabajadores."""
+    level: str
+    """El nivel de riesgo de ese promedio según las tablas de la norma: nulo, bajo, medio, alto o muy_alto."""
+    levels: dict[str, int]
+    """Cuántos trabajadores quedaron en cada nivel (nulo, bajo, medio, alto, muy_alto)."""
+    needs_program: bool
+    """De medio para arriba pide un Programa de intervención (numeral 8.3)."""
+
+
+class ClimateSurveyResultsNom035DepartmentsItem(TypedDict):
+    name: str
+    """Nombre."""
+    answered: int
+    """Cuántos de ahí contestaron."""
+    score: float
+    """La calificación final promedio del departamento."""
+    level: str
+    """Nivel educativo (nivelEducativo)."""
+
+
+class ClimateSurveyResultsNom035(TypedDict):
+    final: ClimateSurveyResultsNom035Final
+    """La calificación final y su nivel de riesgo."""
+    categories: list[ClimateSurveyResultsNom035CategoriesItem]
+    """Cada categoría de la guía."""
+    domains: list[ClimateSurveyResultsNom035DomainsItem]
+    """Cada dominio de la guía."""
+    departments: list[ClimateSurveyResultsNom035DepartmentsItem]
+    """Cada departamento con min_group respuestas o más."""
+    hidden_departments: int
+    """Departamentos con menos de min_group respuestas, que no se muestran."""
+
+
+class ClimateSurveyResultsClimateItem(TypedDict):
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    text: str
+    """Texto de la leyenda (textoLeyenda)."""
+    type: str
+    """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    answered: int
+    """Cuántos la contestaron."""
+    average: float | None
+    """scale y nps: el promedio."""
+    counts: dict[str, int] | None
+    """Cuántos dieron cada respuesta (cada número o cada opción)."""
+    enps: float | None
+    """nps: el porcentaje de promotores menos el de detractores."""
+    texts: list[str] | None
+    """text: las respuestas, en orden alfabético y sin nombre."""
+
+
+class ClimateSurveyResultsTraumatic(TypedDict):
+    yes: int
+    """Quienes dijeron haber vivido un acontecimiento traumático severo."""
+    needs_attention: int
+    """De ellos, quienes requieren valoración clínica (Guía I)."""
+
+
+class ClimateSurveyResults(TypedDict):
+    """Los resultados, sin nombres."""
+    invited: int
+    """A cuántos se les pidió."""
+    answered: int
+    """Cuántos contestaron."""
+    min_group: int
+    """Cuántas respuestas hacen falta para mostrar resultados (5)."""
+    hidden: bool
+    """true con menos de min_group respuestas: no se muestra nada, para que no se distinga lo que contestó cada quien."""
+    nom035: ClimateSurveyResultsNom035 | None
+    """La calificación final, por categoría y por dominio (Guías II y III)."""
+    climate: list[ClimateSurveyResultsClimateItem] | None
+    """Encuesta de clima: cada pregunta."""
+    traumatic: ClimateSurveyResultsTraumatic | None
+    """Guía I: cuántos dijeron «Sí» (los nombres, en traumatic_events)."""
+
+
+class ClimateSurveyInvitesItem(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    name: str
+    """Nombre."""
+    answered: bool
+    """Si ya contestó (no qué)."""
+
+
+class ClimateSurvey(TypedDict):
+    """Una encuesta NOM-035 o de clima (Nómina › Clima laboral)."""
+    id: str
+    """La encuesta (cls_…)."""
+    object: Literal["climate_survey"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    kind: str
+    """nom035 o clima."""
+    title: str
+    """Su nombre."""
+    branch: str | None
+    """El centro de trabajo (brn_…); null: todos los trabajadores del emisor."""
+    centro: str
+    """El nombre del centro de trabajo."""
+    guide: str | None
+    """NOM-035: II (de 16 a 50 trabajadores), III (más de 50) o null (hasta 15: solo la Guía I), numeral 7.1."""
+    guide_i: bool
+    """Si también pregunta la Guía I."""
+    sample: bool
+    """Si se aplica a una muestra (Guía III)."""
+    status: str
+    """draft, open o closed."""
+    closes_on: str | None
+    """La fecha límite para contestar."""
+    workers: int | None
+    """Los trabajadores del centro cuando se abrió."""
+    invited: int
+    """A cuántos se les pidió contestarla."""
+    answered: int
+    """Cuántos la contestaron."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    opened_at: str | None
+    """Cuándo se abrió."""
+    closed_at: str | None
+    """Cuándo se cerró."""
+    questions: NotRequired[list[ClimateSurveyQuestionsItem]]
+    """Encuesta de clima: sus preguntas (al ver una encuesta)."""
+    report: NotRequired[ClimateSurveyReport]
+    """Lo que dice el informe además de los resultados (numeral 7.7)."""
+    results: NotRequired[ClimateSurveyResults]
+    """Los resultados, sin nombres."""
+    invites: NotRequired[list[ClimateSurveyInvitesItem]]
+    """A quién se le pidió y si contestó, para recordarle a quien falta."""
+
+
+class ClimateSurveyDeleted(TypedDict):
+    """Una encuesta borrada."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["climate_survey"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    deleted: bool
+    """Siempre true."""
+
+
+class ClimateTraumaticEvent(TypedDict):
+    """Quien dijo haber vivido un acontecimiento traumático severo (Guía I)."""
+    object: Literal["climate_traumatic_event"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    survey: str
+    """La encuesta (cls_…)."""
+    employee: str
+    """El empleado (emp_…)."""
+    name: str
+    """Nombre."""
+    needs_attention: bool
+    """Si requiere valoración clínica según la Guía I (numeral 5.5)."""
+    answered_on: str
+    """Cuándo contestó."""
+    referred_to: str | None
+    """A dónde se le canalizó."""
+    referred_on: str | None
+    """Cuándo se le canalizó."""
+    note: str | None
+    """Una nota."""
+
+
+class ClimateAction(TypedDict):
+    """Una acción del Programa de intervención (numerales 8.3 a 8.5)."""
+    id: str
+    """La acción (cla_…)."""
+    object: Literal["climate_action"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    survey: str | None
+    """La encuesta de la que sale (cls_…)."""
+    area: str
+    """La categoría o el dominio que atiende."""
+    level: str
+    """primer, segundo o tercer nivel (numeral 8.5)."""
+    action: str
+    """Qué se va a hacer."""
+    owner: str | None
+    """El responsable."""
+    due_on: str | None
+    """Para cuándo."""
+    status: str
+    """pending, in_progress o done."""
+    done_on: str | None
+    """Cuándo se terminó."""
+    evaluation: str | None
+    """Cómo resultó (numeral 8.4 c))."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+
+
+class ClimateActionDeleted(TypedDict):
+    """Una acción borrada."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["climate_action"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    deleted: bool
+    """Siempre true."""
+
+
+class ClimateComplaint(TypedDict):
+    """Una queja del buzón (numeral 8.1 b))."""
+    id: str
+    """La queja (clq_…)."""
+    object: Literal["climate_complaint"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    kind: str
+    """violencia, entorno u otro."""
+    body: str
+    """Lo que escribió."""
+    employee: str | None
+    """Solo si quien la mandó la firmó."""
+    name: str | None
+    """Nombre."""
+    received_on: str
+    """Cuándo llegó."""
+    status: str
+    """nueva, en_atencion o atendida."""
+    note: str | None
+    """Qué se hizo."""
+    closed_on: str | None
+    """Cuándo se atendió."""
 
 
 class ImssFilesFilesItem(TypedDict):
@@ -13492,6 +13901,50 @@ class TrainingCourseList(TypedDict):
     """La ruta de esta lista."""
 
 
+class ClimateSurveyList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[ClimateSurvey]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class ClimateTraumaticEventList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[ClimateTraumaticEvent]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class ClimateActionList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[ClimateAction]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class ClimateComplaintList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[ClimateComplaint]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class InvoiceBatchList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -17705,6 +18158,200 @@ class UpdateEmployeeTrainingParams(TypedDict):
     """Su clave del Catálogo Nacional de Ocupaciones cuando no es la de su puesto; null usa la de su puesto."""
     education: NotRequired[Literal["primaria", "secundaria", "bachillerato", "tecnico", "licenciatura", "especialidad", "maestria", "doctorado"] | None]
     """Su grado de estudios terminados, que pide el aviso a la STPS: primaria, secundaria, bachillerato, tecnico, licenciatura, especialidad, maestria o doctorado."""
+
+
+class GetClimateParams(TypedDict):
+    """Los parámetros de GET /v1/climate."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdateClimatePolicyParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    policy: NotRequired[str | None]
+    """El texto de la política de prevención de riesgos psicosociales (numeral 5.1). La Guía IV de la norma trae un ejemplo."""
+    complaints_contact: NotRequired[str | None]
+    """Con quién más pueden presentar una queja, además del buzón del portal (Recursos Humanos, por ejemplo)."""
+    publish: NotRequired[bool]
+    """true la publica en el portal de cada trabajador (numeral 5.7) como una versión nueva, que se les pide leer otra vez."""
+
+
+class ListClimateSurveysParams(TypedDict):
+    """Los parámetros de GET /v1/climate_surveys."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateClimateSurveyParamsQuestionsItem(TypedDict):
+    id: str
+    """Su id, único en la encuesta."""
+    text: str
+    """La pregunta."""
+    type: Literal["scale", "nps", "choice", "text"]
+    """scale (del 1 al 5, qué tan de acuerdo), nps (del 0 al 10, para el eNPS), choice (opciones) o text (respuesta abierta)."""
+    options: NotRequired[list[str]]
+    """Con choice: de 2 a 12 opciones."""
+    required: NotRequired[bool]
+    """Si es obligatoria (por omisión, sí)."""
+
+
+class CreateClimateSurveyParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    kind: Literal["nom035", "clima"]
+    """nom035 (las guías de la norma por centro de trabajo) o clima (una encuesta propia con sus preguntas)."""
+    title: NotRequired[str | None]
+    """Su nombre; por omisión «NOM-035 2026» o «Encuesta de clima 2026»."""
+    branch: NotRequired[str | None]
+    """El centro de trabajo: una sucursal (brn_…). null u omitido: todos los trabajadores del emisor."""
+    guide_i: NotRequired[bool]
+    """NOM-035: también pregunta la Guía I, para identificar a quien vivió un acontecimiento traumático severo (numeral 5.5). Por omisión, sí."""
+    sample: NotRequired[bool]
+    """NOM-035 con la Guía III (más de 50 trabajadores): la aplica a una muestra elegida al azar según la Ecuación 1 de la norma, en proporción de hombres y mujeres."""
+    questions: NotRequired[list[CreateClimateSurveyParamsQuestionsItem]]
+    """Encuesta de clima: sus preguntas, en orden."""
+    closes_on: NotRequired[str | None]
+    """La fecha límite para contestar (opcional)."""
+    open: NotRequired[bool]
+    """true la abre de una vez: invita a quien trabaja hoy en ese centro y aparece en su portal."""
+
+
+class UpdateClimateSurveyParamsQuestionsItem(TypedDict):
+    id: str
+    """Su id, único en la encuesta."""
+    text: str
+    """La pregunta."""
+    type: Literal["scale", "nps", "choice", "text"]
+    """scale (del 1 al 5, qué tan de acuerdo), nps (del 0 al 10, para el eNPS), choice (opciones) o text (respuesta abierta)."""
+    options: NotRequired[list[str]]
+    """Con choice: de 2 a 12 opciones."""
+    required: NotRequired[bool]
+    """Si es obligatoria (por omisión, sí)."""
+
+
+class UpdateClimateSurveyParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    kind: Literal["nom035", "clima"]
+    """nom035 (las guías de la norma por centro de trabajo) o clima (una encuesta propia con sus preguntas)."""
+    title: NotRequired[str | None]
+    """Su nombre; por omisión «NOM-035 2026» o «Encuesta de clima 2026»."""
+    branch: NotRequired[str | None]
+    """El centro de trabajo: una sucursal (brn_…). null u omitido: todos los trabajadores del emisor."""
+    guide_i: NotRequired[bool]
+    """NOM-035: también pregunta la Guía I, para identificar a quien vivió un acontecimiento traumático severo (numeral 5.5). Por omisión, sí."""
+    sample: NotRequired[bool]
+    """NOM-035 con la Guía III (más de 50 trabajadores): la aplica a una muestra elegida al azar según la Ecuación 1 de la norma, en proporción de hombres y mujeres."""
+    questions: NotRequired[list[UpdateClimateSurveyParamsQuestionsItem]]
+    """Encuesta de clima: sus preguntas, en orden."""
+    closes_on: NotRequired[str | None]
+    """La fecha límite para contestar (opcional)."""
+
+
+class UpdateClimateSurveyReportParams(TypedDict):
+    address: NotRequired[str | None]
+    """El domicilio del centro de trabajo (numeral 7.7 b))."""
+    activity: NotRequired[str | None]
+    """Su actividad principal."""
+    objective: NotRequired[str | None]
+    """El objetivo de la evaluación."""
+    activities: NotRequired[str | None]
+    """Las principales actividades que se hacen ahí."""
+    conclusions: NotRequired[str | None]
+    """Las conclusiones (numeral 7.7 g))."""
+    responsible: NotRequired[str | None]
+    """El responsable de la evaluación."""
+    license: NotRequired[str | None]
+    """Su cédula profesional, si la tiene."""
+
+
+class ReferClimateTraumaticEventParams(TypedDict):
+    employee: str
+    """Quien vivió el acontecimiento (emp_…), de GET /v1/climate_surveys/{id}/traumatic_events."""
+    referred_to: NotRequired[str | None]
+    """A dónde se le canalizó: el IMSS, un médico, un psicólogo."""
+    referred_on: NotRequired[str | None]
+    """Cuándo."""
+    note: NotRequired[str | None]
+    """Una nota."""
+
+
+class ListClimateActionsParams(TypedDict):
+    """Los parámetros de GET /v1/climate_actions."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    survey: NotRequired[str]
+    """Solo las de esta encuesta (cls_…)."""
+
+
+class CreateClimateActionParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    survey: NotRequired[str | None]
+    """La encuesta de la que sale (cls_…), si sale de una."""
+    area: str
+    """La categoría o el dominio que atiende (su clave en results), o un texto libre."""
+    level: NotRequired[Literal["primer", "segundo", "tercer"]]
+    """El nivel de la acción (numeral 8.5): primer (la organización, por omisión), segundo (grupos) o tercer (cada persona)."""
+    action: str
+    """Qué se va a hacer."""
+    owner: NotRequired[str | None]
+    """El responsable."""
+    due_on: NotRequired[str | None]
+    """Para cuándo."""
+    status: NotRequired[Literal["pending", "in_progress", "done"]]
+    """pending (por omisión), in_progress o done."""
+    evaluation: NotRequired[str | None]
+    """Al terminarla: cómo resultó (numeral 8.4 c))."""
+
+
+class UpdateClimateActionParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    survey: NotRequired[str | None]
+    """La encuesta de la que sale (cls_…), si sale de una."""
+    area: str
+    """La categoría o el dominio que atiende (su clave en results), o un texto libre."""
+    level: NotRequired[Literal["primer", "segundo", "tercer"]]
+    """El nivel de la acción (numeral 8.5): primer (la organización, por omisión), segundo (grupos) o tercer (cada persona)."""
+    action: str
+    """Qué se va a hacer."""
+    owner: NotRequired[str | None]
+    """El responsable."""
+    due_on: NotRequired[str | None]
+    """Para cuándo."""
+    status: NotRequired[Literal["pending", "in_progress", "done"]]
+    """pending (por omisión), in_progress o done."""
+    evaluation: NotRequired[str | None]
+    """Al terminarla: cómo resultó (numeral 8.4 c))."""
+
+
+class ListClimateComplaintsParams(TypedDict):
+    """Los parámetros de GET /v1/climate_complaints."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    status: NotRequired[str]
+    """Solo las nueva, en_atencion o atendida."""
+
+
+class UpdateClimateComplaintParams(TypedDict):
+    status: NotRequired[Literal["nueva", "en_atencion", "atendida"]]
+    """nueva, en_atencion o atendida."""
+    note: NotRequired[str | None]
+    """Qué se hizo."""
 
 
 class UpdatePayrollTaxSettingsParams(TypedDict):
