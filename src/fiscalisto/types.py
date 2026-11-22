@@ -3881,8 +3881,8 @@ class EmployeeVacations(TypedDict):
 
 
 class EmployeePortalNoticesItem(TypedDict):
-    kind: Literal["receipt", "receipt_canceled", "vacation_approved", "vacation_rejected", "sign_reminder"]
-    """receipt: recibo nuevo; receipt_canceled: se canceló uno; vacation_approved / vacation_rejected: la respuesta a sus vacaciones; sign_reminder: tiene un recibo por firmar."""
+    kind: Literal["receipt", "receipt_canceled", "vacation_approved", "vacation_rejected", "sign_reminder", "survey"]
+    """receipt: recibo nuevo; receipt_canceled: se canceló uno; vacation_approved / vacation_rejected: la respuesta a sus vacaciones; sign_reminder: tiene un recibo por firmar; survey: tiene una encuesta de clima laboral por contestar."""
     channel: Literal["push", "email", "off", "none", "skipped", "stale"] | None
     """Cómo le llegó: push (a su celular), email (a su correo), off (usted o el empleado apagó ese aviso), none (no tiene avisos ni correo), skipped (ya no aplicaba: lo firmó, se canceló o se lo mandamos con el recibo), stale (no salió en 7 días); null mientras está por salir (por ejemplo, de noche)."""
     created_at: str
@@ -3936,6 +3936,8 @@ class EmployeeNoticeSettings(TypedDict):
     """Avisar cuando un recibo suyo se cancela ante el SAT."""
     vacation: bool
     """Avisar la respuesta a sus vacaciones, con su nota."""
+    survey: bool
+    """Avisar cuando se abre una encuesta NOM-035 o de clima para él."""
     sign_reminder_days: int
     """Los días después de timbrarse en que se le recuerda, una vez, firmar un recibo sin firmar; 0: nunca."""
     email_fallback: bool
@@ -6332,8 +6334,14 @@ class RuleActionsItemColumns(TypedDict):
 
 
 class RuleActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "category", "stage", "close", "ask_approval", "notify", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature", "account", "webhook"]
+    type: Literal["tag", "cost_center", "category", "stage", "close", "ask_approval", "notify", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature", "account", "webhook", "flag"]
     """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    severity: NotRequired[Literal["critical", "warning", "info"]]
+    """flag: qué tan grave es el hallazgo de la regla."""
+    detail: NotRequired[str | None]
+    """flag: qué revisar, como sale en Hallazgos."""
+    finding_code: NotRequired[str]
+    """flag: el código de su hallazgo (regla_…), el `code` en GET /v1/findings y GET /v1/sat_findings."""
     tag: NotRequired[str]
     """tag: la etiqueta (tag_…, GET /v1/tags)."""
     url: NotRequired[str]
@@ -6390,8 +6398,14 @@ class RuleElseActionsItemColumns(TypedDict):
 
 
 class RuleElseActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "category", "stage", "close", "ask_approval", "notify", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature", "account", "webhook"]
+    type: Literal["tag", "cost_center", "category", "stage", "close", "ask_approval", "notify", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature", "account", "webhook", "flag"]
     """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
+    severity: NotRequired[Literal["critical", "warning", "info"]]
+    """flag: qué tan grave es el hallazgo de la regla."""
+    detail: NotRequired[str | None]
+    """flag: qué revisar, como sale en Hallazgos."""
+    finding_code: NotRequired[str]
+    """flag: el código de su hallazgo (regla_…), el `code` en GET /v1/findings y GET /v1/sat_findings."""
     tag: NotRequired[str]
     """tag: la etiqueta (tag_…, GET /v1/tags)."""
     url: NotRequired[str]
@@ -17328,6 +17342,8 @@ class UpdateEmployeeNoticeSettingsParams(TypedDict):
     """Cuando un recibo suyo se cancela ante el SAT."""
     vacation: NotRequired[bool]
     """Al aprobar o rechazar los días que pidió, con su nota."""
+    survey: NotRequired[bool]
+    """Cuando se abre una encuesta NOM-035 o de clima para él (POST /v1/climate_surveys/{id}/open)."""
     sign_reminder_days: NotRequired[int]
     """Si un recibo sigue sin firmar de recibido estos días después de timbrarse, se le recuerda una vez. 0: nunca."""
     email_fallback: NotRequired[bool]
@@ -19072,8 +19088,8 @@ class CreateRuleParamsActionsItemColumns(TypedDict):
 
 
 class CreateRuleParamsActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "account", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature", "webhook"]
-    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; account (facturas): registrar su ingreso o gasto en la cuenta `account` del catálogo en vez de la de su categoría, nunca sobre la que eligió una persona ni en un mes cerrado; en bank.movement, registrar el movimiento con su póliza de ingresos o egresos contra esa cuenta (otra cuenta de banco de la empresa es un traspaso), si no tiene una ni es un mes cerrado; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura; extra_signature (payout.submitted): el pago necesita `signatures` firmas más que las de Configurar pagos, con `reason` para quien firma (nunca las baja; no cambia un pago que ya salió); webhook: mandar el evento rule.matched, con el registro y todos los campos de sus condiciones, a `url` (Zapier, Make, n8n o su sistema), firmado y con reintentos como los demás webhooks; al guardar se usa o se crea el webhook de esa dirección en Desarrolladores › Webhooks. Pide permiso de administrar la API."""
+    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "account", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature", "webhook", "flag"]
+    """flag (facturas, órdenes y movimientos del banco): marcar el hallazgo propio de la regla, con su nombre, `severity` y `detail`; queda abierto en Hallazgos hasta que alguien lo revise y se va si se borra la regla (`finding_code` es su código en GET /v1/findings y GET /v1/sat_findings); tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; account (facturas): registrar su ingreso o gasto en la cuenta `account` del catálogo en vez de la de su categoría, nunca sobre la que eligió una persona ni en un mes cerrado; en bank.movement, registrar el movimiento con su póliza de ingresos o egresos contra esa cuenta (otra cuenta de banco de la empresa es un traspaso), si no tiene una ni es un mes cerrado; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura; extra_signature (payout.submitted): el pago necesita `signatures` firmas más que las de Configurar pagos, con `reason` para quien firma (nunca las baja; no cambia un pago que ya salió); webhook: mandar el evento rule.matched, con el registro y todos los campos de sus condiciones, a `url` (Zapier, Make, n8n o su sistema), firmado y con reintentos como los demás webhooks; al guardar se usa o se crea el webhook de esa dirección en Desarrolladores › Webhooks. Pide permiso de administrar la API."""
     url: NotRequired[str]
     """webhook: la dirección https a la que manda rule.matched."""
     tag: NotRequired[str | int]
@@ -19114,6 +19130,10 @@ class CreateRuleParamsActionsItem(TypedDict):
     """extra_signature: cuántas firmas más pide (1 a 3). Por omisión, 1."""
     reason: NotRequired[str | None]
     """extra_signature: por qué, para quien firma («Proveedor nuevo»). Puede llevar las variables de `message`, menos las tablas."""
+    severity: NotRequired[Literal["critical", "warning", "info"]]
+    """flag: qué tan grave es su hallazgo. Por omisión, warning."""
+    detail: NotRequired[str | None]
+    """flag: qué revisar, como sale en Hallazgos."""
     findings: NotRequired[list[str]]
     """review_findings: los hallazgos que da por revisados (sus códigos, `code` en GET /v1/sat_findings). No los que cambian impuestos o la lista negra: cancelado, efos_definitivo, efos_presunto, lista_69b_bis, lista_69."""
 
@@ -19128,8 +19148,8 @@ class CreateRuleParamsElseActionsItemColumns(TypedDict):
 
 
 class CreateRuleParamsElseActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "account", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature", "webhook"]
-    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; account (facturas): registrar su ingreso o gasto en la cuenta `account` del catálogo en vez de la de su categoría, nunca sobre la que eligió una persona ni en un mes cerrado; en bank.movement, registrar el movimiento con su póliza de ingresos o egresos contra esa cuenta (otra cuenta de banco de la empresa es un traspaso), si no tiene una ni es un mes cerrado; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura; extra_signature (payout.submitted): el pago necesita `signatures` firmas más que las de Configurar pagos, con `reason` para quien firma (nunca las baja; no cambia un pago que ya salió); webhook: mandar el evento rule.matched, con el registro y todos los campos de sus condiciones, a `url` (Zapier, Make, n8n o su sistema), firmado y con reintentos como los demás webhooks; al guardar se usa o se crea el webhook de esa dirección en Desarrolladores › Webhooks. Pide permiso de administrar la API."""
+    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "account", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature", "webhook", "flag"]
+    """flag (facturas, órdenes y movimientos del banco): marcar el hallazgo propio de la regla, con su nombre, `severity` y `detail`; queda abierto en Hallazgos hasta que alguien lo revise y se va si se borra la regla (`finding_code` es su código en GET /v1/findings y GET /v1/sat_findings); tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; account (facturas): registrar su ingreso o gasto en la cuenta `account` del catálogo en vez de la de su categoría, nunca sobre la que eligió una persona ni en un mes cerrado; en bank.movement, registrar el movimiento con su póliza de ingresos o egresos contra esa cuenta (otra cuenta de banco de la empresa es un traspaso), si no tiene una ni es un mes cerrado; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura; extra_signature (payout.submitted): el pago necesita `signatures` firmas más que las de Configurar pagos, con `reason` para quien firma (nunca las baja; no cambia un pago que ya salió); webhook: mandar el evento rule.matched, con el registro y todos los campos de sus condiciones, a `url` (Zapier, Make, n8n o su sistema), firmado y con reintentos como los demás webhooks; al guardar se usa o se crea el webhook de esa dirección en Desarrolladores › Webhooks. Pide permiso de administrar la API."""
     url: NotRequired[str]
     """webhook: la dirección https a la que manda rule.matched."""
     tag: NotRequired[str | int]
@@ -19170,6 +19190,10 @@ class CreateRuleParamsElseActionsItem(TypedDict):
     """extra_signature: cuántas firmas más pide (1 a 3). Por omisión, 1."""
     reason: NotRequired[str | None]
     """extra_signature: por qué, para quien firma («Proveedor nuevo»). Puede llevar las variables de `message`, menos las tablas."""
+    severity: NotRequired[Literal["critical", "warning", "info"]]
+    """flag: qué tan grave es su hallazgo. Por omisión, warning."""
+    detail: NotRequired[str | None]
+    """flag: qué revisar, como sale en Hallazgos."""
     findings: NotRequired[list[str]]
     """review_findings: los hallazgos que da por revisados (sus códigos, `code` en GET /v1/sat_findings). No los que cambian impuestos o la lista negra: cancelado, efos_definitivo, efos_presunto, lista_69b_bis, lista_69."""
 
@@ -19277,8 +19301,8 @@ class UpdateRuleParamsActionsItemColumns(TypedDict):
 
 
 class UpdateRuleParamsActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "account", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature", "webhook"]
-    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; account (facturas): registrar su ingreso o gasto en la cuenta `account` del catálogo en vez de la de su categoría, nunca sobre la que eligió una persona ni en un mes cerrado; en bank.movement, registrar el movimiento con su póliza de ingresos o egresos contra esa cuenta (otra cuenta de banco de la empresa es un traspaso), si no tiene una ni es un mes cerrado; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura; extra_signature (payout.submitted): el pago necesita `signatures` firmas más que las de Configurar pagos, con `reason` para quien firma (nunca las baja; no cambia un pago que ya salió); webhook: mandar el evento rule.matched, con el registro y todos los campos de sus condiciones, a `url` (Zapier, Make, n8n o su sistema), firmado y con reintentos como los demás webhooks; al guardar se usa o se crea el webhook de esa dirección en Desarrolladores › Webhooks. Pide permiso de administrar la API."""
+    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "account", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature", "webhook", "flag"]
+    """flag (facturas, órdenes y movimientos del banco): marcar el hallazgo propio de la regla, con su nombre, `severity` y `detail`; queda abierto en Hallazgos hasta que alguien lo revise y se va si se borra la regla (`finding_code` es su código en GET /v1/findings y GET /v1/sat_findings); tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; account (facturas): registrar su ingreso o gasto en la cuenta `account` del catálogo en vez de la de su categoría, nunca sobre la que eligió una persona ni en un mes cerrado; en bank.movement, registrar el movimiento con su póliza de ingresos o egresos contra esa cuenta (otra cuenta de banco de la empresa es un traspaso), si no tiene una ni es un mes cerrado; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura; extra_signature (payout.submitted): el pago necesita `signatures` firmas más que las de Configurar pagos, con `reason` para quien firma (nunca las baja; no cambia un pago que ya salió); webhook: mandar el evento rule.matched, con el registro y todos los campos de sus condiciones, a `url` (Zapier, Make, n8n o su sistema), firmado y con reintentos como los demás webhooks; al guardar se usa o se crea el webhook de esa dirección en Desarrolladores › Webhooks. Pide permiso de administrar la API."""
     url: NotRequired[str]
     """webhook: la dirección https a la que manda rule.matched."""
     tag: NotRequired[str | int]
@@ -19319,6 +19343,10 @@ class UpdateRuleParamsActionsItem(TypedDict):
     """extra_signature: cuántas firmas más pide (1 a 3). Por omisión, 1."""
     reason: NotRequired[str | None]
     """extra_signature: por qué, para quien firma («Proveedor nuevo»). Puede llevar las variables de `message`, menos las tablas."""
+    severity: NotRequired[Literal["critical", "warning", "info"]]
+    """flag: qué tan grave es su hallazgo. Por omisión, warning."""
+    detail: NotRequired[str | None]
+    """flag: qué revisar, como sale en Hallazgos."""
     findings: NotRequired[list[str]]
     """review_findings: los hallazgos que da por revisados (sus códigos, `code` en GET /v1/sat_findings). No los que cambian impuestos o la lista negra: cancelado, efos_definitivo, efos_presunto, lista_69b_bis, lista_69."""
 
@@ -19333,8 +19361,8 @@ class UpdateRuleParamsElseActionsItemColumns(TypedDict):
 
 
 class UpdateRuleParamsElseActionsItem(TypedDict):
-    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "account", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature", "webhook"]
-    """tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; account (facturas): registrar su ingreso o gasto en la cuenta `account` del catálogo en vez de la de su categoría, nunca sobre la que eligió una persona ni en un mes cerrado; en bank.movement, registrar el movimiento con su póliza de ingresos o egresos contra esa cuenta (otra cuenta de banco de la empresa es un traspaso), si no tiene una ni es un mes cerrado; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura; extra_signature (payout.submitted): el pago necesita `signatures` firmas más que las de Configurar pagos, con `reason` para quien firma (nunca las baja; no cambia un pago que ya salió); webhook: mandar el evento rule.matched, con el registro y todos los campos de sus condiciones, a `url` (Zapier, Make, n8n o su sistema), firmado y con reintentos como los demás webhooks; al guardar se usa o se crea el webhook de esa dirección en Desarrolladores › Webhooks. Pide permiso de administrar la API."""
+    type: Literal["tag", "cost_center", "stage", "close", "ask_approval", "notify", "category", "account", "lote", "hold_payment", "email_supplier", "review_findings", "extra_signature", "webhook", "flag"]
+    """flag (facturas, órdenes y movimientos del banco): marcar el hallazgo propio de la regla, con su nombre, `severity` y `detail`; queda abierto en Hallazgos hasta que alguien lo revise y se va si se borra la regla (`finding_code` es su código en GET /v1/findings y GET /v1/sat_findings); tag (facturas y órdenes): poner la etiqueta `tag`; category (facturas recibidas): poner la categoría de gasto `category`, nunca sobre la que eligió una persona; account (facturas): registrar su ingreso o gasto en la cuenta `account` del catálogo en vez de la de su categoría, nunca sobre la que eligió una persona ni en un mes cerrado; en bank.movement, registrar el movimiento con su póliza de ingresos o egresos contra esa cuenta (otra cuenta de banco de la empresa es un traspaso), si no tiene una ni es un mes cerrado; cost_center (facturas): poner `cost_center` (ccn_…), nunca sobre lo que puso una persona; stage (órdenes): pasar a la etapa `stage`; close (órdenes): cerrarla si ya llegó todo; ask_approval (órdenes en borrador): pedir aprobación por sus pasos de aprobación; notify: avisar a `members` (mem_…); lote (invoice.received e invoice.approved): agregar la factura al lote de pagos abierto `lote_name` que paga `pay_on`, o crear uno, preparado como quien hizo la regla; hold_payment (facturas recibidas): retener su pago hasta que alguien lo suelte, con `note`; email_supplier (facturas recibidas): escribirle al proveedor a los correos de su tema `topic`, con `subject` y `message`; review_findings: dar por revisados los hallazgos `findings` de la factura; extra_signature (payout.submitted): el pago necesita `signatures` firmas más que las de Configurar pagos, con `reason` para quien firma (nunca las baja; no cambia un pago que ya salió); webhook: mandar el evento rule.matched, con el registro y todos los campos de sus condiciones, a `url` (Zapier, Make, n8n o su sistema), firmado y con reintentos como los demás webhooks; al guardar se usa o se crea el webhook de esa dirección en Desarrolladores › Webhooks. Pide permiso de administrar la API."""
     url: NotRequired[str]
     """webhook: la dirección https a la que manda rule.matched."""
     tag: NotRequired[str | int]
@@ -19375,6 +19403,10 @@ class UpdateRuleParamsElseActionsItem(TypedDict):
     """extra_signature: cuántas firmas más pide (1 a 3). Por omisión, 1."""
     reason: NotRequired[str | None]
     """extra_signature: por qué, para quien firma («Proveedor nuevo»). Puede llevar las variables de `message`, menos las tablas."""
+    severity: NotRequired[Literal["critical", "warning", "info"]]
+    """flag: qué tan grave es su hallazgo. Por omisión, warning."""
+    detail: NotRequired[str | None]
+    """flag: qué revisar, como sale en Hallazgos."""
     findings: NotRequired[list[str]]
     """review_findings: los hallazgos que da por revisados (sus códigos, `code` en GET /v1/sat_findings). No los que cambian impuestos o la lista negra: cancelado, efos_definitivo, efos_presunto, lista_69b_bis, lista_69."""
 
