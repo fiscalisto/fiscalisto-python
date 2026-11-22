@@ -174,6 +174,7 @@ if TYPE_CHECKING:
         FillPayrollVacancyParams,
         FinancialRatios,
         FinancialStatements,
+        Finding,
         FixedAsset,
         FixedAssetList,
         FxRevaluation,
@@ -278,6 +279,7 @@ if TYPE_CHECKING:
         ListExpensePeopleParams,
         ListExpenseReportsParams,
         ListExportsParams,
+        ListFindingsParams,
         ListFixedAssetsParams,
         ListImssMovementsParams,
         ListInvitationsParams,
@@ -394,6 +396,7 @@ if TYPE_CHECKING:
         Retention,
         ReturnExpenseReportParams,
         RevertAutomaticEntryParams,
+        ReviewFindingParams,
         Role,
         RoleList,
         RollWebhookSecretParams,
@@ -4476,6 +4479,93 @@ class RulesResource:
         https://fiscalisto.com/docs/api/referencia/reglas/list-rule-runs
         """
         return self._client.list(f"/v1/rules/{_path(id)}/runs", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+
+class FindingsResource:
+    """Hallazgos: fiscalisto.findings."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListFindingsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[Finding]:
+        """Listar hallazgos
+
+        Lo que Fiscalisto encontró en las órdenes de compra, pagos, proveedores y contabilidad del emisor, el más reciente primero: una factura que no coincide con su orden, un proveedor en la lista 69-B, un documento vencido, Caja con saldo acreedor. Sin status, los que nadie ha revisado. Los de facturas están en GET /v1/sat_findings. No usa timbres.
+
+        GET /v1/findings
+        https://fiscalisto.com/docs/api/referencia/hallazgos/list-findings
+        """
+        return self._client.list("/v1/findings", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Finding:
+        """Ver un hallazgo
+
+        Un hallazgo, con su registro y si lo revisaron.
+
+        GET /v1/findings/{id}
+        https://fiscalisto.com/docs/api/referencia/hallazgos/get-finding
+        """
+        result: Finding = self._client.request(
+            "GET", f"/v1/findings/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def review(
+        self,
+        id: str,
+        params: ReviewFindingParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Finding:
+        """Marcar un hallazgo como revisado
+
+        Como «Revisado» en la app: alguien vio el hallazgo y está bien, con una nota opcional de por qué. Si detenía su registro, ya no lo detiene. Uno ya revisado cambia su nota. Uno que ya no aplica contesta finding_resolved. Si lo que lo causó cambia después, vuelve a abrirse solo.
+
+        POST /v1/findings/{id}/review
+        https://fiscalisto.com/docs/api/referencia/hallazgos/review-finding
+        """
+        result: Finding = self._client.request(
+            "POST", f"/v1/findings/{_path(id)}/review", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def reopen(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Finding:
+        """Volver a abrir un hallazgo
+
+        Como «Deshacer» en la app: un hallazgo revisado vuelve a «Sin revisar», sin su nota, y si su ajuste es detener el registro, lo vuelve a detener.
+
+        POST /v1/findings/{id}/reopen
+        https://fiscalisto.com/docs/api/referencia/hallazgos/reopen-finding
+        """
+        result: Finding = self._client.request(
+            "POST", f"/v1/findings/{_path(id)}/reopen", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
 
 
 class CostCentersResource:
@@ -10958,6 +11048,11 @@ class FiscalistoApi(Core):
     def rules(self) -> RulesResource:
         """Reglas."""
         return RulesResource(self)
+
+    @cached_property
+    def findings(self) -> FindingsResource:
+        """Hallazgos."""
+        return FindingsResource(self)
 
     @cached_property
     def cost_centers(self) -> CostCentersResource:

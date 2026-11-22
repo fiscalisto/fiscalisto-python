@@ -152,6 +152,9 @@ class ErrorCode:
     FEATURE_NOT_IN_PLAN: Final = "feature_not_in_plan"
     """En producción, inventario avanzado, portal de proveedores, pedidos de venta y comprobación de gastos siguen el plan de la empresa, como en la app: vienen con Operaciones (se agrega a cualquier plan de pago; incluida en Corporativo). La contabilidad (/v1/accounting/…, salvo DIOT, cross_checks, vat_refund y fixed_assets) viene con Contabilidad (se agrega a Independiente, Emprendedor o Negocio; incluida en Despacho y Corporativo): sin ella, cambiar los libros responde este error, y leerlos solo funciona hasta el último mes en que la tuvo. En modo de pruebas están todos."""
 
+    FINDING_RESOLVED: Final = "finding_resolved"
+    """El hallazgo ya no aplica: lo que lo causó cambió (status resolved). No hay nada que revisar."""
+
     IDEMPOTENCY_KEY_INVALID: Final = "idempotency_key_invalid"
     """Idempotency-Key es de 1 a 255 caracteres ASCII, sin acentos ni ñ: el id de su pedido o un UUID."""
 
@@ -501,6 +504,7 @@ ErrorCodeValue = Literal[
     "export_in_progress",
     "export_not_ready",
     "feature_not_in_plan",
+    "finding_resolved",
     "idempotency_key_invalid",
     "idempotency_key_missing",
     "idempotency_key_reused",

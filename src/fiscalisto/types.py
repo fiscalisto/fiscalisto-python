@@ -507,6 +507,9 @@ __all__ = [
     "FinancialStatementsIncomeStatementYearToDateSectionsItem",
     "FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItem",
     "FinancialStatementsIncomeStatementYearToDateSectionsItemGroupsItemAccountsItem",
+    "Finding",
+    "FindingList",
+    "FindingRecord",
     "FixedAsset",
     "FixedAssetDisposal",
     "FixedAssetList",
@@ -745,6 +748,7 @@ __all__ = [
     "ListExpensePeopleParams",
     "ListExpenseReportsParams",
     "ListExportsParams",
+    "ListFindingsParams",
     "ListFixedAssetsParams",
     "ListImssMovementsParams",
     "ListInvitationsParams",
@@ -994,6 +998,7 @@ __all__ = [
     "RetentionTotals",
     "ReturnExpenseReportParams",
     "RevertAutomaticEntryParams",
+    "ReviewFindingParams",
     "Role",
     "RoleList",
     "RollWebhookSecretParams",
@@ -5687,6 +5692,62 @@ class RuleRun(TypedDict):
     """Por qué no pudo, o null."""
     created_at: str
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+
+
+class FindingRecord(TypedDict):
+    """En qué registro está."""
+    type: Literal["purchase_order", "payout", "supplier", "poliza", "account", "bank_movement"]
+    """purchase_order, payout, supplier, poliza (la contabilidad de un mes), account (una cuenta en un mes) o bank_movement."""
+    id: str | None
+    """Su id en la API: el pago (pyo_…) o el RFC del proveedor; null si no tiene."""
+    reference: str
+    """Cómo lo nombra Fiscalisto: el número de la orden, el RFC, «RFC:AAAA-MM» un mes de contabilidad, «RFC:AAAA-MM:cuenta» una cuenta."""
+    description: str
+    """El registro en palabras: «Orden de compra 12»."""
+
+
+class Finding(TypedDict):
+    """Un hallazgo en una orden de compra, un pago, un proveedor o la contabilidad: lo que Fiscalisto encontró y conviene revisar. Los de facturas están en SatFinding."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["finding"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (iss_…)."""
+    area: Literal["purchase_orders", "payouts", "suppliers", "accounting", "bank"] | None
+    """purchase_orders (órdenes de compra), payouts (pagos a proveedores), suppliers (proveedores), accounting (contabilidad) o bank (movimientos del banco)."""
+    record: FindingRecord
+    """En qué registro está."""
+    code: str
+    """El tipo de hallazgo (oc_factura_distinta, prov_lista_sat…)."""
+    severity: Literal["critical", "warning", "info"]
+    """critical (grave), warning (revisar) o info (aviso), como lo puso la empresa."""
+    title: str
+    """El tipo de hallazgo en palabras."""
+    explanation: str | None
+    """Qué significa y por qué, con el artículo."""
+    text: str
+    """Qué encontró exactamente en este registro."""
+    amount: float | None
+    """El monto en cuestión, en pesos, o null."""
+    counterparty_tax_id: str | None
+    """El RFC del proveedor, o null."""
+    status: Literal["open", "reviewed", "resolved"]
+    """open: nadie lo ha revisado; reviewed: alguien dijo que está bien; resolved: ya no aplica (lo que lo causó cambió)."""
+    holds_record: bool
+    """true si detiene su registro hasta que alguien lo revise («No dejar aprobar», «No dejar pagar»)."""
+    note: str | None
+    """Por qué está bien, si quien lo revisó lo dijo."""
+    created_at: str | None
+    """Cuándo lo encontró."""
+    updated_at: str | None
+    """La última vez que cambió su texto."""
+    reviewed_at: str | None
+    """Cuándo lo revisaron, o null."""
+    resolved_at: str | None
+    """Cuándo dejó de aplicar, o null."""
 
 
 class PriceListItemsItem(TypedDict):
@@ -12986,6 +13047,17 @@ class RuleRunList(TypedDict):
     """La ruta de esta lista."""
 
 
+class FindingList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[Finding]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class CostCenterList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -17475,6 +17547,31 @@ class ListRuleRunsParams(TypedDict):
     """El id del último de la página anterior, para la siguiente."""
 
 
+class ListFindingsParams(TypedDict):
+    """Los parámetros de GET /v1/findings."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    area: NotRequired[Literal["purchase_orders", "payouts", "suppliers", "accounting", "bank"]]
+    """Solo los de un área: purchase_orders, payouts, suppliers, accounting o bank."""
+    status: NotRequired[Literal["open", "reviewed", "resolved", "all"]]
+    """open (por omisión: sin revisar), reviewed (revisados), resolved (ya no aplican) o all."""
+    severity: NotRequired[Literal["critical", "warning", "info"]]
+    """Solo los de esta gravedad: critical, warning o info."""
+    code: NotRequired[str]
+    """Solo este tipo de hallazgo (oc_factura_distinta…)."""
+    counterparty_tax_id: NotRequired[str]
+    """Solo los de este proveedor (su RFC)."""
+
+
+class ReviewFindingParams(TypedDict):
+    note: NotRequired[str]
+    """Por qué está bien (hasta 500 caracteres)."""
+
+
 class CreateCostCenterParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…). Por omisión, su único emisor."""
@@ -20412,7 +20509,7 @@ class CreateRecurringInvoiceParamsSchedule(TypedDict):
     """La primera factura, AAAA-MM-DD (hoy o después). Por omisión: con monthly, el próximo day_of_month; con weekly o daily, hoy."""
     hour: NotRequired[int]
     """La hora (0 a 23) en que se timbra, en time_zone. Por omisión 7."""
-    time_zone: NotRequired[Literal["America/Mexico_City", "America/Cancun", "America/Mazatlan", "America/Hermosillo", "America/Tijuana", "America/Ciudad_Juarez"]]
+    time_zone: NotRequired[Literal["America/Mexico_City", "America/Cancun", "America/Mazatlan", "America/Hermosillo", "America/Tijuana", "America/Matamoros", "America/Ciudad_Juarez"]]
     """La zona de esa hora. Por omisión America/Mexico_City."""
 
 
@@ -20455,7 +20552,7 @@ class UpdateRecurringInvoiceParamsSchedule(TypedDict):
     """La primera factura, AAAA-MM-DD (hoy o después). Por omisión: con monthly, el próximo day_of_month; con weekly o daily, hoy."""
     hour: NotRequired[int]
     """La hora (0 a 23) en que se timbra, en time_zone. Por omisión 7."""
-    time_zone: NotRequired[Literal["America/Mexico_City", "America/Cancun", "America/Mazatlan", "America/Hermosillo", "America/Tijuana", "America/Ciudad_Juarez"]]
+    time_zone: NotRequired[Literal["America/Mexico_City", "America/Cancun", "America/Mazatlan", "America/Hermosillo", "America/Tijuana", "America/Matamoros", "America/Ciudad_Juarez"]]
     """La zona de esa hora. Por omisión America/Mexico_City."""
 
 
