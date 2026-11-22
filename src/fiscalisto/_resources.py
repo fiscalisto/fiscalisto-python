@@ -42,6 +42,7 @@ if TYPE_CHECKING:
         BooksLogEntry,
         Branch,
         Budget,
+        CalibrateReviewParams,
         CancelInvoiceParams,
         CancelPayoutParams,
         CancelRetentionParams,
@@ -132,6 +133,8 @@ if TYPE_CHECKING:
         CreateRecurringInvoiceParams,
         CreateRepseContractParams,
         CreateRetentionParams,
+        CreateReviewCycleParams,
+        CreateReviewObjectiveParams,
         CreateRoleParams,
         CreateRuleParams,
         CreateSalesOrderDeliveryParams,
@@ -337,6 +340,7 @@ if TYPE_CHECKING:
         ListRecurringInvoicesParams,
         ListRepseContractsParams,
         ListRetentionsParams,
+        ListReviewCyclesParams,
         ListRolesParams,
         ListRuleRunsParams,
         ListRulesParams,
@@ -432,7 +436,12 @@ if TYPE_CHECKING:
         Retention,
         ReturnExpenseReportParams,
         RevertAutomaticEntryParams,
+        ReviewCycle,
+        ReviewCycleDeleted,
         ReviewFindingParams,
+        ReviewObjective,
+        ReviewObjectiveDeleted,
+        ReviewResult,
         Role,
         RoleList,
         RollWebhookSecretParams,
@@ -473,6 +482,8 @@ if TYPE_CHECKING:
         SendSalesOrderParams,
         SetClosedPeriodParams,
         SetOpeningBalancesParams,
+        SetReviewParticipantsParams,
+        SetReviewPeersParams,
         SetTrainingParticipantsParams,
         SetTrainingResultsParams,
         SignEfirmaParams,
@@ -547,6 +558,8 @@ if TYPE_CHECKING:
         UpdateRecurringInvoiceParams,
         UpdateRepseContractParams,
         UpdateRepseProfileParams,
+        UpdateReviewCycleParams,
+        UpdateReviewObjectiveParams,
         UpdateRoleParams,
         UpdateRuleParams,
         UpdateSalesOrderParams,
@@ -5123,6 +5136,312 @@ class ClimateComplaintsResource:
         """
         result: ClimateComplaint = self._client.request(
             "POST", f"/v1/climate_complaints/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class ReviewCyclesResource:
+    """Nómina: fiscalisto.review_cycles."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListReviewCyclesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[ReviewCycle]:
+        """Listar ciclos de evaluación
+
+        Los ciclos de evaluación de desempeño del emisor (rvc_…), los más recientes primero, con cuántas personas y cuántas evaluaciones van enviadas.
+
+        GET /v1/review_cycles
+        https://fiscalisto.com/docs/api/referencia/nomina/list-review-cycles
+        """
+        return self._client.list("/v1/review_cycles", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def create(
+        self,
+        params: CreateReviewCycleParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ReviewCycle:
+        """Crear un ciclo de evaluación
+
+        Lo crea en borrador con todas las personas que trabajan hoy en el emisor, o en la sucursal o el departamento que diga. Ninguna ley pide evaluar el desempeño, así que la escala, quién evalúa, los pesos y las competencias los decide usted; lo que no manda toma los valores por omisión. Ábralo con POST /v1/review_cycles/{id}/open.
+
+        POST /v1/review_cycles
+        https://fiscalisto.com/docs/api/referencia/nomina/create-review-cycle
+        """
+        result: ReviewCycle = self._client.request(
+            "POST", "/v1/review_cycles", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ReviewCycle:
+        """Ver un ciclo de evaluación
+
+        El ciclo con sus reglas, competencias y cada persona: su jefe, quién la evalúa y si ya envió su evaluación (no qué contestó), sus objetivos y su resultado. Con el ciclo abierto el resultado se calcula con lo que va llegando; al cerrarlo queda guardado.
+
+        GET /v1/review_cycles/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/get-review-cycle
+        """
+        result: ReviewCycle = self._client.request(
+            "GET", f"/v1/review_cycles/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateReviewCycleParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ReviewCycle:
+        """Cambiar un ciclo de evaluación
+
+        En borrador cambia todo. Abierto, solo el nombre, el periodo, la fecha límite, compañeros por persona y share_results: la escala, las competencias y quién evalúa ya no cambian porque hay quien ya contestó con ellas. Cerrado ya no cambia.
+
+        POST /v1/review_cycles/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/update-review-cycle
+        """
+        result: ReviewCycle = self._client.request(
+            "POST", f"/v1/review_cycles/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ReviewCycleDeleted:
+        """Borrar un ciclo de evaluación
+
+        Lo borra con sus personas y objetivos si nadie ha enviado una evaluación. Con evaluaciones, ciérrelo.
+
+        DELETE /v1/review_cycles/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/delete-review-cycle
+        """
+        result: ReviewCycleDeleted = self._client.request(
+            "DELETE", f"/v1/review_cycles/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def open(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ReviewCycle:
+        """Abrir un ciclo de evaluación
+
+        Arma quién evalúa a quién: la persona misma, su jefe en el organigrama, sus compañeros (los elegidos o, si no, peers_count al azar entre quienes tienen el mismo jefe) y las personas a su cargo, según rules.raters. A cada evaluador le aparece en su portal lo que le toca, con el aviso review si lo tiene encendido.
+
+        POST /v1/review_cycles/{id}/open
+        https://fiscalisto.com/docs/api/referencia/nomina/open-review-cycle
+        """
+        result: ReviewCycle = self._client.request(
+            "POST", f"/v1/review_cycles/{_path(id)}/open", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def close(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ReviewCycle:
+        """Cerrar un ciclo de evaluación
+
+        Deja de recibir evaluaciones y guarda el resultado de cada persona como quedó. Con share_results, cada persona lo ve en su portal.
+
+        POST /v1/review_cycles/{id}/close
+        https://fiscalisto.com/docs/api/referencia/nomina/close-review-cycle
+        """
+        result: ReviewCycle = self._client.request(
+            "POST", f"/v1/review_cycles/{_path(id)}/close", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def set_participants(
+        self,
+        id: str,
+        params: SetReviewParticipantsParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ReviewCycle:
+        """Elegir a quién se evalúa
+
+        En borrador: reemplaza la lista de personas del ciclo. Quien sale pierde sus objetivos en el ciclo.
+
+        POST /v1/review_cycles/{id}/participants
+        https://fiscalisto.com/docs/api/referencia/nomina/set-review-participants
+        """
+        result: ReviewCycle = self._client.request(
+            "POST", f"/v1/review_cycles/{_path(id)}/participants", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def set_peers(
+        self,
+        id: str,
+        params: SetReviewPeersParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ReviewCycle:
+        """Elegir los compañeros que evalúan a alguien
+
+        Los compañeros que evalúan a una persona. Con el ciclo abierto agrega las evaluaciones de los nuevos y quita las que no se han enviado de los que salen.
+
+        POST /v1/review_cycles/{id}/peers
+        https://fiscalisto.com/docs/api/referencia/nomina/set-review-peers
+        """
+        result: ReviewCycle = self._client.request(
+            "POST", f"/v1/review_cycles/{_path(id)}/peers", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def calibrate(
+        self,
+        id: str,
+        params: CalibrateReviewParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ReviewCycle:
+        """Calibrar el resultado de una persona
+
+        Con el ciclo abierto o cerrado: una calificación calibrada en lugar de la calculada (con la nota de por qué cambia) y su potencial para la matriz de 9 cuadros. Lo que no manda no cambia.
+
+        POST /v1/review_cycles/{id}/calibrations
+        https://fiscalisto.com/docs/api/referencia/nomina/calibrate-review
+        """
+        result: ReviewCycle = self._client.request(
+            "POST", f"/v1/review_cycles/{_path(id)}/calibrations", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def result(
+        self,
+        id: str,
+        employee: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ReviewResult:
+        """Ver el resultado de una persona
+
+        Su calificación por competencia y por tipo de evaluador, y los comentarios. Compañeros y personas a su cargo se promedian juntos y nunca llevan nombre; con menos respuestas que rules.anonymous_min no cuentan ni se muestran.
+
+        GET /v1/review_cycles/{id}/results/{employee}
+        https://fiscalisto.com/docs/api/referencia/nomina/get-review-result
+        """
+        result: ReviewResult = self._client.request(
+            "GET", f"/v1/review_cycles/{_path(id)}/results/{_path(employee)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class ReviewObjectivesResource:
+    """Nómina: fiscalisto.review_objectives."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateReviewObjectiveParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ReviewObjective:
+        """Agregar un objetivo
+
+        Un objetivo de una persona en un ciclo, con su meta, unidad y peso (hasta 20 por persona). Su jefe lo califica al evaluarla y la persona anota su avance en su portal. Ya no se agregan cuando el jefe la evaluó.
+
+        POST /v1/review_objectives
+        https://fiscalisto.com/docs/api/referencia/nomina/create-review-objective
+        """
+        result: ReviewObjective = self._client.request(
+            "POST", "/v1/review_objectives", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateReviewObjectiveParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ReviewObjective:
+        """Cambiar un objetivo
+
+        Reemplaza el objetivo con lo que manda: lo que no manda queda vacío o con su valor por omisión.
+
+        POST /v1/review_objectives/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/update-review-objective
+        """
+        result: ReviewObjective = self._client.request(
+            "POST", f"/v1/review_objectives/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ReviewObjectiveDeleted:
+        """Borrar un objetivo
+
+        Lo borra, salvo que su jefe ya lo haya calificado.
+
+        DELETE /v1/review_objectives/{id}
+        https://fiscalisto.com/docs/api/referencia/nomina/delete-review-objective
+        """
+        result: ReviewObjectiveDeleted = self._client.request(
+            "DELETE", f"/v1/review_objectives/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -12268,6 +12587,16 @@ class FiscalistoApi(Core):
     def climate_complaints(self) -> ClimateComplaintsResource:
         """Nómina."""
         return ClimateComplaintsResource(self)
+
+    @cached_property
+    def review_cycles(self) -> ReviewCyclesResource:
+        """Nómina."""
+        return ReviewCyclesResource(self)
+
+    @cached_property
+    def review_objectives(self) -> ReviewObjectivesResource:
+        """Nómina."""
+        return ReviewObjectivesResource(self)
 
     @cached_property
     def invoice_batches(self) -> InvoiceBatchesResource:

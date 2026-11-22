@@ -100,6 +100,7 @@ __all__ = [
     "BudgetIncomeBeforeTaxesMonth",
     "BudgetIncomeBeforeTaxesYearToDate",
     "BudgetLinesItem",
+    "CalibrateReviewParams",
     "CancelInvoiceParams",
     "CancelPayoutParams",
     "CancelRetentionParams",
@@ -364,6 +365,13 @@ __all__ = [
     "CreateRetentionParamsTrustIncome",
     "CreateRetentionParamsTrustLease",
     "CreateRetentionParamsTrustWithholding",
+    "CreateReviewCycleParams",
+    "CreateReviewCycleParamsCompetenciesItem",
+    "CreateReviewCycleParamsRules",
+    "CreateReviewCycleParamsRulesRaterWeights",
+    "CreateReviewCycleParamsRulesRaters",
+    "CreateReviewCycleParamsRulesScale",
+    "CreateReviewObjectiveParams",
     "CreateRoleParams",
     "CreateRuleParams",
     "CreateRuleParamsActionsItem",
@@ -831,6 +839,7 @@ __all__ = [
     "ListRecurringInvoicesParams",
     "ListRepseContractsParams",
     "ListRetentionsParams",
+    "ListReviewCyclesParams",
     "ListRolesParams",
     "ListRuleRunsParams",
     "ListRulesParams",
@@ -1071,7 +1080,23 @@ __all__ = [
     "RetentionTotals",
     "ReturnExpenseReportParams",
     "RevertAutomaticEntryParams",
+    "ReviewCycle",
+    "ReviewCycleCompetenciesItem",
+    "ReviewCycleDeleted",
+    "ReviewCycleList",
+    "ReviewCycleParticipantsItem",
+    "ReviewCycleParticipantsItemRatersItem",
+    "ReviewCycleRules",
+    "ReviewCycleRulesRaterWeights",
+    "ReviewCycleRulesRaters",
+    "ReviewCycleRulesScale",
     "ReviewFindingParams",
+    "ReviewObjective",
+    "ReviewObjectiveDeleted",
+    "ReviewResult",
+    "ReviewResultCommentsItem",
+    "ReviewResultCompetenciesItem",
+    "ReviewResultRelationsItem",
     "Role",
     "RoleList",
     "RollWebhookSecretParams",
@@ -1201,6 +1226,8 @@ __all__ = [
     "SetClosedPeriodParams",
     "SetOpeningBalancesParams",
     "SetOpeningBalancesParamsLinesItem",
+    "SetReviewParticipantsParams",
+    "SetReviewPeersParams",
     "SetTrainingParticipantsParams",
     "SetTrainingResultsParams",
     "SetTrainingResultsParamsResultsItem",
@@ -1355,6 +1382,13 @@ __all__ = [
     "UpdateRepseContractParamsSiteAddress",
     "UpdateRepseContractParamsWorkersItem",
     "UpdateRepseProfileParams",
+    "UpdateReviewCycleParams",
+    "UpdateReviewCycleParamsCompetenciesItem",
+    "UpdateReviewCycleParamsRules",
+    "UpdateReviewCycleParamsRulesRaterWeights",
+    "UpdateReviewCycleParamsRulesRaters",
+    "UpdateReviewCycleParamsRulesScale",
+    "UpdateReviewObjectiveParams",
     "UpdateRoleParams",
     "UpdateRuleParams",
     "UpdateRuleParamsActionsItem",
@@ -3886,8 +3920,8 @@ class EmployeeVacations(TypedDict):
 
 
 class EmployeePortalNoticesItem(TypedDict):
-    kind: Literal["receipt", "receipt_canceled", "vacation_approved", "vacation_rejected", "sign_reminder", "survey"]
-    """receipt: recibo nuevo; receipt_canceled: se canceló uno; vacation_approved / vacation_rejected: la respuesta a sus vacaciones; sign_reminder: tiene un recibo por firmar; survey: tiene una encuesta de clima laboral por contestar."""
+    kind: Literal["receipt", "receipt_canceled", "vacation_approved", "vacation_rejected", "sign_reminder", "survey", "review"]
+    """receipt: recibo nuevo; receipt_canceled: se canceló uno; vacation_approved / vacation_rejected: la respuesta a sus vacaciones; sign_reminder: tiene un recibo por firmar; survey: tiene una encuesta de clima laboral por contestar; review: tiene evaluaciones de desempeño por hacer."""
     channel: Literal["push", "email", "off", "none", "skipped", "stale"] | None
     """Cómo le llegó: push (a su celular), email (a su correo), off (usted o el empleado apagó ese aviso), none (no tiene avisos ni correo), skipped (ya no aplicaba: lo firmó, se canceló o se lo mandamos con el recibo), stale (no salió en 7 días); null mientras está por salir (por ejemplo, de noche)."""
     created_at: str
@@ -3943,6 +3977,8 @@ class EmployeeNoticeSettings(TypedDict):
     """Avisar la respuesta a sus vacaciones, con su nota."""
     survey: bool
     """Avisar cuando se abre una encuesta NOM-035 o de clima para él."""
+    review: bool
+    """Avisar cuando se abre un ciclo de Desempeño con evaluaciones que le toca hacer."""
     sign_reminder_days: int
     """Los días después de timbrarse en que se le recuerda, una vez, firmar un recibo sin firmar; 0: nunca."""
     email_fallback: bool
@@ -5286,6 +5322,262 @@ class ClimateComplaint(TypedDict):
     """Qué se hizo."""
     closed_on: str | None
     """Cuándo se atendió."""
+
+
+class ReviewCycleRulesScale(TypedDict):
+    """La escala."""
+    max: int
+    """Se califica de 1 a max."""
+    labels: list[str]
+    """El nombre de cada punto, del 1 al max; vacío: solo los números."""
+
+
+class ReviewCycleRulesRaters(TypedDict):
+    """Quién evalúa."""
+    self: bool
+    """Si cuenta lo que dice la persona misma."""
+    manager: bool
+    """Si cuenta lo que dice su jefe en el organigrama."""
+    peer: bool
+    """Si cuenta lo que dice sus compañeros."""
+    report: bool
+    """Si cuenta lo que dice las personas a su cargo."""
+
+
+class ReviewCycleRulesRaterWeights(TypedDict):
+    """El peso de cada uno en las competencias; cuentan solo los que evalúan."""
+    self: float
+    """El peso de lo que dice la persona misma."""
+    manager: float
+    """El peso de lo que dice su jefe en el organigrama."""
+    peer: float
+    """El peso de lo que dice sus compañeros."""
+    report: float
+    """El peso de lo que dice las personas a su cargo."""
+
+
+class ReviewCycleRules(TypedDict):
+    """Cómo se califica (al ver un ciclo)."""
+    scale: ReviewCycleRulesScale
+    """La escala."""
+    raters: ReviewCycleRulesRaters
+    """Quién evalúa."""
+    rater_weights: ReviewCycleRulesRaterWeights
+    """El peso de cada uno en las competencias; cuentan solo los que evalúan."""
+    objectives_weight: float
+    """Cuánto pesan los objetivos en el resultado, de 0 a 100."""
+    anonymous_min: int
+    """Compañeros o personas a su cargo con menos respuestas no cuentan."""
+    box_cuts: list[float]
+    """Los cortes de desempeño medio y alto de la matriz de 9 cuadros."""
+
+
+class ReviewCycleCompetenciesItem(TypedDict):
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    name: str
+    """Nombre."""
+    description: str | None
+    """Descripción."""
+
+
+class ReviewCycleParticipantsItemRatersItem(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    name: str
+    """Nombre."""
+    relation: str
+    """self (autoevaluación), manager (su jefe), peer (compañeros) o report (personas a su cargo)."""
+    done: bool
+    """Si ya la envió (no qué contestó)."""
+    portal: bool
+    """Si tiene portal; sin él no puede contestar."""
+
+
+class ReviewCycleParticipantsItem(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    name: str
+    """Nombre."""
+    position: str | None
+    """Puesto (Puesto)."""
+    department: str | None
+    """Departamento (Departamento)."""
+    manager: str | None
+    """Su jefe en el organigrama (emp_…), quien la evalúa como jefe."""
+    peers: list[str]
+    """Los compañeros elegidos para evaluarla (emp_…)."""
+    raters: list[ReviewCycleParticipantsItemRatersItem]
+    """Quién la evalúa, desde que se abre el ciclo."""
+    objectives: list[ReviewObjective]
+    """Sus objetivos."""
+    competencies_score: float | None
+    """Su calificación de competencias."""
+    objectives_score: float | None
+    """Su calificación de objetivos."""
+    final: float | None
+    """El resultado calculado: vivo con el ciclo abierto, guardado al cerrar."""
+    calibrated: float | None
+    """La calificación calibrada."""
+    calibration_note: str | None
+    """Por qué cambió."""
+    potential: int | None
+    """1 bajo, 2 medio, 3 alto, para la matriz de 9 cuadros."""
+    result: float | None
+    """El que cuenta: calibrated, o si no, final."""
+
+
+class ReviewCycle(TypedDict):
+    """Un ciclo de evaluación (Nómina › Desempeño)."""
+    id: str
+    """El ciclo (rvc_…)."""
+    object: Literal["review_cycle"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    title: str
+    """Su nombre, como «Evaluación 2026»."""
+    status: str
+    """draft, open o closed."""
+    period_start: str | None
+    """Desde cuándo se evalúa."""
+    period_end: str | None
+    """Hasta cuándo."""
+    closes_on: str | None
+    """La fecha límite para contestar."""
+    people: int
+    """Cuántas personas se evalúan."""
+    evaluations: int
+    """Cuántas evaluaciones hay que hacer (cero en borrador)."""
+    evaluations_done: int
+    """Cuántas ya se enviaron."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    branch: NotRequired[str | None]
+    """La sucursal con que se armó (brn_…)."""
+    department: NotRequired[str | None]
+    """El departamento con que se armó."""
+    rules: NotRequired[ReviewCycleRules]
+    """Cómo se califica (al ver un ciclo)."""
+    competencies: NotRequired[list[ReviewCycleCompetenciesItem]]
+    """Lo que se califica de cada persona."""
+    peers_count: NotRequired[int]
+    """Compañeros al azar por persona, para quien no tenga elegidos."""
+    share_results: NotRequired[bool]
+    """Si cada persona ve su resultado en su portal al cerrar."""
+    opened_at: NotRequired[str | None]
+    """Cuándo se abrió."""
+    closed_at: NotRequired[str | None]
+    """Cuándo se cerró."""
+    participants: NotRequired[list[ReviewCycleParticipantsItem]]
+    """Cada persona que se evalúa (al ver un ciclo)."""
+
+
+class ReviewCycleDeleted(TypedDict):
+    """Un ciclo borrado."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["review_cycle"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    deleted: bool
+    """Siempre true."""
+
+
+class ReviewObjective(TypedDict):
+    """Un objetivo de una persona en un ciclo."""
+    id: str
+    """El objetivo (rvo_…)."""
+    object: Literal["review_objective"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    cycle: str
+    """El ciclo (rvc_…)."""
+    employee: str
+    """De quién es (emp_…)."""
+    title: str
+    """Qué tiene que lograr."""
+    target: float | None
+    """La meta."""
+    actual: float | None
+    """El avance; lo anota la persona en su portal o usted aquí."""
+    unit: str | None
+    """La unidad."""
+    lower_better: bool
+    """La meta es un máximo: menos es mejor."""
+    weight: float
+    """Cuánto cuenta frente a sus otros objetivos."""
+    note: str | None
+    """Una nota sobre el objetivo."""
+    achievement: float | None
+    """% logrado: avance entre meta, o al revés con lower_better. null sin los dos."""
+    score: float | None
+    """La calificación que le dio su jefe al evaluarla."""
+
+
+class ReviewObjectiveDeleted(TypedDict):
+    """Un objetivo borrado."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["review_objective"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    deleted: bool
+    """Siempre true."""
+
+
+class ReviewResultRelationsItem(TypedDict):
+    relation: str
+    """self (autoevaluación), manager (su jefe), peer (compañeros) o report (personas a su cargo)."""
+    answers: int
+    """Cuántos la evaluaron así."""
+    score: float | None
+    """Su promedio."""
+    hidden: bool
+    """Menos respuestas que anonymous_min: no cuenta ni se muestra."""
+
+
+class ReviewResultCompetenciesItem(TypedDict):
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    name: str
+    """Nombre."""
+    score: float | None
+    """Su calificación, con el peso de cada tipo de evaluador."""
+    by_relation: dict[str, float]
+    """Lo que dio cada tipo de evaluador que cuenta."""
+
+
+class ReviewResultCommentsItem(TypedDict):
+    relation: str
+    """self (autoevaluación), manager (su jefe), peer (compañeros) o report (personas a su cargo)."""
+    text: str
+    """Texto de la leyenda (textoLeyenda)."""
+    name: str | None
+    """Solo de la autoevaluación y del jefe; compañeros y personas a su cargo van sin nombre."""
+
+
+class ReviewResult(TypedDict):
+    """El resultado de una persona en un ciclo, por competencia y tipo de evaluador."""
+    object: Literal["review_result"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    cycle: str
+    """El ciclo (rvc_…)."""
+    employee: str
+    """El empleado (emp_…)."""
+    name: str
+    """Nombre."""
+    final: float | None
+    """El resultado: competencias y objetivos con el peso de los objetivos."""
+    competencies_score: float | None
+    """El promedio de cada tipo de evaluador que cuenta, con su peso."""
+    objectives_score: float | None
+    """Lo que calificó el jefe en cada objetivo, con su peso."""
+    relations: list[ReviewResultRelationsItem]
+    """Cada tipo de evaluador."""
+    competencies: list[ReviewResultCompetenciesItem]
+    """La calificación de cada competencia."""
+    comments: list[ReviewResultCommentsItem]
+    """Los comentarios."""
 
 
 class ImssFilesFilesItem(TypedDict):
@@ -14278,6 +14570,17 @@ class ClimateComplaintList(TypedDict):
     """La ruta de esta lista."""
 
 
+class ReviewCycleList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[ReviewCycle]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
 class InvoiceBatchList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
@@ -17402,6 +17705,8 @@ class UpdateEmployeeNoticeSettingsParams(TypedDict):
     """Al aprobar o rechazar los días que pidió, con su nota."""
     survey: NotRequired[bool]
     """Cuando se abre una encuesta NOM-035 o de clima para él (POST /v1/climate_surveys/{id}/open)."""
+    review: NotRequired[bool]
+    """Cuando se abre un ciclo de Desempeño con evaluaciones que le toca hacer (POST /v1/review_cycles/{id}/open)."""
     sign_reminder_days: NotRequired[int]
     """Si un recibo sigue sin firmar de recibido estos días después de timbrarse, se le recuerda una vez. 0: nunca."""
     email_fallback: NotRequired[bool]
@@ -18913,6 +19218,237 @@ class UpdateClimateComplaintParams(TypedDict):
     """nueva, en_atencion o atendida."""
     note: NotRequired[str | None]
     """Qué se hizo."""
+
+
+class ListReviewCyclesParams(TypedDict):
+    """Los parámetros de GET /v1/review_cycles."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateReviewCycleParamsRulesScale(TypedDict):
+    """La escala."""
+    max: int
+    """Se califica de 1 a max (de 3 a 10)."""
+    labels: list[str]
+    """El nombre de cada punto, del 1 al max; vacío: solo los números."""
+
+
+class CreateReviewCycleParamsRulesRaters(TypedDict):
+    """Quién evalúa: self (autoevaluación), manager (su jefe en el organigrama), peer (compañeros), report (las personas a su cargo)."""
+    self: bool
+    """Si cuenta lo que dice la persona misma."""
+    manager: bool
+    """Si cuenta lo que dice su jefe en el organigrama."""
+    peer: bool
+    """Si cuenta lo que dice sus compañeros."""
+    report: bool
+    """Si cuenta lo que dice las personas a su cargo."""
+
+
+class CreateReviewCycleParamsRulesRaterWeights(TypedDict):
+    """El peso de cada uno en la calificación de competencias, de 0 a 100. Cuentan solo los que evalúan; no tienen que sumar 100."""
+    self: float
+    """El peso de lo que dice la persona misma."""
+    manager: float
+    """El peso de lo que dice su jefe en el organigrama."""
+    peer: float
+    """El peso de lo que dice sus compañeros."""
+    report: float
+    """El peso de lo que dice las personas a su cargo."""
+
+
+class CreateReviewCycleParamsRules(TypedDict):
+    """Cómo se califica. Por omisión, escala de 1 a 5, autoevaluación y jefe, objetivos 60 %."""
+    scale: CreateReviewCycleParamsRulesScale
+    """La escala."""
+    raters: CreateReviewCycleParamsRulesRaters
+    """Quién evalúa: self (autoevaluación), manager (su jefe en el organigrama), peer (compañeros), report (las personas a su cargo)."""
+    rater_weights: CreateReviewCycleParamsRulesRaterWeights
+    """El peso de cada uno en la calificación de competencias, de 0 a 100. Cuentan solo los que evalúan; no tienen que sumar 100."""
+    objectives_weight: float
+    """Cuánto pesan los objetivos en el resultado, de 0 a 100; el resto son las competencias."""
+    anonymous_min: int
+    """Compañeros o personas a su cargo con menos respuestas no cuentan, para que no se sepa quién contestó qué."""
+    box_cuts: list[float]
+    """Los cortes de desempeño de la matriz de 9 cuadros: debajo del primero es bajo, desde el segundo es alto."""
+
+
+class CreateReviewCycleParamsCompetenciesItem(TypedDict):
+    id: str
+    """Su id, único en el ciclo."""
+    name: str
+    """Su nombre."""
+    description: NotRequired[str | None]
+    """Qué se espera, en una frase; lo ve cada evaluador."""
+
+
+class CreateReviewCycleParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    title: str
+    """Su nombre, como «Evaluación 2026»."""
+    period_start: NotRequired[str | None]
+    """Desde cuándo se evalúa."""
+    period_end: NotRequired[str | None]
+    """Hasta cuándo."""
+    closes_on: NotRequired[str | None]
+    """La fecha límite para contestar que ve cada evaluador (opcional)."""
+    rules: NotRequired[CreateReviewCycleParamsRules]
+    """Cómo se califica. Por omisión, escala de 1 a 5, autoevaluación y jefe, objetivos 60 %."""
+    competencies: NotRequired[list[CreateReviewCycleParamsCompetenciesItem]]
+    """Lo que se califica de cada persona. Por omisión, cinco de ejemplo."""
+    peers_count: NotRequired[int]
+    """Con peer: cuántos compañeros se toman al azar, entre quienes tienen el mismo jefe, para quien no tenga elegidos. Por omisión, 3."""
+    share_results: NotRequired[bool]
+    """Al cerrar, cada persona ve su resultado en su portal. Por omisión, no."""
+    branch: NotRequired[str | None]
+    """Solo quien trabaja en esta sucursal (brn_…). null u omitido: todo el emisor."""
+    department: NotRequired[str | None]
+    """Solo quien es de este departamento."""
+
+
+class UpdateReviewCycleParamsRulesScale(TypedDict):
+    """La escala."""
+    max: int
+    """Se califica de 1 a max (de 3 a 10)."""
+    labels: list[str]
+    """El nombre de cada punto, del 1 al max; vacío: solo los números."""
+
+
+class UpdateReviewCycleParamsRulesRaters(TypedDict):
+    """Quién evalúa: self (autoevaluación), manager (su jefe en el organigrama), peer (compañeros), report (las personas a su cargo)."""
+    self: bool
+    """Si cuenta lo que dice la persona misma."""
+    manager: bool
+    """Si cuenta lo que dice su jefe en el organigrama."""
+    peer: bool
+    """Si cuenta lo que dice sus compañeros."""
+    report: bool
+    """Si cuenta lo que dice las personas a su cargo."""
+
+
+class UpdateReviewCycleParamsRulesRaterWeights(TypedDict):
+    """El peso de cada uno en la calificación de competencias, de 0 a 100. Cuentan solo los que evalúan; no tienen que sumar 100."""
+    self: float
+    """El peso de lo que dice la persona misma."""
+    manager: float
+    """El peso de lo que dice su jefe en el organigrama."""
+    peer: float
+    """El peso de lo que dice sus compañeros."""
+    report: float
+    """El peso de lo que dice las personas a su cargo."""
+
+
+class UpdateReviewCycleParamsRules(TypedDict):
+    """Cómo se califica. Por omisión, escala de 1 a 5, autoevaluación y jefe, objetivos 60 %."""
+    scale: UpdateReviewCycleParamsRulesScale
+    """La escala."""
+    raters: UpdateReviewCycleParamsRulesRaters
+    """Quién evalúa: self (autoevaluación), manager (su jefe en el organigrama), peer (compañeros), report (las personas a su cargo)."""
+    rater_weights: UpdateReviewCycleParamsRulesRaterWeights
+    """El peso de cada uno en la calificación de competencias, de 0 a 100. Cuentan solo los que evalúan; no tienen que sumar 100."""
+    objectives_weight: float
+    """Cuánto pesan los objetivos en el resultado, de 0 a 100; el resto son las competencias."""
+    anonymous_min: int
+    """Compañeros o personas a su cargo con menos respuestas no cuentan, para que no se sepa quién contestó qué."""
+    box_cuts: list[float]
+    """Los cortes de desempeño de la matriz de 9 cuadros: debajo del primero es bajo, desde el segundo es alto."""
+
+
+class UpdateReviewCycleParamsCompetenciesItem(TypedDict):
+    id: str
+    """Su id, único en el ciclo."""
+    name: str
+    """Su nombre."""
+    description: NotRequired[str | None]
+    """Qué se espera, en una frase; lo ve cada evaluador."""
+
+
+class UpdateReviewCycleParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    title: str
+    """Su nombre, como «Evaluación 2026»."""
+    period_start: NotRequired[str | None]
+    """Desde cuándo se evalúa."""
+    period_end: NotRequired[str | None]
+    """Hasta cuándo."""
+    closes_on: NotRequired[str | None]
+    """La fecha límite para contestar que ve cada evaluador (opcional)."""
+    rules: NotRequired[UpdateReviewCycleParamsRules]
+    """Cómo se califica. Por omisión, escala de 1 a 5, autoevaluación y jefe, objetivos 60 %."""
+    competencies: NotRequired[list[UpdateReviewCycleParamsCompetenciesItem]]
+    """Lo que se califica de cada persona. Por omisión, cinco de ejemplo."""
+    peers_count: NotRequired[int]
+    """Con peer: cuántos compañeros se toman al azar, entre quienes tienen el mismo jefe, para quien no tenga elegidos. Por omisión, 3."""
+    share_results: NotRequired[bool]
+    """Al cerrar, cada persona ve su resultado en su portal. Por omisión, no."""
+
+
+class SetReviewParticipantsParams(TypedDict):
+    employees: list[str]
+    """Todas las personas que se evalúan (emp_…), en borrador. Reemplaza la lista."""
+
+
+class SetReviewPeersParams(TypedDict):
+    employee: str
+    """La persona que se evalúa (emp_…)."""
+    peers: list[str]
+    """Los compañeros que la evalúan (emp_…). Vacío: al abrir se toman al azar. Con el ciclo abierto agrega o quita sus evaluaciones (las ya contestadas se quedan)."""
+
+
+class CalibrateReviewParams(TypedDict):
+    employee: str
+    """La persona (emp_…)."""
+    calibrated: NotRequired[float | None]
+    """La calificación calibrada, en la escala del ciclo; null usa la calculada."""
+    note: NotRequired[str | None]
+    """Por qué cambia; se pide con calibrated."""
+    potential: NotRequired[int | None]
+    """El potencial para la matriz de 9 cuadros: 1 bajo, 2 medio, 3 alto."""
+
+
+class CreateReviewObjectiveParams(TypedDict):
+    cycle: str
+    """El ciclo (rvc_…)."""
+    employee: str
+    """La persona (emp_…)."""
+    title: str
+    """Qué tiene que lograr."""
+    target: NotRequired[float | None]
+    """La meta, si se mide con un número."""
+    actual: NotRequired[float | None]
+    """El avance."""
+    unit: NotRequired[str | None]
+    """La unidad: pesos, %, piezas."""
+    lower_better: NotRequired[bool]
+    """La meta es un máximo (quejas, mermas): menos es mejor."""
+    weight: NotRequired[float]
+    """Cuánto cuenta frente a sus otros objetivos. Por omisión, 1."""
+    note: NotRequired[str | None]
+    """Una nota."""
+
+
+class UpdateReviewObjectiveParams(TypedDict):
+    title: str
+    """Qué tiene que lograr."""
+    target: NotRequired[float | None]
+    """La meta, si se mide con un número."""
+    actual: NotRequired[float | None]
+    """El avance."""
+    unit: NotRequired[str | None]
+    """La unidad: pesos, %, piezas."""
+    lower_better: NotRequired[bool]
+    """La meta es un máximo (quejas, mermas): menos es mejor."""
+    weight: NotRequired[float]
+    """Cuánto cuenta frente a sus otros objetivos. Por omisión, 1."""
+    note: NotRequired[str | None]
+    """Una nota."""
 
 
 class UpdatePayrollTaxSettingsParams(TypedDict):
