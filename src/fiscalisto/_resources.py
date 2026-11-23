@@ -31,9 +31,13 @@ if TYPE_CHECKING:
         ApproveExpenseReportParams,
         ApproveVacationRequestParams,
         AssignPayrollOrgChartParams,
+        AttendanceCalendar,
+        AttendanceCalendarChange,
         AttendanceMark,
         AttendanceOvertime,
         AttendanceReport,
+        AttendanceRotation,
+        AttendanceShift,
         AutomaticJournalEntry,
         BacktestRuleParams,
         Balance,
@@ -83,6 +87,8 @@ if TYPE_CHECKING:
         CostOfSales,
         CreateAdvanceParams,
         CreateAttendanceMarkParams,
+        CreateAttendanceRotationParams,
+        CreateAttendanceShiftParams,
         CreateBankTransactionsParams,
         CreateBranchParams,
         CreateCashForecastItemParams,
@@ -203,6 +209,7 @@ if TYPE_CHECKING:
         GetAccountingSettingsParams,
         GetAnnualAdjustmentParams,
         GetAnnualReturnParams,
+        GetAttendanceCalendarParams,
         GetAttendanceParams,
         GetAutomaticEntryParams,
         GetBooksExportParams,
@@ -248,6 +255,7 @@ if TYPE_CHECKING:
         GetPayrollOrgChartParams,
         GetPayrollProvisionParams,
         GetPayrollTaxParams,
+        GetPrepaidExpenseParams,
         GetRepseProfileParams,
         GetRepseReturnParams,
         GetRetentionParams,
@@ -293,6 +301,8 @@ if TYPE_CHECKING:
         LedgerBankAccount,
         LedgerBankAccountList,
         ListAdvancesParams,
+        ListAttendanceRotationsParams,
+        ListAttendanceShiftsParams,
         ListBankMovementsParams,
         ListBankTransactionsParams,
         ListBooksLogParams,
@@ -411,6 +421,7 @@ if TYPE_CHECKING:
         PermissionList,
         PortalSupplier,
         PostBankMovementParams,
+        PrepaidExpense,
         PreviewExtraordinaryPayrollReceiptParams,
         PreviewPayrollReceiptParams,
         PriceList,
@@ -429,6 +440,7 @@ if TYPE_CHECKING:
         RejectQuoteParams,
         RejectVacationRequestParams,
         RemovePayrollDepartmentParams,
+        RemovePrepaidExpenseParams,
         RenumberAccountsParams,
         ReportImssMovementsParams,
         RepseContract,
@@ -486,6 +498,7 @@ if TYPE_CHECKING:
         SendQuoteParams,
         SendRetentionParams,
         SendSalesOrderParams,
+        SetAttendanceCalendarParams,
         SetClosedPeriodParams,
         SetOpeningBalancesParams,
         SetReviewParticipantsParams,
@@ -521,6 +534,8 @@ if TYPE_CHECKING:
         UpdateAccountParams,
         UpdateAccountingSettingsParams,
         UpdateAnnualAdjustmentParams,
+        UpdateAttendanceRotationParams,
+        UpdateAttendanceShiftParams,
         UpdateAutomaticEntryParams,
         UpdateBranchParams,
         UpdateCandidateParams,
@@ -557,6 +572,7 @@ if TYPE_CHECKING:
         UpdateMemberParams,
         UpdatePayrollTaxSettingsParams,
         UpdatePayrollVacancyParams,
+        UpdatePrepaidExpenseParams,
         UpdatePriceListParams,
         UpdateProductParams,
         UpdatePurchaseReceiptParams,
@@ -6667,6 +6683,167 @@ class AttendanceResource:
         )
         return result
 
+    def list_shifts(
+        self,
+        params: ListAttendanceShiftsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[AttendanceShift]:
+        """Listar los turnos
+
+        Los turnos de Asistencia › Turnos (ats_…), los archivados también: sus tramos, sus minutos y su jornada por ley (diurna, nocturna o mixta, LFT art. 60) con lo que dice la ley de ellos.
+
+        GET /v1/attendance/shifts
+        https://fiscalisto.com/docs/api/referencia/asistencia/list-attendance-shifts
+        """
+        return self._client.list("/v1/attendance/shifts", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def create_shift(
+        self,
+        params: CreateAttendanceShiftParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AttendanceShift:
+        """Crear un turno
+
+        Un turno con uno a tres tramos (con dos o tres es partido: el tiempo entre tramos no es jornada); un tramo puede pasar de la medianoche. Se guarda aunque pase de la jornada del art. 61 (con el acuerdo del trabajador, art. 58) y lo dice en warnings.
+
+        POST /v1/attendance/shifts
+        https://fiscalisto.com/docs/api/referencia/asistencia/create-attendance-shift
+        """
+        result: AttendanceShift = self._client.request(
+            "POST", "/v1/attendance/shifts", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_shift(
+        self,
+        id: str,
+        params: UpdateAttendanceShiftParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AttendanceShift:
+        """Cambiar un turno
+
+        Cambia lo que mande y deja lo demás. Cambiar sus horas cambia los días que lo tienen desde hoy; archived: true lo archiva.
+
+        POST /v1/attendance/shifts/{id}
+        https://fiscalisto.com/docs/api/referencia/asistencia/update-attendance-shift
+        """
+        result: AttendanceShift = self._client.request(
+            "POST", f"/v1/attendance/shifts/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list_rotations(
+        self,
+        params: ListAttendanceRotationsParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[AttendanceRotation]:
+        """Listar los roles de turnos
+
+        Los roles de turnos (atr_…), los archivados también: el ciclo de turnos y descansos, el promedio a la semana y el aviso del art. 69 si pasan más de seis días de trabajo sin descanso.
+
+        GET /v1/attendance/rotations
+        https://fiscalisto.com/docs/api/referencia/asistencia/list-attendance-rotations
+        """
+        return self._client.list("/v1/attendance/rotations", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def create_rotation(
+        self,
+        params: CreateAttendanceRotationParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AttendanceRotation:
+        """Crear un rol de turnos
+
+        Un ciclo de turnos y descansos en orden que vuelve a empezar al terminar (4×4: cuatro días un turno y cuatro null). A cada empleado se le pone en la app, en Asistencia › Personas, con el día en que cae su día 1.
+
+        POST /v1/attendance/rotations
+        https://fiscalisto.com/docs/api/referencia/asistencia/create-attendance-rotation
+        """
+        result: AttendanceRotation = self._client.request(
+            "POST", "/v1/attendance/rotations", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update_rotation(
+        self,
+        id: str,
+        params: UpdateAttendanceRotationParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AttendanceRotation:
+        """Cambiar un rol de turnos
+
+        Cambia su nombre o su ciclo; archived: true lo archiva.
+
+        POST /v1/attendance/rotations/{id}
+        https://fiscalisto.com/docs/api/referencia/asistencia/update-attendance-rotation
+        """
+        result: AttendanceRotation = self._client.request(
+            "POST", f"/v1/attendance/rotations/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def get_calendar(
+        self,
+        params: GetAttendanceCalendarParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AttendanceCalendar:
+        """Ver el calendario de turnos
+
+        El turno de cada empleado cada día de un mes y de dónde sale: un cambio puesto en el calendario, su rol de turnos o su horario de la semana.
+
+        GET /v1/attendance/calendar
+        https://fiscalisto.com/docs/api/referencia/asistencia/get-attendance-calendar
+        """
+        result: AttendanceCalendar = self._client.request(
+            "GET", "/v1/attendance/calendar", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def set_calendar(
+        self,
+        params: SetAttendanceCalendarParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> AttendanceCalendarChange:
+        """Poner turnos en el calendario
+
+        Pone un turno (o descanso, shift null) en unos días de unos empleados, y gana sobre su rol y su horario: un cambio de turno, un descanso extra. clear: true lo quita y esos días vuelven a su rol u horario. Hasta 62 días y 500 empleados a la vez.
+
+        POST /v1/attendance/calendar
+        https://fiscalisto.com/docs/api/referencia/asistencia/set-attendance-calendar
+        """
+        result: AttendanceCalendarChange = self._client.request(
+            "POST", "/v1/attendance/calendar", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
 
 class ExpensePeopleResource:
     """Viáticos y gastos: fiscalisto.expense_people."""
@@ -10093,6 +10270,77 @@ class AutomaticEntriesResource:
         return result
 
 
+class PrepaidExpensesResource:
+    """Contabilidad: fiscalisto.prepaid_expenses."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def get(
+        self,
+        uuid: str,
+        params: GetPrepaidExpenseParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PrepaidExpense:
+        """Ver si una factura se amortiza
+
+        Si una factura recibida (por su UUID) es un gasto pagado por anticipado y su calendario: una póliza de amortización al final de cada mes que cubre.
+
+        GET /v1/accounting/prepaid_expenses/{uuid}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/get-prepaid-expense
+        """
+        result: PrepaidExpense = self._client.request(
+            "GET", f"/v1/accounting/prepaid_expenses/{_path(uuid)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        uuid: str,
+        params: UpdatePrepaidExpenseParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PrepaidExpense:
+        """Amortizar una factura pagada por anticipado
+
+        Su póliza va a pagos anticipados (109.01, 109.05 o 109.23) y los libros la pasan a su gasto al final de cada mes que cubre (NIF C-5). Solo una factura de ingreso recibida que se registra como gasto: un activo fijo, un movimiento o una por aclarar no se amortiza, ni una cuya póliza se editó a mano. Un mes cerrado contesta period_closed. Impuestos no cambia.
+
+        POST /v1/accounting/prepaid_expenses/{uuid}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/update-prepaid-expense
+        """
+        result: PrepaidExpense = self._client.request(
+            "POST", f"/v1/accounting/prepaid_expenses/{_path(uuid)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def remove(
+        self,
+        uuid: str,
+        params: RemovePrepaidExpenseParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> PrepaidExpense:
+        """Dejar de amortizar una factura
+
+        Vuelve a registrarse como gasto del mes en la cuenta a la que se amortizaba, y sus pólizas de amortización salen de los libros. Un mes cerrado contesta period_closed.
+
+        DELETE /v1/accounting/prepaid_expenses/{uuid}
+        https://fiscalisto.com/docs/api/referencia/contabilidad/remove-prepaid-expense
+        """
+        result: PrepaidExpense = self._client.request(
+            "DELETE", f"/v1/accounting/prepaid_expenses/{_path(uuid)}", query=params, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class OpeningBalancesResource:
     """Contabilidad: fiscalisto.opening_balances."""
 
@@ -12971,6 +13219,11 @@ class FiscalistoApi(Core):
     def automatic_entries(self) -> AutomaticEntriesResource:
         """Contabilidad."""
         return AutomaticEntriesResource(self)
+
+    @cached_property
+    def prepaid_expenses(self) -> PrepaidExpensesResource:
+        """Contabilidad."""
+        return PrepaidExpensesResource(self)
 
     @cached_property
     def opening_balances(self) -> OpeningBalancesResource:

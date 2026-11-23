@@ -65,13 +65,24 @@ __all__ = [
     "ApproveExpenseReportParams",
     "ApproveVacationRequestParams",
     "AssignPayrollOrgChartParams",
+    "AttendanceCalendar",
+    "AttendanceCalendarChange",
+    "AttendanceCalendarEmployeesItem",
+    "AttendanceCalendarEmployeesItemDaysItem",
+    "AttendanceCalendarEmployeesItemDaysItemSegmentsItem",
     "AttendanceMark",
     "AttendanceOvertime",
     "AttendanceReport",
     "AttendanceReportEmployeesItem",
     "AttendanceReportEmployeesItemDaysItem",
     "AttendanceReportEmployeesItemDaysItemScheduled",
+    "AttendanceReportEmployeesItemDaysItemScheduledSegmentsItem",
     "AttendanceReportEmployeesItemWeeksDisputedItem",
+    "AttendanceRotation",
+    "AttendanceRotationList",
+    "AttendanceShift",
+    "AttendanceShiftList",
+    "AttendanceShiftSegmentsItem",
     "AutomaticJournalEntry",
     "AutomaticJournalEntryLinesItem",
     "AutomaticJournalEntryOriginalLinesItem",
@@ -243,6 +254,9 @@ __all__ = [
     "CreateAdvanceParamsCustomer",
     "CreateAdvanceParamsCustomerForeign",
     "CreateAttendanceMarkParams",
+    "CreateAttendanceRotationParams",
+    "CreateAttendanceShiftParams",
+    "CreateAttendanceShiftParamsSegmentsItem",
     "CreateBankTransactionsParams",
     "CreateBankTransactionsParamsTransactionsItem",
     "CreateBranchParams",
@@ -576,6 +590,7 @@ __all__ = [
     "GetAccountingSettingsParams",
     "GetAnnualAdjustmentParams",
     "GetAnnualReturnParams",
+    "GetAttendanceCalendarParams",
     "GetAttendanceParams",
     "GetAutomaticEntryParams",
     "GetBooksExportParams",
@@ -621,6 +636,7 @@ __all__ = [
     "GetPayrollOrgChartParams",
     "GetPayrollProvisionParams",
     "GetPayrollTaxParams",
+    "GetPrepaidExpenseParams",
     "GetRepseProfileParams",
     "GetRepseReturnParams",
     "GetRetentionParams",
@@ -797,6 +813,8 @@ __all__ = [
     "LedgerBankAccount",
     "LedgerBankAccountList",
     "ListAdvancesParams",
+    "ListAttendanceRotationsParams",
+    "ListAttendanceShiftsParams",
     "ListBankMovementsParams",
     "ListBankTransactionsParams",
     "ListBooksLogParams",
@@ -1005,6 +1023,8 @@ __all__ = [
     "PortalSupplierScore",
     "PortalSupplierScorePartsItem",
     "PostBankMovementParams",
+    "PrepaidExpense",
+    "PrepaidExpenseScheduleItem",
     "PreviewExtraordinaryPayrollReceiptParams",
     "PreviewPayrollReceiptParams",
     "PreviewPayrollReceiptParamsIncidents",
@@ -1059,6 +1079,7 @@ __all__ = [
     "RejectQuoteParams",
     "RejectVacationRequestParams",
     "RemovePayrollDepartmentParams",
+    "RemovePrepaidExpenseParams",
     "RenumberAccountsParams",
     "RenumberAccountsParamsMappingItem",
     "ReportImssMovementsParams",
@@ -1243,6 +1264,7 @@ __all__ = [
     "SendQuoteParams",
     "SendRetentionParams",
     "SendSalesOrderParams",
+    "SetAttendanceCalendarParams",
     "SetClosedPeriodParams",
     "SetOpeningBalancesParams",
     "SetOpeningBalancesParamsLinesItem",
@@ -1327,6 +1349,9 @@ __all__ = [
     "UpdateAccountParams",
     "UpdateAccountingSettingsParams",
     "UpdateAnnualAdjustmentParams",
+    "UpdateAttendanceRotationParams",
+    "UpdateAttendanceShiftParams",
+    "UpdateAttendanceShiftParamsSegmentsItem",
     "UpdateAutomaticEntryParams",
     "UpdateAutomaticEntryParamsLinesItem",
     "UpdateBranchParams",
@@ -1377,6 +1402,7 @@ __all__ = [
     "UpdateMemberParams",
     "UpdatePayrollTaxSettingsParams",
     "UpdatePayrollVacancyParams",
+    "UpdatePrepaidExpenseParams",
     "UpdatePriceListParams",
     "UpdatePriceListParamsItemsItem",
     "UpdateProductParams",
@@ -1560,8 +1586,8 @@ class AttendanceMark(TypedDict):
     """El lugar donde marcó, o null."""
     distance_m: float | None
     """A cuántos metros del lugar estaba, si dio su ubicación; si no, null."""
-    flags: list[Literal["no_location", "far", "imprecise", "remote", "new_device"]]
-    """Notas para revisar (la marca nunca se rechaza por ellas): no_location (no dio su ubicación), far (lejos del lugar), imprecise (ubicación imprecisa), remote (fuera de la sucursal), new_device (un celular nuevo)."""
+    flags: list[Literal["no_location", "far", "imprecise", "remote", "new_device", "offline", "code_time"]]
+    """Notas para revisar (la marca nunca se rechaza por ellas): no_location (no dio su ubicación), far (lejos del lugar), imprecise (ubicación imprecisa), remote (fuera de la sucursal), new_device (un celular nuevo), offline (se hizo sin conexión y llegó después; at es la hora en que se hizo, corregida por el reloj del celular), code_time (sin conexión, con un código del checador de otra hora)."""
     reason: str | None
     """Por qué se agregó, en una corrección o desde la API (el empleado lo ve); null si la hizo él."""
     created_by: str | None
@@ -1583,6 +1609,13 @@ class AttendanceReportEmployeesItemWeeksDisputedItem(TypedDict):
     """Lo que el empleado dijo que no coincide."""
 
 
+class AttendanceReportEmployeesItemDaysItemScheduledSegmentsItem(TypedDict):
+    start: str
+    """Entrada del tramo, HH:MM."""
+    end: str
+    """Salida del tramo, HH:MM (antes de la entrada: al día siguiente)."""
+
+
 class AttendanceReportEmployeesItemDaysItemScheduled(TypedDict):
     start: str
     """Hora de entrada, HH:MM."""
@@ -1590,6 +1623,12 @@ class AttendanceReportEmployeesItemDaysItemScheduled(TypedDict):
     """Hora de salida, HH:MM (antes de la entrada: al día siguiente)."""
     break_minutes: int
     """Minutos de comida que no se pagan."""
+    segments: list[AttendanceReportEmployeesItemDaysItemScheduledSegmentsItem]
+    """Sus tramos: uno, o dos o tres en un turno partido."""
+    break_paid: bool
+    """true: el descanso cuenta como jornada porque no puede salir del lugar (LFT art. 64)."""
+    shift: str | None
+    """El turno (ats_…) de ese día, de su rol o del calendario; null: su horario."""
 
 
 class AttendanceReportEmployeesItemDaysItem(TypedDict):
@@ -1599,6 +1638,8 @@ class AttendanceReportEmployeesItemDaysItem(TypedDict):
     """worked (trabajó), incomplete (falta una marca), absent (falta), rest (descanso), holiday (día festivo), excused (justificado con una nota), upcoming (por venir), before (antes de empezar su registro)."""
     scheduled: AttendanceReportEmployeesItemDaysItemScheduled | None
     """Su horario ese día, o null si descansa."""
+    jornada: Literal["diurna", "nocturna", "mixta"] | None
+    """La jornada de ese día por ley, o null si descansa."""
     worked_minutes: int
     """Minutos trabajados ese día."""
     late_minutes: int
@@ -1683,6 +1724,7 @@ AttendanceReport = TypedDict(
         "overtime_policy": "Literal[\"approval\", \"all\", \"none\"]",
         "ordinary_week_hours": "int",
         "weekly_hours": "int | None",
+        "daily_jornada": "Literal[\"agreed\", \"law\"]",
         "employees": "list[AttendanceReportEmployeesItem]",
     },
 )
@@ -1704,6 +1746,140 @@ class AttendanceOvertime(TypedDict):
     """true: la empresa rechazó las horas extra de ese día."""
     comment: str | None
     """Por qué, o null."""
+
+
+class AttendanceShiftSegmentsItem(TypedDict):
+    start: str
+    """Entrada del tramo, HH:MM."""
+    end: str
+    """Salida del tramo, HH:MM (antes de la entrada: al día siguiente)."""
+
+
+class AttendanceShift(TypedDict):
+    """Un turno de Asistencia › Turnos: a qué hora se entra y se sale, en uno a tres tramos, y su jornada por ley."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["attendance_shift"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    name: str
+    """Su nombre."""
+    color: Literal["teal", "blue", "violet", "amber", "rose", "slate"]
+    """Su color en el calendario."""
+    segments: list[AttendanceShiftSegmentsItem]
+    """Sus tramos: uno, o dos o tres en un turno partido."""
+    break_minutes: int
+    """Minutos de descanso dentro del turno."""
+    break_paid: bool
+    """true: el descanso cuenta como jornada (LFT art. 64)."""
+    minutes: int
+    """Minutos de jornada del turno."""
+    jornada: Literal["diurna", "nocturna", "mixta"]
+    """La jornada por ley (LFT art. 60): diurna (entre 6:00 y 20:00), nocturna (entre 20:00 y 6:00) o mixta (con menos de 3 h 30 min de noche; con más es nocturna). Su máximo es de 8 h, 7 h y 7 h 30 min (art. 61)."""
+    overnight: bool
+    """true: termina al día siguiente."""
+    warnings: list[str]
+    """Lo que dice la ley de este turno: pasa de la jornada del art. 61, o le falta la media hora de descanso del art. 63."""
+    archived: bool
+    """true: archivado, ya no se pone en días ni roles nuevos."""
+
+
+class AttendanceRotation(TypedDict):
+    """Un rol de turnos: turnos y descansos que se repiten en un ciclo (4×4, semana y semana)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["attendance_rotation"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    name: str
+    """Su nombre."""
+    days: list[str | None]
+    """El ciclo en orden: cada día un turno (ats_…) o null para descanso."""
+    week_minutes: int
+    """Minutos a la semana en promedio en el ciclo."""
+    warning: str | None
+    """Si pasan más de seis días de trabajo seguidos sin descanso (LFT art. 69), lo dice; si no, null."""
+    archived: bool
+    """true: archivado, ya no se le pone a nadie más."""
+
+
+class AttendanceCalendarEmployeesItemDaysItemSegmentsItem(TypedDict):
+    start: str
+    """Entrada del tramo, HH:MM."""
+    end: str
+    """Salida del tramo, HH:MM (antes de la entrada: al día siguiente)."""
+
+
+class AttendanceCalendarEmployeesItemDaysItem(TypedDict):
+    date: str
+    """AAAA-MM-DD."""
+    source: Literal["calendar", "rotation", "week"]
+    """De dónde sale: calendar (un cambio puesto en el calendario), rotation (su rol de turnos) o week (su horario de la semana)."""
+    shift: str | None
+    """El turno (ats_…), o null."""
+    start: str | None
+    """Hora de entrada, HH:MM; null si descansa."""
+    end: str | None
+    """Hora de salida, HH:MM, o null."""
+    segments: list[AttendanceCalendarEmployeesItemDaysItemSegmentsItem] | None
+    """Sus tramos, o null si descansa."""
+    minutes: int
+    """Minutos de jornada."""
+    jornada: Literal["diurna", "nocturna", "mixta"] | None
+    """Su jornada por ley (LFT art. 60): diurna, nocturna o mixta; null si descansa."""
+    note: Literal["vacaciones", "incapacidad", "permiso_con_goce", "permiso_sin_goce", "descanso", "festivo", "falta"] | None
+    """La nota del día que puso la empresa, o null."""
+
+
+class AttendanceCalendarEmployeesItem(TypedDict):
+    employee: str
+    """El empleado (emp_…)."""
+    name: str
+    """Su nombre."""
+    number: str | None
+    """Su número de empleado, o null."""
+    rotation: str | None
+    """Su rol de turnos (atr_…), o null."""
+    warning: str | None
+    """Más de seis días de trabajo seguidos sin descanso en el mes (LFT art. 69)."""
+    days: list[AttendanceCalendarEmployeesItemDaysItem]
+    """Cada día del mes."""
+
+
+# El calendario de turnos de un mes, como Nómina › Asistencia › Turnos: el turno de cada empleado cada día y de dónde sale.
+AttendanceCalendar = TypedDict(
+    "AttendanceCalendar",
+    {
+        "object": "Literal[\"attendance_calendar\"]",
+        "livemode": "bool",
+        "issuer": "str",
+        "month": "str",
+        "from": "str",
+        "to": "str",
+        "daily_jornada": "Literal[\"agreed\", \"law\"]",
+        "employees": "list[AttendanceCalendarEmployeesItem]",
+    },
+)
+
+
+class AttendanceCalendarChange(TypedDict):
+    """Lo que cambió en el calendario de turnos."""
+    object: Literal["attendance_calendar_change"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    issuer: str
+    """El emisor (iss_…)."""
+    employees: int
+    """A cuántos empleados."""
+    days: int
+    """Cuántos días a cada uno."""
+    shift: str | None
+    """El turno que se puso (ats_…), o null: descanso o quitado."""
+    cleared: bool
+    """true: se quitó lo del calendario y esos días vuelven a su rol u horario."""
 
 
 class BalanceAutoRecharge(TypedDict):
@@ -8794,7 +8970,7 @@ class JournalEntry(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     issuer: str
     """El emisor."""
-    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal", "bank_identification", "foreign_supplier_operations"]
+    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal", "bank_identification", "foreign_supplier_operations", "prepaid_amortization"]
     """De qué es: invoice (un CFDI de ingreso o egreso), payment_received o payment_made (un pago de un complemento), payroll (un recibo de nómina), employee_expenses (un anticipo, reembolso, devolución o comprobación de viáticos, contra 107.01 «Funcionarios y empleados»), depreciation (la depreciación del mes de los activos fijos), manual (una póliza capturada a mano, o la reversión de una provisión) o asset_disposal (la venta o baja de un activo fijo)."""
     manual_entry: str | None
     """Con type manual: la póliza capturada (mje_…), también en su reversión; null en las demás."""
@@ -8953,6 +9129,49 @@ class AutomaticJournalEntry(TypedDict):
     """Editada: los renglones que arma Fiscalisto hoy para su CFDI."""
     original_changed: bool | None
     """Editada: true si la póliza que arma su CFDI cambió desde que se editó (su cuenta o su categoría), para revisar que la edición siga bien."""
+
+
+class PrepaidExpenseScheduleItem(TypedDict):
+    month: int
+    """Un solo mes, del 1 al 12 (MesIni y MesFin iguales)."""
+    date: str
+    """El último día del mes, AAAA-MM-DD."""
+    amount: float
+    """Importe."""
+    posted: bool
+    """true si su fecha ya pasó."""
+
+
+class PrepaidExpense(TypedDict):
+    """Un gasto pagado por anticipado (NIF C-5): una factura recibida de un seguro, una renta adelantada o una licencia que cubre varios meses. Queda en pagos anticipados y pasa a su gasto al final de cada mes que cubre. Impuestos no cambia."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["prepaid_expense"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (iss_…)."""
+    uuid: str
+    """El UUID de la factura recibida."""
+    active: bool
+    """true si se amortiza; false si se registra como gasto del mes."""
+    kind: Literal["insurance", "rent", "other"] | None
+    """Qué pagó: insurance (seguros y fianzas), rent (rentas) u other."""
+    account: str | None
+    """La cuenta de pagos anticipados (código agrupador 109) a la que va su póliza."""
+    expense_account: str | None
+    """La cuenta de costos o gastos a la que se amortiza."""
+    expense_account_name: str | None
+    """Su nombre en el catálogo."""
+    start_month: str | None
+    """Primer mes que cubre, AAAA-MM."""
+    months: int | None
+    """Cuántos meses cubre, de 1 a 120: una póliza de amortización por mes."""
+    amount: float | None
+    """Pesos que se amortizan en total: lo que su póliza carga a la cuenta 109 (sin el IVA acreditable)."""
+    pending: float | None
+    """Lo que queda en la cuenta 109: las pólizas de los meses que no han terminado."""
+    schedule: list[PrepaidExpenseScheduleItem]
+    """Una póliza de amortización por mes: cargo a su gasto, abono a la cuenta 109. Todas iguales al centavo; la última lleva el redondeo."""
 
 
 class FixedAssetDisposal(TypedDict):
@@ -10557,7 +10776,7 @@ class BooksLogEntry(TypedDict):
     """El emisor."""
     created_at: str
     """Cuándo se hizo el cambio."""
-    subject: Literal["manual_journal_entry", "opening_balances", "account", "chart_of_accounts", "period_close", "consolidation_elimination", "entry_template", "fixed_asset", "invoice_account", "automatic_journal_entry"]
+    subject: Literal["manual_journal_entry", "opening_balances", "account", "chart_of_accounts", "period_close", "consolidation_elimination", "entry_template", "fixed_asset", "invoice_account", "automatic_journal_entry", "prepaid_expense"]
     """Qué cambió: una póliza a mano (manual_journal_entry), los saldos iniciales, una cuenta, el catálogo completo (una importación o una renumeración), el cierre del mes (period_close), una eliminación de consolidación, una póliza modelo o la baja de un activo fijo."""
     subject_id: str | None
     """El id de lo que cambió cuando tiene uno en la API (mje_, cel_, mjt_); null en los demás."""
@@ -11248,7 +11467,7 @@ class GeneralLedgerAccountsItemMovementsItem(TypedDict):
     """Fecha de emisión (Fecha), hora de la Ciudad de México."""
     journal_entry: str
     """La póliza (el mismo id de GET /v1/accounting/journal_entries)."""
-    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal", "bank_identification", "foreign_supplier_operations"]
+    type: Literal["invoice", "payment_received", "payment_made", "payroll", "employee_expenses", "depreciation", "manual", "asset_disposal", "bank_identification", "foreign_supplier_operations", "prepaid_amortization"]
     """Tipo de comprobante (TipoDeComprobante): I ingreso, E egreso, P pago, T traslado, N nómina."""
     description: str
     """Descripción."""
@@ -14949,6 +15168,28 @@ class CustomerGroupList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[CustomerGroup]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class AttendanceShiftList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[AttendanceShift]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class AttendanceRotationList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[AttendanceRotation]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -20762,6 +21003,111 @@ class ApproveAttendanceOvertimeParams(TypedDict):
     """Por qué (obligatorio al rechazar; el empleado lo ve)."""
 
 
+class ListAttendanceShiftsParams(TypedDict):
+    """Los parámetros de GET /v1/attendance/shifts."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateAttendanceShiftParamsSegmentsItem(TypedDict):
+    start: str
+    """Entrada del tramo, HH:MM."""
+    end: str
+    """Salida del tramo, HH:MM. Antes de la entrada: termina al día siguiente."""
+
+
+class CreateAttendanceShiftParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    name: str
+    """Su nombre, como «Nocturno»."""
+    segments: list[CreateAttendanceShiftParamsSegmentsItem]
+    """Sus tramos: uno, o dos o tres para un turno partido (el tiempo entre tramos no es jornada). Un tramo puede pasar de la medianoche (22:00 a 06:00)."""
+    break_minutes: NotRequired[int]
+    """Minutos de descanso dentro de un turno de un tramo. Por omisión 0."""
+    break_paid: NotRequired[bool]
+    """El descanso cuenta como jornada: el trabajador no puede salir del lugar (LFT art. 64)."""
+    color: NotRequired[Literal["teal", "blue", "violet", "amber", "rose", "slate"]]
+    """Su color en el calendario. Por omisión teal."""
+
+
+class UpdateAttendanceShiftParamsSegmentsItem(TypedDict):
+    start: str
+    """Entrada del tramo, HH:MM."""
+    end: str
+    """Salida del tramo, HH:MM. Antes de la entrada: termina al día siguiente."""
+
+
+class UpdateAttendanceShiftParams(TypedDict):
+    name: NotRequired[str]
+    """Su nombre, como «Nocturno»."""
+    segments: NotRequired[list[UpdateAttendanceShiftParamsSegmentsItem]]
+    """Sus tramos: uno, o dos o tres para un turno partido (el tiempo entre tramos no es jornada). Un tramo puede pasar de la medianoche (22:00 a 06:00)."""
+    break_minutes: NotRequired[int]
+    """Minutos de descanso dentro de un turno de un tramo. Por omisión 0."""
+    break_paid: NotRequired[bool]
+    """El descanso cuenta como jornada: el trabajador no puede salir del lugar (LFT art. 64)."""
+    color: NotRequired[Literal["teal", "blue", "violet", "amber", "rose", "slate"]]
+    """Su color en el calendario. Por omisión teal."""
+    archived: NotRequired[bool]
+    """true lo archiva: ya no se puede poner en días ni roles nuevos; los días que ya lo tienen lo conservan."""
+
+
+class ListAttendanceRotationsParams(TypedDict):
+    """Los parámetros de GET /v1/attendance/rotations."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class CreateAttendanceRotationParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    name: str
+    """Su nombre, como «4×4»."""
+    days: list[str | None]
+    """El ciclo en orden, de 1 a 56 días: cada uno un turno (ats_…) o null para descanso. Al terminar vuelve a empezar."""
+
+
+class UpdateAttendanceRotationParams(TypedDict):
+    name: NotRequired[str]
+    """Su nombre, como «4×4»."""
+    days: NotRequired[list[str | None]]
+    """El ciclo en orden, de 1 a 56 días: cada uno un turno (ats_…) o null para descanso. Al terminar vuelve a empezar."""
+    archived: NotRequired[bool]
+    """true lo archiva: quien lo tiene lo sigue usando; ya no se le puede poner a nadie más."""
+
+
+class GetAttendanceCalendarParams(TypedDict):
+    """Los parámetros de GET /v1/attendance/calendar."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    month: str
+    """El mes, AAAA-MM."""
+    employee: NotRequired[str]
+    """Solo este empleado (emp_…)."""
+
+
+class SetAttendanceCalendarParams(TypedDict):
+    employees: list[str]
+    """Los empleados (emp_…), todos del mismo emisor."""
+    dates: list[str]
+    """Los días, AAAA-MM-DD (hasta 62)."""
+    shift: str | None
+    """El turno (ats_…) que tienen esos días, o null para descanso. Gana sobre su rol y su horario."""
+    clear: NotRequired[bool]
+    """true quita lo que se puso en el calendario: esos días vuelven a su rol de turnos o a su horario de la semana (shift se ignora)."""
+    comment: NotRequired[str]
+    """Por qué (un cambio de turno, un descanso extra)."""
+
+
 class CreateExpensePersonParams(TypedDict):
     issuer: NotRequired[str]
     """El emisor (iss_…). Por omisión, su único emisor."""
@@ -22700,6 +23046,31 @@ class RevertAutomaticEntryParams(TypedDict):
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 
 
+class GetPrepaidExpenseParams(TypedDict):
+    """Los parámetros de GET /v1/accounting/prepaid_expenses/{uuid}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
+class UpdatePrepaidExpenseParams(TypedDict):
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Por omisión, su único emisor."""
+    kind: NotRequired[Literal["insurance", "rent", "other"]]
+    """Qué pagó: insurance (109.01 Seguros y fianzas), rent (109.05 Rentas) u other (109.23 Otros pagos anticipados). Sin él, el que tiene, o el que sugiere su categoría."""
+    months: int
+    """Meses que cubre, de 1 a 120."""
+    start_month: NotRequired[str]
+    """Primer mes que cubre, AAAA-MM: el de la factura o después. Sin él, el que tiene, o el de la factura."""
+    expense_account: NotRequired[str]
+    """Número de la cuenta de costos o gastos (500, 600 o 700) a la que se amortiza. Sin él, la que tiene, o la de su categoría."""
+
+
+class RemovePrepaidExpenseParams(TypedDict):
+    """Los parámetros de DELETE /v1/accounting/prepaid_expenses/{uuid}."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+
+
 class ImportManualEntriesParamsEntriesItemLinesItem(TypedDict):
     account: str
     """El número de la cuenta en su catálogo (GET /v1/accounting/accounts), por ejemplo 205-06."""
@@ -23077,7 +23448,7 @@ class RenumberAccountsParams(TypedDict):
 ListBooksLogParams = TypedDict(
     "ListBooksLogParams",
     {
-        "subject": "NotRequired[Literal[\"manual_journal_entry\", \"opening_balances\", \"account\", \"chart_of_accounts\", \"period_close\", \"consolidation_elimination\", \"entry_template\", \"fixed_asset\", \"invoice_account\", \"automatic_journal_entry\"]]",
+        "subject": "NotRequired[Literal[\"manual_journal_entry\", \"opening_balances\", \"account\", \"chart_of_accounts\", \"period_close\", \"consolidation_elimination\", \"entry_template\", \"fixed_asset\", \"invoice_account\", \"automatic_journal_entry\", \"prepaid_expense\"]]",
         "from": "NotRequired[str]",
         "to": "NotRequired[str]",
         "limit": "NotRequired[int]",
