@@ -1724,7 +1724,7 @@ class BalancePlanTimbres(TypedDict):
 
 class BalancePacksItem(TypedDict):
     type: Literal["welcome", "purchase", "referral"]
-    """welcome: los timbres de bienvenida (no vencen); purchase: un paquete comprado o una recarga automática; referral: los de una recomendación."""
+    """welcome: los timbres de bienvenida (no vencen): los 10 de cada empresa y, en las cuentas abiertas antes del 15 de noviembre de 2026, los 20 de regalo de la API, en paquetes aparte; purchase: un paquete comprado o una recarga automática; referral: los de una recomendación."""
     timbres: int
     """Timbres del paquete."""
     remaining: int
@@ -1744,15 +1744,15 @@ class Balance(TypedDict):
     available: int
     """Timbres de sus paquetes, en total: un solo saldo para la API y la app, comprados en Desarrolladores o en Plan y pagos."""
     unlimited: bool
-    """true si la cuenta timbra sin usar timbres."""
+    """Obsoleto: siempre false. Solo las cuentas internas de Fiscalisto timbran sin usar timbres. Se conserva por compatibilidad; no lo use."""
     low_balance_at: int
     """Con esta cantidad o menos llega balance.low (y otra vez al acabarse). Se elige en Desarrolladores › Timbres y pagos."""
     auto_recharge: BalanceAutoRecharge | None
-    """La recarga automática con la tarjeta guardada, o null si está apagada."""
+    """La recarga automática con la tarjeta guardada, o null si está apagada (se enciende en Desarrolladores › Timbres y pagos)."""
     use_plan_timbres: bool
-    """Siempre true: los RFC de la empresa (type own) timbran primero con los timbres del mes de su plan y después con `available`, los paquetes de su único saldo (comprados en Desarrolladores o en Plan y pagos). Los emisores conectados usan solo `available`. Se conserva por compatibilidad."""
+    """Obsoleto: siempre true. Los RFC de la empresa (type own) timbran primero con los timbres del mes de su plan y después con `available`, los paquetes de su único saldo (comprados en Desarrolladores o en Plan y pagos). Los emisores conectados usan solo `available`. Se conserva por compatibilidad."""
     plan_timbres: BalancePlanTimbres | None
-    """Los timbres del mes del plan de su empresa, que los RFC de la empresa (type own) usan antes que `available`; no se suman a `available`. null si la empresa no tiene un plan de paga con timbres al mes (Gratis o una prueba sin pagar) o en modo de prueba."""
+    """Los timbres del mes del plan de su empresa, que los RFC de la empresa (type own) usan antes que `available`; no se suman a `available`. null si la empresa no tiene un plan de paga con timbres al mes (Gratis o una prueba sin pagar). Con llaves de prueba trae los mismos que en producción, como `available`."""
     packs: list[BalancePacksItem]
     """Los paquetes con timbres, el que vence antes primero (en ese orden se usan)."""
 
