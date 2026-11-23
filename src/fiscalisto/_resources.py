@@ -368,6 +368,7 @@ if TYPE_CHECKING:
         ListSatRefreshesParams,
         ListSatRetentionsParams,
         ListSatReviewsParams,
+        ListSettingChangesParams,
         ListStockAdjustmentsParams,
         ListStockMovementsParams,
         ListStoreConnectionsParams,
@@ -505,6 +506,7 @@ if TYPE_CHECKING:
         SetReviewPeersParams,
         SetTrainingParticipantsParams,
         SetTrainingResultsParams,
+        SettingChange,
         SignEfirmaParams,
         StartProductionOrderParams,
         StockAdjustment,
@@ -1402,6 +1404,51 @@ class ScheduleSettingsResource:
         """
         result: ScheduleSettings = self._client.request(
             "POST", "/v1/schedule_settings", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
+class SettingChangesResource:
+    """Emisores: fiscalisto.setting_changes."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def list(
+        self,
+        params: ListSettingChangesParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[SettingChange]:
+        """Listar los cambios a los ajustes
+
+        Como Ajustes › Cambios en la app: cada ajuste de la empresa que alguien cambió (por ahora la cobranza automática y los horarios), de qué a qué, quién, por dónde y cuándo, del más reciente al más antiguo. Valen para toda la empresa: cualquiera de sus emisores lee los mismos.
+
+        GET /v1/setting_changes
+        https://fiscalisto.com/docs/api/referencia/emisores/list-setting-changes
+        """
+        return self._client.list("/v1/setting_changes", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def undo(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> SettingChange:
+        """Deshacer un cambio a un ajuste
+
+        Regresa el ajuste al valor que tenía antes de ese cambio, como «Deshacer» en la app, y devuelve el cambio nuevo que eso hizo (que también se puede deshacer). Solo el cambio más reciente de cada ajuste y mientras conserve el valor que dejó: si no, 400 setting_change_not_undoable.
+
+        POST /v1/setting_changes/{id}/undo
+        https://fiscalisto.com/docs/api/referencia/emisores/undo-setting-change
+        """
+        result: SettingChange = self._client.request(
+            "POST", f"/v1/setting_changes/{_path(id)}/undo", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -12754,6 +12801,11 @@ class FiscalistoApi(Core):
     def schedule_settings(self) -> ScheduleSettingsResource:
         """Emisores."""
         return ScheduleSettingsResource(self)
+
+    @cached_property
+    def setting_changes(self) -> SettingChangesResource:
+        """Emisores."""
+        return SettingChangesResource(self)
 
     @cached_property
     def invoices(self) -> InvoicesResource:

@@ -880,6 +880,7 @@ __all__ = [
     "ListSatRefreshesParams",
     "ListSatRetentionsParams",
     "ListSatReviewsParams",
+    "ListSettingChangesParams",
     "ListStockAdjustmentsParams",
     "ListStockMovementsParams",
     "ListStoreConnectionsParams",
@@ -1273,6 +1274,8 @@ __all__ = [
     "SetTrainingParticipantsParams",
     "SetTrainingResultsParams",
     "SetTrainingResultsParamsResultsItem",
+    "SettingChange",
+    "SettingChangeList",
     "SignEfirmaParams",
     "StartProductionOrderParams",
     "StartProductionOrderParamsComponentsItem",
@@ -13560,6 +13563,36 @@ class ScheduleSettings(TypedDict):
     """A qué hora (0 a 23) del lunes sale el resumen semanal."""
 
 
+class SettingChange(TypedDict):
+    """Un cambio a un ajuste de la empresa (Ajustes › Cambios): cuál (setting, su id, y name, su nombre en la app), de qué a qué como lo escribe la app (before, after), quién (changed_by: su nombre; null si fue con la API o su cuenta ya no existe) y por dónde (source: app, api o mcp), cuándo, si ya se deshizo (undone) y si todavía se puede deshacer (undoable: es el cambio más reciente de ese ajuste)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["setting_change"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    issuer: str
+    """El emisor (iss_…)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    setting: str
+    """El ajuste que cambió, por su id (cobranza.dias-credito, horarios.vigencia-cotizaciones…)."""
+    name: str
+    """Nombre."""
+    before: str
+    """Lo que tenía antes, como lo escribe la app («30 días», «Encendido»)."""
+    after: str
+    """Lo que quedó, como lo escribe la app."""
+    changed_by: str | None
+    """Quién lo cambió, por su nombre; «La API» si fue con una llave, null si su cuenta ya no existe."""
+    source: Literal["app", "api", "mcp"]
+    """Por dónde: app (la app), api (la API) o mcp (un asistente como ChatGPT o Claude)."""
+    created: str
+    """Cuándo se cambió."""
+    undone: str | None
+    """Cuándo se deshizo; null si no."""
+    undoable: bool
+    """Si todavía se puede deshacer (POST /v1/setting_changes/{id}/undo): es el cambio más reciente de ese ajuste y no se ha deshecho."""
+
+
 class WebhookDelivery(TypedDict):
     """Lo que pasó con un evento en un webhook: su último intento, cuántos lleva y cuándo va el siguiente."""
     object: Literal["webhook_delivery"]
@@ -14805,6 +14838,17 @@ class IssuerList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[Issuer]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class SettingChangeList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[SettingChange]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -17115,6 +17159,18 @@ class UpdateScheduleSettingsParams(TypedDict):
     """A qué hora (0 a 23) corre la revisión diaria de hallazgos."""
     digest_hour: NotRequired[int]
     """A qué hora (0 a 23) del lunes sale el resumen semanal por correo."""
+
+
+class ListSettingChangesParams(TypedDict):
+    """Los parámetros de GET /v1/setting_changes."""
+    limit: NotRequired[int]
+    """Cuántos por página, de 1 a 100. Por omisión 10."""
+    starting_after: NotRequired[str]
+    """El id del último de la página anterior, para la siguiente."""
+    issuer: NotRequired[str]
+    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    setting: NotRequired[str]
+    """Solo los de este ajuste, por ejemplo cobranza.dias-credito."""
 
 
 class UploadIssuerLogoParams(TypedDict):
