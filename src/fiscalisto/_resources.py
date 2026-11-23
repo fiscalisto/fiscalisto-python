@@ -494,6 +494,9 @@ if TYPE_CHECKING:
         SavePayrollDepartmentParams,
         ScheduleSettings,
         ScheduleSupplierInvoiceParams,
+        SearchCustomersParams,
+        SearchInvoicesParams,
+        SearchProductsParams,
         SelfInvoicing,
         SendInvoiceParams,
         SendQuoteParams,
@@ -1518,6 +1521,23 @@ class InvoicesResource:
         )
         return result
 
+    def search(
+        self,
+        params: SearchInvoicesParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[Invoice]:
+        """Buscar facturas
+
+        Con un lenguaje de búsqueda, como el de Stripe: campo:'valor' (igual, sin importar mayúsculas), campo~'valor' (contiene, 3 caracteres o más), >, >=, < y <= en números y fechas, -campo:'valor' (no) y campo:null; hasta 10 cláusulas unidas con AND o con OR. Se busca por customer (RFC), customer_name, uuid, series, folio, total, status (valid, pending, canceled, rejected o processing) y created. Los más recientes primero, por páginas como las listas. Una búsqueda que no se entiende responde search_query_invalid diciendo dónde.
+
+        GET /v1/invoices/search
+        https://fiscalisto.com/docs/api/referencia/facturas/search-invoices
+        """
+        return self._client.list("/v1/invoices/search", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
     def get(
         self,
         id: str,
@@ -1818,6 +1838,23 @@ class CustomersResource:
         https://fiscalisto.com/docs/api/referencia/clientes/list-customers
         """
         return self._client.list("/v1/customers", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def search(
+        self,
+        params: SearchCustomersParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[Customer]:
+        """Buscar clientes
+
+        Con un lenguaje de búsqueda, como el de Stripe: campo:'valor' (igual, sin importar mayúsculas), campo~'valor' (contiene, 3 caracteres o más), >, >=, < y <= en números y fechas, -campo:'valor' (no) y campo:null; hasta 10 cláusulas unidas con AND o con OR. Se busca por tax_id, legal_name, email, zip, tax_system, use y created. Los más recientes primero, por páginas como las listas. Una búsqueda que no se entiende responde search_query_invalid diciendo dónde.
+
+        GET /v1/customers/search
+        https://fiscalisto.com/docs/api/referencia/clientes/search-customers
+        """
+        return self._client.list("/v1/customers/search", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -7499,6 +7536,23 @@ class ProductsResource:
         https://fiscalisto.com/docs/api/referencia/productos/list-products
         """
         return self._client.list("/v1/products", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def search(
+        self,
+        params: SearchProductsParams,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[Product]:
+        """Buscar productos
+
+        Con un lenguaje de búsqueda, como el de Stripe: campo:'valor' (igual, sin importar mayúsculas), campo~'valor' (contiene, 3 caracteres o más), >, >=, < y <= en números y fechas, -campo:'valor' (no) y campo:null; hasta 10 cláusulas unidas con AND o con OR. Se busca por name, description, sku, product_key, unit_key, unit_price y created. Los más recientes primero, por páginas como las listas. Una búsqueda que no se entiende responde search_query_invalid diciendo dónde.
+
+        GET /v1/products/search
+        https://fiscalisto.com/docs/api/referencia/productos/search-products
+        """
+        return self._client.list("/v1/products/search", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,

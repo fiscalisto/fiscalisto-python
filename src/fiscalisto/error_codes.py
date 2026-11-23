@@ -197,6 +197,9 @@ class ErrorCode:
     INVOICE_REJECTED: Final = "invoice_rejected"
     """El PAC o el SAT no la aceptaron. sat_code trae su código (CFDI40xxx), message qué corregir y doc_url su explicación en [Rechazos del SAT](/docs/api/rechazos-del-sat). La factura queda como rejected; no se usó ningún timbre."""
 
+    IP_NOT_ALLOWED: Final = "ip_not_allowed"
+    """La llave solo funciona desde algunas IP (Solo desde estas IP, en Desarrolladores › Llaves) y la solicitud llegó desde otra. El mensaje dice desde cuál."""
+
     ISSUER_ARCHIVED: Final = "issuer_archived"
     """El emisor está archivado: ya no timbra. Sus comprobantes se pueden consultar y cancelar."""
 
@@ -232,6 +235,9 @@ class ErrorCode:
 
     KEY_READ_ONLY: Final = "key_read_only"
     """La llave es de solo lectura: puede hacer GET, validar RFC, revisar listas del SAT y calcular recibos de nómina, pero nada que timbre, cancele, envíe o cambie datos."""
+
+    KEY_RESOURCE_DENIED: Final = "key_resource_denied"
+    """La llave tiene permisos por recurso y no tiene el que pide la ruta: lectura para un GET (o un POST que solo revisa), escritura para lo que cambia algo. El mensaje dice qué recurso y qué permiso."""
 
     KEY_RESTRICTED: Final = "key_restricted"
     """La llave está limitada a algunos emisores y la solicitud toca otro (o crea uno nuevo, o usa algo de toda la cuenta como webhooks)."""
@@ -380,6 +386,9 @@ class ErrorCode:
     SAT_UNAVAILABLE: Final = "sat_unavailable"
     """El SAT no contestó o no dejó entrar con la e.firma del emisor. El mensaje trae lo que dijo; no se usó ningún timbre. Reintente en 10 minutos."""
 
+    SEARCH_QUERY_INVALID: Final = "search_query_invalid"
+    """La búsqueda de query no se entiende: un campo por el que no se busca, un operador que no va con ese campo, una comilla sin cerrar, AND y OR juntos o más de 10 cláusulas. El mensaje dice dónde."""
+
     SETTING_CHANGE_NOT_UNDOABLE: Final = "setting_change_not_undoable"
     """Ese cambio ya no se puede deshacer: ya se deshizo, el ajuste cambió otra vez después (deshaga primero el más reciente) o ya no tiene el valor que dejó ese cambio."""
 
@@ -522,6 +531,7 @@ ErrorCodeValue = Literal[
     "invoice_not_markable",
     "invoice_not_stamped",
     "invoice_rejected",
+    "ip_not_allowed",
     "issuer_archived",
     "issuer_creation_limit",
     "issuer_exists",
@@ -534,6 +544,7 @@ ErrorCodeValue = Literal[
     "issuer_required",
     "key_in_sandbox",
     "key_read_only",
+    "key_resource_denied",
     "key_restricted",
     "livemode_mismatch",
     "method_not_allowed",
@@ -583,6 +594,7 @@ ErrorCodeValue = Literal[
     "sat_refresh_too_soon",
     "sat_request_rejected",
     "sat_unavailable",
+    "search_query_invalid",
     "setting_change_not_undoable",
     "stamp_rate_limit",
     "store_already_connected",
