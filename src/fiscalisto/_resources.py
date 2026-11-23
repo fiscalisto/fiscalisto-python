@@ -10347,7 +10347,7 @@ class PrepaidExpensesResource:
     def update(
         self,
         uuid: str,
-        params: UpdatePrepaidExpenseParams,
+        params: UpdatePrepaidExpenseParams | None = None,
         *,
         idempotency_key: str | None = None,
         timeout: float | None = None,
