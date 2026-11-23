@@ -6169,6 +6169,7 @@ SatDownload = TypedDict(
         "status": "Literal[\"processing\", \"completed\", \"failed\"]",
         "new_invoices": "int | None",
         "error": "str | None",
+        "error_cause": "Literal[\"sat_unavailable\", \"sat_refused\", \"account\", \"internal\"] | None",
         "created_at": "str | None",
         "completed_at": "str | None",
     },
@@ -6540,6 +6541,8 @@ class SatDeclaration(TypedDict):
     """Qué archivos ya tiene: pdf (GET …/pdf), receipt (GET …/receipt), payment_record (GET …/payment_record, cuando el SAT la tiene como pagada) y financial_statements (GET …/financial_statements, solo en la anual de persona moral)."""
     files_error: str | None
     """Por qué falta un archivo, como lo dijo el SAT (por ejemplo «No se puede generar el archivo»). Se vuelve a pedir en la siguiente consulta."""
+    files_error_cause: Literal["sat_unavailable", "sat_refused", "account", "internal"] | None
+    """De quién es la falla de files_error, para decidir sin leer el texto. sat_unavailable: el servicio del SAT no está disponible o no respondió (es del SAT; se vuelve a pedir solo). sat_refused: el SAT respondió que no, con su motivo en el mensaje. account: le toca a su cliente (e.firma vencida, sin autorización, su plan). internal: ni lo uno ni lo otro; se vuelve a intentar. null si no falló."""
     created_at: str | None
     """Cuándo se trajo por primera vez."""
     updated_at: str | None
@@ -7884,6 +7887,8 @@ class ComplianceOpinion(TypedDict):
     """Cuándo se consultó por última vez, o null."""
     last_error: str | None
     """Por qué falló la última consulta, o null."""
+    last_error_cause: Literal["sat_unavailable", "sat_refused", "account", "internal"] | None
+    """De quién es la falla de last_error, para decidir sin leer el texto. sat_unavailable: el servicio del SAT no está disponible o no respondió (es del SAT; se vuelve a pedir solo). sat_refused: el SAT respondió que no, con su motivo en el mensaje. account: le toca a su cliente (e.firma vencida, sin autorización, su plan). internal: ni lo uno ni lo otro; se vuelve a intentar. null si no falló."""
 
 
 class TaxStatusCertificateTaxSystemsItem(TypedDict):
