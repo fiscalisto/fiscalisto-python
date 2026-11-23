@@ -970,6 +970,9 @@ __all__ = [
     "PayrollProvisionPosted",
     "PayrollReceiptPreview",
     "PayrollReceiptPreviewDeductionsItem",
+    "PayrollReceiptPreviewExplanationItem",
+    "PayrollReceiptPreviewExplanationItemLawItem",
+    "PayrollReceiptPreviewExplanationItemStepsItem",
     "PayrollReceiptPreviewImssDays",
     "PayrollReceiptPreviewIsr",
     "PayrollReceiptPreviewIsrAdjustment",
@@ -2923,6 +2926,41 @@ class PayrollReceiptPreviewTotals(TypedDict):
     """Neto a pagar al empleado."""
 
 
+class PayrollReceiptPreviewExplanationItemStepsItem(TypedDict):
+    label: str
+    """Qué cifra es: la base, la tasa, los días…"""
+    value: float
+    """La cifra, en la unidad de unit."""
+    unit: Literal["mxn", "pct", "days"]
+    """mxn: pesos; pct: tasa (0.01125 es 1.125%); days: días."""
+    formula: NotRequired[str]
+    """La operación con las cifras del recibo."""
+
+
+class PayrollReceiptPreviewExplanationItemLawItem(TypedDict):
+    ref: str
+    """Ley y artículo: «LISR art. 96», «LSS art. 147»."""
+    says: str
+    """Lo que dice que importa aquí."""
+
+
+class PayrollReceiptPreviewExplanationItem(TypedDict):
+    id: str
+    """isr, subsidio, isr_ajuste (ajuste mensual del subsidio) o imss_eym_excedente, imss_eym_dinero, imss_gmp, imss_iv, imss_cv (cada cuota obrera del IMSS)."""
+    kind: Literal["isr", "subsidio", "imss"]
+    """isr: el impuesto; subsidio: subsidio para el empleo; imss: una cuota obrera."""
+    concept: str
+    """La línea como la nombra el recibo."""
+    amount: float
+    """Lo que el recibo tiene en esa línea."""
+    summary: str
+    """Qué es la línea y por qué salió así, en una frase."""
+    steps: list[PayrollReceiptPreviewExplanationItemStepsItem]
+    """La base, la tasa o el renglón de la tarifa y la operación, en orden; el último paso es el importe."""
+    law: list[PayrollReceiptPreviewExplanationItemLawItem]
+    """El fundamento de cada cifra."""
+
+
 class PayrollReceiptPreview(TypedDict):
     """El recibo como se timbraría: percepciones, deducciones (ISR, IMSS), otros pagos (subsidio) y el neto."""
     object: Literal["payroll_receipt_preview"]
@@ -2953,6 +2991,8 @@ class PayrollReceiptPreview(TypedDict):
     """El cálculo del ISR del periodo: base, tarifa, subsidio y resultado."""
     totals: PayrollReceiptPreviewTotals
     """Totales: percepciones, deducciones, otros pagos y el neto a pagar."""
+    explanation: list[PayrollReceiptPreviewExplanationItem]
+    """Cómo se calculó cada línea de ISR, subsidio para el empleo e IMSS: base, tasa o renglón de la tarifa, la operación y el artículo de la ley. Son las mismas cifras del recibo, no un recálculo."""
 
 
 class ExtraordinaryPayrollReceiptPreviewPeriod(TypedDict):
