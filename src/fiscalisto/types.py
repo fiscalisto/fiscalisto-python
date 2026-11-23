@@ -905,6 +905,7 @@ __all__ = [
     "OrderRulesParams",
     "PausePayoutsParams",
     "PayableInvoice",
+    "PayableInvoiceCreditNotesToReviewItem",
     "PayableInvoiceEarlyPayment",
     "PayableInvoiceList",
     "PayableInvoicePaymentHold",
@@ -12453,6 +12454,19 @@ class PayableInvoiceEarlyPayment(TypedDict):
     """Lo del descuento que su nota de crédito aún no cubre. Ya está fuera de amount_due."""
 
 
+class PayableInvoiceCreditNotesToReviewItem(TypedDict):
+    uuid: str
+    """Folio fiscal de la nota de crédito."""
+    series_folio: str
+    """Serie y folio de la nota."""
+    date: str
+    """Su fecha (AAAA-MM-DD)."""
+    amount: float
+    """Lo que descuenta, en la moneda de la factura."""
+    declined: bool
+    """true: alguien eligió «No restarla» en la app (se le pide al proveedor que la cancele); false: espera a que alguien la acepte."""
+
+
 class PayableInvoicePaymentHold(TypedDict):
     rule: str
     """La regla que lo retuvo, por su nombre."""
@@ -12496,6 +12510,8 @@ class PayableInvoice(TypedDict):
     """Pronto pago del portal de proveedores. Aceptado, amount_due ya es el total menos el descuento hasta que llega la nota de crédito del proveedor. null: no tiene."""
     in_payout: str | None
     """El pago abierto (pyo_…) en el que ya está, o null. Si se dividió en varios pagos, el primero: un pago nuevo solo toma lo que esos no cubren."""
+    credit_notes_to_review: list[PayableInvoiceCreditNotesToReviewItem]
+    """Con «Notas de crédito relacionadas con la factura: Esperar a que alguien las acepte» en Configurar pagos: las notas que el proveedor relacionó con esta factura y que todavía no se restan de amount_due. Se aceptan en la app (**Aceptar nota de crédito**) o aplicándolas en un pago de esta factura (`credit_notes` de la línea). Vacío si la empresa las resta solas."""
     payment_hold: PayableInvoicePaymentHold | None
     """Si una regla de Ajustes › Reglas retuvo su pago: no se paga hasta que alguien con permiso lo suelte en la app («Soltar el pago»). null: no está retenido."""
     warnings: list[str]
