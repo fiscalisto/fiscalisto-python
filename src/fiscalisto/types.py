@@ -22396,6 +22396,8 @@ class GetGeneralLedgerParams(TypedDict):
     """El último mes (AAAA-MM), hasta 12 meses después; por omisión, from_month."""
     account: NotRequired[str]
     """Solo esta cuenta, por su número en el catálogo."""
+    grouping_code: NotRequired[str]
+    """Solo las cuentas de este código agrupador del SAT (102 trae 102.01, 102.02…), como el renglón de un estado financiero. Con account no se usa."""
     issuer: NotRequired[str]
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
 
