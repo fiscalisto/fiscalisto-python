@@ -7193,10 +7193,10 @@ class RuleVersion(TypedDict):
 
 class FindingRecord(TypedDict):
     """En qué registro está."""
-    type: Literal["purchase_order", "payout", "supplier", "poliza", "account", "bank_movement", "expense_report", "expense_ticket", "product", "customer"]
-    """purchase_order, payout, supplier, poliza (la contabilidad de un mes), account (una cuenta en un mes), bank_movement, expense_report (una comprobación de viáticos), expense_ticket (un ticket de compra), product (la existencia de un producto) o customer (un cliente)."""
+    type: Literal["purchase_order", "payout", "supplier", "poliza", "account", "bank_movement", "expense_report", "expense_ticket", "product", "customer", "employee"]
+    """purchase_order, payout, supplier, poliza (la contabilidad de un mes), account (una cuenta en un mes), bank_movement, expense_report (una comprobación de viáticos), expense_ticket (un ticket de compra), product (la existencia de un producto), customer (un cliente) o employee (un empleado)."""
     id: str | None
-    """Su id en la API: el pago (pyo_…), la comprobación (exr_…), el ticket (rct_…), el producto (prd_…), el cliente (cus_…) o el RFC del proveedor; null si no tiene."""
+    """Su id en la API: el pago (pyo_…), la comprobación (exr_…), el ticket (rct_…), el producto (prd_…), el cliente (cus_…), el empleado (emp_…) o el RFC del proveedor; null si no tiene."""
     reference: str
     """Cómo lo nombra Fiscalisto: el número de la orden, el RFC, «RFC:AAAA-MM» un mes de contabilidad, «RFC:AAAA-MM:cuenta» una cuenta."""
     description: str
@@ -7213,8 +7213,8 @@ class Finding(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     issuer: str
     """El emisor (iss_…)."""
-    area: Literal["purchase_orders", "payouts", "suppliers", "accounting", "bank", "expense_reports", "purchase_receipts", "inventory", "customers"] | None
-    """purchase_orders (órdenes de compra), payouts (pagos a proveedores), suppliers (proveedores), accounting (contabilidad), bank (movimientos del banco), expense_reports (comprobaciones de viáticos), purchase_receipts (tickets de compra), inventory (inventario) o customers (clientes y cobranza)."""
+    area: Literal["purchase_orders", "payouts", "suppliers", "accounting", "bank", "expense_reports", "purchase_receipts", "inventory", "customers", "payroll"] | None
+    """purchase_orders (órdenes de compra), payouts (pagos a proveedores), suppliers (proveedores), accounting (contabilidad), bank (movimientos del banco), expense_reports (comprobaciones de viáticos), purchase_receipts (tickets de compra), inventory (inventario), customers (clientes y cobranza) o payroll (nómina)."""
     record: FindingRecord
     """En qué registro está."""
     code: str
@@ -20719,8 +20719,8 @@ class ListFindingsParams(TypedDict):
     """Cuántos por página, de 1 a 100. Por omisión 10."""
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
-    area: NotRequired[Literal["purchase_orders", "payouts", "suppliers", "accounting", "bank", "expense_reports", "purchase_receipts", "inventory", "customers"]]
-    """Solo los de un área: purchase_orders, payouts, suppliers, accounting, bank, expense_reports, purchase_receipts, inventory o customers."""
+    area: NotRequired[Literal["purchase_orders", "payouts", "suppliers", "accounting", "bank", "expense_reports", "purchase_receipts", "inventory", "customers", "payroll"]]
+    """Solo los de un área: purchase_orders, payouts, suppliers, accounting, bank, expense_reports, purchase_receipts, inventory, customers o payroll."""
     status: NotRequired[Literal["open", "reviewed", "resolved", "all"]]
     """open (por omisión: sin revisar), reviewed (revisados), resolved (ya no aplican) o all."""
     severity: NotRequired[Literal["critical", "warning", "info"]]
