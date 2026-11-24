@@ -6282,6 +6282,8 @@ class SatInvoice(TypedDict):
     """Solo recibidas, marcadas con mark_paid, en la app o por una regla: without_complement true en una PPD pagada sin complemento de pago (el SAT la sigue viendo sin pagar); false en una PUE, donde solo se anotó de dónde salió el dinero."""
     cash_confirmation: Literal["pending", "confirmed"] | None
     """Solo en una PUE recibida pagada en efectivo cuando la empresa pide confirmar estos pagos (Ajustes › Pagos en efectivo): pending hasta que alguien anote de dónde salió el dinero (mark_paid con money_source), confirmed después. Null en las demás. Sus impuestos no cambian."""
+    cash_confirmed_at: str | None
+    """Cuándo alguien confirmó el pago en efectivo (cash_confirmation confirmed), en hora del centro de México. Null en las demás."""
     cost_center: str | None
     """Su centro de costo (ccn_…), o null. Póngalo o cámbielo con POST /v1/sat_invoices/{id}."""
     account: str | None
