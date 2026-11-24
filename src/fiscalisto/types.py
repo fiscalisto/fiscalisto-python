@@ -2842,15 +2842,15 @@ class Product(TypedDict):
     taxability: str
     """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
     iva: str
-    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    """Tasa de IVA trasladado: "0.16" (por omisión), "0.08" (región fronteriza), "0" o "exento". También como número (0.16, 16), con seis decimales ("0.160000") o en por ciento ("16%"); la respuesta la da como "0.16"."""
     ieps: float | None
     """IEPS trasladado: tasa (0.265…) o cuota en pesos por unidad, según ieps_factor."""
     ieps_factor: str | None
     """Tasa o Cuota (TipoFactor del IEPS)."""
     iva_retention: float
-    """Tasa de IVA retenido (por ejemplo 0.106667, dos terceras partes del 16%)."""
+    """Tasa de IVA retenido, en fracción (por ejemplo 0.106667, dos terceras partes del 16%)."""
     isr_retention: float
-    """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    """Tasa de ISR retenido, en fracción (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     local_taxes: list[ProductLocalTaxesItem]
     """Impuestos locales (complemento implocal): traslados y retenciones estatales."""
     hydrocarbon: ProductHydrocarbon | None
@@ -3648,7 +3648,7 @@ class Advance(TypedDict):
     total: float
     """Total en la moneda del comprobante (Total)."""
     iva: str
-    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    """Tasa de IVA trasladado: "0.16" (por omisión), "0.08" (región fronteriza), "0" o "exento". También como número (0.16, 16), con seis decimales ("0.160000") o en por ciento ("16%"); la respuesta la da como "0.16"."""
     currency: str
     """Moneda, clave ISO 4217 de c_Moneda (MXN, USD, EUR…). Por omisión MXN."""
 
@@ -8638,7 +8638,7 @@ class TicketLinesItem(TypedDict):
     unit_key: str
     """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
     iva: str | None
-    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    """Tasa de IVA trasladado: "0.16" (por omisión), "0.08" (región fronteriza), "0" o "exento". También como número (0.16, 16), con seis decimales ("0.160000") o en por ciento ("16%"); la respuesta la da como "0.16"."""
     local_taxes: list[TicketLinesItemLocalTaxesItem]
     """Sus impuestos locales (los de su producto o los que mandó), incluidos en su total."""
     ieps: float | None
@@ -16076,7 +16076,7 @@ class InvoiceCreateItemsItem(TypedDict):
     taxability: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
     """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
-    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    """Tasa de IVA trasladado: "0.16" (por omisión), "0.08" (región fronteriza), "0" o "exento". También como número (0.16, 16), con seis decimales ("0.160000") o en por ciento ("16%"); la respuesta la da como "0.16"."""
     ieps: NotRequired[float]
     """IEPS trasladado: tasa (0.265…) o cuota en pesos por unidad, según ieps_factor."""
     ieps_factor: NotRequired[Literal["Tasa", "Cuota"]]
@@ -16084,9 +16084,9 @@ class InvoiceCreateItemsItem(TypedDict):
     ieps_units: NotRequired[float]
     """Unidades de IEPS a cuota (litros, cigarros…), si no son la cantidad."""
     iva_retention: NotRequired[float]
-    """Tasa de IVA retenido (por ejemplo 0.106667, dos terceras partes del 16%)."""
+    """Tasa de IVA retenido, en fracción (por ejemplo 0.106667, dos terceras partes del 16%)."""
     isr_retention: NotRequired[float]
-    """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    """Tasa de ISR retenido, en fracción (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     predial: NotRequired[list[str]]
     """Números de cuenta predial (CuentaPredial) en arrendamiento."""
     pedimentos: NotRequired[list[str]]
@@ -17767,7 +17767,7 @@ class CreateAdvanceParams(TypedDict):
     amount: float
     """Lo que pagó el cliente, con IVA incluido."""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
-    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    """Tasa de IVA trasladado: "0.16" (por omisión), "0.08" (región fronteriza), "0" o "exento". También como número (0.16, 16), con seis decimales ("0.160000") o en por ciento ("16%"); la respuesta la da como "0.16"."""
     payment_form: str
     """Forma de pago (FormaPago), clave de c_FormaPago: 01 efectivo, 03 transferencia, 04 tarjeta de crédito, 28 débito, 99 por definir… Obligatoria con PUE; con PPD es 99."""
     currency: NotRequired[str]
@@ -21699,15 +21699,15 @@ class CreateProductParams(TypedDict):
     taxability: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
     """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
-    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    """Tasa de IVA trasladado: "0.16" (por omisión), "0.08" (región fronteriza), "0" o "exento". También como número (0.16, 16), con seis decimales ("0.160000") o en por ciento ("16%"); la respuesta la da como "0.16"."""
     ieps: NotRequired[float | None]
     """IEPS trasladado: tasa (0.265…) o cuota en pesos por unidad, según ieps_factor."""
     ieps_factor: NotRequired[Literal["Tasa", "Cuota"]]
     """Tasa o Cuota (TipoFactor del IEPS)."""
     iva_retention: NotRequired[float]
-    """Tasa de IVA retenido (por ejemplo 0.106667, dos terceras partes del 16%)."""
+    """Tasa de IVA retenido, en fracción (por ejemplo 0.106667, dos terceras partes del 16%)."""
     isr_retention: NotRequired[float]
-    """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    """Tasa de ISR retenido, en fracción (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     local_taxes: NotRequired[list[CreateProductParamsLocalTaxesItem]]
     """Impuestos locales que lleva, como el ISH 3% de hospedaje: van en cada factura con él, sobre sus conceptos."""
     hydrocarbon: NotRequired[CreateProductParamsHydrocarbon | None]
@@ -21796,15 +21796,15 @@ class UpdateProductParams(TypedDict):
     taxability: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
     """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
-    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    """Tasa de IVA trasladado: "0.16" (por omisión), "0.08" (región fronteriza), "0" o "exento". También como número (0.16, 16), con seis decimales ("0.160000") o en por ciento ("16%"); la respuesta la da como "0.16"."""
     ieps: NotRequired[float | None]
     """IEPS trasladado: tasa (0.265…) o cuota en pesos por unidad, según ieps_factor."""
     ieps_factor: NotRequired[Literal["Tasa", "Cuota"]]
     """Tasa o Cuota (TipoFactor del IEPS)."""
     iva_retention: NotRequired[float]
-    """Tasa de IVA retenido (por ejemplo 0.106667, dos terceras partes del 16%)."""
+    """Tasa de IVA retenido, en fracción (por ejemplo 0.106667, dos terceras partes del 16%)."""
     isr_retention: NotRequired[float]
-    """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    """Tasa de ISR retenido, en fracción (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     local_taxes: NotRequired[list[UpdateProductParamsLocalTaxesItem]]
     """Impuestos locales que lleva, como el ISH 3% de hospedaje: van en cada factura con él, sobre sus conceptos."""
     hydrocarbon: NotRequired[UpdateProductParamsHydrocarbon | None]
@@ -22646,7 +22646,7 @@ class CreateTicketParamsLinesItem(TypedDict):
     unit_key: NotRequired[str]
     """c_ClaveUnidad. Por omisión, la de la clave del producto."""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
-    """Tasa de IVA incluida en su total. Por omisión 0.16."""
+    """Tasa de IVA incluida en su total. Por omisión 0.16; también como número (0.16 o 16)."""
     local_taxes: NotRequired[list[CreateTicketParamsLinesItemLocalTaxesItem]]
     """Impuestos locales incluidos en su total, como el ISH 3.5% de hospedaje, con `product_key` (un producto lleva los suyos). Cada uno se calcula sobre la base de este concepto y la factura los suma por nombre y tasa en el complemento de impuestos locales."""
     ieps: NotRequired[float | None]
@@ -22683,7 +22683,7 @@ class CreateTicketParams(TypedDict):
     unit_key: NotRequired[str]
     """c_ClaveUnidad. Por omisión, la de la clave del producto."""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
-    """Tasa de IVA incluida en el total. Por omisión 0.16."""
+    """Tasa de IVA incluida en el total. Por omisión 0.16; también como número (0.16 o 16)."""
     local_taxes: NotRequired[list[CreateTicketParamsLocalTaxesItem]]
     """Impuestos locales incluidos en su total, como el ISH 3.5% de hospedaje, con `product_key` (un producto lleva los suyos). Cada uno se calcula sobre la base de este concepto y la factura los suma por nombre y tasa en el complemento de impuestos locales."""
     ieps: NotRequired[float | None]
@@ -23994,7 +23994,7 @@ class CreateStoreConnectionParamsSettings(TypedDict):
     unit_key: NotRequired[str]
     """c_ClaveUnidad. Por omisión, la de la clave del producto."""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
-    """Tasa de IVA incluida en los precios. Por omisión 0.16."""
+    """Tasa de IVA incluida en los precios. Por omisión 0.16; también como número (0.16 o 16)."""
     description: NotRequired[str]
     """El concepto de cada ticket. Por omisión, el pedido y sus artículos («Pedido 1001: Playera (2), Gorra»)."""
     folio_prefix: NotRequired[str]
@@ -24057,7 +24057,7 @@ class UpdateStoreConnectionParamsSettings(TypedDict):
     unit_key: NotRequired[str]
     """c_ClaveUnidad. Por omisión, la de la clave del producto."""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
-    """Tasa de IVA incluida en los precios. Por omisión 0.16."""
+    """Tasa de IVA incluida en los precios. Por omisión 0.16; también como número (0.16 o 16)."""
     description: NotRequired[str]
     """El concepto de cada ticket. Por omisión, el pedido y sus artículos («Pedido 1001: Playera (2), Gorra»)."""
     folio_prefix: NotRequired[str]
@@ -24282,7 +24282,7 @@ class CreateQuoteParamsItemsItem(TypedDict):
     taxability: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
     """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
-    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    """Tasa de IVA trasladado: "0.16" (por omisión), "0.08" (región fronteriza), "0" o "exento". También como número (0.16, 16), con seis decimales ("0.160000") o en por ciento ("16%"); la respuesta la da como "0.16"."""
     ieps: NotRequired[float]
     """IEPS trasladado: tasa (0.265…) o cuota en pesos por unidad, según ieps_factor."""
     ieps_factor: NotRequired[Literal["Tasa", "Cuota"]]
@@ -24290,9 +24290,9 @@ class CreateQuoteParamsItemsItem(TypedDict):
     ieps_units: NotRequired[float]
     """Unidades de IEPS a cuota (litros, cigarros…), si no son la cantidad."""
     iva_retention: NotRequired[float]
-    """Tasa de IVA retenido (por ejemplo 0.106667, dos terceras partes del 16%)."""
+    """Tasa de IVA retenido, en fracción (por ejemplo 0.106667, dos terceras partes del 16%)."""
     isr_retention: NotRequired[float]
-    """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    """Tasa de ISR retenido, en fracción (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     predial: NotRequired[list[str]]
     """Números de cuenta predial (CuentaPredial) en arrendamiento."""
     pedimentos: NotRequired[list[str]]
@@ -24474,7 +24474,7 @@ class UpdateQuoteParamsItemsItem(TypedDict):
     taxability: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
     """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
-    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    """Tasa de IVA trasladado: "0.16" (por omisión), "0.08" (región fronteriza), "0" o "exento". También como número (0.16, 16), con seis decimales ("0.160000") o en por ciento ("16%"); la respuesta la da como "0.16"."""
     ieps: NotRequired[float]
     """IEPS trasladado: tasa (0.265…) o cuota en pesos por unidad, según ieps_factor."""
     ieps_factor: NotRequired[Literal["Tasa", "Cuota"]]
@@ -24482,9 +24482,9 @@ class UpdateQuoteParamsItemsItem(TypedDict):
     ieps_units: NotRequired[float]
     """Unidades de IEPS a cuota (litros, cigarros…), si no son la cantidad."""
     iva_retention: NotRequired[float]
-    """Tasa de IVA retenido (por ejemplo 0.106667, dos terceras partes del 16%)."""
+    """Tasa de IVA retenido, en fracción (por ejemplo 0.106667, dos terceras partes del 16%)."""
     isr_retention: NotRequired[float]
-    """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    """Tasa de ISR retenido, en fracción (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     predial: NotRequired[list[str]]
     """Números de cuenta predial (CuentaPredial) en arrendamiento."""
     pedimentos: NotRequired[list[str]]
@@ -24666,7 +24666,7 @@ class CreateSalesOrderParamsItemsItem(TypedDict):
     taxability: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
     """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
-    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    """Tasa de IVA trasladado: "0.16" (por omisión), "0.08" (región fronteriza), "0" o "exento". También como número (0.16, 16), con seis decimales ("0.160000") o en por ciento ("16%"); la respuesta la da como "0.16"."""
     ieps: NotRequired[float]
     """IEPS trasladado: tasa (0.265…) o cuota en pesos por unidad, según ieps_factor."""
     ieps_factor: NotRequired[Literal["Tasa", "Cuota"]]
@@ -24674,9 +24674,9 @@ class CreateSalesOrderParamsItemsItem(TypedDict):
     ieps_units: NotRequired[float]
     """Unidades de IEPS a cuota (litros, cigarros…), si no son la cantidad."""
     iva_retention: NotRequired[float]
-    """Tasa de IVA retenido (por ejemplo 0.106667, dos terceras partes del 16%)."""
+    """Tasa de IVA retenido, en fracción (por ejemplo 0.106667, dos terceras partes del 16%)."""
     isr_retention: NotRequired[float]
-    """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    """Tasa de ISR retenido, en fracción (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     predial: NotRequired[list[str]]
     """Números de cuenta predial (CuentaPredial) en arrendamiento."""
     pedimentos: NotRequired[list[str]]
@@ -24867,7 +24867,7 @@ class UpdateSalesOrderParamsItemsItem(TypedDict):
     taxability: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
     """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
     iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
-    """Tasa de IVA trasladado: 0.16 (por omisión), 0.08 (región fronteriza), 0 o exento."""
+    """Tasa de IVA trasladado: "0.16" (por omisión), "0.08" (región fronteriza), "0" o "exento". También como número (0.16, 16), con seis decimales ("0.160000") o en por ciento ("16%"); la respuesta la da como "0.16"."""
     ieps: NotRequired[float]
     """IEPS trasladado: tasa (0.265…) o cuota en pesos por unidad, según ieps_factor."""
     ieps_factor: NotRequired[Literal["Tasa", "Cuota"]]
@@ -24875,9 +24875,9 @@ class UpdateSalesOrderParamsItemsItem(TypedDict):
     ieps_units: NotRequired[float]
     """Unidades de IEPS a cuota (litros, cigarros…), si no son la cantidad."""
     iva_retention: NotRequired[float]
-    """Tasa de IVA retenido (por ejemplo 0.106667, dos terceras partes del 16%)."""
+    """Tasa de IVA retenido, en fracción (por ejemplo 0.106667, dos terceras partes del 16%)."""
     isr_retention: NotRequired[float]
-    """Tasa de ISR retenido (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    """Tasa de ISR retenido, en fracción (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
     predial: NotRequired[list[str]]
     """Números de cuenta predial (CuentaPredial) en arrendamiento."""
     pedimentos: NotRequired[list[str]]
