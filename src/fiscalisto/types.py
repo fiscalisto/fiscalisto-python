@@ -9002,8 +9002,8 @@ class SelfInvoicing(TypedDict):
     """month: se factura hasta el fin del mes de la venta. days: hasta window_days días después."""
     window_days: int
     """Días para facturar con window: days."""
-    global_periodicity: Literal["01", "02", "03", "04"]
-    """Cada cuánto se timbra sola la factura global con lo que nadie facturó: 01 diaria, 02 semanal, 03 quincenal, 04 mensual."""
+    global_periodicity: Literal["01", "02", "04"]
+    """Cada cuánto se timbra sola la factura global con lo que nadie facturó: 01 diaria, 02 semanal o 04 mensual (regla 2.7.1.21 de la RMF 2026)."""
     global_invoice: Literal["auto", "off"]
     """auto: los tickets que nadie facturó van solos a la factura global de su periodo. off: Fiscalisto no hace factura global de estos tickets (la hace usted en otro lado)."""
     ask_total: bool
@@ -17083,7 +17083,7 @@ class InvoiceCreateComercioExterior(TypedDict):
 class InvoiceCreateGlobal(TypedDict):
     """Factura global a público en general (InformacionGlobal): periodicidad, meses y año."""
     periodicity: str
-    """Periodicidad (Periodicidad), c_Periodicidad: 01 diario, 02 semanal, 03 quincenal, 04 mensual, 05 bimestral."""
+    """Periodicidad (Periodicidad), c_Periodicidad: 01 diario, 02 semanal o 04 mensual; 05 bimestral solo en el Régimen de Incorporación Fiscal (621). La regla 2.7.1.21 de la RMF 2026 no permite 03 quincenal."""
     months: str
     """Meses (Meses), c_Meses: 01 a 12, o 13 a 18 bimestres."""
     year: int
@@ -18540,7 +18540,7 @@ class UpdateInvoiceParamsComercioExterior(TypedDict):
 class UpdateInvoiceParamsGlobal(TypedDict):
     """Factura global a público en general (InformacionGlobal): periodicidad, meses y año."""
     periodicity: str
-    """Periodicidad (Periodicidad), c_Periodicidad: 01 diario, 02 semanal, 03 quincenal, 04 mensual, 05 bimestral."""
+    """Periodicidad (Periodicidad), c_Periodicidad: 01 diario, 02 semanal o 04 mensual; 05 bimestral solo en el Régimen de Incorporación Fiscal (621). La regla 2.7.1.21 de la RMF 2026 no permite 03 quincenal."""
     months: str
     """Meses (Meses), c_Meses: 01 a 12, o 13 a 18 bimestres."""
     year: int
@@ -24497,8 +24497,8 @@ class UpdateSelfInvoicingParams(TypedDict):
     """Hasta cuándo se puede facturar un ticket: `month`, hasta el fin del mes de la venta (lo usual ante el SAT); `days`, `window_days` días después."""
     window_days: NotRequired[int]
     """Días para facturar con `window: days`."""
-    global_periodicity: NotRequired[Literal["01", "02", "03", "04"]]
-    """c_Periodicidad de la factura global con los tickets que nadie facturó: 01 diaria, 02 semanal, 03 quincenal, 04 mensual."""
+    global_periodicity: NotRequired[Literal["01", "02", "04"]]
+    """c_Periodicidad de la factura global con los tickets que nadie facturó: 01 diaria, 02 semanal o 04 mensual (regla 2.7.1.21 de la RMF 2026; 03 quincenal no)."""
     global_invoice: NotRequired[Literal["auto", "off"]]
     """`auto` (por omisión): los tickets que nadie facturó van solos a la factura global al terminar su periodo. `off`: Fiscalisto no hace factura global de los tickets (por ejemplo, porque su punto de venta ya la hace); quedan pendientes y usted responde por ellos ante el SAT."""
     ask_total: NotRequired[bool]
