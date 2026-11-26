@@ -174,6 +174,36 @@ class RequestTest(unittest.TestCase):
             f.balance.get()
         self.assertEqual((caught.exception.code, waits), ("rate_limit", []))
 
+    def test_waits_ratelimit_reset_without_retry_after(self) -> None:
+        busy = {"error": {"type": "rate_limit_error", "code": "rate_limited"}}
+        fake = Fake(answer(429, busy, ratelimit_reset="4"), answer(200, {"object": "balance"}))
+        f, waits = client(fake)
+        f.balance.get()
+        self.assertEqual(waits, [4.0])
+
+    def test_warns_once_when_the_key_expires_within_a_week(self) -> None:
+        import time
+        import warnings
+
+        soon = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() + 3 * 86400))
+        later = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() + 30 * 86400))
+        ok = {"object": "balance"}
+        with warnings.catch_warnings(record=True) as seen:
+            warnings.simplefilter("always")
+            f, _ = client(Fake(answer(200, ok, fiscalisto_key_expires_at=later)))
+            f.balance.get()
+            self.assertEqual(seen, [])
+            f, _ = client(
+                Fake(
+                    answer(200, ok, fiscalisto_key_expires_at=soon),
+                    answer(200, ok, fiscalisto_key_expires_at=soon),
+                )
+            )
+            f.balance.get()
+            f.balance.get()
+            self.assertEqual(len(seen), 1)
+            self.assertIn(soon, str(seen[0].message))
+
     def test_waits_for_a_stamp_in_progress(self) -> None:
         fake = Fake(
             answer(409, {"error": {"type": "idempotency_error", "code": "request_in_progress"}}),

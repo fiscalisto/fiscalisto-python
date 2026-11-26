@@ -23,6 +23,7 @@ if TYPE_CHECKING:
         AnnualAdjustment,
         AnnualReturn,
         AnnualReturnCarryForward,
+        ApiKey,
         ApplyAdvanceParams,
         ApplyChartTemplateParams,
         ApplyEntryTemplateParams,
@@ -86,6 +87,7 @@ if TYPE_CHECKING:
         CostCenterResults,
         CostOfSales,
         CreateAdvanceParams,
+        CreateApiKeyParams,
         CreateAttendanceMarkParams,
         CreateAttendanceRotationParams,
         CreateAttendanceShiftParams,
@@ -301,6 +303,7 @@ if TYPE_CHECKING:
         LedgerBankAccount,
         LedgerBankAccountList,
         ListAdvancesParams,
+        ListApiKeysParams,
         ListAttendanceRotationsParams,
         ListAttendanceShiftsParams,
         ListBankMovementsParams,
@@ -357,8 +360,10 @@ if TYPE_CHECKING:
         ListReviewCyclesParams,
         ListRolesParams,
         ListRuleRunsParams,
+        ListRuleVersionsParams,
         ListRulesParams,
         ListSalesOrdersParams,
+        ListSandboxesParams,
         ListSatDeclarationsParams,
         ListSatDownloadsParams,
         ListSatFindingCounterpartiesParams,
@@ -401,7 +406,7 @@ if TYPE_CHECKING:
         OpeningBalances,
         OrderRulesParams,
         PausePayoutsParams,
-        PayableInvoiceList,
+        PayableInvoice,
         PayeeAccountList,
         Payout,
         PayoutMandateList,
@@ -461,6 +466,7 @@ if TYPE_CHECKING:
         ReviewResult,
         Role,
         RoleList,
+        RollApiKeyParams,
         RollWebhookSecretParams,
         Rule,
         RuleBacktest,
@@ -539,6 +545,7 @@ if TYPE_CHECKING:
         UpdateAccountParams,
         UpdateAccountingSettingsParams,
         UpdateAnnualAdjustmentParams,
+        UpdateApiKeyParams,
         UpdateAttendanceRotationParams,
         UpdateAttendanceShiftParams,
         UpdateAutomaticEntryParams,
@@ -604,7 +611,6 @@ if TYPE_CHECKING:
         UploadCertificateParams,
         UploadIssuerLogoParams,
         VacationRequest,
-        VacationRequestList,
         ValidateTaxIdParams,
         VariableSalary,
         VatRefund,
@@ -728,6 +734,7 @@ class SandboxesResource:
 
     def list(
         self,
+        params: ListSandboxesParams | None = None,
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
@@ -741,7 +748,7 @@ class SandboxesResource:
         https://fiscalisto.com/docs/api/referencia/entornos-de-prueba/list-sandboxes
         """
         result: SandboxList = self._client.request(
-            "GET", "/v1/sandboxes", timeout=timeout, max_retries=max_retries, expand=expand
+            "GET", "/v1/sandboxes", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1531,7 +1538,7 @@ class InvoicesResource:
     ) -> ListObject[Invoice]:
         """Buscar facturas
 
-        Con un lenguaje de búsqueda, como el de Stripe: campo:'valor' (igual, sin importar mayúsculas), campo~'valor' (contiene, 3 caracteres o más), >, >=, < y <= en números y fechas, -campo:'valor' (no) y campo:null; hasta 10 cláusulas unidas con AND o con OR. Se busca por customer (RFC), customer_name, uuid, series, folio, total, status (valid, pending, canceled, rejected o processing) y created. Los más recientes primero, por páginas como las listas. Una búsqueda que no se entiende responde search_query_invalid diciendo dónde.
+        Con un lenguaje de búsqueda, como el de Stripe: campo:'valor' (igual, sin importar mayúsculas), campo~'valor' (contiene, 3 caracteres o más), >, >=, < y <= en números y fechas, -campo:'valor' (no) y campo:null; hasta 10 cláusulas unidas con AND o con OR. Se busca por customer (RFC), customer_name, uuid, series, folio, total, status (valid, pending, canceled, rejected o processing), created y metadata (metadata['order_id']:'123', con la llave entre corchetes). Los más recientes primero, por páginas como las listas. Una búsqueda que no se entiende responde search_query_invalid diciendo dónde.
 
         GET /v1/invoices/search
         https://fiscalisto.com/docs/api/referencia/facturas/search-invoices
@@ -1549,7 +1556,7 @@ class InvoicesResource:
     ) -> Invoice:
         """Ver una factura
 
-        Por su id (inv_…) o por su folio fiscal (UUID).
+        Por su id (inv_…) o por su folio fiscal (UUID). Un borrador responde con status draft; ya timbrado, su id responde con la factura timbrada (que tiene su propio id).
 
         GET /v1/invoices/{id}
         https://fiscalisto.com/docs/api/referencia/facturas/get-invoice
@@ -1569,15 +1576,56 @@ class InvoicesResource:
         max_retries: int | None = None,
         expand: Sequence[str] | None = None,
     ) -> Invoice:
-        """Actualizar una factura
+        """Actualizar una factura o un borrador
 
-        Lo que se puede cambiar de una factura timbrada sin tocar el CFDI: su centro de costo (cost_center, o null para quitárselo; los complementos de pago y los traslados no llevan) y la nota para el cliente del PDF (notes, o null para quitarla; el XML no cambia y el siguiente PDF y correo ya la llevan).
+        Un borrador (status draft) se cambia completo: mande la factura entera, con el mismo cuerpo y las mismas revisiones que POST /v1/invoices (un error responde invoice_invalid; los avisos vienen en warnings); metadata que no mande se queda como estaba. Si esperaba la aprobación de un administrador en Fiscalisto, la solicitud se retira. De una factura timbrada solo cambia lo que no toca el CFDI: su centro de costo (cost_center, o null para quitárselo; los complementos de pago y los traslados no llevan) y la nota para el cliente del PDF (notes, o null para quitarla; el XML no cambia y el siguiente PDF y correo ya la llevan).
 
         POST /v1/invoices/{id}
         https://fiscalisto.com/docs/api/referencia/facturas/update-invoice
         """
         result: Invoice = self._client.request(
             "POST", f"/v1/invoices/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def delete(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Borrar un borrador
+
+        Borra un borrador (status draft), hecho con la API o en Fiscalisto. Una factura timbrada no se borra: responde invoice_not_draft; cancélela con POST /v1/invoices/{id}/cancel.
+
+        DELETE /v1/invoices/{id}
+        https://fiscalisto.com/docs/api/referencia/facturas/delete-invoice
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/invoices/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def stamp(
+        self,
+        id: str,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Invoice:
+        """Timbrar un borrador
+
+        Timbra un borrador tal como está guardado (no lleva cuerpo; cámbielo antes con POST /v1/invoices/{id}), con las mismas revisiones y respuestas que POST /v1/invoices: 201 timbrada, o 202 en processing si el PAC tarda. Pide Idempotency-Key; además, un borrador se timbra una sola vez aunque lo timbren a la vez desde la API y desde Fiscalisto. Ya timbrado, responde con esa factura. Uno que espera la aprobación de un administrador responde draft_awaiting_approval.
+
+        POST /v1/invoices/{id}/stamp
+        https://fiscalisto.com/docs/api/referencia/facturas/stamp-invoice
+        """
+        result: Invoice = self._client.request(
+            "POST", f"/v1/invoices/{_path(id)}/stamp", idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -1849,7 +1897,7 @@ class CustomersResource:
     ) -> ListObject[Customer]:
         """Buscar clientes
 
-        Con un lenguaje de búsqueda, como el de Stripe: campo:'valor' (igual, sin importar mayúsculas), campo~'valor' (contiene, 3 caracteres o más), >, >=, < y <= en números y fechas, -campo:'valor' (no) y campo:null; hasta 10 cláusulas unidas con AND o con OR. Se busca por tax_id, legal_name, email, zip, tax_system, use y created. Los más recientes primero, por páginas como las listas. Una búsqueda que no se entiende responde search_query_invalid diciendo dónde.
+        Con un lenguaje de búsqueda, como el de Stripe: campo:'valor' (igual, sin importar mayúsculas), campo~'valor' (contiene, 3 caracteres o más), >, >=, < y <= en números y fechas, -campo:'valor' (no) y campo:null; hasta 10 cláusulas unidas con AND o con OR. Se busca por tax_id, legal_name, email, zip, tax_system, use, created y metadata (metadata['order_id']:'123', con la llave entre corchetes). Los más recientes primero, por páginas como las listas. Una búsqueda que no se entiende responde search_query_invalid diciendo dónde.
 
         GET /v1/customers/search
         https://fiscalisto.com/docs/api/referencia/clientes/search-customers
@@ -3006,7 +3054,7 @@ class VacationRequestsResource:
         timeout: float | None = None,
         max_retries: int | None = None,
         expand: Sequence[str] | None = None,
-    ) -> VacationRequestList:
+    ) -> ListObject[VacationRequest]:
         """Listar solicitudes de vacaciones
 
         Los días que los empleados pidieron desde su enlace, las más recientes primero.
@@ -3014,10 +3062,7 @@ class VacationRequestsResource:
         GET /v1/vacation_requests
         https://fiscalisto.com/docs/api/referencia/nomina/list-vacation-requests
         """
-        result: VacationRequestList = self._client.request(
-            "GET", "/v1/vacation_requests", query=params, timeout=timeout, max_retries=max_retries, expand=expand
-        )
-        return result
+        return self._client.list("/v1/vacation_requests", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
     def get(
         self,
@@ -4733,7 +4778,7 @@ class TrainingCoursesResource:
     ) -> TrainingCourseDeleted:
         """Borrar un curso de capacitación
 
-        Lo borra si nadie tiene su constancia; si alguien la tiene, lo cancela (cancelled true), porque las copias se conservan a disposición de la STPS (artículo 26, fracción III).
+        Lo borra si nadie tiene su constancia; si alguien la tiene, lo cancela (canceled true), porque las copias se conservan a disposición de la STPS (artículo 26, fracción III).
 
         DELETE /v1/training_courses/{id}
         https://fiscalisto.com/docs/api/referencia/nomina/delete-training-course
@@ -5986,6 +6031,7 @@ class RulesResource:
     def list_versions(
         self,
         id: str,
+        params: ListRuleVersionsParams | None = None,
         *,
         timeout: float | None = None,
         max_retries: int | None = None,
@@ -5999,7 +6045,7 @@ class RulesResource:
         https://fiscalisto.com/docs/api/referencia/reglas/list-rule-versions
         """
         result: RuleVersionList = self._client.request(
-            "GET", f"/v1/rules/{_path(id)}/versions", timeout=timeout, max_retries=max_retries, expand=expand
+            "GET", f"/v1/rules/{_path(id)}/versions", query=params, timeout=timeout, max_retries=max_retries, expand=expand
         )
         return result
 
@@ -7547,7 +7593,7 @@ class ProductsResource:
     ) -> ListObject[Product]:
         """Buscar productos
 
-        Con un lenguaje de búsqueda, como el de Stripe: campo:'valor' (igual, sin importar mayúsculas), campo~'valor' (contiene, 3 caracteres o más), >, >=, < y <= en números y fechas, -campo:'valor' (no) y campo:null; hasta 10 cláusulas unidas con AND o con OR. Se busca por name, description, sku, product_key, unit_key, unit_price y created. Los más recientes primero, por páginas como las listas. Una búsqueda que no se entiende responde search_query_invalid diciendo dónde.
+        Con un lenguaje de búsqueda, como el de Stripe: campo:'valor' (igual, sin importar mayúsculas), campo~'valor' (contiene, 3 caracteres o más), >, >=, < y <= en números y fechas, -campo:'valor' (no) y campo:null; hasta 10 cláusulas unidas con AND o con OR. Se busca por name, description, sku, product_key, unit_key, unit_price, created y metadata (metadata['order_id']:'123', con la llave entre corchetes). Los más recientes primero, por páginas como las listas. Una búsqueda que no se entiende responde search_query_invalid diciendo dónde.
 
         GET /v1/products/search
         https://fiscalisto.com/docs/api/referencia/productos/search-products
@@ -8310,7 +8356,7 @@ class ProductionOrdersResource:
     ) -> ProductionOrder:
         """Cancelar una orden de producción
 
-        Los componentes regresan a su almacén y lo producido sale (status cancelled). Una ya cancelada: 400 inventory_refused.
+        Los componentes regresan a su almacén y lo producido sale (status canceled). Una ya cancelada: 400 inventory_refused.
 
         POST /v1/production_orders/{id}/cancel
         https://fiscalisto.com/docs/api/referencia/inventario/cancel-production-order
@@ -9245,7 +9291,7 @@ class PayableInvoicesResource:
         timeout: float | None = None,
         max_retries: int | None = None,
         expand: Sequence[str] | None = None,
-    ) -> PayableInvoiceList:
+    ) -> ListObject[PayableInvoice]:
         """Listar lo que falta por pagar
 
         Las facturas recibidas con algo por pagar, como Pagos › Por pagar, las más recientes primero; con uuid, esas facturas (pagadas o no). Lo pagado cuenta complementos, notas de crédito, pagos de Fiscalisto y pagos registrados a mano. Si el emisor no paga con Fintoc, 400 payouts_not_enabled.
@@ -9253,10 +9299,7 @@ class PayableInvoicesResource:
         GET /v1/payable_invoices
         https://fiscalisto.com/docs/api/referencia/pagos-a-proveedores/list-payable-invoices
         """
-        result: PayableInvoiceList = self._client.request(
-            "GET", "/v1/payable_invoices", query=params, timeout=timeout, max_retries=max_retries, expand=expand
-        )
-        return result
+        return self._client.list("/v1/payable_invoices", params, timeout=timeout, max_retries=max_retries, expand=expand)
 
 
 class PayoutsResource:
@@ -10044,7 +10087,7 @@ class AccountingResource:
     ) -> bytes:
         """Descargar la contabilidad electrónica
 
-        El ZIP del mes para el Buzón Tributario: el catálogo (CT) y la balanza (BN, o BC si es complementaria), cada uno en su ZIP con el nombre que espera el SAT, en el formato 1.3 del Anexo 24. Con journal_request, también las pólizas (PL), que se entregan cuando el SAT las pide. Con month AAAA-13, la balanza de comprobación ajustada al cierre del ejercicio (regla 2.8.1.6 RMF): solo la balanza, con los saldos finales de diciembre como saldos iniciales y, con closing_entry, la póliza de cierre.
+        El ZIP del mes para el Buzón Tributario: el catálogo (CT) y la balanza (BN, o BC si es complementaria), cada uno en su ZIP con el nombre que espera el SAT, en el formato 1.3 del Anexo 24. Con journal_request, también las pólizas (PL), que se entregan cuando el SAT las pide. Con month AAAA-13, la balanza de comprobación ajustada al cierre del ejercicio (regla 2.8.1.6 RMF), con los saldos finales de diciembre como saldos iniciales y, con closing_entry, la póliza de cierre, y el catálogo como mes 12 (se envía con ella si no cambió en el ejercicio, fr. I); sin pólizas.
 
         GET /v1/accounting/electronic_accounting
         https://fiscalisto.com/docs/api/referencia/contabilidad/get-electronic-accounting
@@ -12561,6 +12604,135 @@ class SalesOrdersResource:
         return result
 
 
+class ApiKeysResource:
+    """Llaves de API: fiscalisto.api_keys."""
+
+    def __init__(self, client: Core) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateApiKeyParams,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ApiKey:
+        """Crear una llave
+
+        Una llave nueva con permisos por recurso, para dar a cada uno de sus clientes (o a cada servidor) la suya. La respuesta trae la llave completa (secret) una sola vez. Nunca tiene más que la llave que la crea: el mismo modo y entorno de prueba, en cada recurso como mucho su acceso, dentro de sus emisores y sus IP, y vence antes o al mismo tiempo. Una llave de producción solo la crea otra de producción. Hasta 30 por hora por cuenta.
+
+        POST /v1/api_keys
+        https://fiscalisto.com/docs/api/referencia/llaves-de-api/create-api-key
+        """
+        result: ApiKey = self._client.request(
+            "POST", "/v1/api_keys", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def list(
+        self,
+        params: ListApiKeysParams | None = None,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ListObject[ApiKey]:
+        """Listar llaves
+
+        Las llaves vigentes del modo que la llave puede manejar (las que no tienen más que ella), la más nueva primero. Sin el secreto. Hasta 50 por modo.
+
+        GET /v1/api_keys
+        https://fiscalisto.com/docs/api/referencia/llaves-de-api/list-api-keys
+        """
+        return self._client.list("/v1/api_keys", params, timeout=timeout, max_retries=max_retries, expand=expand)
+
+    def get(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ApiKey:
+        """Ver una llave
+
+        Sus permisos, emisores, IP, vencimiento y último uso. El secreto solo viene al crearla o cambiarla.
+
+        GET /v1/api_keys/{id}
+        https://fiscalisto.com/docs/api/referencia/llaves-de-api/get-api-key
+        """
+        result: ApiKey = self._client.request(
+            "GET", f"/v1/api_keys/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def update(
+        self,
+        id: str,
+        params: UpdateApiKeyParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ApiKey:
+        """Actualizar una llave
+
+        Cambia su nombre, sus permisos, sus emisores o sus IP, con el mismo secreto. Solo cambia lo que mande, con los mismos límites que al crearla. Su vencimiento no se cambia.
+
+        POST /v1/api_keys/{id}
+        https://fiscalisto.com/docs/api/referencia/llaves-de-api/update-api-key
+        """
+        result: ApiKey = self._client.request(
+            "POST", f"/v1/api_keys/{_path(id)}", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def revoke(
+        self,
+        id: str,
+        *,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> Deleted:
+        """Revocar una llave
+
+        Deja de funcionar en ese momento. No se puede deshacer.
+
+        DELETE /v1/api_keys/{id}
+        https://fiscalisto.com/docs/api/referencia/llaves-de-api/revoke-api-key
+        """
+        result: Deleted = self._client.request(
+            "DELETE", f"/v1/api_keys/{_path(id)}", timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+    def roll(
+        self,
+        id: str,
+        params: RollApiKeyParams | None = None,
+        *,
+        idempotency_key: str | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        expand: Sequence[str] | None = None,
+    ) -> ApiKey:
+        """Cambiar una llave
+
+        Una llave nueva con el mismo nombre, permisos, emisores, IP y duración, que la respuesta trae una sola vez. La anterior sigue funcionando el tiempo que elija (expires_in), 24 horas por omisión, para que la cambie sin cortar el servicio. Si se filtró, mande expires_in: 0.
+
+        POST /v1/api_keys/{id}/roll
+        https://fiscalisto.com/docs/api/referencia/llaves-de-api/roll-api-key
+        """
+        result: ApiKey = self._client.request(
+            "POST", f"/v1/api_keys/{_path(id)}/roll", body=params, idempotent=True, idempotency_key=idempotency_key, timeout=timeout, max_retries=max_retries, expand=expand
+        )
+        return result
+
+
 class WebhookEndpointsResource:
     """Webhooks: fiscalisto.webhook_endpoints."""
 
@@ -12768,7 +12940,7 @@ class EventsResource:
     ) -> ListObject[Event]:
         """Listar eventos
 
-        Los de los últimos 30 días, los más recientes primero.
+        Los de los últimos 30 días, los más recientes primero. Para leer hacia adelante sin perder ninguno (lo que llegó después del último que procesó), mande ending_before con ese evento y repita con el primero de data mientras has_more sea true.
 
         GET /v1/events
         https://fiscalisto.com/docs/api/referencia/eventos/list-events
@@ -13460,6 +13632,11 @@ class FiscalistoApi(Core):
     def sales_orders(self) -> SalesOrdersResource:
         """Pedidos."""
         return SalesOrdersResource(self)
+
+    @cached_property
+    def api_keys(self) -> ApiKeysResource:
+        """Llaves de API."""
+        return ApiKeysResource(self)
 
     @cached_property
     def webhook_endpoints(self) -> WebhookEndpointsResource:

@@ -56,6 +56,8 @@ __all__ = [
     "AnnualReturnTaxAccountsYearEnd",
     "ApiError",
     "ApiErrorError",
+    "ApiKey",
+    "ApiKeyList",
     "ApplyAdvanceParams",
     "ApplyAdvanceParamsRemainder",
     "ApplyChartTemplateParams",
@@ -253,6 +255,7 @@ __all__ = [
     "CreateAdvanceParams",
     "CreateAdvanceParamsCustomer",
     "CreateAdvanceParamsCustomerForeign",
+    "CreateApiKeyParams",
     "CreateAttendanceMarkParams",
     "CreateAttendanceRotationParams",
     "CreateAttendanceShiftParams",
@@ -754,6 +757,10 @@ __all__ = [
     "InvoiceCreateLocalTaxesItem",
     "InvoiceCreateRelated",
     "InvoiceCustomer",
+    "InvoiceDraft",
+    "InvoiceDraftCreatedEvent",
+    "InvoiceDraftDeletedEvent",
+    "InvoiceDraftUpdatedEvent",
     "InvoiceEmail",
     "InvoiceEmailBouncedEvent",
     "InvoiceEmailComplainedEvent",
@@ -816,6 +823,7 @@ __all__ = [
     "LedgerBankAccount",
     "LedgerBankAccountList",
     "ListAdvancesParams",
+    "ListApiKeysParams",
     "ListAttendanceRotationsParams",
     "ListAttendanceShiftsParams",
     "ListBankMovementsParams",
@@ -872,8 +880,10 @@ __all__ = [
     "ListReviewCyclesParams",
     "ListRolesParams",
     "ListRuleRunsParams",
+    "ListRuleVersionsParams",
     "ListRulesParams",
     "ListSalesOrdersParams",
+    "ListSandboxesParams",
     "ListSatDeclarationsParams",
     "ListSatDownloadsParams",
     "ListSatFindingCounterpartiesParams",
@@ -1141,6 +1151,7 @@ __all__ = [
     "ReviewResultRelationsItem",
     "Role",
     "RoleList",
+    "RollApiKeyParams",
     "RollWebhookSecretParams",
     "Rule",
     "RuleActionsItem",
@@ -1361,6 +1372,7 @@ __all__ = [
     "UpdateAccountParams",
     "UpdateAccountingSettingsParams",
     "UpdateAnnualAdjustmentParams",
+    "UpdateApiKeyParams",
     "UpdateAttendanceRotationParams",
     "UpdateAttendanceShiftParams",
     "UpdateAttendanceShiftParamsSegmentsItem",
@@ -1401,6 +1413,65 @@ __all__ = [
     "UpdateHiringSettingsParams",
     "UpdateImssMovementParams",
     "UpdateInvoiceParams",
+    "UpdateInvoiceParamsAddenda",
+    "UpdateInvoiceParamsCartaPorte",
+    "UpdateInvoiceParamsCartaPorteAir",
+    "UpdateInvoiceParamsCartaPorteAirShipper",
+    "UpdateInvoiceParamsCartaPorteAirShipperForeign",
+    "UpdateInvoiceParamsCartaPorteDestinationsItem",
+    "UpdateInvoiceParamsCartaPorteDestinationsItemAddress",
+    "UpdateInvoiceParamsCartaPorteDestinationsItemForeign",
+    "UpdateInvoiceParamsCartaPorteDestinationsItemStation",
+    "UpdateInvoiceParamsCartaPorteDriversItem",
+    "UpdateInvoiceParamsCartaPorteDriversItemForeign",
+    "UpdateInvoiceParamsCartaPorteFiguresItem",
+    "UpdateInvoiceParamsCartaPorteFiguresItemAddress",
+    "UpdateInvoiceParamsCartaPorteFiguresItemForeign",
+    "UpdateInvoiceParamsCartaPorteGoodsItem",
+    "UpdateInvoiceParamsCartaPorteGoodsItemCofepris",
+    "UpdateInvoiceParamsCartaPorteGoodsItemCustomsDocsItem",
+    "UpdateInvoiceParamsCartaPorteGoodsItemDetail",
+    "UpdateInvoiceParamsCartaPorteGoodsItemGuidesItem",
+    "UpdateInvoiceParamsCartaPorteGoodsItemHazmat",
+    "UpdateInvoiceParamsCartaPorteGoodsItemMaterial",
+    "UpdateInvoiceParamsCartaPorteGoodsItemQuantitiesItem",
+    "UpdateInvoiceParamsCartaPorteInternational",
+    "UpdateInvoiceParamsCartaPorteIstmo",
+    "UpdateInvoiceParamsCartaPorteOrigin",
+    "UpdateInvoiceParamsCartaPorteOriginAddress",
+    "UpdateInvoiceParamsCartaPorteOriginForeign",
+    "UpdateInvoiceParamsCartaPorteOriginStation",
+    "UpdateInvoiceParamsCartaPorteRail",
+    "UpdateInvoiceParamsCartaPorteRailCarsItem",
+    "UpdateInvoiceParamsCartaPorteRailCarsItemContainersItem",
+    "UpdateInvoiceParamsCartaPorteRailRightsItem",
+    "UpdateInvoiceParamsCartaPorteSea",
+    "UpdateInvoiceParamsCartaPorteSeaContainersItem",
+    "UpdateInvoiceParamsCartaPorteSeaContainersItemTrailersItem",
+    "UpdateInvoiceParamsCartaPorteVehicle",
+    "UpdateInvoiceParamsCartaPorteVehicleTrailersItem",
+    "UpdateInvoiceParamsComercioExterior",
+    "UpdateInvoiceParamsComercioExteriorGoodsItem",
+    "UpdateInvoiceParamsComercioExteriorIssuerAddress",
+    "UpdateInvoiceParamsComercioExteriorOwnersItem",
+    "UpdateInvoiceParamsComercioExteriorReceiverAddress",
+    "UpdateInvoiceParamsComercioExteriorRecipient",
+    "UpdateInvoiceParamsComercioExteriorRecipientAddress",
+    "UpdateInvoiceParamsCustomer",
+    "UpdateInvoiceParamsCustomerForeign",
+    "UpdateInvoiceParamsDonation",
+    "UpdateInvoiceParamsGlobal",
+    "UpdateInvoiceParamsIne",
+    "UpdateInvoiceParamsIneEntitiesItem",
+    "UpdateInvoiceParamsItemsItem",
+    "UpdateInvoiceParamsItemsItemHydrocarbon",
+    "UpdateInvoiceParamsItemsItemIedu",
+    "UpdateInvoiceParamsItemsItemThirdParty",
+    "UpdateInvoiceParamsItemsItemUsedVehicle",
+    "UpdateInvoiceParamsItemsItemUsedVehicleCustomsItem",
+    "UpdateInvoiceParamsLeyendasItem",
+    "UpdateInvoiceParamsLocalTaxesItem",
+    "UpdateInvoiceParamsRelated",
     "UpdateIssuerBrandingParams",
     "UpdateIssuerParams",
     "UpdateIssuerParamsDonationAuthorization",
@@ -1576,6 +1647,40 @@ class Account(TypedDict):
     """La versión más reciente de la API."""
     key: AccountKey
     """La llave con que se hizo la solicitud: id, nombre y emisores a los que se limita."""
+
+
+class ApiKey(TypedDict):
+    """Una llave secreta de la API, con permisos por recurso."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    object: Literal["api_key"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    name: str | None
+    """Nombre."""
+    redacted: str
+    """El principio de la llave (fk_live_AbC…), para reconocerla. El secreto completo solo viene en secret."""
+    permissions: dict[str, Literal["read", "write"]]
+    """read o write en cada recurso; uno que no está es sin acceso."""
+    issuers: list[str]
+    """Los emisores con que trabaja; vacío: todos los del modo."""
+    allowed_ips: list[str]
+    """Solo funciona desde estas IP o rangos; vacío: desde cualquiera."""
+    lifetime_hours: int | None
+    """La duración que se le dio al crearla, en horas (la nueva al cambiarla dura lo mismo); null: no vence."""
+    expires_at: str | None
+    """Cuándo deja de funcionar (su duración, o el plazo de una llave que se cambió); null: no vence."""
+    created_at: str | None
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    last_used_at: str | None
+    """Su última solicitud (al minuto), o null."""
+    rolled: bool
+    """Ya se cambió por otra (POST /v1/api_keys/{id}/roll): funciona solo hasta expires_at."""
+    sandbox: str | None
+    """El entorno de prueba (sbx_…) en que funciona, o null."""
+    secret: NotRequired[str]
+    """La llave completa (fk_live_… o fk_test_…): solo en la respuesta que la crea o la cambia. Guárdela; no se vuelve a mostrar."""
 
 
 class AttendanceMark(TypedDict):
@@ -1942,7 +2047,7 @@ class Balance(TypedDict):
     unlimited: bool
     """Obsoleto: siempre false. Solo las cuentas internas de Fiscalisto timbran sin usar timbres. Se conserva por compatibilidad; no lo use."""
     low_balance_at: int
-    """Con esta cantidad o menos llega balance.low (y otra vez al acabarse). Se elige en Desarrolladores › Timbres y pagos."""
+    """Con esta cantidad o menos llega balance.low (y otra vez al acabarse). Se elige en Desarrolladores › Timbres y pagos. Si solo le quedan timbres de regalo, llega al quedar 2."""
     auto_recharge: BalanceAutoRecharge | None
     """La recarga automática con la tarjeta guardada, o null si está apagada (se enciende en Desarrolladores › Timbres y pagos)."""
     use_plan_timbres: bool
@@ -2489,6 +2594,22 @@ class InvoiceOrigin(TypedDict):
     """El nombre de la llave de la API o del punto de venta, el asistente («ChatGPT») o de dónde vinieron los datos del comprador en una autofactura («Stripe»)."""
 
 
+class InvoiceDraft(TypedDict):
+    """Solo en un borrador (status draft)."""
+    updated_at: str | None
+    """Cuándo cambió por última vez."""
+    awaiting_approval: bool
+    """Alguien del equipo lo mandó a aprobar en Fiscalisto: no se timbra por la API hasta que un administrador lo apruebe. Cambiarlo retira la solicitud."""
+    stamping: bool
+    """Se está timbrando en este momento (desde la API o desde Fiscalisto)."""
+    scheduled_at: str | None
+    """Programado en Fiscalisto («Programar timbrado») para timbrarse solo a esa hora; null si no."""
+    send_email: bool
+    """Al timbrarlo se manda por correo a customer.email."""
+    email_cc: str | None
+    """Copias del correo al timbrarlo."""
+
+
 class InvoiceSubstitutesCancellation(TypedDict):
     status: str | None
     """`pending`: el SAT tiene la solicitud (la termina en minutos, o espera la respuesta del receptor). `accepted`: cancelada. `rejected`: el receptor la rechazó. `lapsed`: el SAT nunca la registró; puede pedirse otra vez. `scheduled`: el SAT aún no la acepta (no registra el CFDI que la sustituye, o rechazó la firma un momento) y Fiscalisto la vuelve a pedir sola. `failed`: Fiscalisto dejó de intentarlo; pídala de nuevo con POST /v1/invoices/{id}/cancel."""
@@ -2543,7 +2664,7 @@ Invoice = TypedDict(
         "branch": "str | None",
         "cost_center": "str | None",
         "type": "Literal[\"I\", \"E\", \"P\", \"T\", \"N\"]",
-        "status": "Literal[\"processing\", \"pending\", \"valid\", \"rejected\", \"canceled\"]",
+        "status": "Literal[\"draft\", \"processing\", \"pending\", \"valid\", \"rejected\", \"canceled\"]",
         "uuid": "str | None",
         "series": "str | None",
         "folio": "str | None",
@@ -2578,6 +2699,7 @@ Invoice = TypedDict(
         "origin": "InvoiceOrigin | None",
         "created_at": "str | None",
         "metadata": "dict[str, str]",
+        "draft": "NotRequired[InvoiceDraft]",
         "warnings": "NotRequired[list[str]]",
         "email_error": "NotRequired[str]",
         "substitutes": "NotRequired[InvoiceSubstitutes]",
@@ -2787,6 +2909,8 @@ class Customer(TypedDict):
     """Lista de precios (prl_…). En un cliente, la suya propia, que gana a la de su grupo; null para usar la de su grupo o la de todos."""
     discount_percent: float | None
     """Porcentaje de descuento sobre el precio, de 0 a 100; en el CFDI va como Descuento de cada concepto."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     created_at: str
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
     updated_at: str | None
@@ -2869,6 +2993,8 @@ class Product(TypedDict):
     """Lo mínimo que se pide de él en el Portal del cliente, o null sin mínimo."""
     order_step: float | None
     """De cuántos en cuántos se pide en el Portal del cliente (6 para pedir 6, 12, 18…), o null de uno en uno."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     created_at: str
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
     updated_at: str | None
@@ -2959,6 +3085,8 @@ class Employee(TypedDict):
     """Causa de la baja ante el IMSS cuando tiene end_date (2 separación voluntaria por omisión), o null."""
     warnings: list[str]
     """Lo que el SAT podría observar de sus datos, antes de timbrar."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     created_at: str
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
 
@@ -5092,7 +5220,7 @@ class TrainingCourse(TypedDict):
     """Fecha de inicio de la relación laboral (FechaInicioRelLaboral), AAAA-MM-DD."""
     end_date: str
     """Último día trabajado si ya no trabaja ahí, AAAA-MM-DD."""
-    cancelled: bool
+    canceled: bool
     """Si se canceló teniendo constancias emitidas (se conservan)."""
     trainer_registration: NotRequired[str | None]
     """El registro del agente externo ante la STPS."""
@@ -5122,7 +5250,7 @@ class TrainingCourseDeleted(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     deleted: bool
     """true si se borró."""
-    cancelled: bool
+    canceled: bool
     """true si se canceló porque tenía constancias emitidas."""
 
 
@@ -6062,6 +6190,8 @@ class CustomerDataRequest(TypedDict):
     """Lo que el cliente ve arriba del formulario."""
     expires_at: str | None
     """Cuándo deja de servir la liga."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     created_at: str | None
     """Cuándo se creó."""
     submission: CustomerDataRequestSubmission | None
@@ -6747,6 +6877,8 @@ class Branch(TypedDict):
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["branch"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     issuer: str
     """El emisor de la sucursal."""
     name: str
@@ -6789,6 +6921,8 @@ class CostCenter(TypedDict):
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["cost_center"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     issuer: str
     """El emisor del centro de costo."""
     name: str
@@ -6813,6 +6947,8 @@ class Tag(TypedDict):
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["tag"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     issuer: str
     """El emisor de la etiqueta."""
     name: str
@@ -7089,7 +7225,7 @@ class Rule(TypedDict):
     """El emisor (iss_…)."""
     name: str
     """Nombre."""
-    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "invoice.approved", "invoice.rejected", "finding.created", "payout.submitted", "payout.paid", "payout.failed", "invoice.daily", "purchase_order.daily", "bank.movement", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered", "sat.listed", "sat.opinion", "sat.buzon", "sat.certificate"]
+    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.canceled", "invoice.approved", "invoice.rejected", "finding.created", "payout.submitted", "payout.paid", "payout.failed", "invoice.daily", "purchase_order.daily", "bank.movement", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered", "sat.listed", "sat.opinion", "sat.buzon", "sat.certificate"]
     """Cuándo corre."""
     conditions: RuleConditions
     """Si: lo que tiene que cumplir la factura u orden. Sin condiciones, corre siempre."""
@@ -7154,7 +7290,7 @@ class RuleRun(TypedDict):
     """Qué tipo de objeto es («invoice», «customer»…)."""
     rule: str
     """La regla (rul_…)."""
-    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "invoice.approved", "invoice.rejected", "finding.created", "payout.submitted", "payout.paid", "payout.failed", "invoice.daily", "purchase_order.daily", "bank.movement", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered", "sat.listed", "sat.opinion", "sat.buzon", "sat.certificate"]
+    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.canceled", "invoice.approved", "invoice.rejected", "finding.created", "payout.submitted", "payout.paid", "payout.failed", "invoice.daily", "purchase_order.daily", "bank.movement", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered", "sat.listed", "sat.opinion", "sat.buzon", "sat.certificate"]
     """Cuándo corre."""
     record: str
     """La factura, orden, movimiento del banco o aviso del SAT, en palabras."""
@@ -7289,6 +7425,8 @@ class PriceList(TypedDict):
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["price_list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     issuer: str
     """El emisor (iss_…)."""
     name: str
@@ -7329,6 +7467,8 @@ class CustomerGroup(TypedDict):
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["customer_group"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     issuer: str
     """El emisor (iss_…)."""
     name: str
@@ -7369,6 +7509,8 @@ class SupplierGroup(TypedDict):
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["supplier_group"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     issuer: str
     """El emisor (iss_…)."""
     name: str
@@ -7447,6 +7589,8 @@ class ExpensePerson(TypedDict):
     """true si tiene un enlace que funciona para subir sus facturas."""
     archived: bool
     """true si está archivada."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     created_at: str | None
     """Cuándo se agregó."""
 
@@ -7632,6 +7776,8 @@ class ExpenseReport(TypedDict):
     """Sus gastos."""
     movements: list[ExpenseMovement]
     """El dinero que se le dio o devolvió."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     created_at: str | None
     """Cuándo se abrió."""
     updated_at: str | None
@@ -7781,6 +7927,8 @@ class StockAdjustment(TypedDict):
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["stock_adjustment"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     issuer: str
     """El emisor."""
     warehouse: str
@@ -7827,12 +7975,14 @@ class ProductionOrder(TypedDict):
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["production_order"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     issuer: str
     """El emisor."""
     number: str
     """Su folio, como OP-12."""
-    status: Literal["draft", "in_process", "completed", "cancelled"]
-    """draft (borrador, nada se ha movido), in_process (los componentes ya salieron), completed (lo producido ya entró) o cancelled (todo regresó)."""
+    status: Literal["draft", "in_process", "completed", "canceled"]
+    """draft (borrador, nada se ha movido), in_process (los componentes ya salieron), completed (lo producido ya entró) o canceled (todo regresó)."""
     product: str
     """Lo que se produce (prd_…)."""
     quantity: float
@@ -7863,7 +8013,7 @@ class ProductionOrder(TypedDict):
     """Cuándo salieron los componentes, o null."""
     completed_at: str | None
     """Cuándo entró lo producido, o null."""
-    cancelled_at: str | None
+    canceled_at: str | None
     """Cuándo se canceló, o null."""
 
 
@@ -8132,7 +8282,7 @@ class CompanyReportYearsItem(TypedDict):
     """El año en curso, hasta hoy."""
     income: float
     """Ingresos facturados sin impuestos, no cancelados."""
-    income_cancelled: float
+    income_canceled: float
     """Ingresos facturados y cancelados."""
     cash_share: float | None
     """Por ciento de ingresos en PUE."""
@@ -8144,7 +8294,7 @@ class CompanyReportYearsItem(TypedDict):
     """Días promedio (ponderados) de la factura al cobro."""
     expenses: float
     """Gastos recibidos sin impuestos, no cancelados."""
-    expenses_cancelled: float
+    expenses_canceled: float
     """Gastos recibidos y cancelados."""
     paid_share: float | None
     """Por ciento de lo PPD ya pagado."""
@@ -8683,8 +8833,8 @@ class Ticket(TypedDict):
     """El folio de la venta en su sistema."""
     code: str
     """Lo que su comprador escribe en el portal junto con el total: el folio y 4 caracteres al azar (A123-K7QX). Imprímalo en el ticket o mándelo con la compra."""
-    status: Literal["pending", "invoiced", "global", "cancelled"]
-    """pending (se puede facturar), invoiced (su comprador lo facturó: la factura en invoice), global (entró en la factura global del periodo) o cancelled."""
+    status: Literal["pending", "invoiced", "global", "canceled"]
+    """pending (se puede facturar), invoiced (su comprador lo facturó: la factura en invoice), global (entró en la factura global del periodo) o canceled."""
     url: str | None
     """La página del portal con el código (c) y el total (t) del ticket: el portal lo encuentra solo y el comprador solo da sus datos. Quien tenga la liga puede facturar el ticket: désela solo al comprador (como el ticket impreso). Puede incrustarla con fiscalisto.js. null si ya no está pendiente."""
     total: float
@@ -8715,6 +8865,8 @@ class Ticket(TypedDict):
     """La sucursal (brn_…) donde se hizo la venta, o null (la Matriz). Su factura se timbra desde ahí y el portal muestra su nombre y su logo."""
     buyer: TicketBuyer | None
     """Quién pagó, como lo conoce el origen de la venta (el `buyer` que mandó, o el cliente de un pago de Stripe). No es el receptor de la factura (`customer`)."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     created_at: str | None
     """Cuándo se registró."""
 
@@ -8966,6 +9118,8 @@ class RecurringInvoice(TypedDict):
     """Los conceptos, con description tal como se guardó ({mes}, {año}… se llenan en cada factura)."""
     total: float | None
     """El total de cada factura con los precios de hoy."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     created_at: str | None
     """Cuándo se creó."""
 
@@ -9614,6 +9768,8 @@ class RepseContract(TypedDict):
     """El centro de trabajo donde trabajan las personas que pone a disposición."""
     workers: list[RepseContractWorkersItem]
     """Quién trabaja en el contrato y desde cuándo."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     created_at: str | None
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
 
@@ -11875,7 +12031,7 @@ class CrossCheckCfdiExplanationExactCfdiItem(TypedDict):
     """Lo que aporta a la cifra, en pesos; negativo en una nota de crédito."""
     effect: float
     """Cuánto cambiaría invoiced."""
-    reason: Literal["cancelled", "ppd_not_collected", "other_month", "month_edge", "credit_note", "ppd_payment", "duplicate", "left_out", "withholding_certificate"]
+    reason: Literal["canceled", "ppd_not_collected", "other_month", "month_edge", "credit_note", "ppd_payment", "duplicate", "left_out", "withholding_certificate"]
     """Por qué lo explicaría."""
     in_invoiced: bool
     """true si está en cfdi."""
@@ -11901,14 +12057,14 @@ class CrossCheckCfdiExplanationCausesItemCfdiItem(TypedDict):
     """Lo que aporta a la cifra, en pesos; negativo en una nota de crédito."""
     effect: float
     """Cuánto cambiaría invoiced."""
-    reason: Literal["cancelled", "ppd_not_collected", "other_month", "month_edge", "credit_note", "ppd_payment", "duplicate", "left_out", "withholding_certificate"]
+    reason: Literal["canceled", "ppd_not_collected", "other_month", "month_edge", "credit_note", "ppd_payment", "duplicate", "left_out", "withholding_certificate"]
     """Por qué lo explicaría."""
     in_invoiced: bool
     """true si está en cfdi."""
 
 
 class CrossCheckCfdiExplanationCausesItem(TypedDict):
-    reason: Literal["cancelled", "ppd_not_collected", "other_month", "month_edge", "credit_note", "ppd_payment", "duplicate", "left_out", "withholding_certificate"]
+    reason: Literal["canceled", "ppd_not_collected", "other_month", "month_edge", "credit_note", "ppd_payment", "duplicate", "left_out", "withholding_certificate"]
     """El motivo que comparten."""
     total: float
     """La suma de su effect."""
@@ -12323,6 +12479,8 @@ class Quote(TypedDict):
     """customer (en su liga) o user (usted: POST /v1/quotes/{id}/accept, /reject o /withdraw, o desde la app)."""
     invoice: str | None
     """La factura (inv_…) que se timbró de ella, o null."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     created_at: str | None
     """Cuándo se creó."""
 
@@ -12451,6 +12609,8 @@ class SalesOrder(TypedDict):
     """Cuándo se canceló, o null."""
     cancel_reason: str | None
     """Por qué se canceló, o null."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     created_at: str | None
     """Cuándo se creó."""
 
@@ -12656,6 +12816,8 @@ class Payout(TypedDict):
     """Por qué se canceló, o null."""
     created_by_api: bool
     """true si lo preparó la API."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     created_at: str | None
     """Cuándo se preparó."""
     approved_at: str | None
@@ -12780,6 +12942,8 @@ class PayableInvoicePaymentHold(TypedDict):
 
 class PayableInvoice(TypedDict):
     """Una factura recibida con lo que falta por pagar, como la muestra Pagos › Por pagar: lo pagado cuenta complementos, notas de crédito, pagos de Fiscalisto y pagos registrados a mano."""
+    id: str
+    """Su folio fiscal (el mismo que uuid). Sirve como starting_after."""
     object: Literal["payable_invoice"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     uuid: str
@@ -13409,6 +13573,8 @@ class PurchaseReceipt(TypedDict):
     """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
     object: Literal["purchase_receipt"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     issuer: str
     """El emisor (el que compró)."""
     status: Literal["pending", "requested", "invoiced", "non_deductible"]
@@ -13497,6 +13663,8 @@ class WebhookEndpoint(TypedDict):
     """Hasta cuándo el secreto anterior también firma (después de cambiarlo), o null."""
     api_version: str | None
     """La versión de la API de sus eventos; null: la de la cuenta."""
+    metadata: dict[str, str]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     created_at: str | None
     """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
     secret: NotRequired[str]
@@ -13722,7 +13890,7 @@ class CfdiVerification(TypedDict):
     """Cuándo se le preguntó al SAT."""
 
 
-EventType = Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.cancellation_failed", "invoice.paid", "invoice.partially_paid", "invoice.email_bounced", "invoice.email_complained", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "payroll_batch.completed", "customer.created", "customer.updated", "customer.deleted", "product.created", "product.updated", "product.deleted", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "sat_refresh.completed", "sat_refresh.failed", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "quote.withdrawn", "sales_order.confirmed", "sales_order.customer_confirmed", "sales_order.delivered", "sales_order.paid", "sales_order.canceled", "supplier_invoice.received", "supplier_invoice.approved", "supplier_invoice.rejected", "supplier_invoice.scheduled", "supplier_invoice.paid", "portal_supplier.approved", "payout.approved", "payout.paid", "payout.partially_paid", "payout.failed", "payout.canceled", "payout_transfer.succeeded", "payout_transfer.failed", "payout_transfer.returned", "issuer.ready", "balance.low", "usage.high", "test_clock.ready", "rule.matched"]
+EventType = Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.cancellation_failed", "invoice.paid", "invoice.partially_paid", "invoice.email_bounced", "invoice.email_complained", "invoice.draft_created", "invoice.draft_updated", "invoice.draft_deleted", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "payroll_batch.completed", "customer.created", "customer.updated", "customer.deleted", "product.created", "product.updated", "product.deleted", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "sat_refresh.completed", "sat_refresh.failed", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "quote.withdrawn", "sales_order.confirmed", "sales_order.customer_confirmed", "sales_order.delivered", "sales_order.paid", "sales_order.canceled", "supplier_invoice.received", "supplier_invoice.approved", "supplier_invoice.rejected", "supplier_invoice.scheduled", "supplier_invoice.paid", "portal_supplier.approved", "payout.approved", "payout.paid", "payout.partially_paid", "payout.failed", "payout.canceled", "payout_transfer.succeeded", "payout_transfer.failed", "payout_transfer.returned", "issuer.ready", "balance.low", "usage.high", "test_clock.ready", "rule.matched"]
 """Lo que puede pasar: el tipo de cada evento."""
 
 
@@ -14006,6 +14174,57 @@ class InvoiceEmailComplainedEvent(TypedDict):
     object: Literal["event"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     type: Literal["invoice.email_complained"]
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.cancellation_failed, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer.created, customer.updated, customer.deleted, product.created, product.updated, product.deleted, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, sat_refresh.completed, sat_refresh.failed, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, supplier_invoice.received, supplier_invoice.approved, supplier_invoice.rejected, supplier_invoice.scheduled, supplier_invoice.paid, portal_supplier.approved, payout.approved, payout.paid, payout.partially_paid, payout.failed, payout.canceled, payout_transfer.succeeded, payout_transfer.failed, payout_transfer.returned, issuer.ready, balance.low, usage.high, test_clock.ready o rule.matched."""
+    api_version: str
+    """Versión de la API con que se armó el objeto."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    data: InvoiceEventData
+
+
+class InvoiceDraftCreatedEvent(TypedDict):
+    """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["event"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    type: Literal["invoice.draft_created"]
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.cancellation_failed, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer.created, customer.updated, customer.deleted, product.created, product.updated, product.deleted, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, sat_refresh.completed, sat_refresh.failed, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, supplier_invoice.received, supplier_invoice.approved, supplier_invoice.rejected, supplier_invoice.scheduled, supplier_invoice.paid, portal_supplier.approved, payout.approved, payout.paid, payout.partially_paid, payout.failed, payout.canceled, payout_transfer.succeeded, payout_transfer.failed, payout_transfer.returned, issuer.ready, balance.low, usage.high, test_clock.ready o rule.matched."""
+    api_version: str
+    """Versión de la API con que se armó el objeto."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    data: InvoiceEventData
+
+
+class InvoiceDraftUpdatedEvent(TypedDict):
+    """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["event"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    type: Literal["invoice.draft_updated"]
+    """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.cancellation_failed, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer.created, customer.updated, customer.deleted, product.created, product.updated, product.deleted, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, sat_refresh.completed, sat_refresh.failed, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, supplier_invoice.received, supplier_invoice.approved, supplier_invoice.rejected, supplier_invoice.scheduled, supplier_invoice.paid, portal_supplier.approved, payout.approved, payout.paid, payout.partially_paid, payout.failed, payout.canceled, payout_transfer.succeeded, payout_transfer.failed, payout_transfer.returned, issuer.ready, balance.low, usage.high, test_clock.ready o rule.matched."""
+    api_version: str
+    """Versión de la API con que se armó el objeto."""
+    livemode: bool
+    """true en producción (llaves fk_live_), false en pruebas (fk_test_). Lo de pruebas no vale ante el SAT."""
+    created_at: str
+    """Cuándo se creó, ISO 8601 con la hora de la Ciudad de México (-06:00)."""
+    data: InvoiceEventData
+
+
+class InvoiceDraftDeletedEvent(TypedDict):
+    """Algo que pasó en su cuenta: el objeto completo como quedó. Se manda a sus webhooks firmado (Standard Webhooks)."""
+    id: str
+    """Identificador del objeto, con su prefijo (iss_, inv_, ret_, cus_, prd_, emp_, bat_, brn_, whs_, stm_, adj_, evt_, whe_)."""
+    object: Literal["event"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    type: Literal["invoice.draft_deleted"]
     """Qué pasó: invoice.stamped, invoice.failed, invoice.canceled, invoice.cancellation_pending, invoice.cancellation_rejected, invoice.cancellation_failed, invoice.paid, invoice.partially_paid, retention.stamped, retention.failed, retention.canceled, invoice_batch.completed, payroll_batch.completed, customer.created, customer.updated, customer.deleted, product.created, product.updated, product.deleted, customer_data_request.completed, sat_download.completed, sat_download.failed, sat_declaration.created, sat_declaration.updated, sat_refresh.completed, sat_refresh.failed, ticket.invoiced, ticket.included_in_global, recurring_invoice.failed, quote.viewed, quote.accepted, quote.changes_requested, quote.rejected, quote.withdrawn, sales_order.confirmed, sales_order.customer_confirmed, sales_order.delivered, sales_order.paid, sales_order.canceled, supplier_invoice.received, supplier_invoice.approved, supplier_invoice.rejected, supplier_invoice.scheduled, supplier_invoice.paid, portal_supplier.approved, payout.approved, payout.paid, payout.partially_paid, payout.failed, payout.canceled, payout_transfer.succeeded, payout_transfer.failed, payout_transfer.returned, issuer.ready, balance.low, usage.high, test_clock.ready o rule.matched."""
     api_version: str
     """Versión de la API con que se armó el objeto."""
@@ -14877,6 +15096,9 @@ Event = Union[
     InvoicePartiallyPaidEvent,
     InvoiceEmailBouncedEvent,
     InvoiceEmailComplainedEvent,
+    InvoiceDraftCreatedEvent,
+    InvoiceDraftUpdatedEvent,
+    InvoiceDraftDeletedEvent,
     RetentionStampedEvent,
     RetentionFailedEvent,
     RetentionCanceledEvent,
@@ -14955,6 +15177,10 @@ class ApiErrorError(TypedDict):
     """Código del SAT o del PAC (CFDI40xxx)."""
     message_es: NotRequired[str]
     """Con Accept-Language: en, el mensaje original en español cuando message solo dice en inglés qué significa el código."""
+    expired_at: NotRequired[str]
+    """Con api_key_expired, cuándo dejó de servir la llave (ISO 8601, UTC)."""
+    revoked_at: NotRequired[str]
+    """Con api_key_revoked, cuándo se revocó la llave (ISO 8601, UTC)."""
     doc_url: str
     """La explicación de este código en la documentación."""
     request_id: str
@@ -15919,6 +16145,17 @@ class SalesOrderList(TypedDict):
     object: Literal["list"]
     """Qué tipo de objeto es («invoice», «customer»…)."""
     data: list[SalesOrder]
+    """Los objetos de esta página."""
+    has_more: bool
+    """true si hay más: pida la siguiente con starting_after igual al id del último."""
+    url: str
+    """La ruta de esta lista."""
+
+
+class ApiKeyList(TypedDict):
+    object: Literal["list"]
+    """Qué tipo de objeto es («invoice», «customer»…)."""
+    data: list[ApiKey]
     """Los objetos de esta página."""
     has_more: bool
     """true si hay más: pida la siguiente con starting_after igual al id del último."""
@@ -16908,6 +17145,7 @@ InvoiceCreate = TypedDict(
         "send_email": "NotRequired[bool]",
         "email_cc": "NotRequired[str | None]",
         "metadata": "NotRequired[dict[str, str]]",
+        "draft": "NotRequired[bool]",
         "async": "NotRequired[bool]",
     },
 )
@@ -17176,7 +17414,7 @@ class ExternalPayrollReceiptCreate(TypedDict):
     replaces: NotRequired[str]
     """El recibo vigente (inv_… o UUID) que este sustituye: relación 04 y se cancela con motivo 01."""
     send_email: NotRequired[bool]
-    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
+    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía. A un cliente con «Enviar al timbrar: Nunca» no se le envía aunque sea true: warnings lo dice y POST /v1/invoices/{id}/send sí se la manda."""
     metadata: NotRequired[dict[str, str]]
     """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
@@ -17194,6 +17432,18 @@ class ResetTestDataParams(TypedDict):
 class CreateSandboxParams(TypedDict):
     name: str
     """Para quién o para qué es, por ejemplo el nombre de quien lo usa."""
+
+
+# Los parámetros de GET /v1/sandboxes.
+ListSandboxesParams = TypedDict(
+    "ListSandboxesParams",
+    {
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class CreateTestClockParams(TypedDict):
@@ -17232,16 +17482,21 @@ class CreateIssuerParams(TypedDict):
     """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListIssuersParams(TypedDict):
-    """Los parámetros de GET /v1/issuers."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    tax_id: NotRequired[str]
-    """Solo el de este RFC."""
-    include_archived: NotRequired[bool]
-    """true para incluir los archivados."""
+# Los parámetros de GET /v1/issuers.
+ListIssuersParams = TypedDict(
+    "ListIssuersParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "tax_id": "NotRequired[str]",
+        "include_archived": "NotRequired[bool]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateIssuerParamsDonationAuthorization(TypedDict):
@@ -17289,7 +17544,7 @@ class UpdateIssuerBrandingParams(TypedDict):
 class GetScheduleSettingsParams(TypedDict):
     """Los parámetros de GET /v1/schedule_settings."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class UpdateScheduleSettingsParams(TypedDict):
@@ -17314,7 +17569,7 @@ class ListSettingChangesParams(TypedDict):
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     setting: NotRequired[str]
     """Solo los de este ajuste, por ejemplo cobranza.dias-credito."""
 
@@ -17346,40 +17601,48 @@ class CreateIssuerOnboardingLinkParams(TypedDict):
     """true para pedir solo la e.firma, sin el CSD: para consultar el SAT por su cliente sin timbrar por él. Implica keep_efirma. El emisor sigue sin poder timbrar hasta que suba su CSD."""
 
 
-class ListInvoicesParams(TypedDict):
-    """Los parámetros de GET /v1/invoices."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    status: NotRequired[Literal["valid", "pending", "canceled", "rejected", "processing"]]
-    """valid, pending, canceled, rejected o processing."""
-    type: NotRequired[Literal["I", "E", "P", "T", "N"]]
-    """I, E, P, T o N."""
-    customer: NotRequired[str]
-    """RFC del cliente o su id (cus_…)."""
-    payment_status: NotRequired[Literal["unpaid", "partial", "open", "paid"]]
-    """Facturas de ingreso por lo que deben: unpaid, partial, open (unpaid o partial) o paid."""
-    created_gte: NotRequired[str]
-    """Creadas desde, en ISO 8601. Un día solo (2026-10-01) cuenta desde su inicio en hora de la Ciudad de México."""
-    created_lte: NotRequired[str]
-    """Creadas hasta, en ISO 8601. Un día solo (2026-10-31) incluye el día completo en hora de la Ciudad de México."""
-    cost_center: NotRequired[str]
-    """Solo las de este centro de costo (ccn_…), o none para las que no tienen."""
+# Los parámetros de GET /v1/invoices.
+ListInvoicesParams = TypedDict(
+    "ListInvoicesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"valid\", \"pending\", \"canceled\", \"rejected\", \"processing\", \"draft\"]]",
+        "type": "NotRequired[Literal[\"I\", \"E\", \"P\", \"T\", \"N\"]]",
+        "customer": "NotRequired[str]",
+        "payment_status": "NotRequired[Literal[\"unpaid\", \"partial\", \"open\", \"paid\"]]",
+        "date[gte]": "NotRequired[str]",
+        "date[gt]": "NotRequired[str]",
+        "date[lte]": "NotRequired[str]",
+        "date[lt]": "NotRequired[str]",
+        "cost_center": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+        "created_gte": "NotRequired[str]",
+        "created_lte": "NotRequired[str]",
+    },
+)
 
 
-class SearchInvoicesParams(TypedDict):
-    """Los parámetros de GET /v1/invoices/search."""
-    query: str
-    """La búsqueda, por ejemplo customer:'URE180429TM6' AND total>1000 AND created>'2026-11-01'."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/invoices/search.
+SearchInvoicesParams = TypedDict(
+    "SearchInvoicesParams",
+    {
+        "query": "str",
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class GetInvoiceParams(TypedDict):
@@ -17390,11 +17653,959 @@ class GetInvoiceParams(TypedDict):
     """true para preguntar su estado al SAT ahora (cancelaciones en espera)."""
 
 
-class UpdateInvoiceParams(TypedDict):
-    cost_center: NotRequired[str | None]
-    """Su centro de costo (ccn_…), o null para quitárselo. Solo facturas, notas de crédito y recibos de nómina timbrados."""
-    notes: NotRequired[str | None]
-    """Nota para el cliente en el PDF (hasta 1,000 caracteres), o null para quitarla. No va en el XML: la factura timbrada no cambia y el siguiente PDF (GET /v1/invoices/{id}/pdf, el correo) ya la lleva. Cada cambio queda en el historial de la factura en Fiscalisto."""
+class UpdateInvoiceParamsCustomerForeign(TypedDict):
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    country: str
+    """País de residencia fiscal, clave de 3 letras de c_Pais (USA, CAN…)."""
+    tax_id: str
+    """Número de registro de identidad fiscal en su país (NumRegIdTrib)."""
+
+
+class UpdateInvoiceParamsCustomer(TypedDict):
+    tax_id: str
+    """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
+    legal_name: str
+    """Nombre o razón social tal como está en la constancia de situación fiscal, sin el régimen de capital (sin «S.A. de C.V.»)."""
+    tax_system: str
+    """Régimen fiscal (RegimenFiscal), clave de c_RegimenFiscal: 601, 612, 626…"""
+    zip: str
+    """Código postal del domicilio fiscal del cliente (DomicilioFiscalReceptor), 5 dígitos."""
+    email: NotRequired[str | None]
+    """Correo a donde se envía (varios separados por comas). Solo se usa si se pide enviarlo."""
+    foreign: NotRequired[UpdateInvoiceParamsCustomerForeign]
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    ieps_taxpayer: NotRequired[bool]
+    """true si el cliente es contribuyente de IEPS: el IEPS va desglosado en vez de sumado al precio, salvo el del alcohol y los tabacos (tasas 0.5, 1.6 y 0.304), que va en el precio siempre (LIEPS art. 19 fr. II)."""
+
+
+class UpdateInvoiceParamsItemsItemThirdParty(TypedDict):
+    """A cuenta de terceros (ACuentaTerceros): RFC, nombre, régimen y código postal."""
+    tax_id: str
+    """RFC de a cuenta de quién (RfcACuentaTerceros)."""
+    name: str
+    """Nombre (NombreACuentaTerceros)."""
+    tax_system: str
+    """Régimen fiscal (RegimenFiscalACuentaTerceros), c_RegimenFiscal."""
+    zip: str
+    """Código postal de su domicilio fiscal (DomicilioFiscalACuentaTerceros)."""
+
+
+class UpdateInvoiceParamsItemsItemIedu(TypedDict):
+    """Complemento de instituciones educativas privadas (IEDU): alumno, CURP, nivel y RVOE."""
+    student_name: str
+    """Nombre del alumno (nombreAlumno)."""
+    curp: str
+    """CURP, 18 caracteres."""
+    level: Literal["Preescolar", "Primaria", "Secundaria", "Profesional técnico", "Bachillerato o su equivalente"]
+    """Nivel educativo (nivelEducativo)."""
+    rvoe: str
+    """Reconocimiento de validez oficial de estudios (autRVOE)."""
+    payer_tax_id: NotRequired[str | None]
+    """RFC de quien paga, si no es el receptor (rfcPago)."""
+
+
+class UpdateInvoiceParamsItemsItemUsedVehicleCustomsItem(TypedDict):
+    number: str
+    """Número del documento de importación (numero)."""
+    date: str
+    """Fecha del documento (fecha), AAAA-MM-DD."""
+    office: NotRequired[str]
+    """Aduana (aduana)."""
+
+
+class UpdateInvoiceParamsItemsItemUsedVehicle(TypedDict):
+    """Complemento de vehículo usado."""
+    purchase_amount: float
+    """Monto de adquisición (montoAdquisicion)."""
+    sale_amount: float
+    """Monto de enajenación (montoEnajenacion)."""
+    vehicle_key: str
+    """Clave vehicular (claveVehicular)."""
+    make: str
+    """Marca (marca)."""
+    type: str
+    """Tipo o versión (tipo)."""
+    model: str
+    """Año del modelo (modelo), 4 dígitos."""
+    engine_number: NotRequired[str]
+    """Número de motor (numeroMotor)."""
+    serial_number: NotRequired[str]
+    """Número de serie (numeroSerie)."""
+    niv: NotRequired[str]
+    """Número de identificación vehicular (NIV)."""
+    guide_value: float
+    """Valor según la guía EBC o Libro Azul (valor)."""
+    customs: NotRequired[list[UpdateInvoiceParamsItemsItemUsedVehicleCustomsItem]]
+    """Información aduanera de la importación del vehículo (InformacionAduanera)."""
+
+
+class UpdateInvoiceParamsItemsItemHydrocarbon(TypedDict):
+    """Complemento de Hidrocarburos y Petrolíferos: obligatorio en cada concepto de diésel (15101505) o gasolina (15101514, 15101515) de una factura o nota de crédito, en litros (LTR)."""
+    permit_type: str
+    """Tipo de permiso de la CNE o la CRE (TipoPermiso, c_TipoPermiso): PER01 a PER11."""
+    permit_number: str
+    """Número de permiso de la CNE o la CRE (NumeroPermiso), como PL/12345/EXP/ES/2016: de 15 a 35 caracteres."""
+    subproduct: str
+    """Subproducto (SubProductoHYP, c_SubProductoHYP): SP16 gasolina regular, SP17 premium, SP18 diésel automotriz…"""
+
+
+class UpdateInvoiceParamsItemsItem(TypedDict):
+    """Un concepto. description, product_key y unit_price son obligatorios, salvo que mande product (prd_…): entonces vienen de su catálogo y lo que mande encima gana."""
+    product: NotRequired[str]
+    """Un producto de su catálogo (prd_…): toma su clave, unidad, precio e impuestos."""
+    description: NotRequired[str]
+    """Descripción del concepto (Descripcion), hasta 1,000 caracteres."""
+    product_key: NotRequired[str]
+    """Clave del producto o servicio (ClaveProdServ), 8 dígitos de c_ClaveProdServ. Búsquela con GET /v1/sat_catalogs/product_keys?q=…"""
+    unit_key: NotRequired[str]
+    """Clave de unidad (ClaveUnidad) de c_ClaveUnidad: E48 unidad de servicio, H87 pieza, ACT actividad… Por omisión H87 si la clave del producto es de un bien (segmentos 10 a 60) y E48 si es de un servicio."""
+    unit_name: NotRequired[str | None]
+    """Nombre de la unidad (Unidad), hasta 20 caracteres."""
+    sku: NotRequired[str | None]
+    """Número de identificación o SKU (NoIdentificacion)."""
+    quantity: NotRequired[float]
+    """Cantidad (Cantidad). Por omisión 1."""
+    unit_price: NotRequired[float]
+    """Precio unitario antes de impuestos (ValorUnitario)."""
+    discount: NotRequired[float]
+    """Descuento (Descuento)."""
+    taxability: NotRequired[Literal["01", "02", "03", "04", "05", "06", "07", "08"]]
+    """Objeto de impuesto (ObjetoImp), c_ObjetoImp: 01 no objeto, 02 sí objeto (por omisión), 03 sin desglose, 04 no causa…"""
+    iva: NotRequired[Literal["0", "0.16", "0.08", "exento"]]
+    """Tasa de IVA trasladado: "0.16" (por omisión), "0.08" (región fronteriza), "0" o "exento". También como número (0.16, 16), con seis decimales ("0.160000") o en por ciento ("16%"); la respuesta la da como "0.16"."""
+    ieps: NotRequired[float]
+    """IEPS trasladado: tasa (0.265…) o cuota en pesos por unidad, según ieps_factor."""
+    ieps_factor: NotRequired[Literal["Tasa", "Cuota"]]
+    """Tasa o Cuota (TipoFactor del IEPS)."""
+    ieps_units: NotRequired[float]
+    """Unidades de IEPS a cuota (litros, cigarros…), si no son la cantidad."""
+    iva_retention: NotRequired[float]
+    """Tasa de IVA retenido, en fracción (por ejemplo 0.106667, dos terceras partes del 16%)."""
+    isr_retention: NotRequired[float]
+    """Tasa de ISR retenido, en fracción (por ejemplo 0.10 honorarios, 0.0125 RESICO)."""
+    predial: NotRequired[list[str]]
+    """Números de cuenta predial (CuentaPredial) en arrendamiento."""
+    pedimentos: NotRequired[list[str]]
+    """Números de pedimento (InformacionAduanera) de mercancía importada."""
+    third_party: NotRequired[UpdateInvoiceParamsItemsItemThirdParty]
+    """A cuenta de terceros (ACuentaTerceros): RFC, nombre, régimen y código postal."""
+    iedu: NotRequired[UpdateInvoiceParamsItemsItemIedu]
+    """Complemento de instituciones educativas privadas (IEDU): alumno, CURP, nivel y RVOE."""
+    used_vehicle: NotRequired[UpdateInvoiceParamsItemsItemUsedVehicle]
+    """Complemento de vehículo usado."""
+    hydrocarbon: NotRequired[UpdateInvoiceParamsItemsItemHydrocarbon]
+    """Complemento de Hidrocarburos y Petrolíferos: obligatorio en cada concepto de diésel (15101505) o gasolina (15101514, 15101515) de una factura o nota de crédito, en litros (LTR)."""
+    addenda: NotRequired[dict[str, str]]
+    """Addenda del receptor (Walmart, Soriana…), con sus propios campos."""
+
+
+class UpdateInvoiceParamsCartaPorteInternational(TypedDict):
+    """Transporte internacional (TranspInternac Sí): entrada o salida, país, vía y regímenes aduaneros."""
+    direction: Literal["Entrada", "Salida"]
+    """EntradaSalidaMerc: Entrada o Salida."""
+    country: str
+    """País de origen o destino (PaisOrigenDestino), c_Pais."""
+    via: str
+    """Vía de entrada o salida (ViaEntradaSalida), c_CveTransporte (05 ducto incluido)."""
+    regimes: list[str]
+    """Regímenes aduaneros (RegimenAduanero), c_RegimenAduanero."""
+
+
+class UpdateInvoiceParamsCartaPorteIstmo(TypedDict):
+    """Corredor Interoceánico del Istmo de Tehuantepec: polos de origen y destino (c_RegistroISTMO)."""
+    origin: str
+    """Polo de origen (UbicacionPoloOrigen)."""
+    destination: str
+    """Polo de destino (UbicacionPoloDestino)."""
+
+
+class UpdateInvoiceParamsCartaPorteOriginForeign(TypedDict):
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    tax_id: str
+    """Número de registro de identidad fiscal en su país (NumRegIdTrib)."""
+    country: str
+    """País de residencia fiscal, clave de 3 letras de c_Pais (USA, CAN…)."""
+
+
+class UpdateInvoiceParamsCartaPorteOriginStation(TypedDict):
+    """Estación, puerto o aeropuerto (TipoEstacion y NumEstacion de c_Estaciones). Solo sin autotransporte."""
+    type: NotRequired[str]
+    """Tipo de estación (TipoEstacion): 01 origen, 02 intermedia, 03 destino final."""
+    number: NotRequired[str]
+    """Clave de la estación, puerto o aeropuerto (NumEstacion), c_Estaciones."""
+    name: NotRequired[str]
+    """Nombre de la estación (NombreEstacion)."""
+    foreign: NotRequired[bool]
+    """true si la estación está en el extranjero (va sin TipoEstacion)."""
+
+
+class UpdateInvoiceParamsCartaPorteOriginAddress(TypedDict):
+    """Domicilio (Domicilio). En México basta el código postal: estado, municipio y localidad se toman de c_CodigoPostal."""
+    street: NotRequired[str]
+    """Calle (Calle)."""
+    exterior: NotRequired[str]
+    """Número exterior (NumeroExterior)."""
+    interior: NotRequired[str]
+    """Número interior (NumeroInterior)."""
+    zip: str
+    """Código postal (CodigoPostal). En México se deducen de él estado, municipio y localidad."""
+    country: NotRequired[str]
+    """País (Pais), c_Pais. Por omisión MEX."""
+    state: NotRequired[str]
+    """Estado (Estado): en el extranjero c_Estado para USA y CAN, o texto."""
+    municipality: NotRequired[str]
+    """Municipio (Municipio), en el extranjero como texto."""
+    locality: NotRequired[str]
+    """Localidad (Localidad), en el extranjero como texto."""
+    colony: NotRequired[str]
+    """Colonia (Colonia), en el extranjero como texto."""
+
+
+class UpdateInvoiceParamsCartaPorteOrigin(TypedDict):
+    """Ubicación de origen (Ubicacion TipoUbicacion Origen): remitente, fecha y hora de salida y domicilio."""
+    tax_id: str
+    """RFC del remitente (RFCRemitenteDestinatario); XEXX010101000 si es extranjero."""
+    name: NotRequired[str]
+    """Nombre del remitente (NombreRemitenteDestinatario)."""
+    foreign: NotRequired[UpdateInvoiceParamsCartaPorteOriginForeign]
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    date_time: str
+    """Fecha y hora de salida (origen) o llegada (destino), AAAA-MM-DDTHH:MM, hora local."""
+    distance_km: NotRequired[float]
+    """Distancia recorrida desde la ubicación anterior, en km (DistanciaRecorrida). Autotransporte y ferroviario."""
+    station: NotRequired[UpdateInvoiceParamsCartaPorteOriginStation]
+    """Estación, puerto o aeropuerto (TipoEstacion y NumEstacion de c_Estaciones). Solo sin autotransporte."""
+    navigation: NotRequired[Literal["Altura", "Cabotaje"]]
+    """Marítimo: tipo de tráfico (NavegacionTrafico), Altura o Cabotaje."""
+    address: UpdateInvoiceParamsCartaPorteOriginAddress
+    """Domicilio (Domicilio). En México basta el código postal: estado, municipio y localidad se toman de c_CodigoPostal."""
+
+
+class UpdateInvoiceParamsCartaPorteDestinationsItemForeign(TypedDict):
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    tax_id: str
+    """Número de registro de identidad fiscal en su país (NumRegIdTrib)."""
+    country: str
+    """País de residencia fiscal, clave de 3 letras de c_Pais (USA, CAN…)."""
+
+
+class UpdateInvoiceParamsCartaPorteDestinationsItemStation(TypedDict):
+    """Estación, puerto o aeropuerto (TipoEstacion y NumEstacion de c_Estaciones). Solo sin autotransporte."""
+    type: NotRequired[str]
+    """Tipo de estación (TipoEstacion): 01 origen, 02 intermedia, 03 destino final."""
+    number: NotRequired[str]
+    """Clave de la estación, puerto o aeropuerto (NumEstacion), c_Estaciones."""
+    name: NotRequired[str]
+    """Nombre de la estación (NombreEstacion)."""
+    foreign: NotRequired[bool]
+    """true si la estación está en el extranjero (va sin TipoEstacion)."""
+
+
+class UpdateInvoiceParamsCartaPorteDestinationsItemAddress(TypedDict):
+    """Domicilio (Domicilio). En México basta el código postal: estado, municipio y localidad se toman de c_CodigoPostal."""
+    street: NotRequired[str]
+    """Calle (Calle)."""
+    exterior: NotRequired[str]
+    """Número exterior (NumeroExterior)."""
+    interior: NotRequired[str]
+    """Número interior (NumeroInterior)."""
+    zip: str
+    """Código postal (CodigoPostal). En México se deducen de él estado, municipio y localidad."""
+    country: NotRequired[str]
+    """País (Pais), c_Pais. Por omisión MEX."""
+    state: NotRequired[str]
+    """Estado (Estado): en el extranjero c_Estado para USA y CAN, o texto."""
+    municipality: NotRequired[str]
+    """Municipio (Municipio), en el extranjero como texto."""
+    locality: NotRequired[str]
+    """Localidad (Localidad), en el extranjero como texto."""
+    colony: NotRequired[str]
+    """Colonia (Colonia), en el extranjero como texto."""
+
+
+class UpdateInvoiceParamsCartaPorteDestinationsItem(TypedDict):
+    tax_id: str
+    """RFC del destinatario (RFCRemitenteDestinatario); XEXX010101000 si es extranjero."""
+    name: NotRequired[str]
+    """Nombre del destinatario (NombreRemitenteDestinatario)."""
+    foreign: NotRequired[UpdateInvoiceParamsCartaPorteDestinationsItemForeign]
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    date_time: str
+    """Fecha y hora de salida (origen) o llegada (destino), AAAA-MM-DDTHH:MM, hora local."""
+    distance_km: NotRequired[float]
+    """Distancia recorrida desde la ubicación anterior, en km (DistanciaRecorrida). Autotransporte y ferroviario."""
+    station: NotRequired[UpdateInvoiceParamsCartaPorteDestinationsItemStation]
+    """Estación, puerto o aeropuerto (TipoEstacion y NumEstacion de c_Estaciones). Solo sin autotransporte."""
+    navigation: NotRequired[Literal["Altura", "Cabotaje"]]
+    """Marítimo: tipo de tráfico (NavegacionTrafico), Altura o Cabotaje."""
+    address: UpdateInvoiceParamsCartaPorteDestinationsItemAddress
+    """Domicilio (Domicilio). En México basta el código postal: estado, municipio y localidad se toman de c_CodigoPostal."""
+
+
+class UpdateInvoiceParamsCartaPorteGoodsItemHazmat(TypedDict):
+    """Material peligroso (MaterialPeligroso Sí): clave UN y embalaje."""
+    key: str
+    """Clave del material peligroso (CveMaterialPeligroso), c_MaterialPeligroso (número UN)."""
+    packaging: str
+    """Tipo de embalaje (Embalaje), c_TipoEmbalaje."""
+    packaging_description: NotRequired[str]
+    """Descripción del embalaje (DescripEmbalaje)."""
+
+
+class UpdateInvoiceParamsCartaPorteGoodsItemCofepris(TypedDict):
+    """Datos COFEPRIS de la mercancía: sector y lo que pide cada uno (medicamentos, precursores, psicotrópicos, sustancias tóxicas, plaguicidas)."""
+    sector: str
+    """Sector COFEPRIS (SectorCOFEPRIS): 01 medicamento, 02 precursores y químicos de uso dual, 03 psicotrópicos y estupefacientes, 04 sustancias tóxicas, 05 plaguicidas y fertilizantes."""
+    active_ingredient: NotRequired[str]
+    """Nombre del ingrediente activo (NombreIngredienteActivo)."""
+    chemical_name: NotRequired[str]
+    """Nombre químico (NomQuimico)."""
+    generic_name: NotRequired[str]
+    """Denominación genérica del producto (DenominacionGenericaProd)."""
+    brand_name: NotRequired[str]
+    """Denominación distintiva o marca (DenominacionDistintivaProd)."""
+    manufacturer: NotRequired[str]
+    """Fabricante (Fabricante)."""
+    expiry: NotRequired[str]
+    """Fecha de caducidad (FechaCaducidad), AAAA-MM-DD."""
+    lot: NotRequired[str]
+    """Lote del medicamento (LoteMedicamento)."""
+    form: NotRequired[str]
+    """Forma farmacéutica (FormaFarmaceutica), c_FormaFarmaceutica."""
+    conditions: NotRequired[str]
+    """Condiciones especiales de transporte (CondicionesEspTransp), c_CondicionesEspeciales."""
+    sanitary_registry: NotRequired[str]
+    """Registro sanitario o folio de autorización (RegistroSanitarioFolioAutorizacion)."""
+    import_permit: NotRequired[str]
+    """Permiso de importación (PermisoImportacion)."""
+    vucem_folio: NotRequired[str]
+    """Folio de importación VUCEM (FolioImpoVUCEM)."""
+    cas: NotRequired[str]
+    """Número CAS de la sustancia (NumCAS)."""
+    importer: NotRequired[str]
+    """Razón social de la empresa importadora (RazonSocialEmpImp)."""
+    pesticide_registry: NotRequired[str]
+    """Registro sanitario de plaguicidas COFEPRIS (NumRegSanPlagCOFEPRIS)."""
+    manufacturer_data: NotRequired[str]
+    """Datos del fabricante (DatosFabricante)."""
+    formulator_data: NotRequired[str]
+    """Datos del formulador (DatosFormulador)."""
+    maquilador_data: NotRequired[str]
+    """Datos del maquilador (DatosMaquilador)."""
+    authorized_use: NotRequired[str]
+    """Uso autorizado (UsoAutorizado)."""
+
+
+class UpdateInvoiceParamsCartaPorteGoodsItemMaterial(TypedDict):
+    """Tipo de materia (TipoMateria, c_TipoMateria) y su descripción si es «otra»."""
+    type: str
+    """Tipo de materia (TipoMateria), c_TipoMateria."""
+    description: NotRequired[str]
+    """Descripción de la materia (DescripcionMateria), con el tipo 05 otra."""
+
+
+class UpdateInvoiceParamsCartaPorteGoodsItemCustomsDocsItem(TypedDict):
+    type: str
+    """Tipo de documento (TipoDocumento), c_DocumentoAduanero: 01 pedimento…"""
+    pedimento: NotRequired[str]
+    """Número de pedimento (NumPedimento), con el formato «NN  NN  NNNN  NNNNNNN». Solo con el tipo 01."""
+    doc_id: NotRequired[str]
+    """Identificador del documento aduanero (IdentDocAduanero), con un tipo distinto de 01."""
+    importer_tax_id: NotRequired[str]
+    """RFC del importador (RFCImpo), con un pedimento."""
+
+
+class UpdateInvoiceParamsCartaPorteGoodsItemGuidesItem(TypedDict):
+    number: str
+    """Número de guía (NumeroGuiaIdentificacion)."""
+    description: str
+    """Descripción del contenido (DescripGuiaIdentificacion)."""
+    weight_kg: float
+    """Peso en kilogramos (PesoEnKg)."""
+
+
+class UpdateInvoiceParamsCartaPorteGoodsItemQuantitiesItem(TypedDict):
+    quantity: float
+    """Cantidad que va a ese destino."""
+    destination: int
+    """El destino, por su posición en destinations (desde 0)."""
+    mode: NotRequired[Literal["01", "02", "03", "04"]]
+    """Medio en que va esa cantidad (CvesTransporte), c_CveTransporte."""
+
+
+class UpdateInvoiceParamsCartaPorteGoodsItemDetail(TypedDict):
+    """Marítimo: detalle de la mercancía (DetalleMercancia): kilos netos, tara y piezas."""
+    net_kg: float
+    """Peso neto en kg (PesoNeto)."""
+    tare_kg: float
+    """Tara en kg (PesoTara)."""
+    pieces: NotRequired[int]
+    """Número de piezas (NumPiezas)."""
+
+
+class UpdateInvoiceParamsCartaPorteGoodsItem(TypedDict):
+    product_key: str
+    """Clave del bien transportado (BienesTransp), c_ClaveProdServCP."""
+    description: str
+    """Descripción de la mercancía (Descripcion)."""
+    quantity: float
+    """Cantidad (Cantidad)."""
+    unit_key: str
+    """Clave de unidad (ClaveUnidad), c_ClaveUnidad."""
+    weight_kg: float
+    """Peso en kilogramos (PesoEnKg)."""
+    dimensions: NotRequired[str]
+    """Dimensiones (Dimensiones), como 30/40/30cm o en plg."""
+    hazmat: NotRequired[UpdateInvoiceParamsCartaPorteGoodsItemHazmat]
+    """Material peligroso (MaterialPeligroso Sí): clave UN y embalaje."""
+    cofepris: NotRequired[UpdateInvoiceParamsCartaPorteGoodsItemCofepris]
+    """Datos COFEPRIS de la mercancía: sector y lo que pide cada uno (medicamentos, precursores, psicotrópicos, sustancias tóxicas, plaguicidas)."""
+    value: NotRequired[float]
+    """Valor de la mercancía (ValorMercancia); obligatorio en transporte aéreo."""
+    currency: NotRequired[str]
+    """Moneda del valor de la mercancía (Moneda), c_Moneda."""
+    tariff: NotRequired[str]
+    """Fracción arancelaria (FraccionArancelaria), 10 dígitos. Transporte internacional."""
+    cce_uuid: NotRequired[str]
+    """UUID del CFDI con complemento de comercio exterior (UUIDComercioExt)."""
+    material: NotRequired[UpdateInvoiceParamsCartaPorteGoodsItemMaterial]
+    """Tipo de materia (TipoMateria, c_TipoMateria) y su descripción si es «otra»."""
+    customs_docs: NotRequired[list[UpdateInvoiceParamsCartaPorteGoodsItemCustomsDocsItem]]
+    """Documentación aduanera (DocumentacionAduanera) de la mercancía en transporte internacional."""
+    guides: NotRequired[list[UpdateInvoiceParamsCartaPorteGoodsItemGuidesItem]]
+    """Paquetería: guías de los paquetes o tarimas (GuiasIdentificacion)."""
+    quantities: NotRequired[list[UpdateInvoiceParamsCartaPorteGoodsItemQuantitiesItem]]
+    """Cuánto va a cada destino (CantidadTransporta), por destino."""
+    detail: NotRequired[UpdateInvoiceParamsCartaPorteGoodsItemDetail]
+    """Marítimo: detalle de la mercancía (DetalleMercancia): kilos netos, tara y piezas."""
+    stcc: NotRequired[str]
+    """Ferroviario: clave STCC (ClaveSTCC)."""
+
+
+class UpdateInvoiceParamsCartaPorteVehicleTrailersItem(TypedDict):
+    type: str
+    """Subtipo de remolque (SubTipoRem), c_SubTipoRem."""
+    plate: str
+    """Placa del remolque (Placa)."""
+
+
+class UpdateInvoiceParamsCartaPorteVehicle(TypedDict):
+    """Autotransporte (Autotransporte): vehículo, permiso SCT, seguros y remolques."""
+    config: str
+    """Configuración vehicular (ConfigVehicular), c_ConfigAutotransporte: C2, T3S2…"""
+    plate: str
+    """Placa (PlacaVM), sin guiones ni espacios."""
+    year: int
+    """Año del modelo (AnioModeloVM)."""
+    gross_weight: float
+    """Peso bruto vehicular en toneladas (PesoBrutoVehicular)."""
+    permit_type: str
+    """Tipo de permiso SCT (PermSCT), c_TipoPermiso."""
+    permit_number: str
+    """Número de permiso SCT (NumPermisoSCT)."""
+    insurer: str
+    """Aseguradora de responsabilidad civil (AseguraRespCivil)."""
+    policy: str
+    """Póliza de responsabilidad civil (PolizaRespCivil)."""
+    env_insurer: NotRequired[str]
+    """Aseguradora de daños al medio ambiente (AseguraMedAmbiente); obligatoria con material peligroso."""
+    env_policy: NotRequired[str]
+    """Póliza de daños al medio ambiente (PolizaMedAmbiente)."""
+    cargo_insurer: NotRequired[str]
+    """Aseguradora de la carga (AseguraCarga)."""
+    cargo_policy: NotRequired[str]
+    """Póliza de la carga (PolizaCarga)."""
+    premium: NotRequired[float]
+    """Prima del seguro (PrimaSeguro)."""
+    trailers: NotRequired[list[UpdateInvoiceParamsCartaPorteVehicleTrailersItem]]
+    """Remolques o semirremolques (Remolque): tipo (c_SubTipoRem) y placa."""
+
+
+class UpdateInvoiceParamsCartaPorteSeaContainersItemTrailersItem(TypedDict):
+    type: str
+    """Subtipo de remolque (SubTipoRem), c_SubTipoRem."""
+    plate: str
+    """Placa del remolque (Placa)."""
+
+
+class UpdateInvoiceParamsCartaPorteSeaContainersItem(TypedDict):
+    type: str
+    """Tipo de contenedor (TipoContenedor), c_ContenedorMaritimo o c_Contenedor en ferroviario."""
+    registration: NotRequired[str]
+    """Matrícula (Matricula)."""
+    seal: NotRequired[str]
+    """Número de precinto (NumPrecinto)."""
+    related_id_ccp: NotRequired[str]
+    """Ferri: el IdCCP de la Carta Porte del autotransporte a bordo (IdCCPRelacionado)."""
+    truck_plate: NotRequired[str]
+    """Ferri: placa del vehículo a bordo (PlacaVMCCP)."""
+    certified_at: NotRequired[str]
+    """Ferri: fecha de certificación de la Carta Porte del vehículo (FechaCertificacionCCP)."""
+    trailers: NotRequired[list[UpdateInvoiceParamsCartaPorteSeaContainersItemTrailersItem]]
+    """Remolques o semirremolques (Remolque): tipo (c_SubTipoRem) y placa."""
+
+
+class UpdateInvoiceParamsCartaPorteSea(TypedDict):
+    """Transporte marítimo (TransporteMaritimo): embarcación, naviero y contenedores."""
+    permit_type: NotRequired[str]
+    """Tipo de permiso SCT (PermSCT), c_TipoPermiso."""
+    permit_number: NotRequired[str]
+    """Número de permiso SCT (NumPermisoSCT)."""
+    insurer: NotRequired[str]
+    """Aseguradora de responsabilidad civil (AseguraRespCivil)."""
+    policy: NotRequired[str]
+    """Póliza de responsabilidad civil (PolizaRespCivil)."""
+    vessel_type: str
+    """Tipo de embarcación (TipoEmbarcacion), c_ConfigMaritima."""
+    registration: str
+    """Matrícula (Matricula)."""
+    imo: str
+    """Número IMO (NumeroOMI): IMO y 7 dígitos."""
+    year: NotRequired[int]
+    """Año de la embarcación (AnioEmbarcacion)."""
+    vessel_name: NotRequired[str]
+    """Nombre de la embarcación (NombreEmbarc)."""
+    flag: str
+    """Nacionalidad de la embarcación (NacionalidadEmbarc), c_Pais."""
+    gross_tonnage: float
+    """Unidades de arqueo bruto (UnidadesDeArqBruto)."""
+    cargo_type: str
+    """Tipo de carga (TipoCarga), c_ClaveTipoCarga."""
+    length: NotRequired[float]
+    """Eslora en metros (Eslora)."""
+    beam: NotRequired[float]
+    """Manga en metros (Manga)."""
+    draft: NotRequired[float]
+    """Calado en metros (Calado)."""
+    depth: NotRequired[float]
+    """Puntal en metros (Puntal)."""
+    line: NotRequired[str]
+    """Línea naviera (LineaNaviera)."""
+    agent_name: str
+    """Nombre del agente naviero consignatario (NombreAgenteNaviero)."""
+    agent_authorization: str
+    """Autorización del agente naviero (NumAutorizacionNaviero), c_NumAutorizacionNaviero."""
+    voyage: NotRequired[str]
+    """Número de viaje (NumViaje)."""
+    bill_of_lading: NotRequired[str]
+    """Número de conocimiento de embarque (NumConocEmbarc)."""
+    temp_permit: NotRequired[str]
+    """Permiso temporal de navegación (PermisoTempNavegacion), para una embarcación extranjera."""
+    containers: NotRequired[list[UpdateInvoiceParamsCartaPorteSeaContainersItem]]
+    """Contenedores (Contenedor)."""
+
+
+class UpdateInvoiceParamsCartaPorteAirShipperForeign(TypedDict):
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    tax_id: str
+    """Número de registro de identidad fiscal en su país (NumRegIdTrib)."""
+    country: str
+    """País de residencia fiscal, clave de 3 letras de c_Pais (USA, CAN…)."""
+
+
+class UpdateInvoiceParamsCartaPorteAirShipper(TypedDict):
+    """Embarcador (RFCEmbarcador o NumRegIdTribEmbarc y ResidenciaFiscalEmbarc, NombreEmbarcador)."""
+    tax_id: NotRequired[str]
+    """RFC del embarcador (RFCEmbarcador)."""
+    foreign: NotRequired[UpdateInvoiceParamsCartaPorteAirShipperForeign]
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    name: NotRequired[str]
+    """Nombre del embarcador (NombreEmbarcador)."""
+
+
+class UpdateInvoiceParamsCartaPorteAir(TypedDict):
+    """Transporte aéreo (TransporteAereo): permiso, guía y transportista."""
+    permit_type: str
+    """Tipo de permiso SCT (PermSCT), c_TipoPermiso."""
+    permit_number: str
+    """Número de permiso SCT (NumPermisoSCT)."""
+    aircraft: NotRequired[str]
+    """Matrícula de la aeronave (MatriculaAeronave)."""
+    insurer: NotRequired[str]
+    """Aseguradora de responsabilidad civil (AseguraRespCivil)."""
+    policy: NotRequired[str]
+    """Póliza de responsabilidad civil (PolizaRespCivil)."""
+    waybill: str
+    """Número de guía aérea (NumeroGuia), de 12 a 15 caracteres."""
+    contract_place: NotRequired[str]
+    """Lugar del contrato (LugarContrato)."""
+    carrier: str
+    """Código del transportista (CodigoTransportista), c_CodigoTransporteAereo."""
+    shipper: NotRequired[UpdateInvoiceParamsCartaPorteAirShipper]
+    """Embarcador (RFCEmbarcador o NumRegIdTribEmbarc y ResidenciaFiscalEmbarc, NombreEmbarcador)."""
+    rate_charge: NotRequired[float]
+    """Cargo por tasación (CargoPorTasacion)."""
+
+
+class UpdateInvoiceParamsCartaPorteRailRightsItem(TypedDict):
+    type: str
+    """Tipo de derecho de paso (TipoDerechoDePaso), c_DerechosDePaso."""
+    km: float
+    """Kilometraje pagado (KilometrajePagado)."""
+
+
+class UpdateInvoiceParamsCartaPorteRailCarsItemContainersItem(TypedDict):
+    type: str
+    """Tipo de contenedor (TipoContenedor), c_ContenedorMaritimo o c_Contenedor en ferroviario."""
+    empty_kg: float
+    """Peso del contenedor vacío en kg (PesoContenedorVacio)."""
+    net_kg: float
+    """Peso neto en kg (PesoNeto)."""
+
+
+class UpdateInvoiceParamsCartaPorteRailCarsItem(TypedDict):
+    type: str
+    """Tipo de carro (TipoCarro), c_TipoCarro."""
+    registration: str
+    """Matrícula (Matricula)."""
+    guide: str
+    """Guía del carro (GuiaCarro)."""
+    net_tons: float
+    """Toneladas netas del carro (ToneladasNetasCarro)."""
+    containers: NotRequired[list[UpdateInvoiceParamsCartaPorteRailCarsItemContainersItem]]
+    """Contenedores (Contenedor)."""
+
+
+class UpdateInvoiceParamsCartaPorteRail(TypedDict):
+    """Transporte ferroviario (TransporteFerroviario): servicio, tráfico, derechos de paso y carros."""
+    service: str
+    """Tipo de servicio (TipoDeServicio), c_TipoDeServicio."""
+    traffic: str
+    """Tipo de tráfico (TipoDeTrafico), c_TipoDeTrafico."""
+    insurer: NotRequired[str]
+    """Aseguradora de responsabilidad civil (AseguraRespCivil)."""
+    policy: NotRequired[str]
+    """Póliza de responsabilidad civil (PolizaRespCivil)."""
+    rights: NotRequired[list[UpdateInvoiceParamsCartaPorteRailRightsItem]]
+    """Derechos de paso (DerechosDePaso): tipo y kilómetros."""
+    cars: list[UpdateInvoiceParamsCartaPorteRailCarsItem]
+    """Carros (Carro)."""
+
+
+class UpdateInvoiceParamsCartaPorteDriversItemForeign(TypedDict):
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    tax_id: str
+    """Número de registro de identidad fiscal en su país (NumRegIdTrib)."""
+    country: str
+    """País de residencia fiscal, clave de 3 letras de c_Pais (USA, CAN…)."""
+
+
+class UpdateInvoiceParamsCartaPorteDriversItem(TypedDict):
+    tax_id: str | Literal[""]
+    """RFC del operador (RFCFigura); vacío si es extranjero (con foreign)."""
+    license: str
+    """Número de licencia (NumLicencia)."""
+    name: str
+    """Nombre del operador (NombreFigura)."""
+    foreign: NotRequired[UpdateInvoiceParamsCartaPorteDriversItemForeign]
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+
+
+class UpdateInvoiceParamsCartaPorteFiguresItemForeign(TypedDict):
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    tax_id: str
+    """Número de registro de identidad fiscal en su país (NumRegIdTrib)."""
+    country: str
+    """País de residencia fiscal, clave de 3 letras de c_Pais (USA, CAN…)."""
+
+
+class UpdateInvoiceParamsCartaPorteFiguresItemAddress(TypedDict):
+    """Domicilio (Domicilio). En México basta el código postal: estado, municipio y localidad se toman de c_CodigoPostal."""
+    street: NotRequired[str]
+    """Calle (Calle)."""
+    exterior: NotRequired[str]
+    """Número exterior (NumeroExterior)."""
+    interior: NotRequired[str]
+    """Número interior (NumeroInterior)."""
+    zip: str
+    """Código postal (CodigoPostal). En México se deducen de él estado, municipio y localidad."""
+    country: NotRequired[str]
+    """País (Pais), c_Pais. Por omisión MEX."""
+    state: NotRequired[str]
+    """Estado (Estado): en el extranjero c_Estado para USA y CAN, o texto."""
+    municipality: NotRequired[str]
+    """Municipio (Municipio), en el extranjero como texto."""
+    locality: NotRequired[str]
+    """Localidad (Localidad), en el extranjero como texto."""
+    colony: NotRequired[str]
+    """Colonia (Colonia), en el extranjero como texto."""
+
+
+class UpdateInvoiceParamsCartaPorteFiguresItem(TypedDict):
+    type: Literal["02", "03", "04", "05"]
+    """Tipo de figura (TipoFigura): 02 propietario, 03 arrendador, 04 notificado, 05 integrante."""
+    tax_id: NotRequired[str]
+    """RFC de la figura (RFCFigura)."""
+    foreign: NotRequired[UpdateInvoiceParamsCartaPorteFiguresItemForeign]
+    """Si es extranjero: su país de residencia (ResidenciaFiscal, c_Pais) y su número de registro tributario (NumRegIdTrib), con el RFC genérico XEXX010101000."""
+    name: str
+    """Nombre de la figura (NombreFigura)."""
+    parts: NotRequired[list[str]]
+    """Partes del transporte que posee o arrienda (ParteTransporte), c_ParteTransporte."""
+    address: NotRequired[UpdateInvoiceParamsCartaPorteFiguresItemAddress]
+    """Domicilio (Domicilio). En México basta el código postal: estado, municipio y localidad se toman de c_CodigoPostal."""
+
+
+class UpdateInvoiceParamsCartaPorte(TypedDict):
+    """Complemento Carta Porte 3.1 (traslado de mercancías)."""
+    modes: NotRequired[list[Literal["01", "02", "03", "04"]]]
+    """Cómo viajan las mercancías (c_CveTransporte): 01 autotransporte, 02 marítimo, 03 aéreo, 04 ferroviario; varios si es intermodal. Por omisión 01."""
+    international: NotRequired[UpdateInvoiceParamsCartaPorteInternational]
+    """Transporte internacional (TranspInternac Sí): entrada o salida, país, vía y regímenes aduaneros."""
+    istmo: NotRequired[UpdateInvoiceParamsCartaPorteIstmo]
+    """Corredor Interoceánico del Istmo de Tehuantepec: polos de origen y destino (c_RegistroISTMO)."""
+    reverse_logistics: NotRequired[bool]
+    """Autotransporte: true si es logística inversa, recolección o devolución."""
+    origin: UpdateInvoiceParamsCartaPorteOrigin
+    """Ubicación de origen (Ubicacion TipoUbicacion Origen): remitente, fecha y hora de salida y domicilio."""
+    destinations: list[UpdateInvoiceParamsCartaPorteDestinationsItem]
+    """Ubicaciones de destino (TipoUbicacion Destino), en orden: destinatario, llegada, distancia y domicilio."""
+    goods: list[UpdateInvoiceParamsCartaPorteGoodsItem]
+    """Mercancías (Mercancia) que se transportan."""
+    vehicle: NotRequired[UpdateInvoiceParamsCartaPorteVehicle]
+    """Autotransporte (Autotransporte): vehículo, permiso SCT, seguros y remolques."""
+    sea: NotRequired[UpdateInvoiceParamsCartaPorteSea]
+    """Transporte marítimo (TransporteMaritimo): embarcación, naviero y contenedores."""
+    air: NotRequired[UpdateInvoiceParamsCartaPorteAir]
+    """Transporte aéreo (TransporteAereo): permiso, guía y transportista."""
+    rail: NotRequired[UpdateInvoiceParamsCartaPorteRail]
+    """Transporte ferroviario (TransporteFerroviario): servicio, tráfico, derechos de paso y carros."""
+    drivers: list[UpdateInvoiceParamsCartaPorteDriversItem]
+    """Operadores (FiguraTransporte tipo 01): RFC, licencia y nombre."""
+    figures: NotRequired[list[UpdateInvoiceParamsCartaPorteFiguresItem]]
+    """Otras figuras de transporte: 02 propietario, 03 arrendador, 04 notificado, 05 integrante de coordinados."""
+
+
+class UpdateInvoiceParamsIneEntitiesItem(TypedDict):
+    key: str
+    """Clave de la entidad (ClaveEntidad): la del estado (JAL, QUE…), NAC (nacional) o la circunscripción CR1 a CR5; estas seis no van con ámbito Local."""
+    scope: NotRequired[Literal["Local", "Federal"]]
+    """Ámbito (Ambito): Local o Federal."""
+    accounting_ids: NotRequired[list[str]]
+    """Claves de contabilidad (IdContabilidad)."""
+
+
+class UpdateInvoiceParamsIne(TypedDict):
+    """Complemento INE (procesos electorales)."""
+    process: Literal["Ordinario", "Precampaña", "Campaña"]
+    """Tipo de proceso (TipoProceso): Ordinario, Precampaña o Campaña."""
+    committee: NotRequired[Literal["Ejecutivo Nacional", "Ejecutivo Estatal", "Directivo Estatal"]]
+    """Tipo de comité (TipoComite), con el proceso Ordinario."""
+    accounting_id: NotRequired[str]
+    """Clave de contabilidad (IdContabilidad), hasta 6 dígitos."""
+    entities: NotRequired[list[UpdateInvoiceParamsIneEntitiesItem]]
+    """Entidades (Entidad): clave del estado, ámbito y claves de contabilidad."""
+
+
+class UpdateInvoiceParamsLeyendasItem(TypedDict):
+    text: str
+    """Texto de la leyenda (textoLeyenda)."""
+    disposition: NotRequired[str]
+    """Disposición fiscal (disposicionFiscal), por ejemplo LISR."""
+    norm: NotRequired[str]
+    """Norma o artículo (norma)."""
+
+
+class UpdateInvoiceParamsDonation(TypedDict):
+    """Complemento de donatarias: un recibo de donativo. El emisor debe ser donataria (tax_system 603) con su oficio en donation_authorization (POST /v1/issuers/{id})."""
+    in_kind: NotRequired[bool]
+    """true si el donativo es en especie (bienes): va con forma de pago 12 (dación en pago) y un concepto por cada tipo de bien."""
+    deducted: NotRequired[bool]
+    """true si el donante ya había deducido los bienes que dona: el recibo dice que el donativo no es deducible."""
+
+
+class UpdateInvoiceParamsLocalTaxesItem(TypedDict):
+    retention: bool
+    """true si es una retención local; false si es un traslado."""
+    name: str
+    """Nombre del impuesto local (ImpLocTrasladado o ImpLocRetenido), como ISH."""
+    rate: float
+    """Tasa en por ciento (TasadeTraslado o TasadeRetencion)."""
+    amount: float
+    """Importe del impuesto local."""
+
+
+class UpdateInvoiceParamsComercioExteriorOwnersItem(TypedDict):
+    tax_id: str
+    """Número de registro tributario del propietario (NumRegIdTrib)."""
+    country: str
+    """País de residencia del propietario (ResidenciaFiscal), c_Pais."""
+
+
+class UpdateInvoiceParamsComercioExteriorIssuerAddress(TypedDict):
+    """Domicilio del emisor (Emisor Domicilio): calle y números; lo demás sale de su código postal."""
+    street: str
+    """Calle (Calle)."""
+    exterior: NotRequired[str]
+    """Número exterior (NumeroExterior)."""
+    interior: NotRequired[str]
+    """Número interior (NumeroInterior)."""
+    zip: NotRequired[str]
+    """Código postal del emisor (CodigoPostal)."""
+
+
+class UpdateInvoiceParamsComercioExteriorReceiverAddress(TypedDict):
+    """Domicilio del receptor en el extranjero (Receptor Domicilio)."""
+    street: str
+    """Calle (Calle)."""
+    exterior: NotRequired[str]
+    """Número exterior (NumeroExterior)."""
+    interior: NotRequired[str]
+    """Número interior (NumeroInterior)."""
+    colony: NotRequired[str]
+    """Colonia (Colonia), en el extranjero como texto."""
+    locality: NotRequired[str]
+    """Localidad (Localidad), en el extranjero como texto."""
+    municipality: NotRequired[str]
+    """Municipio (Municipio), en el extranjero como texto."""
+    state: NotRequired[str]
+    """Estado (Estado), c_Estado para USA y CAN."""
+    country: str
+    """País (Pais), c_Pais."""
+    zip: str
+    """Código postal en su país (CodigoPostal)."""
+
+
+class UpdateInvoiceParamsComercioExteriorRecipientAddress(TypedDict):
+    """Domicilio del destinatario (Domicilio)."""
+    street: str
+    """Calle (Calle)."""
+    exterior: NotRequired[str]
+    """Número exterior (NumeroExterior)."""
+    interior: NotRequired[str]
+    """Número interior (NumeroInterior)."""
+    colony: NotRequired[str]
+    """Colonia (Colonia), en el extranjero como texto."""
+    locality: NotRequired[str]
+    """Localidad (Localidad), en el extranjero como texto."""
+    municipality: NotRequired[str]
+    """Municipio (Municipio), en el extranjero como texto."""
+    state: NotRequired[str]
+    """Estado (Estado): en el extranjero c_Estado para USA y CAN, o texto."""
+    country: str
+    """País (Pais), c_Pais. Por omisión MEX."""
+    zip: str
+    """Código postal (CodigoPostal). En México se deducen de él estado, municipio y localidad."""
+
+
+class UpdateInvoiceParamsComercioExteriorRecipient(TypedDict):
+    """Destinatario, si no es el receptor (Destinatario)."""
+    name: NotRequired[str]
+    """Nombre del destinatario (Nombre)."""
+    tax_id: NotRequired[str]
+    """Número de registro tributario del destinatario (NumRegIdTrib)."""
+    address: UpdateInvoiceParamsComercioExteriorRecipientAddress
+    """Domicilio del destinatario (Domicilio)."""
+
+
+class UpdateInvoiceParamsComercioExteriorGoodsItem(TypedDict):
+    id: NotRequired[str]
+    """Número de identificación de la mercancía (NoIdentificacion): el sku de su concepto."""
+    tariff: NotRequired[str]
+    """Fracción arancelaria (FraccionArancelaria), 10 dígitos con el NICO, vigente en c_FraccionArancelaria (búsquela en `GET /v1/sat_catalogs/customs_tariffs`); una que no lo esté se rechaza antes de timbrar."""
+    unit: NotRequired[str]
+    """Unidad aduana (UnidadAduana), c_UnidadAduana; 99 en un servicio. Con `tariff` puede omitirse: va la UMT de la fracción en el catálogo del SAT (otra la rechaza el SAT con CCE161)."""
+    quantity: NotRequired[float]
+    """Cantidad en la unidad aduana (CantidadAduana)."""
+    unit_value_usd: NotRequired[float]
+    """Valor unitario en dólares (ValorUnitarioAduana)."""
+
+
+class UpdateInvoiceParamsComercioExterior(TypedDict):
+    """Complemento de comercio exterior 2.0."""
+    motive: NotRequired[Literal["99", "01", "02", "03", "04", "05"]]
+    """Motivo de traslado (MotivoTraslado), c_MotivoTraslado, solo en un traslado: 01 mercancías facturadas con anterioridad (relacione la factura de venta en related), 02 reubicación de mercancías propias, 03 consignación, 04 para posterior enajenación, 05 propiedad de terceros (con owners), 99 otros."""
+    owners: NotRequired[list[UpdateInvoiceParamsComercioExteriorOwnersItem]]
+    """Propietarios de la mercancía si no es el emisor (Propietario), con motive 05."""
+    incoterm: NotRequired[str]
+    """Incoterm (Incoterm), c_INCOTERM: EXW, FOB, CIF, DAP, DDP…"""
+    certificate: NotRequired[str]
+    """Número de certificado de origen (NumCertificadoOrigen)."""
+    usd_rate: float
+    """Tipo de cambio a dólares (TipoCambioUSD)."""
+    issuer_curp: NotRequired[str]
+    """CURP del emisor persona física (Emisor Curp)."""
+    issuer_address: NotRequired[UpdateInvoiceParamsComercioExteriorIssuerAddress]
+    """Domicilio del emisor (Emisor Domicilio): calle y números; lo demás sale de su código postal."""
+    receiver_address: NotRequired[UpdateInvoiceParamsComercioExteriorReceiverAddress]
+    """Domicilio del receptor en el extranjero (Receptor Domicilio)."""
+    recipient: NotRequired[UpdateInvoiceParamsComercioExteriorRecipient]
+    """Destinatario, si no es el receptor (Destinatario)."""
+    goods: list[UpdateInvoiceParamsComercioExteriorGoodsItem]
+    """Mercancías (Mercancia), una por concepto exportado."""
+    notes: NotRequired[str]
+    """Observaciones del complemento (Observaciones)."""
+
+
+class UpdateInvoiceParamsGlobal(TypedDict):
+    """Factura global a público en general (InformacionGlobal): periodicidad, meses y año."""
+    periodicity: str
+    """Periodicidad (Periodicidad), c_Periodicidad: 01 diario, 02 semanal, 03 quincenal, 04 mensual, 05 bimestral."""
+    months: str
+    """Meses (Meses), c_Meses: 01 a 12, o 13 a 18 bimestres."""
+    year: int
+    """Año (Año): el de la fecha de la factura o hasta cinco años antes (CFDI40136)."""
+    keep_concepts: NotRequired[bool]
+    """Solo emisores con régimen 603 (donatarias y asociaciones): true conserva la descripción, claves, unidad y cantidad de cada concepto en vez de «Venta», 01010101, ACT."""
+
+
+class UpdateInvoiceParamsAddenda(TypedDict):
+    """Addenda del receptor (Walmart, Soriana…), con sus propios campos."""
+    type: Literal["walmart", "soriana", "liverpool", "homedepot", "chedraui", "generic"]
+    values: dict[str, str]
+    customer: NotRequired[dict[str, str]]
+
+
+class UpdateInvoiceParamsRelated(TypedDict):
+    """CFDI relacionados (CfdiRelacionados): tipo de relación de c_TipoRelacion y los UUID."""
+    relationship: str
+    """Tipo de relación (TipoRelacion): 01 nota de crédito, 03 devolución, 04 sustitución, 07 anticipo…"""
+    uuids: list[str]
+    """Folios fiscales relacionados."""
+
+
+# De un borrador, la factura entera, como en POST /v1/invoices (draft no se manda). De una factura timbrada, solo cost_center y notes.
+UpdateInvoiceParams = TypedDict(
+    "UpdateInvoiceParams",
+    {
+        "issuer": "NotRequired[str]",
+        "branch": "NotRequired[str]",
+        "cost_center": "NotRequired[str]",
+        "warehouse": "NotRequired[str]",
+        "customer": "NotRequired[str | UpdateInvoiceParamsCustomer]",
+        "items": "NotRequired[list[UpdateInvoiceParamsItemsItem]]",
+        "type": "NotRequired[Literal[\"I\", \"T\"]]",
+        "carta_porte": "NotRequired[UpdateInvoiceParamsCartaPorte]",
+        "carta_porte_exemption": "NotRequired[Literal[\"2.7.7.2.1\", \"2.7.7.2.2\", \"2.7.7.2.3\"]]",
+        "ine": "NotRequired[UpdateInvoiceParamsIne]",
+        "leyendas": "NotRequired[list[UpdateInvoiceParamsLeyendasItem]]",
+        "donation": "NotRequired[UpdateInvoiceParamsDonation]",
+        "local_taxes": "NotRequired[list[UpdateInvoiceParamsLocalTaxesItem]]",
+        "export": "NotRequired[Literal[\"01\", \"02\", \"03\", \"04\"]]",
+        "comercio_exterior": "NotRequired[UpdateInvoiceParamsComercioExterior]",
+        "global": "NotRequired[UpdateInvoiceParamsGlobal]",
+        "use": "NotRequired[str]",
+        "payment_form": "NotRequired[str]",
+        "payment_method": "NotRequired[Literal[\"PUE\", \"PPD\"]]",
+        "paid_later": "NotRequired[bool]",
+        "currency": "NotRequired[str]",
+        "series": "NotRequired[str]",
+        "notes": "NotRequired[str]",
+        "payment_terms": "NotRequired[str]",
+        "pdf_language": "NotRequired[Literal[\"es\", \"en\", \"bi\"]]",
+        "addenda": "NotRequired[UpdateInvoiceParamsAddenda]",
+        "related": "NotRequired[UpdateInvoiceParamsRelated]",
+        "exchange_rate": "NotRequired[float]",
+        "folio": "NotRequired[int]",
+        "continue_sequence": "NotRequired[bool]",
+        "date": "NotRequired[str]",
+        "send_email": "NotRequired[bool]",
+        "email_cc": "NotRequired[str | None]",
+        "metadata": "NotRequired[dict[str, str]]",
+        "draft": "NotRequired[bool]",
+        "async": "NotRequired[bool]",
+    },
+)
 
 
 class GetInvoicePdfParams(TypedDict):
@@ -17427,6 +18638,8 @@ class CancelInvoiceParams(TypedDict):
     """Motivo de cancelación (c_MotivoCancelacion): 01 con errores con relación (lleva substitution), 02 con errores sin relación (por omisión), 03 no se llevó a cabo, 04 solo en una factura global, cuando una venta incluida se facturó a nombre del cliente."""
     substitution: NotRequired[str]
     """El comprobante que sustituye a este (su id o su UUID), con el motivo 01."""
+    notify_customer: NotRequired[bool]
+    """true para avisarle al cliente por correo que se canceló, con el diseño de Fiscalisto, a las direcciones a las que se le mandó la factura (con la que la sustituye, si hay). Por omisión no se avisa. Solo si la factura se le mandó por correo; quien se dio de baja de los avisos no lo recibe."""
 
 
 class MarkInvoicePaidParams(TypedDict):
@@ -17441,7 +18654,7 @@ class ListReceivablesParams(TypedDict):
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     customer: NotRequired[str]
     """Solo este cliente: su RFC o su id (cus_…)."""
 
@@ -17449,7 +18662,7 @@ class ListReceivablesParams(TypedDict):
 class GetCashForecastParams(TypedDict):
     """Los parámetros de GET /v1/cash_forecast."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     customers_pay_days_later: NotRequired[int]
     """Escenario: sus clientes le pagan estos días después (0 a 120)."""
     pay_suppliers_days_later: NotRequired[int]
@@ -17549,16 +18762,24 @@ class CreateBankTransactionsParams(TypedDict):
     """Los depósitos, hasta 1,000 por solicitud."""
 
 
-class ListBankTransactionsParams(TypedDict):
-    """Los parámetros de GET /v1/bank_transactions."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    status: NotRequired[Literal["open", "matched", "classified"]]
-    """open (sin conciliar), matched o classified."""
+# Los parámetros de GET /v1/bank_transactions.
+ListBankTransactionsParams = TypedDict(
+    "ListBankTransactionsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"open\", \"matched\", \"classified\"]]",
+        "date[gte]": "NotRequired[str]",
+        "date[gt]": "NotRequired[str]",
+        "date[lte]": "NotRequired[str]",
+        "date[lt]": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class MatchBankTransactionParams(TypedDict):
@@ -17611,18 +18832,25 @@ class CreatePurchaseReceiptParams(TypedDict):
     """El uso del CFDI (G03, I01…). Por omisión G03 si el régimen del emisor lo permite."""
     note: NotRequired[str | None]
     """Una nota para su equipo."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListPurchaseReceiptsParams(TypedDict):
-    """Los parámetros de GET /v1/purchase_receipts."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    status: NotRequired[Literal["pending", "requested", "invoiced", "non_deductible"]]
-    """pending, requested, invoiced o non_deductible."""
+# Los parámetros de GET /v1/purchase_receipts.
+ListPurchaseReceiptsParams = TypedDict(
+    "ListPurchaseReceiptsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"pending\", \"requested\", \"invoiced\", \"non_deductible\"]]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdatePurchaseReceiptParamsFieldsItem(TypedDict):
@@ -17655,6 +18883,8 @@ class UpdatePurchaseReceiptParams(TypedDict):
     """El uso del CFDI (G03, I01…). Por omisión G03 si el régimen del emisor lo permite."""
     note: NotRequired[str | None]
     """Una nota para su equipo."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class RequestPurchaseReceiptInvoiceParams(TypedDict):
@@ -17700,7 +18930,7 @@ class CreatePaymentParams(TypedDict):
     documents: list[CreatePaymentParamsDocumentsItem]
     """Las facturas que paga (DoctoRelacionado)."""
     send_email: NotRequired[bool]
-    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
+    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía. A un cliente con «Enviar al timbrar: Nunca» no se le envía aunque sea true: warnings lo dice y POST /v1/invoices/{id}/send sí se la manda."""
     email: NotRequired[str]
     """Correo a donde se envía (varios separados por comas). Solo se usa si se pide enviarlo."""
     email_cc: NotRequired[str | None]
@@ -17725,7 +18955,7 @@ class CreateCreditNoteParams(TypedDict):
     relationship: NotRequired[Literal["01", "03"]]
     """Tipo de relación (TipoRelacion) con la factura: 01 nota de crédito (por omisión) o 03 devolución de mercancía."""
     send_email: NotRequired[bool]
-    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
+    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía. A un cliente con «Enviar al timbrar: Nunca» no se le envía aunque sea true: warnings lo dice y POST /v1/invoices/{id}/send sí se la manda."""
     email: NotRequired[str]
     """Correo a donde se envía (varios separados por comas). Solo se usa si se pide enviarlo."""
     email_cc: NotRequired[str | None]
@@ -17781,7 +19011,7 @@ class CreateAdvanceParams(TypedDict):
     notes: NotRequired[str]
     """Observaciones que aparecen en el PDF (no van en el XML)."""
     send_email: NotRequired[bool]
-    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
+    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía. A un cliente con «Enviar al timbrar: Nunca» no se le envía aunque sea true: warnings lo dice y POST /v1/invoices/{id}/send sí se la manda."""
     email_cc: NotRequired[str | None]
     """Correos con copia, separados por comas."""
     metadata: NotRequired[dict[str, str]]
@@ -18137,27 +19367,30 @@ class CreateRetentionParams(TypedDict):
     replaces: NotRequired[str]
     """Folio fiscal (UUID) de la constancia que esta corrige: vigente, del mismo emisor y al mismo receptor (emitida aquí o en otro sistema). Va en CfdiRetenRelacionados (04) y, timbrada esta, la anterior se cancela con el motivo 01; `replaced` dice si se canceló."""
     send_email: NotRequired[bool]
-    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
+    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía. A un cliente con «Enviar al timbrar: Nunca» no se le envía aunque sea true: warnings lo dice y POST /v1/invoices/{id}/send sí se la manda."""
     email: NotRequired[str]
     """Correo a donde se envía (varios separados por comas). Solo se usa si se pide enviarlo."""
     metadata: NotRequired[dict[str, str]]
     """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListRetentionsParams(TypedDict):
-    """Los parámetros de GET /v1/retentions."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    status: NotRequired[Literal["valid", "canceled", "rejected", "processing"]]
-    """valid, canceled, rejected o processing."""
-    recipient: NotRequired[str]
-    """RFC del receptor."""
-    year: NotRequired[str]
-    """Ejercicio, 4 dígitos."""
+# Los parámetros de GET /v1/retentions.
+ListRetentionsParams = TypedDict(
+    "ListRetentionsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"valid\", \"canceled\", \"rejected\", \"processing\"]]",
+        "recipient": "NotRequired[str]",
+        "year": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class GetRetentionParams(TypedDict):
@@ -18261,16 +19494,24 @@ class CreateEmployeeParams(TypedDict):
     """Unidad de medicina familiar (UMF) del IMSS, opcional."""
     exit_reason: NotRequired[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9", "A"] | None]
     """Causa de la baja ante el IMSS, con end_date: 1 término de contrato, 2 separación voluntaria (la usual), 3 abandono, 4 defunción, 5 clausura, 6 otras, 7 ausentismo, 8 rescisión, 9 jubilación, A pensión."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListEmployeesParams(TypedDict):
-    """Los parámetros de GET /v1/employees."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/employees.
+ListEmployeesParams = TypedDict(
+    "ListEmployeesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class CreateEmployeeRaiseParams(TypedDict):
@@ -18357,6 +19598,8 @@ class UpdateEmployeeParams(TypedDict):
     """Unidad de medicina familiar (UMF) del IMSS, opcional."""
     exit_reason: NotRequired[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9", "A"] | None]
     """Causa de la baja ante el IMSS, con end_date: 1 término de contrato, 2 separación voluntaria (la usual), 3 abandono, 4 defunción, 5 clausura, 6 otras, 7 ausentismo, 8 rescisión, 9 jubilación, A pensión."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class GetEmployeeVacationsParams(TypedDict):
@@ -18400,7 +19643,7 @@ class UpdateEmployeePortalParams(TypedDict):
 class GetEmployeeNoticeSettingsParams(TypedDict):
     """Los parámetros de GET /v1/employee_notice_settings."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class UpdateEmployeeNoticeSettingsParams(TypedDict):
@@ -18424,16 +19667,21 @@ class UpdateEmployeeNoticeSettingsParams(TypedDict):
     """Los avisos de entre las 21:00 y las 7:00 (hora del centro) llegan a las 7:00."""
 
 
-class ListVacationRequestsParams(TypedDict):
-    """Los parámetros de GET /v1/vacation_requests."""
-    employee: NotRequired[str]
-    """Solo las de este empleado (emp_…)."""
-    status: NotRequired[Literal["pending", "approved", "rejected", "canceled"]]
-    """pending, approved, rejected o canceled."""
-    limit: NotRequired[int]
-    """Cuántas, de 1 a 500. Por omisión 100."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/vacation_requests.
+ListVacationRequestsParams = TypedDict(
+    "ListVacationRequestsParams",
+    {
+        "employee": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"pending\", \"approved\", \"rejected\", \"canceled\"]]",
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class ApproveVacationRequestParams(TypedDict):
@@ -18526,7 +19774,7 @@ class CreatePayrollReceiptParams(TypedDict):
     replaces: NotRequired[str]
     """El recibo vigente (inv_… o UUID) que este corrige, calculado por Fiscalisto para el mismo empleado: el nuevo se calcula con los datos del empleado como están ahora, va relacionado con 04 y el anterior se cancela con motivo 01. Para un recibo que calculó su sistema use POST /v1/payroll_receipts/external con replaces."""
     send_email: NotRequired[bool]
-    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
+    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía. A un cliente con «Enviar al timbrar: Nunca» no se le envía aunque sea true: warnings lo dice y POST /v1/invoices/{id}/send sí se la manda."""
     metadata: NotRequired[dict[str, str]]
     """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     confirmation_token: NotRequired[str]
@@ -18632,7 +19880,7 @@ class PreviewPayrollReceiptParams(TypedDict):
     replaces: NotRequired[str]
     """El recibo vigente (inv_… o UUID) que este corrige, calculado por Fiscalisto para el mismo empleado: el nuevo se calcula con los datos del empleado como están ahora, va relacionado con 04 y el anterior se cancela con motivo 01. Para un recibo que calculó su sistema use POST /v1/payroll_receipts/external con replaces."""
     send_email: NotRequired[bool]
-    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
+    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía. A un cliente con «Enviar al timbrar: Nunca» no se le envía aunque sea true: warnings lo dice y POST /v1/invoices/{id}/send sí se la manda."""
     metadata: NotRequired[dict[str, str]]
     """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
@@ -18661,7 +19909,7 @@ class CreateExtraordinaryPayrollReceiptParams(TypedDict):
     vacation_days_owed: NotRequired[float]
     """finiquito: los días de vacaciones de años de servicio cumplidos que no disfrutó ni han prescrito; se pagan con su prima vacacional. Por omisión, pending_days de sus vacaciones."""
     send_email: NotRequired[bool]
-    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
+    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía. A un cliente con «Enviar al timbrar: Nunca» no se le envía aunque sea true: warnings lo dice y POST /v1/invoices/{id}/send sí se la manda."""
     metadata: NotRequired[dict[str, str]]
     """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     confirmation_token: NotRequired[str]
@@ -18692,7 +19940,7 @@ class PreviewExtraordinaryPayrollReceiptParams(TypedDict):
     vacation_days_owed: NotRequired[float]
     """finiquito: los días de vacaciones de años de servicio cumplidos que no disfrutó ni han prescrito; se pagan con su prima vacacional. Por omisión, pending_days de sus vacaciones."""
     send_email: NotRequired[bool]
-    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
+    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía. A un cliente con «Enviar al timbrar: Nunca» no se le envía aunque sea true: warnings lo dice y POST /v1/invoices/{id}/send sí se la manda."""
     metadata: NotRequired[dict[str, str]]
     """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
@@ -18749,14 +19997,19 @@ class CreatePayrollBatchParams(TypedDict):
     """Los recibos que calculó su sistema de nómina, timbrados tal cual. En lugar de receipts."""
 
 
-class ListPayrollBatchesParams(TypedDict):
-    """Los parámetros de GET /v1/payroll_batches."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/payroll_batches.
+ListPayrollBatchesParams = TypedDict(
+    "ListPayrollBatchesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class CreatePayrollApprovalParamsPeriod(TypedDict):
@@ -18852,7 +20105,7 @@ class ListPayrollApprovalsParams(TypedDict):
     status: NotRequired[Literal["pending", "approved", "rejected", "withdrawn", "replaced"]]
     """pending, approved, rejected, withdrawn o replaced."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class CreatePayrollBankFileParams(TypedDict):
@@ -18879,6 +20132,8 @@ class CreatePayrollPayoutParams(TypedDict):
     """La fecha de pago (FechaPago) de los recibos de nómina timbrados que paga (AAAA-MM-DD)."""
     pay_on: NotRequired[str]
     """El día en que sale (AAAA-MM-DD, hoy o después). Por omisión, hoy: sale en cuanto lo firmen."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class CreateImssMovementParams(TypedDict):
@@ -18901,7 +20156,7 @@ class ListImssMovementsParams(TypedDict):
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     status: NotRequired[Literal["pending", "reported"]]
     """pending (por omisión) o reported."""
 
@@ -18972,7 +20227,7 @@ class CreateEmployeeDeductionParams(TypedDict):
 class ListEmployeeDeductionsParams(TypedDict):
     """Los parámetros de GET /v1/employee_deductions."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     employee: NotRequired[str]
     """Solo los de este empleado (emp_…)."""
 
@@ -19001,7 +20256,7 @@ class UpdateEmployeeDeductionParams(TypedDict):
 class GetVariableSalaryParams(TypedDict):
     """Los parámetros de GET /v1/variable_salaries."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     bimester: str
     """AAAA-B: 2026-5 es septiembre–octubre de 2026."""
 
@@ -19018,7 +20273,7 @@ class ApplyVariableSalaryParams(TypedDict):
 class GetAnnualAdjustmentParams(TypedDict):
     """Los parámetros de GET /v1/annual_adjustments."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     year: int
     """El ejercicio: 2026."""
 
@@ -19037,7 +20292,7 @@ class UpdateAnnualAdjustmentParams(TypedDict):
 class GetPayrollTaxParams(TypedDict):
     """Los parámetros de GET /v1/payroll_taxes."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     month: str
     """El mes: 2026-11."""
 
@@ -19045,7 +20300,7 @@ class GetPayrollTaxParams(TypedDict):
 class GetPayrollAccumulatedParams(TypedDict):
     """Los parámetros de GET /v1/payroll_reports/accumulated."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     year: NotRequired[int]
     """El año: 2026 (por omisión, el actual)."""
     employee: NotRequired[str]
@@ -19055,7 +20310,7 @@ class GetPayrollAccumulatedParams(TypedDict):
 class GetPayrollCostParams(TypedDict):
     """Los parámetros de GET /v1/payroll_reports/cost."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     year: NotRequired[int]
     """El año: 2026 (por omisión, el actual)."""
 
@@ -19063,7 +20318,7 @@ class GetPayrollCostParams(TypedDict):
 class GetPayrollCalendarParams(TypedDict):
     """Los parámetros de GET /v1/payroll_calendar."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     days_ahead: NotRequired[int]
     """Hasta cuántos días adelante (por omisión 90, hasta 366)."""
     days_back: NotRequired[int]
@@ -19157,16 +20412,24 @@ class CreateRepseContractParams(TypedDict):
     """El centro de trabajo donde trabajan las personas que pone a disposición."""
     workers: list[CreateRepseContractParamsWorkersItem]
     """Quién trabaja en el contrato y desde cuándo (hasta 2,000)."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListRepseContractsParams(TypedDict):
-    """Los parámetros de GET /v1/repse_contracts."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/repse_contracts.
+ListRepseContractsParams = TypedDict(
+    "ListRepseContractsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateRepseContractParamsClientAddress(TypedDict):
@@ -19243,12 +20506,14 @@ class UpdateRepseContractParams(TypedDict):
     """El centro de trabajo donde trabajan las personas que pone a disposición."""
     workers: NotRequired[list[UpdateRepseContractParamsWorkersItem]]
     """Quién trabaja en el contrato y desde cuándo (hasta 2,000)."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class GetRepseProfileParams(TypedDict):
     """Los parámetros de GET /v1/repse_profile."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class UpdateRepseProfileParams(TypedDict):
@@ -19283,13 +20548,13 @@ class UpdateRepseProfileParams(TypedDict):
 class GetRepseReturnParams(TypedDict):
     """Los parámetros de GET /v1/repse_returns/{period}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetPayrollOrgChartParams(TypedDict):
     """Los parámetros de GET /v1/payroll_org_chart."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     as_of: NotRequired[str]
     """Un día pasado (YYYY-MM-DD): el organigrama como estaba al cierre de ese día, con los jefes, departamentos y sucursales que tenían (se guardan desde el 21 de noviembre de 2026)."""
 
@@ -19396,7 +20661,7 @@ class PublishPayrollVacancyParams(TypedDict):
 class GetHiringParams(TypedDict):
     """Los parámetros de GET /v1/hiring."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class UpdateHiringSettingsParams(TypedDict):
@@ -19528,18 +20793,21 @@ class UpdateJobFormParams(TypedDict):
     """Sus preguntas, en orden. nombre y correo van siempre (si no las manda, se agregan al principio)."""
 
 
-class ListCandidatesParams(TypedDict):
-    """Los parámetros de GET /v1/candidates."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    vacancy: NotRequired[str]
-    """Solo las de una vacante (vac_…)."""
-    stage: NotRequired[str]
-    """Solo las de una etapa, como en stages de hiring."""
+# Los parámetros de GET /v1/candidates.
+ListCandidatesParams = TypedDict(
+    "ListCandidatesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "vacancy": "NotRequired[str]",
+        "stage": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class UpdateCandidateParams(TypedDict):
@@ -19559,7 +20827,7 @@ class HireCandidateParams(TypedDict):
 class GetTrainingParams(TypedDict):
     """Los parámetros de GET /v1/training."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class UpdateTrainingSettingsParamsCommissionItem(TypedDict):
@@ -19614,7 +20882,7 @@ class ListTrainingCoursesParams(TypedDict):
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class CreateTrainingCourseParams(TypedDict):
@@ -19738,7 +21006,7 @@ class UpdateEmployeeTrainingParams(TypedDict):
 class GetClimateParams(TypedDict):
     """Los parámetros de GET /v1/climate."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class UpdateClimatePolicyParams(TypedDict):
@@ -19752,14 +21020,19 @@ class UpdateClimatePolicyParams(TypedDict):
     """true la publica en el portal de cada trabajador (numeral 5.7) como una versión nueva, que se les pide leer otra vez."""
 
 
-class ListClimateSurveysParams(TypedDict):
-    """Los parámetros de GET /v1/climate_surveys."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/climate_surveys.
+ListClimateSurveysParams = TypedDict(
+    "ListClimateSurveysParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class CreateClimateSurveyParamsQuestionsItem(TypedDict):
@@ -19856,16 +21129,20 @@ class ReferClimateTraumaticEventParams(TypedDict):
     """Una nota."""
 
 
-class ListClimateActionsParams(TypedDict):
-    """Los parámetros de GET /v1/climate_actions."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    survey: NotRequired[str]
-    """Solo las de esta encuesta (cls_…)."""
+# Los parámetros de GET /v1/climate_actions.
+ListClimateActionsParams = TypedDict(
+    "ListClimateActionsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "survey": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class CreateClimateActionParams(TypedDict):
@@ -19917,7 +21194,7 @@ class ListClimateComplaintsParams(TypedDict):
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     status: NotRequired[str]
     """Solo las nueva, en_atencion o atendida."""
 
@@ -19929,14 +21206,19 @@ class UpdateClimateComplaintParams(TypedDict):
     """Qué se hizo."""
 
 
-class ListReviewCyclesParams(TypedDict):
-    """Los parámetros de GET /v1/review_cycles."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/review_cycles.
+ListReviewCyclesParams = TypedDict(
+    "ListReviewCyclesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class CreateReviewCycleParamsRulesScale(TypedDict):
@@ -20180,14 +21462,19 @@ class CreateInvoiceBatchParams(TypedDict):
     """Las facturas, como el cuerpo de POST /v1/invoices, con reference opcional."""
 
 
-class ListInvoiceBatchesParams(TypedDict):
-    """Los parámetros de GET /v1/invoice_batches."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/invoice_batches.
+ListInvoiceBatchesParams = TypedDict(
+    "ListInvoiceBatchesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class ValidateTaxIdParams(TypedDict):
@@ -20256,20 +21543,26 @@ class CreateBranchParams(TypedDict):
     """Estilo del PDF de sus facturas: clasico, moderno, compacto o minimalista. null toma el del emisor."""
     time_zone: NotRequired[Literal["America/Mexico_City", "America/Cancun", "America/Mazatlan", "America/Hermosillo", "America/Tijuana", "America/Matamoros", "America/Ciudad_Juarez"] | None]
     """Su zona horaria (IANA), cuando no es la de su código postal: cuándo empieza su día para «hoy», los límites por día y los avisos. null sigue la de su código postal. La fecha de sus facturas siempre es la hora local de su código postal (Anexo 20)."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListBranchesParams(TypedDict):
-    """Los parámetros de GET /v1/branches."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    include_archived: NotRequired[bool]
-    """true para incluir las archivadas."""
-    zip: NotRequired[str]
-    """Solo la de este código postal."""
+# Los parámetros de GET /v1/branches.
+ListBranchesParams = TypedDict(
+    "ListBranchesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "include_archived": "NotRequired[bool]",
+        "zip": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateBranchParamsAddress(TypedDict):
@@ -20323,6 +21616,8 @@ class UpdateBranchParams(TypedDict):
     """Su zona horaria (IANA), cuando no es la de su código postal: cuándo empieza su día para «hoy», los límites por día y los avisos. null sigue la de su código postal. La fecha de sus facturas siempre es la hora local de su código postal (Anexo 20)."""
     archived: NotRequired[bool]
     """true la archiva: ya no se puede facturar desde ella, y sus facturas la siguen nombrando. false la restaura."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class UploadBranchLogoParams(TypedDict):
@@ -20332,7 +21627,7 @@ class UploadBranchLogoParams(TypedDict):
 
 class CreateRuleParamsConditionsConditionsItem(TypedDict):
     field: str
-    """Qué se revisa. Facturas: supplier, customer, supplierGroup (recibidas: el grupo del proveedor, sgr_…), customerGroup (emitidas: el grupo del cliente, cgr_…), partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), orderTotal (recibidas: el total de sus órdenes, en pesos), lastTotal (el total de la factura anterior de ese proveedor o cliente), avgTotal (el promedio de sus facturas en los últimos 6 meses), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, supplierGroup (sgr_…), ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos), lastTotal (el total de la orden anterior a ese proveedor), avgTotal (el promedio de sus órdenes en los últimos 6 meses). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday. Avisos del SAT (sat.*): party (supplier/customer/own), supplier, customer, supplierGroup, customerGroup, ownRfc, list (69b, 69b_bis, 69_no_localizados, 69_exigibles, 69_firmes, 69_sentencias, 69_cancelados, 69_csd_sin_efectos), situation (presunto, definitivo, desvirtuado, sentencia_favorable, listado), billed12m (lo facturado con ese RFC en 12 meses, en pesos), balance (su saldo pendiente) en sat.listed; sentido y previous (positivo, negativo, sin_obligaciones, suspendido; previous también ninguno) y pending (obligaciones pendientes) en sat.opinion; kind (comunicado, notificacion, sin_medios), urgency (urgente, atender, informativo) y text (el asunto) en sat.buzon; certificate (csd, efirma) y daysLeft (días para vencer; negativo si ya venció) en sat.certificate."""
+    """Qué se revisa. Facturas: supplier, customer, supplierGroup (recibidas: el grupo del proveedor, sgr_…), customerGroup (emitidas: el grupo del cliente, cgr_…), partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.canceled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), orderTotal (recibidas: el total de sus órdenes, en pesos), lastTotal (el total de la factura anterior de ese proveedor o cliente), avgTotal (el promedio de sus facturas en los últimos 6 meses), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, supplierGroup (sgr_…), ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos), lastTotal (el total de la orden anterior a ese proveedor), avgTotal (el promedio de sus órdenes en los últimos 6 meses). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday. Avisos del SAT (sat.*): party (supplier/customer/own), supplier, customer, supplierGroup, customerGroup, ownRfc, list (69b, 69b_bis, 69_no_localizados, 69_exigibles, 69_firmes, 69_sentencias, 69_cancelados, 69_csd_sin_efectos), situation (presunto, definitivo, desvirtuado, sentencia_favorable, listado), billed12m (lo facturado con ese RFC en 12 meses, en pesos), balance (su saldo pendiente) en sat.listed; sentido y previous (positivo, negativo, sin_obligaciones, suspendido; previous también ninguno) y pending (obligaciones pendientes) en sat.opinion; kind (comunicado, notificacion, sin_medios), urgency (urgente, atender, informativo) y text (el asunto) en sat.buzon; certificate (csd, efirma) y daysLeft (días para vencer; negativo si ya venció) en sat.certificate."""
     operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
     """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to; o contra otro campo con compare_to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
     values: NotRequired[list[str]]
@@ -20349,7 +21644,7 @@ class CreateRuleParamsConditionsConditionsItem(TypedDict):
 
 class CreateRuleParamsConditionsGroupsItemConditionsItem(TypedDict):
     field: str
-    """Qué se revisa. Facturas: supplier, customer, supplierGroup (recibidas: el grupo del proveedor, sgr_…), customerGroup (emitidas: el grupo del cliente, cgr_…), partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), orderTotal (recibidas: el total de sus órdenes, en pesos), lastTotal (el total de la factura anterior de ese proveedor o cliente), avgTotal (el promedio de sus facturas en los últimos 6 meses), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, supplierGroup (sgr_…), ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos), lastTotal (el total de la orden anterior a ese proveedor), avgTotal (el promedio de sus órdenes en los últimos 6 meses). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday. Avisos del SAT (sat.*): party (supplier/customer/own), supplier, customer, supplierGroup, customerGroup, ownRfc, list (69b, 69b_bis, 69_no_localizados, 69_exigibles, 69_firmes, 69_sentencias, 69_cancelados, 69_csd_sin_efectos), situation (presunto, definitivo, desvirtuado, sentencia_favorable, listado), billed12m (lo facturado con ese RFC en 12 meses, en pesos), balance (su saldo pendiente) en sat.listed; sentido y previous (positivo, negativo, sin_obligaciones, suspendido; previous también ninguno) y pending (obligaciones pendientes) en sat.opinion; kind (comunicado, notificacion, sin_medios), urgency (urgente, atender, informativo) y text (el asunto) en sat.buzon; certificate (csd, efirma) y daysLeft (días para vencer; negativo si ya venció) en sat.certificate."""
+    """Qué se revisa. Facturas: supplier, customer, supplierGroup (recibidas: el grupo del proveedor, sgr_…), customerGroup (emitidas: el grupo del cliente, cgr_…), partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.canceled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), orderTotal (recibidas: el total de sus órdenes, en pesos), lastTotal (el total de la factura anterior de ese proveedor o cliente), avgTotal (el promedio de sus facturas en los últimos 6 meses), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, supplierGroup (sgr_…), ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos), lastTotal (el total de la orden anterior a ese proveedor), avgTotal (el promedio de sus órdenes en los últimos 6 meses). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday. Avisos del SAT (sat.*): party (supplier/customer/own), supplier, customer, supplierGroup, customerGroup, ownRfc, list (69b, 69b_bis, 69_no_localizados, 69_exigibles, 69_firmes, 69_sentencias, 69_cancelados, 69_csd_sin_efectos), situation (presunto, definitivo, desvirtuado, sentencia_favorable, listado), billed12m (lo facturado con ese RFC en 12 meses, en pesos), balance (su saldo pendiente) en sat.listed; sentido y previous (positivo, negativo, sin_obligaciones, suspendido; previous también ninguno) y pending (obligaciones pendientes) en sat.opinion; kind (comunicado, notificacion, sin_medios), urgency (urgente, atender, informativo) y text (el asunto) en sat.buzon; certificate (csd, efirma) y daysLeft (días para vencer; negativo si ya venció) en sat.certificate."""
     operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
     """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to; o contra otro campo con compare_to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
     values: NotRequired[list[str]]
@@ -20573,8 +21868,8 @@ class CreateRuleParams(TypedDict):
     """El emisor (iss_…). Por omisión, su único emisor."""
     name: NotRequired[str]
     """Cómo se llama en Ajustes › Reglas. Sin él, se nombra por lo que hace."""
-    trigger: Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "invoice.approved", "invoice.rejected", "finding.created", "payout.submitted", "payout.paid", "payout.failed", "invoice.daily", "purchase_order.daily", "bank.movement", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered", "sat.listed", "sat.opinion", "sat.buzon", "sat.certificate"]
-    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), invoice.paid (una factura PPD queda pagada), invoice.cancelled (el SAT la cancela), invoice.approved (se aprueba en el Portal de proveedores), invoice.rejected (se rechaza en el portal), payout.submitted (se manda a firmar un pago que la incluye), payout.paid (se le paga una factura a un proveedor), payout.failed (falla o se devuelve su pago), invoice.daily (cada mañana a las 8, a cada factura con saldo, recibida o emitida, de Ingreso y no cancelada), purchase_order.daily (cada mañana a las 8, a cada orden que aún no llega toda ni está cerrada o cancelada), finding.created (aparece un hallazgo en una factura de los últimos 45 días), purchase_order.saved, .approved, .rejected, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered, bank.movement (llega un movimiento del banco: un retiro al importar el estado de cuenta, un depósito cuando Conciliación lo clasifica como préstamo, traspaso, devolución o intereses), sat.listed (un proveedor, cliente o RFC suyo aparece en una lista del SAT; cada mañana, una vez por RFC, lista y situación), sat.opinion (cambia la opinión de cumplimiento de un RFC suyo), sat.buzon (llega un comunicado, una notificación por abrir o el buzón no tiene medios de contacto), sat.certificate (cada mañana a las 8, a cada CSD y e.firma, con sus días para vencer)."""
+    trigger: Literal["invoice.cancelled", "invoice.received", "invoice.issued", "invoice.paid", "invoice.canceled", "invoice.approved", "invoice.rejected", "finding.created", "payout.submitted", "payout.paid", "payout.failed", "invoice.daily", "purchase_order.daily", "bank.movement", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered", "sat.listed", "sat.opinion", "sat.buzon", "sat.certificate"]
+    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), invoice.paid (una factura PPD queda pagada), invoice.canceled (el SAT la cancela; también se acepta invoice.cancelled), invoice.approved (se aprueba en el Portal de proveedores), invoice.rejected (se rechaza en el portal), payout.submitted (se manda a firmar un pago que la incluye), payout.paid (se le paga una factura a un proveedor), payout.failed (falla o se devuelve su pago), invoice.daily (cada mañana a las 8, a cada factura con saldo, recibida o emitida, de Ingreso y no cancelada), purchase_order.daily (cada mañana a las 8, a cada orden que aún no llega toda ni está cerrada o cancelada), finding.created (aparece un hallazgo en una factura de los últimos 45 días), purchase_order.saved, .approved, .rejected, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered, bank.movement (llega un movimiento del banco: un retiro al importar el estado de cuenta, un depósito cuando Conciliación lo clasifica como préstamo, traspaso, devolución o intereses), sat.listed (un proveedor, cliente o RFC suyo aparece en una lista del SAT; cada mañana, una vez por RFC, lista y situación), sat.opinion (cambia la opinión de cumplimiento de un RFC suyo), sat.buzon (llega un comunicado, una notificación por abrir o el buzón no tiene medios de contacto), sat.certificate (cada mañana a las 8, a cada CSD y e.firma, con sus días para vencer)."""
     conditions: NotRequired[CreateRuleParamsConditions]
     """Si: lo que tiene que cumplir. Sin condiciones, corre siempre."""
     actions: list[CreateRuleParamsActionsItem]
@@ -20593,16 +21888,20 @@ class CreateRuleParams(TypedDict):
     """false la deja en pausa."""
 
 
-class ListRulesParams(TypedDict):
-    """Los parámetros de GET /v1/rules."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    trigger: NotRequired[str]
-    """Solo las de este trigger, por ejemplo invoice.received."""
+# Los parámetros de GET /v1/rules.
+ListRulesParams = TypedDict(
+    "ListRulesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "trigger": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class OrderRulesParams(TypedDict):
@@ -20614,7 +21913,7 @@ class OrderRulesParams(TypedDict):
 
 class UpdateRuleParamsConditionsConditionsItem(TypedDict):
     field: str
-    """Qué se revisa. Facturas: supplier, customer, supplierGroup (recibidas: el grupo del proveedor, sgr_…), customerGroup (emitidas: el grupo del cliente, cgr_…), partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), orderTotal (recibidas: el total de sus órdenes, en pesos), lastTotal (el total de la factura anterior de ese proveedor o cliente), avgTotal (el promedio de sus facturas en los últimos 6 meses), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, supplierGroup (sgr_…), ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos), lastTotal (el total de la orden anterior a ese proveedor), avgTotal (el promedio de sus órdenes en los últimos 6 meses). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday. Avisos del SAT (sat.*): party (supplier/customer/own), supplier, customer, supplierGroup, customerGroup, ownRfc, list (69b, 69b_bis, 69_no_localizados, 69_exigibles, 69_firmes, 69_sentencias, 69_cancelados, 69_csd_sin_efectos), situation (presunto, definitivo, desvirtuado, sentencia_favorable, listado), billed12m (lo facturado con ese RFC en 12 meses, en pesos), balance (su saldo pendiente) en sat.listed; sentido y previous (positivo, negativo, sin_obligaciones, suspendido; previous también ninguno) y pending (obligaciones pendientes) en sat.opinion; kind (comunicado, notificacion, sin_medios), urgency (urgente, atender, informativo) y text (el asunto) en sat.buzon; certificate (csd, efirma) y daysLeft (días para vencer; negativo si ya venció) en sat.certificate."""
+    """Qué se revisa. Facturas: supplier, customer, supplierGroup (recibidas: el grupo del proveedor, sgr_…), customerGroup (emitidas: el grupo del cliente, cgr_…), partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.canceled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), orderTotal (recibidas: el total de sus órdenes, en pesos), lastTotal (el total de la factura anterior de ese proveedor o cliente), avgTotal (el promedio de sus facturas en los últimos 6 meses), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, supplierGroup (sgr_…), ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos), lastTotal (el total de la orden anterior a ese proveedor), avgTotal (el promedio de sus órdenes en los últimos 6 meses). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday. Avisos del SAT (sat.*): party (supplier/customer/own), supplier, customer, supplierGroup, customerGroup, ownRfc, list (69b, 69b_bis, 69_no_localizados, 69_exigibles, 69_firmes, 69_sentencias, 69_cancelados, 69_csd_sin_efectos), situation (presunto, definitivo, desvirtuado, sentencia_favorable, listado), billed12m (lo facturado con ese RFC en 12 meses, en pesos), balance (su saldo pendiente) en sat.listed; sentido y previous (positivo, negativo, sin_obligaciones, suspendido; previous también ninguno) y pending (obligaciones pendientes) en sat.opinion; kind (comunicado, notificacion, sin_medios), urgency (urgente, atender, informativo) y text (el asunto) en sat.buzon; certificate (csd, efirma) y daysLeft (días para vencer; negativo si ya venció) en sat.certificate."""
     operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
     """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to; o contra otro campo con compare_to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
     values: NotRequired[list[str]]
@@ -20631,7 +21930,7 @@ class UpdateRuleParamsConditionsConditionsItem(TypedDict):
 
 class UpdateRuleParamsConditionsGroupsItemConditionsItem(TypedDict):
     field: str
-    """Qué se revisa. Facturas: supplier, customer, supplierGroup (recibidas: el grupo del proveedor, sgr_…), customerGroup (emitidas: el grupo del cliente, cgr_…), partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.cancelled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), orderTotal (recibidas: el total de sus órdenes, en pesos), lastTotal (el total de la factura anterior de ese proveedor o cliente), avgTotal (el promedio de sus facturas en los últimos 6 meses), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, supplierGroup (sgr_…), ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos), lastTotal (el total de la orden anterior a ese proveedor), avgTotal (el promedio de sus órdenes en los últimos 6 meses). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday. Avisos del SAT (sat.*): party (supplier/customer/own), supplier, customer, supplierGroup, customerGroup, ownRfc, list (69b, 69b_bis, 69_no_localizados, 69_exigibles, 69_firmes, 69_sentencias, 69_cancelados, 69_csd_sin_efectos), situation (presunto, definitivo, desvirtuado, sentencia_favorable, listado), billed12m (lo facturado con ese RFC en 12 meses, en pesos), balance (su saldo pendiente) en sat.listed; sentido y previous (positivo, negativo, sin_obligaciones, suspendido; previous también ninguno) y pending (obligaciones pendientes) en sat.opinion; kind (comunicado, notificacion, sin_medios), urgency (urgente, atender, informativo) y text (el asunto) en sat.buzon; certificate (csd, efirma) y daysLeft (días para vencer; negativo si ya venció) en sat.certificate."""
+    """Qué se revisa. Facturas: supplier, customer, supplierGroup (recibidas: el grupo del proveedor, sgr_…), customerGroup (emitidas: el grupo del cliente, cgr_…), partyName, ownRfc, direction (received/issued, en invoice.paid e invoice.canceled), category (categoría de gasto), tags (tag_…), total, subtotal, iva, saldo, saldoPct (el saldo en % del total), orderDiff (recibidas: cuánto pasa de sus órdenes, en %), orderTotal (recibidas: el total de sus órdenes, en pesos), lastTotal (el total de la factura anterior de ese proveedor o cliente), avgTotal (el promedio de sus facturas en los últimos 6 meses), age (días desde su fecha), weekday (el día de su fecha: lun, mar, mie, jue, vie, sab, dom), newParty (la primera factura de ese proveedor o cliente), monthTotal (lo facturado ese mes por ese proveedor o cliente, en pesos), dayCount (sus facturas ese día), opinion (recibidas: la opinión 32-D del proveedor en el portal: positive, negative, expired o none), satList (está en una lista del SAT: 69-B o 69), hasOrder (recibidas: ligada a una orden de compra), payoutAmount, newAccount y accountCheck (en payout.*: lo que se le paga al proveedor en el pago, si es el primer pago a esa cuenta y cómo se verificó: bank, hand o none), tipo, metodo, forma, uso, moneda, serie, concept, clave, costCenter, ivaRetenido, isrRetenido, hasFindings. Órdenes de compra: supplier, supplierGroup (sgr_…), ownRfc, total, category, warehouse, stage, createdBy, moneda, note, project (el id del proyecto), paymentDays, deliveryDays (días para la entrega), advance (lleva anticipo), newSupplier (la primera orden a ese proveedor), monthTotal (lo ordenado ese mes a ese proveedor, en pesos), lastTotal (el total de la orden anterior a ese proveedor), avgTotal (el promedio de sus órdenes en los últimos 6 meses). Movimientos del banco: flow (out: retiro; in: depósito), description (el texto del banco), reference, amount, bankAccount (los últimos 4 dígitos de la cuenta), ownRfc, classification (de un depósito: prestamo, traspaso, devolucion o intereses), monthDay (el día del mes), weekday. Avisos del SAT (sat.*): party (supplier/customer/own), supplier, customer, supplierGroup, customerGroup, ownRfc, list (69b, 69b_bis, 69_no_localizados, 69_exigibles, 69_firmes, 69_sentencias, 69_cancelados, 69_csd_sin_efectos), situation (presunto, definitivo, desvirtuado, sentencia_favorable, listado), billed12m (lo facturado con ese RFC en 12 meses, en pesos), balance (su saldo pendiente) en sat.listed; sentido y previous (positivo, negativo, sin_obligaciones, suspendido; previous también ninguno) y pending (obligaciones pendientes) en sat.opinion; kind (comunicado, notificacion, sin_medios), urgency (urgente, atender, informativo) y text (el asunto) en sat.buzon; certificate (csd, efirma) y daysLeft (días para vencer; negativo si ya venció) en sat.certificate."""
     operator: Literal["is", "not", "gte", "lte", "between", "contains", "not_contains", "starts", "yes", "no", "set", "unset"]
     """Listas: is (alguno de values), not (ninguno), set, unset. Montos (MXN): gte, lte, between (value y to; o contra otro campo con compare_to). Texto: contains, not_contains, starts (text; sin importar acentos ni mayúsculas), set, unset. Sí/no: yes, no."""
     values: NotRequired[list[str]]
@@ -20853,8 +22152,8 @@ class UpdateRuleParamsFollowUpsItem(TypedDict):
 class UpdateRuleParams(TypedDict):
     name: NotRequired[str]
     """Cómo se llama en Ajustes › Reglas. Sin él, se nombra por lo que hace."""
-    trigger: NotRequired[Literal["invoice.received", "invoice.issued", "invoice.paid", "invoice.cancelled", "invoice.approved", "invoice.rejected", "finding.created", "payout.submitted", "payout.paid", "payout.failed", "invoice.daily", "purchase_order.daily", "bank.movement", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered", "sat.listed", "sat.opinion", "sat.buzon", "sat.certificate"]]
-    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), invoice.paid (una factura PPD queda pagada), invoice.cancelled (el SAT la cancela), invoice.approved (se aprueba en el Portal de proveedores), invoice.rejected (se rechaza en el portal), payout.submitted (se manda a firmar un pago que la incluye), payout.paid (se le paga una factura a un proveedor), payout.failed (falla o se devuelve su pago), invoice.daily (cada mañana a las 8, a cada factura con saldo, recibida o emitida, de Ingreso y no cancelada), purchase_order.daily (cada mañana a las 8, a cada orden que aún no llega toda ni está cerrada o cancelada), finding.created (aparece un hallazgo en una factura de los últimos 45 días), purchase_order.saved, .approved, .rejected, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered, bank.movement (llega un movimiento del banco: un retiro al importar el estado de cuenta, un depósito cuando Conciliación lo clasifica como préstamo, traspaso, devolución o intereses), sat.listed (un proveedor, cliente o RFC suyo aparece en una lista del SAT; cada mañana, una vez por RFC, lista y situación), sat.opinion (cambia la opinión de cumplimiento de un RFC suyo), sat.buzon (llega un comunicado, una notificación por abrir o el buzón no tiene medios de contacto), sat.certificate (cada mañana a las 8, a cada CSD y e.firma, con sus días para vencer)."""
+    trigger: NotRequired[Literal["invoice.cancelled", "invoice.received", "invoice.issued", "invoice.paid", "invoice.canceled", "invoice.approved", "invoice.rejected", "finding.created", "payout.submitted", "payout.paid", "payout.failed", "invoice.daily", "purchase_order.daily", "bank.movement", "purchase_order.saved", "purchase_order.approved", "purchase_order.rejected", "purchase_order.sent", "purchase_order.confirmed", "purchase_order.received_part", "purchase_order.received_all", "purchase_order.invoiced_all", "purchase_order.price_variance", "purchase_order.registered", "sat.listed", "sat.opinion", "sat.buzon", "sat.certificate"]]
+    """Cuándo corre: invoice.received (llega una factura de un proveedor), invoice.issued (se emite una factura), invoice.paid (una factura PPD queda pagada), invoice.canceled (el SAT la cancela; también se acepta invoice.cancelled), invoice.approved (se aprueba en el Portal de proveedores), invoice.rejected (se rechaza en el portal), payout.submitted (se manda a firmar un pago que la incluye), payout.paid (se le paga una factura a un proveedor), payout.failed (falla o se devuelve su pago), invoice.daily (cada mañana a las 8, a cada factura con saldo, recibida o emitida, de Ingreso y no cancelada), purchase_order.daily (cada mañana a las 8, a cada orden que aún no llega toda ni está cerrada o cancelada), finding.created (aparece un hallazgo en una factura de los últimos 45 días), purchase_order.saved, .approved, .rejected, .sent, .confirmed, .received_part, .received_all, .invoiced_all, .price_variance, .registered, bank.movement (llega un movimiento del banco: un retiro al importar el estado de cuenta, un depósito cuando Conciliación lo clasifica como préstamo, traspaso, devolución o intereses), sat.listed (un proveedor, cliente o RFC suyo aparece en una lista del SAT; cada mañana, una vez por RFC, lista y situación), sat.opinion (cambia la opinión de cumplimiento de un RFC suyo), sat.buzon (llega un comunicado, una notificación por abrir o el buzón no tiene medios de contacto), sat.certificate (cada mañana a las 8, a cada CSD y e.firma, con sus días para vencer)."""
     conditions: NotRequired[UpdateRuleParamsConditions]
     """Si: lo que tiene que cumplir. Sin condiciones, corre siempre."""
     actions: NotRequired[list[UpdateRuleParamsActionsItem]]
@@ -20880,17 +22179,35 @@ class TestRuleParams(TypedDict):
     """Cuántas de las más recientes (10 por omisión)."""
 
 
-class ListRuleRunsParams(TypedDict):
-    """Los parámetros de GET /v1/rules/{id}/runs."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
+# Los parámetros de GET /v1/rules/{id}/runs.
+ListRuleRunsParams = TypedDict(
+    "ListRuleRunsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class BacktestRuleParams(TypedDict):
     days: NotRequired[int]
     """Cuántos días hacia atrás (90 por omisión, hasta 90)."""
+
+
+# Los parámetros de GET /v1/rules/{id}/versions.
+ListRuleVersionsParams = TypedDict(
+    "ListRuleVersionsParams",
+    {
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class CreateSupplierGroupParams(TypedDict):
@@ -20902,16 +22219,24 @@ class CreateSupplierGroupParams(TypedDict):
     """Color de su etiqueta en la app: info, warning, positive, critical o muted."""
     suppliers: NotRequired[list[str]]
     """RFC de los proveedores que entran al grupo (hasta 500); salen del que tenían."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListSupplierGroupsParams(TypedDict):
-    """Los parámetros de GET /v1/supplier_groups."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/supplier_groups.
+ListSupplierGroupsParams = TypedDict(
+    "ListSupplierGroupsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateSupplierGroupParams(TypedDict):
@@ -20923,26 +22248,28 @@ class UpdateSupplierGroupParams(TypedDict):
     """RFC de los proveedores que entran al grupo (hasta 500); salen del que tenían."""
     remove_suppliers: NotRequired[list[str]]
     """RFC de los proveedores que salen del grupo y quedan sin grupo (hasta 500)."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListFindingsParams(TypedDict):
-    """Los parámetros de GET /v1/findings."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    area: NotRequired[Literal["purchase_orders", "payouts", "suppliers", "accounting", "bank", "expense_reports", "purchase_receipts", "inventory", "customers", "payroll"]]
-    """Solo los de un área: purchase_orders, payouts, suppliers, accounting, bank, expense_reports, purchase_receipts, inventory, customers o payroll."""
-    status: NotRequired[Literal["open", "reviewed", "resolved", "all"]]
-    """open (por omisión: sin revisar), reviewed (revisados), resolved (ya no aplican) o all."""
-    severity: NotRequired[Literal["critical", "warning", "info"]]
-    """Solo los de esta gravedad: critical, warning o info."""
-    code: NotRequired[str]
-    """Solo este tipo de hallazgo (oc_factura_distinta…)."""
-    counterparty_tax_id: NotRequired[str]
-    """Solo los de este proveedor (su RFC)."""
+# Los parámetros de GET /v1/findings.
+ListFindingsParams = TypedDict(
+    "ListFindingsParams",
+    {
+        "issuer": "NotRequired[str]",
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "area": "NotRequired[Literal[\"purchase_orders\", \"payouts\", \"suppliers\", \"accounting\", \"bank\", \"expense_reports\", \"purchase_receipts\", \"inventory\", \"customers\", \"payroll\"]]",
+        "status": "NotRequired[Literal[\"open\", \"reviewed\", \"resolved\", \"all\"]]",
+        "severity": "NotRequired[Literal[\"critical\", \"warning\", \"info\"]]",
+        "code": "NotRequired[str]",
+        "counterparty_tax_id": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class ReviewFindingParams(TypedDict):
@@ -20957,18 +22284,25 @@ class CreateCostCenterParams(TypedDict):
     """Cómo lo llama su equipo, por ejemplo «Obra Norte». No se repite en el emisor (sin importar mayúsculas)."""
     code: NotRequired[str | None]
     """Su clave, si su contabilidad usa claves (por ejemplo «CC-01»)."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListCostCentersParams(TypedDict):
-    """Los parámetros de GET /v1/cost_centers."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    include_archived: NotRequired[bool]
-    """true para incluir los archivados."""
+# Los parámetros de GET /v1/cost_centers.
+ListCostCentersParams = TypedDict(
+    "ListCostCentersParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "include_archived": "NotRequired[bool]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateCostCenterParams(TypedDict):
@@ -20978,6 +22312,8 @@ class UpdateCostCenterParams(TypedDict):
     """Su clave, si su contabilidad usa claves (por ejemplo «CC-01»)."""
     archived: NotRequired[bool]
     """true lo archiva: ya no se pueden poner facturas en él, pero las suyas lo conservan. false lo restaura."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class DeleteCostCenterParams(TypedDict):
@@ -20993,16 +22329,24 @@ class CreateTagParams(TypedDict):
     """Cómo la llama su equipo, por ejemplo «Obra Norte». No se repite (sin importar mayúsculas ni acentos)."""
     color: NotRequired[Literal["info", "positive", "warning", "critical", "muted"]]
     """Su color: info (azul), positive (verde), warning (ámbar), critical (rojo) o muted (gris). Por omisión, el siguiente de la lista."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListTagsParams(TypedDict):
-    """Los parámetros de GET /v1/tags."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/tags.
+ListTagsParams = TypedDict(
+    "ListTagsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateTagParams(TypedDict):
@@ -21010,6 +22354,8 @@ class UpdateTagParams(TypedDict):
     """Cómo la llama su equipo, por ejemplo «Obra Norte». No se repite (sin importar mayúsculas ni acentos)."""
     color: NotRequired[Literal["info", "positive", "warning", "critical", "muted"]]
     """Su color: info (azul), positive (verde), warning (ámbar), critical (rojo) o muted (gris). Por omisión, el siguiente de la lista."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class CreatePriceListParamsItemsItem(TypedDict):
@@ -21046,16 +22392,24 @@ class CreatePriceListParams(TypedDict):
     """La tienen los clientes sin otra lista (ni ellos ni su grupo). Solo una lo es."""
     items: NotRequired[list[CreatePriceListParamsItemsItem]]
     """Sus precios propios; al mandarlos reemplazan a los que tenía."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListPriceListsParams(TypedDict):
-    """Los parámetros de GET /v1/price_lists."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/price_lists.
+ListPriceListsParams = TypedDict(
+    "ListPriceListsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdatePriceListParamsItemsItem(TypedDict):
@@ -21090,6 +22444,8 @@ class UpdatePriceListParams(TypedDict):
     """La tienen los clientes sin otra lista (ni ellos ni su grupo). Solo una lo es."""
     items: NotRequired[list[UpdatePriceListParamsItemsItem]]
     """Sus precios propios; al mandarlos reemplazan a los que tenía."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class CreateCustomerGroupParams(TypedDict):
@@ -21119,16 +22475,24 @@ class CreateCustomerGroupParams(TypedDict):
     """Hora de corte (0 a 23, Ciudad de México): un pedido del portal después de ella cuenta desde el día siguiente; null: sin hora de corte."""
     prep_days: NotRequired[int]
     """Días para preparar un pedido antes de poder entregarlo (0 por omisión)."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListCustomerGroupsParams(TypedDict):
-    """Los parámetros de GET /v1/customer_groups."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/customer_groups.
+ListCustomerGroupsParams = TypedDict(
+    "ListCustomerGroupsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateCustomerGroupParams(TypedDict):
@@ -21156,6 +22520,8 @@ class UpdateCustomerGroupParams(TypedDict):
     """Hora de corte (0 a 23, Ciudad de México): un pedido del portal después de ella cuenta desde el día siguiente; null: sin hora de corte."""
     prep_days: NotRequired[int]
     """Días para preparar un pedido antes de poder entregarlo (0 por omisión)."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class QuotePricesParamsItemsItem(TypedDict):
@@ -21302,7 +22668,7 @@ class UpdateAttendanceRotationParams(TypedDict):
 class GetAttendanceCalendarParams(TypedDict):
     """Los parámetros de GET /v1/attendance/calendar."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     month: str
     """El mes, AAAA-MM."""
     employee: NotRequired[str]
@@ -21339,18 +22705,25 @@ class CreateExpensePersonParams(TypedDict):
     """Dónde trabaja (por ejemplo «Guadalajara, Jal.»): un viaje a menos de 50 km no es deducible como viáticos."""
     department: NotRequired[str | None]
     """Su área."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListExpensePeopleParams(TypedDict):
-    """Los parámetros de GET /v1/expense_people."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    include_archived: NotRequired[bool]
-    """true para incluir las archivadas."""
+# Los parámetros de GET /v1/expense_people.
+ListExpensePeopleParams = TypedDict(
+    "ListExpensePeopleParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "include_archived": "NotRequired[bool]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateExpensePersonParams(TypedDict):
@@ -21370,6 +22743,8 @@ class UpdateExpensePersonParams(TypedDict):
     """Su área."""
     archived: NotRequired[bool]
     """true la archiva (y apaga su enlace): ya no se le abren comprobaciones. false la restaura."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class CreateExpensePersonLinkParams(TypedDict):
@@ -21396,20 +22771,26 @@ class CreateExpenseReportParams(TypedDict):
     """La salida (o el inicio del periodo)."""
     end_date: NotRequired[str | None]
     """El regreso (o el fin del periodo)."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListExpenseReportsParams(TypedDict):
-    """Los parámetros de GET /v1/expense_reports."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    status: NotRequired[str]
-    """Solo las de un estado: draft, submitted, rejected, approved o closed."""
-    person: NotRequired[str]
-    """Solo las de una persona (exp_…)."""
+# Los parámetros de GET /v1/expense_reports.
+ListExpenseReportsParams = TypedDict(
+    "ListExpenseReportsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "status": "NotRequired[str]",
+        "person": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateExpenseReportParams(TypedDict):
@@ -21427,6 +22808,8 @@ class UpdateExpenseReportParams(TypedDict):
     """La salida (o el inicio del periodo)."""
     end_date: NotRequired[str | None]
     """El regreso (o el fin del periodo)."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class ApproveExpenseReportParams(TypedDict):
@@ -21507,7 +22890,7 @@ class CreateExpenseMovementParams(TypedDict):
 class GetExpensePolicyParams(TypedDict):
     """Los parámetros de GET /v1/expense_policy."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class UpdateExpensePolicyParamsLimitsValue(TypedDict):
@@ -21548,6 +22931,8 @@ class CreateCustomerParamsForeign(TypedDict):
 class CreateCustomerParams(TypedDict):
     issuer: NotRequired[str]
     """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     tax_id: str
     """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
     legal_name: str
@@ -21578,28 +22963,38 @@ class CreateCustomerParams(TypedDict):
     """Sus condiciones de pago («Crédito a 30 días»): las facturas nuevas en la app empiezan con ellas; null: las de la empresa. POST /v1/invoices no las pone solas: mándelas en payment_terms."""
 
 
-class ListCustomersParams(TypedDict):
-    """Los parámetros de GET /v1/customers."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    tax_id: NotRequired[str]
-    """Solo el de este RFC."""
+# Los parámetros de GET /v1/customers.
+ListCustomersParams = TypedDict(
+    "ListCustomersParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "tax_id": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
-class SearchCustomersParams(TypedDict):
-    """Los parámetros de GET /v1/customers/search."""
-    query: str
-    """La búsqueda, por ejemplo legal_name~'robotica' AND zip:'86991'."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/customers/search.
+SearchCustomersParams = TypedDict(
+    "SearchCustomersParams",
+    {
+        "query": "str",
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateCustomerParamsForeign(TypedDict):
@@ -21610,6 +23005,8 @@ class UpdateCustomerParamsForeign(TypedDict):
 
 
 class UpdateCustomerParams(TypedDict):
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     tax_id: NotRequired[str]
     """RFC (Rfc), 12 caracteres una persona moral y 13 una física."""
     legal_name: NotRequired[str]
@@ -21649,16 +23046,24 @@ class CreateCustomerDataRequestParams(TypedDict):
     """Una línea que el cliente ve arriba del formulario: para qué son sus datos."""
     expires_in_days: NotRequired[int]
     """Días que la liga sirve, de 1 a 60. Por omisión 60."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListCustomerDataRequestsParams(TypedDict):
-    """Los parámetros de GET /v1/customer_data_requests."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/customer_data_requests.
+ListCustomerDataRequestsParams = TypedDict(
+    "ListCustomerDataRequestsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class CreateProductParamsLocalTaxesItem(TypedDict):
@@ -21682,6 +23087,8 @@ class CreateProductParamsHydrocarbon(TypedDict):
 class CreateProductParams(TypedDict):
     issuer: NotRequired[str]
     """Emisor (iss_…). Si la llave tiene un solo emisor o la cuenta tiene uno solo, puede omitirse."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     name: NotRequired[str | None]
     """Nombre corto para encontrarlo, solo para usted; en el CFDI va description."""
     description: str
@@ -21732,32 +23139,40 @@ class CreateProductParams(TypedDict):
     """Su categoría, con las de arriba separadas por › (también > o /): «Ferretería › Tornillos». Si no existe, se crea. null la quita."""
 
 
-class ListProductsParams(TypedDict):
-    """Los parámetros de GET /v1/products."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    sku: NotRequired[str]
-    """Solo el de este SKU."""
-    product_key: NotRequired[str]
-    """Solo los de esta clave del SAT."""
-    category: NotRequired[str]
-    """Solo los de esta categoría y sus subcategorías: «Ferretería» o «Ferretería › Tornillos»."""
+# Los parámetros de GET /v1/products.
+ListProductsParams = TypedDict(
+    "ListProductsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "sku": "NotRequired[str]",
+        "product_key": "NotRequired[str]",
+        "category": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
-class SearchProductsParams(TypedDict):
-    """Los parámetros de GET /v1/products/search."""
-    query: str
-    """La búsqueda, por ejemplo description~'tornillo' AND unit_price<10."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/products/search.
+SearchProductsParams = TypedDict(
+    "SearchProductsParams",
+    {
+        "query": "str",
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateProductParamsLocalTaxesItem(TypedDict):
@@ -21779,6 +23194,8 @@ class UpdateProductParamsHydrocarbon(TypedDict):
 
 
 class UpdateProductParams(TypedDict):
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     name: NotRequired[str | None]
     """Nombre corto para encontrarlo, solo para usted; en el CFDI va description."""
     description: NotRequired[str]
@@ -21829,58 +23246,64 @@ class UpdateProductParams(TypedDict):
     """Su categoría, con las de arriba separadas por › (también > o /): «Ferretería › Tornillos». Si no existe, se crea. null la quita."""
 
 
-class ListSatMailboxMessagesParams(TypedDict):
-    """Los parámetros de GET /v1/sat_mailbox_messages."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    unread: NotRequired[bool]
-    """true para solo los no leídos en el SAT, false para los leídos."""
+# Los parámetros de GET /v1/sat_mailbox_messages.
+ListSatMailboxMessagesParams = TypedDict(
+    "ListSatMailboxMessagesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "unread": "NotRequired[bool]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
-class ListSatFindingsParams(TypedDict):
-    """Los parámetros de GET /v1/sat_findings."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    direction: NotRequired[Literal["issued", "received"]]
-    """issued (emitidos) o received (recibidos); sin él, los dos."""
-    date_gte: NotRequired[str]
-    """CFDI desde este día (AAAA-MM-DD)."""
-    date_lte: NotRequired[str]
-    """CFDI hasta este día (AAAA-MM-DD, completo)."""
-    severity: NotRequired[Literal["critical", "warning", "info"]]
-    """Solo los de esta gravedad: critical, warning o info."""
-    counterparty: NotRequired[str]
-    """Solo los CFDI de este proveedor o cliente (su RFC): qué hallazgos tiene."""
+# Los parámetros de GET /v1/sat_findings.
+ListSatFindingsParams = TypedDict(
+    "ListSatFindingsParams",
+    {
+        "issuer": "NotRequired[str]",
+        "direction": "NotRequired[Literal[\"issued\", \"received\"]]",
+        "date[gte]": "NotRequired[str]",
+        "date[gt]": "NotRequired[str]",
+        "date[lte]": "NotRequired[str]",
+        "date[lt]": "NotRequired[str]",
+        "severity": "NotRequired[Literal[\"critical\", \"warning\", \"info\"]]",
+        "counterparty": "NotRequired[str]",
+        "date_gte": "NotRequired[str]",
+        "date_lte": "NotRequired[str]",
+    },
+)
 
 
-class ListSatFindingCounterpartiesParams(TypedDict):
-    """Los parámetros de GET /v1/sat_finding_counterparties."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    direction: NotRequired[Literal["issued", "received"]]
-    """issued (emitidos: clientes) o received (recibidos: proveedores); sin él, los dos."""
-    date_gte: NotRequired[str]
-    """CFDI desde este día (AAAA-MM-DD)."""
-    date_lte: NotRequired[str]
-    """CFDI hasta este día (AAAA-MM-DD, completo)."""
-    severity: NotRequired[Literal["critical", "warning", "info"]]
-    """Solo los de esta gravedad: critical, warning o info."""
-    code: NotRequired[str]
-    """Solo quienes tienen este hallazgo (efos_definitivo, cancelado, regla_12…; el code de GET /v1/sat_findings)."""
+# Los parámetros de GET /v1/sat_finding_counterparties.
+ListSatFindingCounterpartiesParams = TypedDict(
+    "ListSatFindingCounterpartiesParams",
+    {
+        "issuer": "NotRequired[str]",
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "direction": "NotRequired[Literal[\"issued\", \"received\"]]",
+        "date[gte]": "NotRequired[str]",
+        "date[gt]": "NotRequired[str]",
+        "date[lte]": "NotRequired[str]",
+        "date[lt]": "NotRequired[str]",
+        "severity": "NotRequired[Literal[\"critical\", \"warning\", \"info\"]]",
+        "code": "NotRequired[str]",
+        "date_gte": "NotRequired[str]",
+        "date_lte": "NotRequired[str]",
+    },
+)
 
 
 class GetCompanyReportParams(TypedDict):
     """Los parámetros de GET /v1/company_report."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     date_gte: NotRequired[str]
     """Desde este día (AAAA-MM-DD)."""
     date_lte: NotRequired[str]
@@ -21889,30 +23312,37 @@ class GetCompanyReportParams(TypedDict):
     """full (por omisión) o executive: solo la calificación, los indicadores principales, los años y 5 clientes y proveedores."""
 
 
-class ListMaterialitySuppliersParams(TypedDict):
-    """Los parámetros de GET /v1/materiality_suppliers."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    date_gte: NotRequired[str]
-    """Facturas desde este día (AAAA-MM-DD)."""
-    date_lte: NotRequired[str]
-    """Facturas hasta este día (AAAA-MM-DD, completo)."""
-    supplier_tax_id: NotRequired[str]
-    """Solo este proveedor (su RFC)."""
+# Los parámetros de GET /v1/materiality_suppliers.
+ListMaterialitySuppliersParams = TypedDict(
+    "ListMaterialitySuppliersParams",
+    {
+        "issuer": "NotRequired[str]",
+        "date[gte]": "NotRequired[str]",
+        "date[gt]": "NotRequired[str]",
+        "date[lte]": "NotRequired[str]",
+        "date[lt]": "NotRequired[str]",
+        "supplier_tax_id": "NotRequired[str]",
+        "date_gte": "NotRequired[str]",
+        "date_lte": "NotRequired[str]",
+    },
+)
 
 
-class ListMaterialityInvoicesParams(TypedDict):
-    """Los parámetros de GET /v1/materiality_invoices."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    date_gte: NotRequired[str]
-    """Facturas desde este día (AAAA-MM-DD)."""
-    date_lte: NotRequired[str]
-    """Facturas hasta este día (AAAA-MM-DD, completo)."""
-    supplier_tax_id: NotRequired[str]
-    """Solo las de este proveedor (su RFC)."""
-    state: NotRequired[Literal["complete", "partial", "none"]]
-    """Solo las de este estado: complete, partial o none. Sin él, las que no están completas."""
+# Los parámetros de GET /v1/materiality_invoices.
+ListMaterialityInvoicesParams = TypedDict(
+    "ListMaterialityInvoicesParams",
+    {
+        "issuer": "NotRequired[str]",
+        "date[gte]": "NotRequired[str]",
+        "date[gt]": "NotRequired[str]",
+        "date[lte]": "NotRequired[str]",
+        "date[lt]": "NotRequired[str]",
+        "supplier_tax_id": "NotRequired[str]",
+        "state": "NotRequired[Literal[\"complete\", \"partial\", \"none\"]]",
+        "date_gte": "NotRequired[str]",
+        "date_lte": "NotRequired[str]",
+    },
+)
 
 
 class CreateSatReviewParamsNoticesItem(TypedDict):
@@ -21966,12 +23396,18 @@ class CreateSatReviewParams(TypedDict):
     """Sus notas."""
 
 
-class ListSatReviewsParams(TypedDict):
-    """Los parámetros de GET /v1/sat_reviews."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    status: NotRequired[Literal["open", "answered", "concluded", "assessed", "in_defense", "closed"]]
-    """Solo las de este estado: open, answered, concluded, assessed, in_defense o closed."""
+# Los parámetros de GET /v1/sat_reviews.
+ListSatReviewsParams = TypedDict(
+    "ListSatReviewsParams",
+    {
+        "issuer": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"open\", \"answered\", \"concluded\", \"assessed\", \"in_defense\", \"closed\"]]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class UpdateSatReviewParamsNoticesItem(TypedDict):
@@ -22026,25 +23462,31 @@ class UpdateSatReviewParams(TypedDict):
 class GetSatRiskCheckParams(TypedDict):
     """Los parámetros de GET /v1/sat_risk_check."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetTaxDiscrepancyParams(TypedDict):
     """Los parámetros de GET /v1/tax_discrepancy."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     year: NotRequired[int]
     """El ejercicio (por omisión, el año pasado)."""
     declared_income: NotRequired[float]
     """Los ingresos de su declaración anual, si tiene ingresos que Fiscalisto no ve (rentas, intereses, otro patrón): reemplazan los que calcula."""
 
 
-class ListWarehousesParams(TypedDict):
-    """Los parámetros de GET /v1/warehouses."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    include_archived: NotRequired[bool]
-    """true para incluir los archivados."""
+# Los parámetros de GET /v1/warehouses.
+ListWarehousesParams = TypedDict(
+    "ListWarehousesParams",
+    {
+        "issuer": "NotRequired[str]",
+        "include_archived": "NotRequired[bool]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class ListWarehouseStockParams(TypedDict):
@@ -22057,24 +23499,28 @@ class ListWarehouseStockParams(TypedDict):
     """true para incluir los productos con track_stock que están en 0."""
 
 
-class ListStockMovementsParams(TypedDict):
-    """Los parámetros de GET /v1/stock_movements."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    product: NotRequired[str]
-    """Solo los de este producto (prd_…)."""
-    warehouse: NotRequired[str]
-    """Solo los de este almacén (whs_…)."""
-    type: NotRequired[Literal["sale", "purchase", "customer_return", "supplier_return", "adjustment", "count", "transfer_out", "transfer_in", "production_consumption", "production_output", "initial", "cost", "reversal"]]
-    """Solo los de este tipo."""
-    date_gte: NotRequired[str]
-    """Desde este día (AAAA-MM-DD) u hora (AAAA-MM-DDTHH:MM:SS) de la Ciudad de México."""
-    date_lte: NotRequired[str]
-    """Hasta este día (completo) u hora de la Ciudad de México."""
+# Los parámetros de GET /v1/stock_movements.
+ListStockMovementsParams = TypedDict(
+    "ListStockMovementsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "product": "NotRequired[str]",
+        "warehouse": "NotRequired[str]",
+        "type": "NotRequired[Literal[\"sale\", \"purchase\", \"customer_return\", \"supplier_return\", \"adjustment\", \"count\", \"transfer_out\", \"transfer_in\", \"production_consumption\", \"production_output\", \"initial\", \"cost\", \"reversal\"]]",
+        "date[gte]": "NotRequired[str]",
+        "date[gt]": "NotRequired[str]",
+        "date[lte]": "NotRequired[str]",
+        "date[lt]": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "date_gte": "NotRequired[str]",
+        "date_lte": "NotRequired[str]",
+    },
+)
 
 
 class CreateStockAdjustmentParamsLinesItem(TypedDict):
@@ -22101,20 +23547,26 @@ class CreateStockAdjustmentParams(TypedDict):
     """Una nota, para el kárdex."""
     lines: list[CreateStockAdjustmentParamsLinesItem]
     """Lo que entra o sale de cada producto, hasta 500 líneas."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListStockAdjustmentsParams(TypedDict):
-    """Los parámetros de GET /v1/stock_adjustments."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    warehouse: NotRequired[str]
-    """Solo los de este almacén (whs_…)."""
-    status: NotRequired[Literal["applied", "pending", "rejected", "reversed"]]
-    """applied, pending, rejected o reversed."""
+# Los parámetros de GET /v1/stock_adjustments.
+ListStockAdjustmentsParams = TypedDict(
+    "ListStockAdjustmentsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "warehouse": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"applied\", \"pending\", \"rejected\", \"reversed\"]]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class CreateProductionOrderParams(TypedDict):
@@ -22132,20 +23584,26 @@ class CreateProductionOrderParams(TypedDict):
     """Para cuándo (AAAA-MM-DD)."""
     note: NotRequired[str | None]
     """Una nota."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListProductionOrdersParams(TypedDict):
-    """Los parámetros de GET /v1/production_orders."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    product: NotRequired[str]
-    """Solo las de este producto (prd_…)."""
-    status: NotRequired[Literal["draft", "in_process", "completed", "cancelled"]]
-    """draft, in_process, completed o cancelled."""
+# Los parámetros de GET /v1/production_orders.
+ListProductionOrdersParams = TypedDict(
+    "ListProductionOrdersParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "product": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"draft\", \"in_process\", \"completed\", \"canceled\", \"cancelled\"]]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class StartProductionOrderParamsComponentsItem(TypedDict):
@@ -22206,10 +23664,17 @@ class VerifyCfdiParams(TypedDict):
     """El total del comprobante, sin XML ni QR. El SAT lo compara como número."""
 
 
-class ListMembersParams(TypedDict):
-    """Los parámetros de GET /v1/members."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/members.
+ListMembersParams = TypedDict(
+    "ListMembersParams",
+    {
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class UpdateMemberParams(TypedDict):
@@ -22236,7 +23701,7 @@ class DeleteMemberParams(TypedDict):
 class ListInvitationsParams(TypedDict):
     """Los parámetros de GET /v1/invitations."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class CreateInvitationParams(TypedDict):
@@ -22261,7 +23726,7 @@ class CreateInvitationParams(TypedDict):
 class ListRolesParams(TypedDict):
     """Los parámetros de GET /v1/roles."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class CreateRoleParams(TypedDict):
@@ -22293,7 +23758,7 @@ class UpdateRoleParams(TypedDict):
 class DeleteRoleParams(TypedDict):
     """Los parámetros de DELETE /v1/roles/{id}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 CreateExportParams = TypedDict(
@@ -22311,14 +23776,19 @@ CreateExportParams = TypedDict(
 )
 
 
-class ListExportsParams(TypedDict):
-    """Los parámetros de GET /v1/exports."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/exports.
+ListExportsParams = TypedDict(
+    "ListExportsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 CreateSatDownloadParams = TypedDict(
@@ -22335,40 +23805,42 @@ CreateSatDownloadParams = TypedDict(
 )
 
 
-class ListSatDownloadsParams(TypedDict):
-    """Los parámetros de GET /v1/sat_downloads."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/sat_downloads.
+ListSatDownloadsParams = TypedDict(
+    "ListSatDownloadsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
-class ListSatInvoicesParams(TypedDict):
-    """Los parámetros de GET /v1/sat_invoices."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    direction: NotRequired[Literal["received", "issued"]]
-    """received (por omisión) o issued."""
-    type: NotRequired[Literal["I", "E", "P", "T", "N"]]
-    """I, E, P, T o N."""
-    counterparty_tax_id: NotRequired[str]
-    """El RFC de quien la emitió (recibidas) o de quien la recibió (emitidas)."""
-    date_gte: NotRequired[str]
-    """Con fecha desde este día (AAAA-MM-DD)."""
-    date_lte: NotRequired[str]
-    """Con fecha hasta este día (AAAA-MM-DD), incluido."""
-    cost_center: NotRequired[str]
-    """Solo las de este centro de costo (ccn_…), o none para las que no tienen."""
-    tag: NotRequired[str]
-    """Solo las que llevan esta etiqueta (tag_…)."""
-    cash_confirmation: NotRequired[Literal["pending", "confirmed"]]
-    """Solo las PUE recibidas en efectivo que la empresa pide confirmar: pending (nadie ha anotado de dónde salió el dinero) o confirmed."""
+# Los parámetros de GET /v1/sat_invoices.
+ListSatInvoicesParams = TypedDict(
+    "ListSatInvoicesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "direction": "NotRequired[Literal[\"received\", \"issued\"]]",
+        "type": "NotRequired[Literal[\"I\", \"E\", \"P\", \"T\", \"N\"]]",
+        "counterparty_tax_id": "NotRequired[str]",
+        "date[gte]": "NotRequired[str]",
+        "date[gt]": "NotRequired[str]",
+        "date[lte]": "NotRequired[str]",
+        "date[lt]": "NotRequired[str]",
+        "cost_center": "NotRequired[str]",
+        "tag": "NotRequired[str]",
+        "cash_confirmation": "NotRequired[Literal[\"pending\", \"confirmed\"]]",
+        "date_gte": "NotRequired[str]",
+        "date_lte": "NotRequired[str]",
+    },
+)
 
 
 class UpdateSatInvoiceParams(TypedDict):
@@ -22398,7 +23870,7 @@ class ListSatRetentionsParams(TypedDict):
     starting_after: NotRequired[str]
     """El id del último de la página anterior, para la siguiente."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     direction: NotRequired[Literal["received", "issued"]]
     """received (por omisión) o issued."""
     status: NotRequired[Literal["active", "canceled"]]
@@ -22420,34 +23892,39 @@ class CancelSatRetentionParams(TypedDict):
     """El comprobante que sustituye a este (su id o su UUID), con el motivo 01."""
 
 
-class ListPortalSuppliersParams(TypedDict):
-    """Los parámetros de GET /v1/portal_suppliers."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    status: NotRequired[Literal["invited", "onboarding", "in_review", "approved", "rejected", "suspended"]]
-    """Solo los que estén en este estado."""
-    tax_id: NotRequired[str]
-    """Solo el de este RFC."""
+# Los parámetros de GET /v1/portal_suppliers.
+ListPortalSuppliersParams = TypedDict(
+    "ListPortalSuppliersParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"invited\", \"onboarding\", \"in_review\", \"approved\", \"rejected\", \"suspended\"]]",
+        "tax_id": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
-class ListSupplierInvoicesParams(TypedDict):
-    """Los parámetros de GET /v1/supplier_invoices."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    status: NotRequired[Literal["received", "approved", "scheduled", "paid", "rejected"]]
-    """Solo las que estén en este estado."""
-    supplier: NotRequired[str]
-    """Solo las de este proveedor (sup_…)."""
-    received_since: NotRequired[str]
-    """Solo las que llegaron desde este día (AAAA-MM-DD)."""
+# Los parámetros de GET /v1/supplier_invoices.
+ListSupplierInvoicesParams = TypedDict(
+    "ListSupplierInvoicesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"received\", \"approved\", \"scheduled\", \"paid\", \"rejected\"]]",
+        "supplier": "NotRequired[str]",
+        "received[gte]": "NotRequired[str]",
+        "received[gt]": "NotRequired[str]",
+        "received[lte]": "NotRequired[str]",
+        "received[lt]": "NotRequired[str]",
+        "received_since": "NotRequired[str]",
+    },
+)
 
 
 class ScheduleSupplierInvoiceParams(TypedDict):
@@ -22468,6 +23945,8 @@ class ListPayableInvoicesParams(TypedDict):
     """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
     limit: NotRequired[int]
     """Cuántas, de 1 a 500. Por omisión 100."""
+    starting_after: NotRequired[str]
+    """El id (folio fiscal) de la última de la página anterior, para la siguiente."""
     supplier_tax_id: NotRequired[str]
     """Solo las de este proveedor (su RFC)."""
     uuid: NotRequired[str]
@@ -22511,28 +23990,37 @@ class CreatePayoutParams(TypedDict):
     """Las facturas recibidas a pagar (hasta 500). Las de un mismo proveedor van en una sola transferencia a su cuenta aprobada. Mande invoices, payments o las dos."""
     payments: NotRequired[list[CreatePayoutParamsPaymentsItem]]
     """Pagos sin factura (hasta 500 entre los dos arreglos): una nómina, un anticipo, un reembolso. Los de un mismo RFC van en una sola transferencia."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListPayoutsParams(TypedDict):
-    """Los parámetros de GET /v1/payouts."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    status: NotRequired[Literal["draft", "pending_approval", "approved", "sending", "paid", "partially_paid", "failed", "canceled"]]
-    """Solo los que estén en este estado."""
-    pay_on_from: NotRequired[str]
-    """Solo los que salen desde este día (AAAA-MM-DD)."""
-    pay_on_to: NotRequired[str]
-    """Solo los que salen hasta este día (AAAA-MM-DD)."""
+# Los parámetros de GET /v1/payouts.
+ListPayoutsParams = TypedDict(
+    "ListPayoutsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"draft\", \"pending_approval\", \"approved\", \"sending\", \"paid\", \"partially_paid\", \"failed\", \"canceled\"]]",
+        "pay_on[gte]": "NotRequired[str]",
+        "pay_on[gt]": "NotRequired[str]",
+        "pay_on[lte]": "NotRequired[str]",
+        "pay_on[lt]": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+        "pay_on_from": "NotRequired[str]",
+        "pay_on_to": "NotRequired[str]",
+    },
+)
 
 
 class GetPayoutsPauseParams(TypedDict):
     """Los parámetros de GET /v1/payouts/pause."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class PausePayoutsParams(TypedDict):
@@ -22547,18 +24035,31 @@ class CancelPayoutParams(TypedDict):
     """Por qué se cancela; lo ve el equipo en el pago."""
 
 
-class ListPayeeAccountsParams(TypedDict):
-    """Los parámetros de GET /v1/payee_accounts."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    supplier_tax_id: NotRequired[str]
-    """Solo las de este proveedor (su RFC)."""
+# Los parámetros de GET /v1/payee_accounts.
+ListPayeeAccountsParams = TypedDict(
+    "ListPayeeAccountsParams",
+    {
+        "issuer": "NotRequired[str]",
+        "supplier_tax_id": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
-class ListPayoutMandatesParams(TypedDict):
-    """Los parámetros de GET /v1/payout_mandates."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/payout_mandates.
+ListPayoutMandatesParams = TypedDict(
+    "ListPayoutMandatesParams",
+    {
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class RefreshSatDeclarationsParams(TypedDict):
@@ -22566,40 +24067,45 @@ class RefreshSatDeclarationsParams(TypedDict):
     """El emisor (iss_…). Por omisión, su único emisor."""
 
 
-class ListSatRefreshesParams(TypedDict):
-    """Los parámetros de GET /v1/sat_refreshes."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """Solo las de un emisor (iss_…)."""
-    document: NotRequired[Literal["declarations", "compliance_opinion", "tax_status_certificate", "sat_mailbox"]]
-    """Solo las de un documento."""
+# Los parámetros de GET /v1/sat_refreshes.
+ListSatRefreshesParams = TypedDict(
+    "ListSatRefreshesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "document": "NotRequired[Literal[\"declarations\", \"compliance_opinion\", \"tax_status_certificate\", \"sat_mailbox\"]]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
-class ListSatDeclarationsParams(TypedDict):
-    """Los parámetros de GET /v1/sat_declarations."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    year: NotRequired[int]
-    """Solo las de un ejercicio, como 2025."""
-    source: NotRequired[Literal["monthly", "annual", "dyp"]]
-    """monthly (provisionales o definitivas), annual (la anual) o dyp (Declaraciones y pagos)."""
-    month: NotRequired[int]
-    """Solo las de un mes (1 a 12)."""
-    type: NotRequired[Literal["normal", "complementary"]]
-    """normal o complementary (complementarias)."""
+# Los parámetros de GET /v1/sat_declarations.
+ListSatDeclarationsParams = TypedDict(
+    "ListSatDeclarationsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "year": "NotRequired[int]",
+        "source": "NotRequired[Literal[\"monthly\", \"annual\", \"dyp\"]]",
+        "month": "NotRequired[int]",
+        "type": "NotRequired[Literal[\"normal\", \"complementary\"]]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class GetSatDeclarationCalendarParams(TypedDict):
     """Los parámetros de GET /v1/sat_declarations/calendar."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     year: NotRequired[int]
     """El ejercicio, como 2026. Por omisión, el actual."""
 
@@ -22607,7 +24113,7 @@ class GetSatDeclarationCalendarParams(TypedDict):
 class GetSatAnnualPreloadParams(TypedDict):
     """Los parámetros de GET /v1/sat_declarations/annual_preload."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     year: NotRequired[int]
     """El ejercicio, como 2025. Por omisión, el anterior (el que se declara)."""
 
@@ -22698,22 +24204,31 @@ class CreateTicketParams(TypedDict):
     """Sucursal (brn_…) donde se hizo la venta: su factura se timbra desde ahí (su código postal en LugarExpedicion) y el portal muestra el nombre comercial y el logo de la sucursal. Sin ella, la Matriz."""
     lines: NotRequired[list[CreateTicketParamsLinesItem]]
     """Una venta de varios conceptos (el folio de un hotel: noches, desayunos, lavandería), cada uno con su producto o sus claves, sus impuestos y lo que se cobró por él; hasta 200. En lugar de `product`, `description`, `product_key`, `unit_key` e `iva`. La factura del cliente lleva un concepto por línea; la factura global, uno por cada combinación de impuestos del ticket."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListTicketsParams(TypedDict):
-    """Los parámetros de GET /v1/tickets."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    status: NotRequired[Literal["pending", "invoiced", "global", "cancelled"]]
-    """pending, invoiced, global o cancelled."""
-    sold_at_gte: NotRequired[str]
-    """Vendidos desde (ISO 8601 o AAAA-MM-DD)."""
-    sold_at_lte: NotRequired[str]
-    """Vendidos hasta (ISO 8601 o AAAA-MM-DD, el día completo)."""
+# Los parámetros de GET /v1/tickets.
+ListTicketsParams = TypedDict(
+    "ListTicketsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"pending\", \"invoiced\", \"global\", \"canceled\", \"cancelled\"]]",
+        "sold_at[gte]": "NotRequired[str]",
+        "sold_at[gt]": "NotRequired[str]",
+        "sold_at[lte]": "NotRequired[str]",
+        "sold_at[lt]": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+        "sold_at_gte": "NotRequired[str]",
+        "sold_at_lte": "NotRequired[str]",
+    },
+)
 
 
 class UpdateSelfInvoicingParamsPortalStyleColors(TypedDict):
@@ -23031,7 +24546,7 @@ class ListJournalEntriesParams(TypedDict):
     starting_after: NotRequired[str]
     """El id de la última póliza de la página anterior."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetTrialBalanceParams(TypedDict):
@@ -23039,7 +24554,7 @@ class GetTrialBalanceParams(TypedDict):
     month: str
     """El mes (AAAA-MM)."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetGeneralLedgerParams(TypedDict):
@@ -23053,7 +24568,7 @@ class GetGeneralLedgerParams(TypedDict):
     grouping_code: NotRequired[str]
     """Solo las cuentas de este código agrupador del SAT (102 trae 102.01, 102.02…), como el renglón de un estado financiero. Con account no se usa."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetFinancialStatementsParams(TypedDict):
@@ -23061,7 +24576,7 @@ class GetFinancialStatementsParams(TypedDict):
     month: str
     """El mes (AAAA-MM)."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetCashFlowParams(TypedDict):
@@ -23071,7 +24586,7 @@ class GetCashFlowParams(TypedDict):
     period: NotRequired[Literal["month", "year_to_date"]]
     """month (solo el mes) o year_to_date (de enero al mes, por omisión)."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetEquityChangesParams(TypedDict):
@@ -23079,7 +24594,7 @@ class GetEquityChangesParams(TypedDict):
     month: str
     """El mes (AAAA-MM)."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetComparativeStatementsParams(TypedDict):
@@ -23089,7 +24604,7 @@ class GetComparativeStatementsParams(TypedDict):
     compare_to: NotRequired[Literal["previous_year", "previous_month"]]
     """previous_year (el mismo mes del año anterior, por omisión) o previous_month."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetFinancialRatiosParams(TypedDict):
@@ -23097,7 +24612,7 @@ class GetFinancialRatiosParams(TypedDict):
     month: str
     """El mes (AAAA-MM)."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetCrossChecksParams(TypedDict):
@@ -23105,7 +24620,7 @@ class GetCrossChecksParams(TypedDict):
     year: NotRequired[int]
     """El ejercicio. Por omisión, el actual."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetVatRefundParams(TypedDict):
@@ -23113,7 +24628,7 @@ class GetVatRefundParams(TypedDict):
     month: NotRequired[str]
     """El mes del saldo a revisar (AAAA-MM). Sin él, solo los saldos."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetCrossCheckCfdiParams(TypedDict):
@@ -23123,7 +24638,7 @@ class GetCrossCheckCfdiParams(TypedDict):
     key: Literal["vat_charged", "vat_creditable", "vat_withheld", "isr_income", "isr_withheld_salaries", "isr_withheld_suppliers", "vat_withheld_suppliers"]
     """La cifra: vat_charged, vat_creditable, vat_withheld, isr_income, isr_withheld_salaries, isr_withheld_suppliers o vat_withheld_suppliers."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class ListLedgerAccountsParams(TypedDict):
@@ -23193,9 +24708,17 @@ ListManualEntriesParams = TypedDict(
     {
         "limit": "NotRequired[int]",
         "starting_after": "NotRequired[str]",
+        "date[gte]": "NotRequired[str]",
+        "date[gt]": "NotRequired[str]",
+        "date[lte]": "NotRequired[str]",
+        "date[lt]": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
         "from": "NotRequired[str]",
         "to": "NotRequired[str]",
-        "issuer": "NotRequired[str]",
     },
 )
 
@@ -23245,7 +24768,7 @@ class UpdateManualEntryParams(TypedDict):
 class GetAutomaticEntryParams(TypedDict):
     """Los parámetros de GET /v1/accounting/automatic_entries/{uuid}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class UpdateAutomaticEntryParamsLinesItem(TypedDict):
@@ -23281,13 +24804,13 @@ class UpdateAutomaticEntryParams(TypedDict):
 class RevertAutomaticEntryParams(TypedDict):
     """Los parámetros de DELETE /v1/accounting/automatic_entries/{uuid}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetPrepaidExpenseParams(TypedDict):
     """Los parámetros de GET /v1/accounting/prepaid_expenses/{uuid}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class UpdatePrepaidExpenseParams(TypedDict):
@@ -23310,7 +24833,7 @@ class UpdatePrepaidExpenseParams(TypedDict):
 class RemovePrepaidExpenseParams(TypedDict):
     """Los parámetros de DELETE /v1/accounting/prepaid_expenses/{uuid}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class ImportManualEntriesParamsEntriesItemLinesItem(TypedDict):
@@ -23357,7 +24880,7 @@ class ImportManualEntriesParams(TypedDict):
 class GetOpeningBalancesParams(TypedDict):
     """Los parámetros de GET /v1/accounting/opening_balances."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class SetOpeningBalancesParamsLinesItem(TypedDict):
@@ -23383,7 +24906,7 @@ class ListFixedAssetsParams(TypedDict):
     month: NotRequired[str]
     """El mes (AAAA-MM) a cuyo cierre van las cifras. Por omisión, el actual."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class CreateFixedAssetParams(TypedDict):
@@ -23413,7 +24936,7 @@ class DisposeFixedAssetParams(TypedDict):
 class GetAccountingSettingsParams(TypedDict):
     """Los parámetros de GET /v1/accounting/settings."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class UpdateAccountingSettingsParams(TypedDict):
@@ -23426,7 +24949,7 @@ class UpdateAccountingSettingsParams(TypedDict):
 class GetClosedPeriodParams(TypedDict):
     """Los parámetros de GET /v1/accounting/closed_period."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class SetClosedPeriodParams(TypedDict):
@@ -23439,7 +24962,7 @@ class SetClosedPeriodParams(TypedDict):
 class GetFxRevaluationParams(TypedDict):
     """Los parámetros de GET /v1/accounting/fx_revaluations/{month}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class CreateFxRevaluationParams(TypedDict):
@@ -23452,13 +24975,13 @@ class CreateFxRevaluationParams(TypedDict):
 class DeleteFxRevaluationParams(TypedDict):
     """Los parámetros de DELETE /v1/accounting/fx_revaluations/{month}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetCostOfSalesParams(TypedDict):
     """Los parámetros de GET /v1/accounting/cost_of_sales/{month}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class CreateCostOfSalesParams(TypedDict):
@@ -23471,13 +24994,13 @@ class CreateCostOfSalesParams(TypedDict):
 class DeleteCostOfSalesParams(TypedDict):
     """Los parámetros de DELETE /v1/accounting/cost_of_sales/{month}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetBudgetParams(TypedDict):
     """Los parámetros de GET /v1/accounting/budgets/{year}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     cost_center: NotRequired[str]
     """El centro de costo (ccn_…). Sin él, toda la empresa."""
     month: NotRequired[int]
@@ -23503,7 +25026,7 @@ class SaveBudgetParams(TypedDict):
 class GetInflationAdjustmentParams(TypedDict):
     """Los parámetros de GET /v1/accounting/inflation_adjustments/{year}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     from_month: NotRequired[int]
     """El primer mes del ejercicio, de 1 a 12. Por omisión 1; otro si la empresa empezó en el año."""
     through_month: NotRequired[int]
@@ -23527,7 +25050,7 @@ class SaveInflationAccountsParams(TypedDict):
 class GetAnnualReturnParams(TypedDict):
     """Los parámetros de GET /v1/accounting/annual_returns/{year}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
     through_month: NotRequired[int]
     """El último mes, de 1 a 12, para estimar el año en curso. Por omisión 12 en un año pasado y el mes actual en el año en curso."""
 
@@ -23635,7 +25158,7 @@ class CarryForwardAnnualReturnParams(TypedDict):
 class GetDepreciationReconciliationParams(TypedDict):
     """Los parámetros de GET /v1/accounting/depreciation_reconciliations/{year}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class SaveBookDepreciationRateParams(TypedDict):
@@ -23691,11 +25214,15 @@ ListBooksLogParams = TypedDict(
     "ListBooksLogParams",
     {
         "subject": "NotRequired[Literal[\"manual_journal_entry\", \"opening_balances\", \"account\", \"chart_of_accounts\", \"period_close\", \"consolidation_elimination\", \"entry_template\", \"fixed_asset\", \"invoice_account\", \"automatic_journal_entry\", \"prepaid_expense\"]]",
-        "from": "NotRequired[str]",
-        "to": "NotRequired[str]",
         "limit": "NotRequired[int]",
         "starting_after": "NotRequired[str]",
         "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "from": "NotRequired[str]",
+        "to": "NotRequired[str]",
     },
 )
 
@@ -23707,7 +25234,7 @@ class GetConsolidatedStatementsParams(TypedDict):
     month: str
     """El mes (AAAA-MM)."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class ListConsolidationEliminationsParams(TypedDict):
@@ -23715,7 +25242,7 @@ class ListConsolidationEliminationsParams(TypedDict):
     month: str
     """El mes (AAAA-MM)."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class CreateConsolidationEliminationParamsLinesItem(TypedDict):
@@ -23763,7 +25290,7 @@ class UpdateConsolidationEliminationParams(TypedDict):
 class ListEntryTemplatesParams(TypedDict):
     """Los parámetros de GET /v1/accounting/entry_templates."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class CreateEntryTemplateParamsLinesItem(TypedDict):
@@ -23828,13 +25355,13 @@ class ApplyEntryTemplateParams(TypedDict):
 class GetCostCenterResultsParams(TypedDict):
     """Los parámetros de GET /v1/accounting/cost_center_results/{month}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetPayrollProvisionParams(TypedDict):
     """Los parámetros de GET /v1/accounting/payroll_provisions/{month}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class CreatePayrollProvisionParams(TypedDict):
@@ -23855,7 +25382,7 @@ class CreatePayrollProvisionParams(TypedDict):
 class DeletePayrollProvisionParams(TypedDict):
     """Los parámetros de DELETE /v1/accounting/payroll_provisions/{month}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class CompareSuaCedulaParams(TypedDict):
@@ -23868,7 +25395,7 @@ class CompareSuaCedulaParams(TypedDict):
 class GetTaxDeterminationParams(TypedDict):
     """Los parámetros de GET /v1/accounting/tax_determinations/{month}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class CreateTaxDeterminationParams(TypedDict):
@@ -23881,13 +25408,13 @@ class CreateTaxDeterminationParams(TypedDict):
 class DeleteTaxDeterminationParams(TypedDict):
     """Los parámetros de DELETE /v1/accounting/tax_determinations/{month}."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class ListLedgerBankAccountsParams(TypedDict):
     """Los parámetros de GET /v1/accounting/bank_accounts."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class UpdateLedgerBankAccountParams(TypedDict):
@@ -23904,7 +25431,7 @@ class ListBankMovementsParams(TypedDict):
     month: NotRequired[str]
     """El mes (AAAA-MM). Por omisión, el actual."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class PostBankMovementParams(TypedDict):
@@ -23938,7 +25465,7 @@ class GetElectronicAccountingParams(TypedDict):
     procedure_number: NotRequired[str]
     """DE y CO: el número de trámite (AB123456789012)."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetBooksExportParams(TypedDict):
@@ -23948,7 +25475,7 @@ class GetBooksExportParams(TypedDict):
     to_month: NotRequired[str]
     """El último mes (AAAA-MM), hasta 24 meses después y no después del mes actual; por omisión, from_month."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetDiotParams(TypedDict):
@@ -23956,7 +25483,7 @@ class GetDiotParams(TypedDict):
     month: str
     """El mes (AAAA-MM)."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetDiotFileParams(TypedDict):
@@ -23966,7 +25493,7 @@ class GetDiotFileParams(TypedDict):
     group_small_suppliers: NotRequired[bool]
     """true para agrupar proveedores de hasta $50,000 en el mes (regla 4.5.2)."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetIepsCustomersParams(TypedDict):
@@ -23976,7 +25503,7 @@ class GetIepsCustomersParams(TypedDict):
     quarter: NotRequired[Literal["1", "2", "3", "4"]]
     """Solo ese trimestre (1 a 4); por omisión, los cuatro."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class GetIepsCustomersFileParams(TypedDict):
@@ -23986,7 +25513,7 @@ class GetIepsCustomersFileParams(TypedDict):
     quarter: Literal["1", "2", "3", "4"]
     """El trimestre (1 a 4)."""
     issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+    """Solo los de este emisor (iss_…). Sin él, los de todos los emisores que la llave puede usar, emisor por emisor (cada objeto dice el suyo en issuer); con más de 25, mándelo."""
 
 
 class CreateStoreConnectionParamsSettings(TypedDict):
@@ -24042,14 +25569,19 @@ class CreateStoreConnectionParams(TypedDict):
     """Cómo se vuelve ticket cada pedido."""
 
 
-class ListStoreConnectionsParams(TypedDict):
-    """Los parámetros de GET /v1/store_connections."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
+# Los parámetros de GET /v1/store_connections.
+ListStoreConnectionsParams = TypedDict(
+    "ListStoreConnectionsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class UpdateStoreConnectionParamsSettings(TypedDict):
@@ -24113,18 +25645,25 @@ class CreateRecurringInvoiceParams(TypedDict):
     """Mandar cada factura al correo del cliente (customer.email o el del catálogo). Por omisión true."""
     catch_up: NotRequired[Literal["all", "latest"]]
     """Si quedaron periodos sin timbrar (sin timbres, en pausa con su fecha pasada): all los timbra todos, cada uno con su mes; latest solo el más reciente. Por omisión all."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListRecurringInvoicesParams(TypedDict):
-    """Los parámetros de GET /v1/recurring_invoices."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    status: NotRequired[Literal["active", "paused"]]
-    """active o paused."""
+# Los parámetros de GET /v1/recurring_invoices.
+ListRecurringInvoicesParams = TypedDict(
+    "ListRecurringInvoicesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"active\", \"paused\"]]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateRecurringInvoiceParamsSchedule(TypedDict):
@@ -24151,11 +25690,13 @@ class UpdateRecurringInvoiceParams(TypedDict):
     invoice: NotRequired[UpdateRecurringInvoiceParamsInvoice]
     """La factura completa que se repite desde la siguiente vez (reemplaza la anterior)."""
     send_email: NotRequired[bool]
-    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía."""
+    """true para mandar el PDF y el XML por correo al timbrar, con el diseño de Fiscalisto. Por omisión no se envía. A un cliente con «Enviar al timbrar: Nunca» no se le envía aunque sea true: warnings lo dice y POST /v1/invoices/{id}/send sí se la manda."""
     catch_up: NotRequired[Literal["all", "latest"]]
     """Si quedaron periodos sin timbrar: all los timbra todos, cada uno con su mes; latest solo el más reciente."""
     active: NotRequired[bool]
     """false la pausa; true la reanuda desde hoy, sin timbrar las fechas que pasaron en pausa."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class CreateQuoteParamsCustomer1Foreign(TypedDict):
@@ -24326,10 +25867,14 @@ class CreateQuoteParams(TypedDict):
     """Forma de pago (FormaPago), clave de c_FormaPago: 01 efectivo, 03 transferencia, 04 tarjeta de crédito, 28 débito, 99 por definir… Obligatoria con PUE; con PPD es 99."""
     payment_method: NotRequired[Literal["PUE", "PPD"]]
     """Método de pago (MetodoPago): PUE (una sola exhibición, por omisión) o PPD (en parcialidades o diferido, se cobra con complementos de pago)."""
+    paid_later: NotRequired[bool]
+    """Con PUE: true si aún no le pagan («Por cobrar» en la app) aunque se pagará este mes."""
     use: NotRequired[str]
     """Uso del CFDI (UsoCFDI), clave de c_UsoCFDI. Por omisión G03, o S01 con régimen 616."""
     notes: NotRequired[str]
     """Observaciones que aparecen en el PDF (no van en el XML)."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     valid_until: NotRequired[str]
     """Hasta cuándo es válida (AAAA-MM-DD, hasta un año). Por omisión, en 15 días."""
     terms: NotRequired[str]
@@ -24338,16 +25883,21 @@ class CreateQuoteParams(TypedDict):
     """Al aceptarla, timbrar la factura sola (con los datos fiscales del cliente; si no los tiene, la página se los pide primero). Por omisión false: la factura se timbra con POST /v1/quotes/{id}/invoice."""
 
 
-class ListQuotesParams(TypedDict):
-    """Los parámetros de GET /v1/quotes."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    status: NotRequired[Literal["draft", "sent", "viewed", "accepted", "rejected", "withdrawn", "expired", "invoiced"]]
-    """Solo las que estén en este estado."""
+# Los parámetros de GET /v1/quotes.
+ListQuotesParams = TypedDict(
+    "ListQuotesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"draft\", \"sent\", \"viewed\", \"accepted\", \"rejected\", \"withdrawn\", \"expired\", \"invoiced\"]]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateQuoteParamsCustomer1Foreign(TypedDict):
@@ -24516,6 +26066,8 @@ class UpdateQuoteParams(TypedDict):
     """Forma de pago (FormaPago), clave de c_FormaPago: 01 efectivo, 03 transferencia, 04 tarjeta de crédito, 28 débito, 99 por definir… Obligatoria con PUE; con PPD es 99."""
     payment_method: NotRequired[Literal["PUE", "PPD"]]
     """Método de pago (MetodoPago): PUE (una sola exhibición, por omisión) o PPD (en parcialidades o diferido, se cobra con complementos de pago)."""
+    paid_later: NotRequired[bool]
+    """Con PUE: true si aún no le pagan («Por cobrar» en la app) aunque se pagará este mes."""
     use: NotRequired[str]
     """Uso del CFDI (UsoCFDI), clave de c_UsoCFDI. Por omisión G03, o S01 con régimen 616."""
     notes: NotRequired[str]
@@ -24524,6 +26076,8 @@ class UpdateQuoteParams(TypedDict):
     """Hasta cuándo es válida (AAAA-MM-DD, hasta un año). Por omisión, en 15 días."""
     terms: NotRequired[str]
     """Condiciones: tiempo de entrega, anticipo, garantía…"""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class SendQuoteParams(TypedDict):
@@ -24706,6 +26260,8 @@ class CreateSalesOrderParams(TypedDict):
     """Los conceptos, como en POST /v1/invoices (hasta 200)."""
     confirm: NotRequired[bool]
     """Confirmarlo en el mismo paso (por omisión false: queda en draft). Confirmado, aparta lo pedido en el almacén."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     currency: NotRequired[str]
     """Moneda, clave ISO 4217 de c_Moneda (MXN, USD, EUR…). Por omisión MXN."""
     exchange_rate: NotRequired[float]
@@ -24714,6 +26270,8 @@ class CreateSalesOrderParams(TypedDict):
     """Forma de pago (FormaPago), clave de c_FormaPago: 01 efectivo, 03 transferencia, 04 tarjeta de crédito, 28 débito, 99 por definir… Obligatoria con PUE; con PPD es 99."""
     payment_method: NotRequired[Literal["PUE", "PPD"]]
     """Método de pago (MetodoPago): PUE (una sola exhibición, por omisión) o PPD (en parcialidades o diferido, se cobra con complementos de pago)."""
+    paid_later: NotRequired[bool]
+    """Con PUE: true si aún no le pagan («Por cobrar» en la app) aunque se pagará este mes."""
     use: NotRequired[str]
     """Uso del CFDI (UsoCFDI), clave de c_UsoCFDI. Por omisión G03, o S01 con régimen 616."""
     notes: NotRequired[str]
@@ -24736,18 +26294,22 @@ class CreateSalesOrderParams(TypedDict):
     """Nota interna (su cliente no la ve)."""
 
 
-class ListSalesOrdersParams(TypedDict):
-    """Los parámetros de GET /v1/sales_orders."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    issuer: NotRequired[str]
-    """El emisor (iss_…). Puede omitirse si la llave o la cuenta tienen uno solo."""
-    status: NotRequired[Literal["draft", "confirmed", "partially_delivered", "delivered", "invoiced", "paid", "closed", "canceled"]]
-    """Solo los que estén en este estado."""
-    customer: NotRequired[str]
-    """Solo los de este RFC."""
+# Los parámetros de GET /v1/sales_orders.
+ListSalesOrdersParams = TypedDict(
+    "ListSalesOrdersParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "issuer": "NotRequired[str]",
+        "status": "NotRequired[Literal[\"draft\", \"confirmed\", \"partially_delivered\", \"delivered\", \"invoiced\", \"paid\", \"closed\", \"canceled\"]]",
+        "customer": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateSalesOrderParamsCustomerForeign(TypedDict):
@@ -24901,6 +26463,8 @@ class UpdateSalesOrderParams(TypedDict):
     """Un cliente de su catálogo (cus_…) o uno con sus datos fiscales (como en POST /v1/invoices: se agrega a sus clientes)."""
     items: NotRequired[list[UpdateSalesOrderParamsItemsItem]]
     """Los conceptos, como en POST /v1/invoices (hasta 200)."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
     currency: NotRequired[str]
     """Moneda, clave ISO 4217 de c_Moneda (MXN, USD, EUR…). Por omisión MXN."""
     exchange_rate: NotRequired[float]
@@ -24909,6 +26473,8 @@ class UpdateSalesOrderParams(TypedDict):
     """Forma de pago (FormaPago), clave de c_FormaPago: 01 efectivo, 03 transferencia, 04 tarjeta de crédito, 28 débito, 99 por definir… Obligatoria con PUE; con PPD es 99."""
     payment_method: NotRequired[Literal["PUE", "PPD"]]
     """Método de pago (MetodoPago): PUE (una sola exhibición, por omisión) o PPD (en parcialidades o diferido, se cobra con complementos de pago)."""
+    paid_later: NotRequired[bool]
+    """Con PUE: true si aún no le pagan («Por cobrar» en la app) aunque se pagará este mes."""
     use: NotRequired[str]
     """Uso del CFDI (UsoCFDI), clave de c_UsoCFDI. Por omisión G03, o S01 con régimen 616."""
     notes: NotRequired[str]
@@ -24993,6 +26559,51 @@ class CancelSalesOrderParams(TypedDict):
     """Por qué (queda en el historial)."""
 
 
+class CreateApiKeyParams(TypedDict):
+    name: str
+    """Para qué es, para usted (por ejemplo, el nombre de su cliente)."""
+    permissions: dict[str, Literal["read", "write"]]
+    """Qué puede hacer la llave en cada recurso: `read` o `write` (escritura incluye lectura). Un recurso que no está es sin acceso. Cada uno, como mucho lo que tiene la llave que la crea."""
+    issuers: NotRequired[list[str]]
+    """Los emisores con que trabaja (sus id). Vacío o sin mandar: todos los del modo; si la llave que la crea está limitada a algunos emisores, sin mandar son esos mismos y la nueva solo puede tener algunos de ellos."""
+    allowed_ips: NotRequired[list[str]]
+    """Solo funciona desde estas IP o rangos CIDR (203.0.113.7, 203.0.113.0/24, 2001:db8::/32). Vacío: desde cualquiera; si la llave que la crea tiene IP, sin mandar son esas mismas y la nueva solo puede tener direcciones dentro de ellas."""
+    lifetime_hours: NotRequired[int | None]
+    """Horas hasta que deja de funcionar (1 hora a 3 años); null: no vence. Sin mandar: vence cuando vence la llave que la crea, o nunca. No puede pasar del vencimiento de la llave que la crea."""
+    expires_at: NotRequired[str]
+    """En vez de lifetime_hours: el momento en que deja de funcionar (ISO 8601), entre 1 hora y 3 años después."""
+
+
+# Los parámetros de GET /v1/api_keys.
+ListApiKeysParams = TypedDict(
+    "ListApiKeysParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
+
+
+class UpdateApiKeyParams(TypedDict):
+    name: NotRequired[str]
+    """Nombre."""
+    permissions: NotRequired[dict[str, Literal["read", "write"]]]
+    """Qué puede hacer la llave en cada recurso: `read` o `write` (escritura incluye lectura). Un recurso que no está es sin acceso. Cada uno, como mucho lo que tiene la llave que la crea."""
+    issuers: NotRequired[list[str]]
+    """Los emisores con que trabaja (sus id). Vacío o sin mandar: todos los del modo; si la llave que la crea está limitada a algunos emisores, sin mandar son esos mismos y la nueva solo puede tener algunos de ellos."""
+    allowed_ips: NotRequired[list[str]]
+    """Solo funciona desde estas IP o rangos CIDR (203.0.113.7, 203.0.113.0/24, 2001:db8::/32). Vacío: desde cualquiera; si la llave que la crea tiene IP, sin mandar son esas mismas y la nueva solo puede tener direcciones dentro de ellas."""
+
+
+class RollApiKeyParams(TypedDict):
+    expires_in: NotRequired[int]
+    """Segundos que la llave anterior sigue funcionando (0: deja de funcionar ya; hasta 7 días). Sin mandar: 24 horas."""
+
+
 class CreateWebhookEndpointParams(TypedDict):
     url: str
     """Dirección https de su servidor que recibe los avisos."""
@@ -25002,14 +26613,23 @@ class CreateWebhookEndpointParams(TypedDict):
     """Para qué es, para usted (no se manda en los eventos)."""
     api_version: NotRequired[str | None]
     """La versión de la API en que llegan sus eventos (por ejemplo 2026-10-24); null o sin mandar: la de la cuenta. Así actualiza un endpoint a la vez."""
+    metadata: NotRequired[dict[str, str]]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
-class ListWebhookEndpointsParams(TypedDict):
-    """Los parámetros de GET /v1/webhook_endpoints."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
+# Los parámetros de GET /v1/webhook_endpoints.
+ListWebhookEndpointsParams = TypedDict(
+    "ListWebhookEndpointsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+        "metadata": "NotRequired[dict[str, str]]",
+    },
+)
 
 
 class UpdateWebhookEndpointParams(TypedDict):
@@ -25023,6 +26643,8 @@ class UpdateWebhookEndpointParams(TypedDict):
     """true para apagarlo sin borrarlo."""
     api_version: NotRequired[str | None]
     """La versión de la API en que llegan sus eventos (por ejemplo 2026-10-24); null o sin mandar: la de la cuenta. Así actualiza un endpoint a la vez."""
+    metadata: NotRequired[dict[str, str] | None]
+    """Sus propios datos: hasta 50 llaves de 40 caracteres con valores de texto de hasta 500. No van al CFDI; vuelven en el objeto y en los webhooks."""
 
 
 class RollWebhookSecretParams(TypedDict):
@@ -25031,18 +26653,23 @@ class RollWebhookSecretParams(TypedDict):
 
 
 class TestWebhookEndpointParams(TypedDict):
-    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.cancellation_failed", "invoice.paid", "invoice.partially_paid", "invoice.email_bounced", "invoice.email_complained", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "payroll_batch.completed", "customer.created", "customer.updated", "customer.deleted", "product.created", "product.updated", "product.deleted", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "sat_refresh.completed", "sat_refresh.failed", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "quote.withdrawn", "sales_order.confirmed", "sales_order.customer_confirmed", "sales_order.delivered", "sales_order.paid", "sales_order.canceled", "supplier_invoice.received", "supplier_invoice.approved", "supplier_invoice.rejected", "supplier_invoice.scheduled", "supplier_invoice.paid", "portal_supplier.approved", "payout.approved", "payout.paid", "payout.partially_paid", "payout.failed", "payout.canceled", "payout_transfer.succeeded", "payout_transfer.failed", "payout_transfer.returned", "issuer.ready", "balance.low", "usage.high", "test_clock.ready", "rule.matched"]]
+    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.cancellation_failed", "invoice.paid", "invoice.partially_paid", "invoice.email_bounced", "invoice.email_complained", "invoice.draft_created", "invoice.draft_updated", "invoice.draft_deleted", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "payroll_batch.completed", "customer.created", "customer.updated", "customer.deleted", "product.created", "product.updated", "product.deleted", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "sat_refresh.completed", "sat_refresh.failed", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "quote.withdrawn", "sales_order.confirmed", "sales_order.customer_confirmed", "sales_order.delivered", "sales_order.paid", "sales_order.canceled", "supplier_invoice.received", "supplier_invoice.approved", "supplier_invoice.rejected", "supplier_invoice.scheduled", "supplier_invoice.paid", "portal_supplier.approved", "payout.approved", "payout.paid", "payout.partially_paid", "payout.failed", "payout.canceled", "payout_transfer.succeeded", "payout_transfer.failed", "payout_transfer.returned", "issuer.ready", "balance.low", "usage.high", "test_clock.ready", "rule.matched"]]
     """El evento a mandar. Por omisión invoice.stamped."""
 
 
-class ListWebhookDeliveriesParams(TypedDict):
-    """Los parámetros de GET /v1/webhook_endpoints/{id}/deliveries."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    succeeded: NotRequired[bool]
-    """false: solo los que fallaron en su último intento. true: solo los que llegaron."""
+# Los parámetros de GET /v1/webhook_endpoints/{id}/deliveries.
+ListWebhookDeliveriesParams = TypedDict(
+    "ListWebhookDeliveriesParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "succeeded": "NotRequired[bool]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class RecoverWebhookEndpointParams(TypedDict):
@@ -25050,18 +26677,22 @@ class RecoverWebhookEndpointParams(TypedDict):
     """Desde cuándo (ISO 8601, de los últimos 30 días): por ejemplo, cuando empezó a fallar su servidor (failing_since del webhook)."""
 
 
-class ListEventsParams(TypedDict):
-    """Los parámetros de GET /v1/events."""
-    limit: NotRequired[int]
-    """Cuántos por página, de 1 a 100. Por omisión 10."""
-    starting_after: NotRequired[str]
-    """El id del último de la página anterior, para la siguiente."""
-    type: NotRequired[Literal["invoice.stamped", "invoice.failed", "invoice.canceled", "invoice.cancellation_pending", "invoice.cancellation_rejected", "invoice.cancellation_failed", "invoice.paid", "invoice.partially_paid", "invoice.email_bounced", "invoice.email_complained", "retention.stamped", "retention.failed", "retention.canceled", "invoice_batch.completed", "payroll_batch.completed", "customer.created", "customer.updated", "customer.deleted", "product.created", "product.updated", "product.deleted", "customer_data_request.completed", "sat_download.completed", "sat_download.failed", "sat_declaration.created", "sat_declaration.updated", "sat_refresh.completed", "sat_refresh.failed", "ticket.invoiced", "ticket.included_in_global", "recurring_invoice.failed", "quote.viewed", "quote.accepted", "quote.changes_requested", "quote.rejected", "quote.withdrawn", "sales_order.confirmed", "sales_order.customer_confirmed", "sales_order.delivered", "sales_order.paid", "sales_order.canceled", "supplier_invoice.received", "supplier_invoice.approved", "supplier_invoice.rejected", "supplier_invoice.scheduled", "supplier_invoice.paid", "portal_supplier.approved", "payout.approved", "payout.paid", "payout.partially_paid", "payout.failed", "payout.canceled", "payout_transfer.succeeded", "payout_transfer.failed", "payout_transfer.returned", "issuer.ready", "balance.low", "usage.high", "test_clock.ready", "rule.matched", "invoice.*", "invoice_batch.*", "payroll_batch.*", "recurring_invoice.*", "quote.*", "sales_order.*", "supplier_invoice.*", "portal_supplier.*", "payout.*", "payout_transfer.*", "ticket.*", "retention.*", "customer.*", "product.*", "customer_data_request.*", "sat_download.*", "sat_declaration.*", "sat_refresh.*", "issuer.*", "balance.*", "usage.*", "test_clock.*", "rule.*"]]
-    """Solo de este tipo (invoice.stamped), o todos los de un recurso con un comodín (invoice.*)."""
-    object: NotRequired[str]
-    """Solo los de este objeto (inv_…, ret_…, bat_…)."""
-    delivery_success: NotRequired[bool]
-    """false: los que algún webhook no recibió (su último intento falló). true: los que recibieron todos los webhooks a los que se mandaron."""
+# Los parámetros de GET /v1/events.
+ListEventsParams = TypedDict(
+    "ListEventsParams",
+    {
+        "limit": "NotRequired[int]",
+        "starting_after": "NotRequired[str]",
+        "ending_before": "NotRequired[str]",
+        "type": "NotRequired[Literal[\"invoice.stamped\", \"invoice.failed\", \"invoice.canceled\", \"invoice.cancellation_pending\", \"invoice.cancellation_rejected\", \"invoice.cancellation_failed\", \"invoice.paid\", \"invoice.partially_paid\", \"invoice.email_bounced\", \"invoice.email_complained\", \"invoice.draft_created\", \"invoice.draft_updated\", \"invoice.draft_deleted\", \"retention.stamped\", \"retention.failed\", \"retention.canceled\", \"invoice_batch.completed\", \"payroll_batch.completed\", \"customer.created\", \"customer.updated\", \"customer.deleted\", \"product.created\", \"product.updated\", \"product.deleted\", \"customer_data_request.completed\", \"sat_download.completed\", \"sat_download.failed\", \"sat_declaration.created\", \"sat_declaration.updated\", \"sat_refresh.completed\", \"sat_refresh.failed\", \"ticket.invoiced\", \"ticket.included_in_global\", \"recurring_invoice.failed\", \"quote.viewed\", \"quote.accepted\", \"quote.changes_requested\", \"quote.rejected\", \"quote.withdrawn\", \"sales_order.confirmed\", \"sales_order.customer_confirmed\", \"sales_order.delivered\", \"sales_order.paid\", \"sales_order.canceled\", \"supplier_invoice.received\", \"supplier_invoice.approved\", \"supplier_invoice.rejected\", \"supplier_invoice.scheduled\", \"supplier_invoice.paid\", \"portal_supplier.approved\", \"payout.approved\", \"payout.paid\", \"payout.partially_paid\", \"payout.failed\", \"payout.canceled\", \"payout_transfer.succeeded\", \"payout_transfer.failed\", \"payout_transfer.returned\", \"issuer.ready\", \"balance.low\", \"usage.high\", \"test_clock.ready\", \"rule.matched\", \"invoice.*\", \"invoice_batch.*\", \"payroll_batch.*\", \"recurring_invoice.*\", \"quote.*\", \"sales_order.*\", \"supplier_invoice.*\", \"portal_supplier.*\", \"payout.*\", \"payout_transfer.*\", \"ticket.*\", \"retention.*\", \"customer.*\", \"product.*\", \"customer_data_request.*\", \"sat_download.*\", \"sat_declaration.*\", \"sat_refresh.*\", \"issuer.*\", \"balance.*\", \"usage.*\", \"test_clock.*\", \"rule.*\"]]",
+        "object": "NotRequired[str]",
+        "delivery_success": "NotRequired[bool]",
+        "created[gte]": "NotRequired[str]",
+        "created[gt]": "NotRequired[str]",
+        "created[lte]": "NotRequired[str]",
+        "created[lt]": "NotRequired[str]",
+    },
+)
 
 
 class ResendEventParams(TypedDict):

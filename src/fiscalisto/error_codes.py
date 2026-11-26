@@ -29,6 +29,24 @@ class ErrorCode:
     ANSWER_RUNNING: Final = "answer_running"
     """Ya se está armando la respuesta de esta revisión del SAT. Espere a que answer.status sea completed (GET /v1/sat_reviews/{id})."""
 
+    API_KEY_CREATION_LIMIT: Final = "api_key_creation_limit"
+    """La cuenta ya hizo 30 llaves por la API (creadas o cambiadas) en la última hora. Espere (Retry-After) o escríbanos si necesita más."""
+
+    API_KEY_ESCALATION: Final = "api_key_escalation"
+    """La llave que se crea o se edita tendría más que la que hace la solicitud: un recurso con más acceso, otro emisor, IP fuera de las suyas o un vencimiento después del suyo. Una llave solo da lo que tiene. param dice qué campo."""
+
+    API_KEY_EXPIRED: Final = "api_key_expired"
+    """La llave venció (eligió cuándo al crearla, o se cambió con «Cambiar llave» y pasó su plazo). El mensaje dice cuándo y expired_at lo trae en ISO 8601. Cree otra en Desarrolladores › Llaves; antes de que venza, «Cambiar llave» le da la nueva sin cortar el servicio."""
+
+    API_KEY_REJECTED: Final = "api_key_rejected"
+    """La llave no se pudo crear, cambiar o revocar: ya hay 50 en el modo, el vencimiento no está entre 1 hora y 3 años, una IP no es válida, no tiene ningún recurso, o ya se cambió por otra. El mensaje dice cuál."""
+
+    API_KEY_REVOKED: Final = "api_key_revoked"
+    """La llave existió y se revocó: en Desarrolladores › Llaves, al borrar su entorno de prueba, o porque GitHub (u otro buscador de secretos) la encontró publicada. El mensaje dice cuándo y quién, y revoked_at lo trae en ISO 8601. Use otra llave; si se publicó, cree una nueva y guárdela como secreto de su servidor."""
+
+    API_KEYS_PERMISSION_REQUIRED: Final = "api_keys_permission_required"
+    """Solo una llave con permisos por recurso que tenga api_keys (lectura para listar y ver, escritura para crear, cambiar y revocar) usa /v1/api_keys. Una llave con todos los permisos o de solo lectura no lo incluye: se da a propósito, en Desarrolladores › Llaves."""
+
     API_VERSION_INVALID: Final = "api_version_invalid"
     """No existe esa versión de la API (en Fiscalisto-Version o api_version). El mensaje dice cuáles hay; vea Versiones."""
 
@@ -110,6 +128,12 @@ class ErrorCode:
     DIOT_EMPTY: Final = "diot_empty"
     """El mes no tiene pagos a proveedores: esa DIOT se presenta sin operaciones desde el portal del SAT."""
 
+    DRAFT_AWAITING_APPROVAL: Final = "draft_awaiting_approval"
+    """El borrador espera la aprobación de un administrador en Fiscalisto y se timbra cuando la dé. Cambiarlo con POST /v1/invoices/{id} retira la solicitud."""
+
+    DRAFT_INCOMPLETE: Final = "draft_incomplete"
+    """El borrador (hecho en la app o con draft: true) no está completo para timbrarse. Complételo con POST /v1/invoices/{id}, con la factura completa."""
+
     EFIRMA_INVALID: Final = "efirma_invalid"
     """La e.firma no sirve: no es una e.firma (es un CSD), es de otro RFC, está vencida o la contraseña no abre la llave."""
 
@@ -156,7 +180,7 @@ class ErrorCode:
     """El hallazgo ya no aplica: lo que lo causó cambió (status resolved). No hay nada que revisar."""
 
     IDEMPOTENCY_KEY_INVALID: Final = "idempotency_key_invalid"
-    """Idempotency-Key es de 1 a 255 caracteres ASCII, sin acentos ni ñ: el id de su pedido o un UUID."""
+    """Idempotency-Key es de 1 a 255 caracteres ASCII, sin acentos ni ñ: el id de su pedido o un UUID. Lo que timbra o prepara un pago pide 8 o más: el mensaje dice cuántos llegaron."""
 
     IDEMPOTENCY_KEY_MISSING: Final = "idempotency_key_missing"
     """Lo que timbra exige el encabezado Idempotency-Key (8 a 255 caracteres, uno nuevo por comprobante). Así un reintento nunca timbra dos veces."""
@@ -171,7 +195,7 @@ class ErrorCode:
     """Algo falló de nuestro lado. Repita la solicitud con la misma Idempotency-Key: nunca se timbra dos veces. Si sigue, escríbanos con el request_id."""
 
     INVALID_API_KEY: Final = "invalid_api_key"
-    """La llave no existe, se revocó o expiró. Cree otra en Desarrolladores › Llaves."""
+    """La llave no es de ninguna cuenta: mal copiada, inventada o de antes de que guardáramos las llaves revocadas. Revise que la copió completa; sus llaves están en Desarrolladores › Llaves."""
 
     INVALID_JSON: Final = "invalid_json"
     """El cuerpo no es un objeto JSON válido."""
@@ -185,8 +209,14 @@ class ErrorCode:
     INVOICE_INVALID: Final = "invoice_invalid"
     """La factura no cumple una regla del SAT que Fiscalisto revisa antes de mandarla al PAC (uso contra régimen, totales, complementos…). No se usó ningún timbre."""
 
+    INVOICE_IS_DRAFT: Final = "invoice_is_draft"
+    """La factura es un borrador: todavía no tiene XML, PDF timbrado, correo ni cancelación. Timbrela con POST /v1/invoices/{id}/stamp."""
+
     INVOICE_NOT_CANCELED: Final = "invoice_not_canceled"
     """El acuse de cancelación existe cuando el SAT ya canceló la factura (status canceled). Con una cancelación en espera del cliente (pending), espere invoice.canceled."""
+
+    INVOICE_NOT_DRAFT: Final = "invoice_not_draft"
+    """La factura ya está timbrada: no se edita con su cuerpo completo, no se borra (se cancela o se sustituye) y no hay nada que timbrar."""
 
     INVOICE_NOT_MARKABLE: Final = "invoice_not_markable"
     """Solo una factura de ingreso PUE vigente se marca pagada o por cobrar; una PPD se paga con su complemento de pago (type P)."""
@@ -213,7 +243,7 @@ class ErrorCode:
     """El emisor no tiene equipo: el equipo es el de una empresa, en sus emisores propios (type own) y con una llave fk_live_. Un emisor conectado o uno de pruebas no tiene miembros."""
 
     ISSUER_LINKED_EMPRESA: Final = "issuer_linked_empresa"
-    """El emisor es una empresa de la app conectada a la cuenta (source empresa): con la API solo se usan su Portal de proveedores y, si alguien que puede los encendió, sus pagos a proveedores; o quien la conectó (o encendió sus pagos) ya no tiene en esa empresa el permiso que la ruta pide."""
+    """El emisor es una empresa de la app conectada a la cuenta (source empresa): con la API solo se usan su Portal de proveedores y, si alguien que puede los encendió, sus pagos a proveedores; o quien la conectó (o encendió sus pagos) ya no tiene en esa empresa el permiso que la ruta pide, o ya no tiene lo que esa empresa pide para entrar (verificación en dos pasos o llave de acceso)."""
 
     ISSUER_MISSING: Final = "issuer_missing"
     """No existe ese emisor en la cuenta (o es del otro modo)."""
@@ -475,6 +505,12 @@ ErrorCodeValue = Literal[
     "answer_missing",
     "answer_not_ready",
     "answer_running",
+    "api_key_creation_limit",
+    "api_key_escalation",
+    "api_key_expired",
+    "api_key_rejected",
+    "api_key_revoked",
+    "api_keys_permission_required",
     "api_version_invalid",
     "asset_already_disposed",
     "asset_from_cfdi",
@@ -502,6 +538,8 @@ ErrorCodeValue = Literal[
     "daily_limit",
     "data_request_completed",
     "diot_empty",
+    "draft_awaiting_approval",
+    "draft_incomplete",
     "efirma_invalid",
     "efirma_required",
     "email_failed",
@@ -527,7 +565,9 @@ ErrorCodeValue = Literal[
     "invalid_response",
     "inventory_refused",
     "invoice_invalid",
+    "invoice_is_draft",
     "invoice_not_canceled",
+    "invoice_not_draft",
     "invoice_not_markable",
     "invoice_not_stamped",
     "invoice_rejected",

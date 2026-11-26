@@ -10,17 +10,19 @@ import random
 import re
 import time
 import uuid
+import warnings
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any, Generic, Literal, TypeVar
 from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request as _UrllibRequest
 from urllib.request import urlopen
 
-VERSION = "0.1.224"
+VERSION = "0.1.225"
 # La versión de la API para la que se hizo este SDK: va en cada solicitud (Fiscalisto-Version).
-API_VERSION = "2026-10-24"
+API_VERSION = "2026-11-25"
 DEFAULT_BASE_URL = "https://api.fiscalisto.com"
 
 ErrorType = Literal[
@@ -136,8 +138,10 @@ class ListObject(Generic[T]):
     """Una lista: data y has_more son la primera página; recorrerla con for da todos los
     objetos, página por página."""
 
-    def __init__(self, page: Callable[[str | None], dict[str, Any]]) -> None:
+    def __init__(self, page: Callable[[str | None], dict[str, Any]], forward: bool = False) -> None:
         self._page = page
+        # ending_before: pages go to newer ones, each read oldest first.
+        self._forward = forward
         self._first: dict[str, Any] | None = None
 
     def first_page(self) -> dict[str, Any]:
@@ -154,14 +158,19 @@ class ListObject(Generic[T]):
     def has_more(self) -> bool:
         return bool(self.first_page()["has_more"])
 
+    def __getitem__(self, key: str) -> Any:
+        """lista["data"], lista["has_more"]: la primera página como dict, igual que antes de que
+        la ruta tuviera páginas."""
+        return self.first_page()[key]
+
     def __iter__(self) -> Iterator[T]:
         page = self.first_page()
         while True:
             items = page["data"]
-            yield from items
+            yield from (reversed(items) if self._forward else items)
             if not page["has_more"] or not items:
                 return
-            page = self._page(items[-1]["id"])
+            page = self._page((items[0] if self._forward else items[-1])["id"])
 
     def to_list(self, max: int = 10_000) -> list[T]:
         """Todos los objetos en una lista, hasta max (por omisión 10,000)."""
@@ -201,6 +210,31 @@ def _query_value(value: Any) -> str:
 
 
 _KEY = re.compile(r"^fk_(live|test)_")
+
+_WEEK = 7 * 24 * 60 * 60
+
+
+def expiry_warning(headers: Mapping[str, str], now: float | None = None) -> str | None:
+    """El aviso cuando la API dice que la llave vence pronto (Fiscalisto-Key-Expires-At en 7 días
+    o menos, o Fiscalisto-Warning: api_key_expires_soon); None si no."""
+    now = time.time() if now is None else now
+    expires_at = headers.get("fiscalisto-key-expires-at") or ""
+    try:
+        at: float | None = datetime.fromisoformat(expires_at.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        at = None
+    flagged = re.search(r"\bapi_key_expires_soon\b", headers.get("fiscalisto-warning") or "")
+    if not flagged and not (at is not None and 0 < at - now <= _WEEK):
+        return None
+    when = (
+        "el " + datetime.fromtimestamp(at, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        if at is not None
+        else "en menos de 7 días"
+    )
+    return (
+        f"[fiscalisto] Su llave de la API vence {when}. Cámbiela antes en Desarrolladores › "
+        "Llaves (Cambiar llave) para que sus solicitudes no fallen con api_key_expired."
+    )
 
 
 class Core:
@@ -242,6 +276,7 @@ class Core:
         self._sleep = sleep or time.sleep
         self._api_version = api_version
         self._language = language
+        self._warned_expiry = False
 
     @property
     def livemode(self) -> bool:
@@ -263,7 +298,15 @@ class Core:
         expand: Sequence[str] | None = None,
     ) -> Any:
         url = self._base_url + path
-        pairs = [(k, _query_value(v)) for k, v in (query or {}).items() if v is not None]
+        pairs = []
+        for k, v in (query or {}).items():
+            if v is None:
+                continue
+            # A dict (metadata={"pedido": "A-1"}) goes as metadata[pedido]=A-1.
+            if isinstance(v, Mapping):
+                pairs += [(f"{k}[{sub}]", _query_value(x)) for sub, x in v.items() if x is not None]
+            else:
+                pairs.append((k, _query_value(v)))
         # Ids as their objects in the same answer: expand=["issuer", "data.recurring_invoice"].
         pairs += [("expand[]", e) for e in expand or []]
         if pairs:
@@ -316,6 +359,11 @@ class Core:
                     }
                 ) from error
             request_id = res.headers.get("request-id")
+            if not self._warned_expiry:
+                warning = expiry_warning(res.headers)
+                if warning:
+                    self._warned_expiry = True
+                    warnings.warn(warning, UserWarning, stacklevel=3)
             if 200 <= res.status < 300:
                 if result == "bytes":
                     return res.body
@@ -332,7 +380,12 @@ class Core:
                 raw = None
             raw = raw if isinstance(raw, dict) else {}
             try:
-                retry_after = float(res.headers.get("retry-after", ""))
+                # Retry-After when the API sends it; otherwise RateLimit-Reset on a 429.
+                retry_after = float(
+                    res.headers.get("retry-after")
+                    or (res.headers.get("ratelimit-reset") if res.status == 429 else None)
+                    or ""
+                )
             except ValueError:
                 retry_after = 0.0
             retryable = (
@@ -355,12 +408,14 @@ class Core:
         max_retries: int | None = None,
         expand: Sequence[str] | None = None,
     ) -> ListObject[Any]:
-        def page(starting_after: str | None) -> dict[str, Any]:
+        forward = bool((query or {}).get("ending_before"))
+
+        def page(cursor: str | None) -> dict[str, Any]:
             q = dict(query or {})
-            if starting_after:
-                q["starting_after"] = starting_after
+            if cursor:
+                q["ending_before" if forward else "starting_after"] = cursor
             return self.request(  # type: ignore[no-any-return]
                 "GET", path, query=q, timeout=timeout, max_retries=max_retries, expand=expand
             )
 
-        return ListObject(page)
+        return ListObject(page, forward)
